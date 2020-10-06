@@ -236,6 +236,19 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     return;
             }
 
+            // Bloodlust
+            if (!Me.HaveBuff("Bloodlust")
+                && Target.HealthPercent > 80)
+                if (Cast(Bloodlust))
+                    return;
+
+            // Water Shield
+            if (!Me.HaveBuff("Water Shield")
+                && !Me.HaveBuff("Lightning Shield")
+                && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage <= _lowManaThreshold))
+                if (Cast(WaterShield))
+                    return;
+
             // Lightning Shield
             if (Me.ManaPercentage > _lowManaThreshold
                 && !Me.HaveBuff("Lightning Shield")
@@ -268,6 +281,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         protected Spell GiftOfTheNaaru = new Spell("Gift of the Naaru");
         protected Spell ElementalMastery = new Spell("Elemental Mastery");
         protected Spell ChainLightning = new Spell("Chain Lightning");
+        protected Spell Bloodlust = new Spell("Bloodlust");
 
         protected bool Cast(Spell s)
         {

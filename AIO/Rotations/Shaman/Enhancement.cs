@@ -162,13 +162,6 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     return;
             }
 
-            // Water Shield
-            if (!Me.HaveBuff("Water Shield")
-                && !Me.HaveBuff("Lightning Shield")
-                && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage <= _lowManaThreshold))
-                if (Cast(WaterShield))
-                    return;
-
             // Totems
             if (Me.ManaPercentage > 20
                 && Target.GetDistance < 20)
