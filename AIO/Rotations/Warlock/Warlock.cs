@@ -259,7 +259,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 // Life Tap
                 if (Me.HealthPercent > Me.ManaPercentage
                     && settings.UseLifeTap)
-                    if (Cast(LifeTap))
+                    if (!Me.IsMounted && Cast(LifeTap))
                         return;
 
                 // Unending Breath
@@ -375,6 +375,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             // Life Tap
             if (Me.HealthPercent > Me.ManaPercentage
+                && !Me.IsMounted
                 && settings.UseLifeTap)
                 if (Cast(LifeTap))
                     return;

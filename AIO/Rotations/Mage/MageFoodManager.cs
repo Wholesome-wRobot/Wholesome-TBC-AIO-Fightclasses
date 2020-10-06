@@ -2,6 +2,7 @@
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 using wManager.Wow.Class;
+using WholesomeTBCAIO.Helpers;
 
 namespace WholesomeTBCAIO.Rotations.Mage
 {

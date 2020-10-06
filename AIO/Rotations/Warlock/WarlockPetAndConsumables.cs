@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using WholesomeTBCAIO.Helpers;
 using wManager.Wow.Helpers;
 
 namespace WholesomeTBCAIO.Rotations.Warlock
