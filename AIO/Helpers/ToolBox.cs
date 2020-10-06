@@ -2,12 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using WholesomeTBCAIO.Helpers;
 using wManager.Wow.Class;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 
-namespace WholesomeTBCAIO
+namespace WholesomeTBCAIO.Helpers
 {
     public class ToolBox
     {

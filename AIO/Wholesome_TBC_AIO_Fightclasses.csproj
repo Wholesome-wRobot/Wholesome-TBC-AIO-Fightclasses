@@ -109,8 +109,8 @@
     <Compile Include="AIOTBCSettings.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Talents.cs" />
-    <Compile Include="ToolBox.cs" />
+    <Compile Include="Helpers\Talents.cs" />
+    <Compile Include="Helpers\ToolBox.cs" />
     <Compile Include="Rotations\Hunter\HunterFoodManager.cs" />
     <Compile Include="Rotations\Hunter\Hunter.cs" />
     <Compile Include="Settings\HunterSettings.cs" />
