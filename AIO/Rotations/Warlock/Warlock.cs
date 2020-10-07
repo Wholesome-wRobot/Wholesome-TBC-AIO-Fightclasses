@@ -346,6 +346,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
                 // Use Soul Stone
                 if (!Me.HaveBuff("Soulstone Resurrection")
+                    && settings.UseSoulStone
                     && CreateSoulstone.KnownSpell
                     && ToolBox.HaveOneInList(WarlockPetAndConsumables.SoulStones())
                     && ToolBox.GetItemCooldown(WarlockPetAndConsumables.SoulStones()) <= 0)
@@ -740,8 +741,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             CombatDebug("Launching");
             if (ObjectManager.Target.IsAlive || !Fight.InFight && ObjectManager.Target.Guid < 1)
             {
-                s.Launch();
-                Usefuls.WaitIsCasting();
+                s.Launch(false, true, true);
             }
             return true;
         }

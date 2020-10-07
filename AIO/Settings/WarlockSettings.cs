@@ -117,7 +117,7 @@ namespace WholesomeTBCAIO.Settings
         */
 
         // TALENT
-        [DropdownList(new string[] { "Affliction" })]
+        [DropdownList(new string[] { "Affliction", "Demonology" })]
         public override string Specialization { get; set; }
     }
 }

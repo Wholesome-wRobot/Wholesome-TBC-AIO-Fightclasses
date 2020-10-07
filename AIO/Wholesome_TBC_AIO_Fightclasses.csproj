@@ -103,6 +103,7 @@
     <Compile Include="Rotations\Shaman\Elemental.cs" />
     <Compile Include="Rotations\Shaman\Enhancement.cs" />
     <Compile Include="Rotations\Warlock\Affliction.cs" />
+    <Compile Include="Rotations\Warlock\Demonology.cs" />
     <Compile Include="Rotations\Warrior\Fury.cs" />
     <Compile Include="Settings\BasePersistentSettings.cs" />
     <Compile Include="Settings\BaseSettings.cs" />
