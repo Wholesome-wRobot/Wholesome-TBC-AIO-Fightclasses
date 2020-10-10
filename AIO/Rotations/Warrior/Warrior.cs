@@ -2,14 +2,12 @@
 using System.Diagnostics;
 using System.Threading;
 using robotManager.Helpful;
-using robotManager.Products;
 using wManager.Events;
 using wManager.Wow.Class;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 using System.Collections.Generic;
 using wManager.Wow.Bot.Tasks;
-using System.Linq;
 using WholesomeTBCAIO.Settings;
 using WholesomeTBCAIO.Helpers;
 
@@ -62,30 +60,20 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             {
                 try
                 {
-                    if (!Products.InPause
-                        && !ObjectManager.Me.IsDeadMe
-                        && !Main.HMPrunningAway)
-                    {
-                        // Buff rotation
-                        if (!Fight.InFight
-                            && ObjectManager.GetNumberAttackPlayer() < 1)
-                        {
-                            specialization.BuffRotation();
-                        }
+                    if (InBerserkStance())
+                        Logger.Log("In berserker stance");
 
-                        // Pull & Combat rotation
-                        if (Fight.InFight
-                            && ObjectManager.Me.Target > 0UL
-                            && ObjectManager.Target.IsAttackable
-                            && ObjectManager.Target.IsAlive)
-                        {
-                            if (ObjectManager.GetNumberAttackPlayer() < 1
-                                && !ObjectManager.Target.InCombatFlagOnly)
-                                specialization.Pull();
-                            else
-                                specialization.CombatRotation();
-                        }
-                    }
+                    if (InBattleStance())
+                        Logger.Log("In battle stance");
+
+                    if (StatusChecker.OutOfCombat())
+                        specialization.BuffRotation();
+
+                    if (StatusChecker.InPull())
+                        specialization.Pull();
+
+                    if (StatusChecker.InCombat())
+                        specialization.CombatRotation();
                 }
                 catch (Exception arg)
                 {
@@ -113,21 +101,6 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                     && CommandingShout.KnownSpell)
                     if (Cast(CommandingShout))
                         return;
-
-                // Cannibalize
-                if (ObjectManager.GetObjectWoWUnit().Where(u => u.GetDistance <= 8
-                && u.IsDead
-                && (u.CreatureTypeTarget == "Humanoid" || u.CreatureTypeTarget == "Undead")).Count() > 0)
-                {
-                    if (Me.HealthPercent < 50
-                        && !Me.HaveBuff("Drink")
-                        && !Me.HaveBuff("Food")
-                        && Me.IsAlive
-                        && Cannibalize.KnownSpell
-                        && Cannibalize.IsSpellUsable)
-                        if (Cast(Cannibalize))
-                            return;
-                }
             }
         }
 
@@ -249,38 +222,6 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 _meleeTimer.Stop();
             }
 
-            // Gift of the Naaru
-            if (ObjectManager.GetNumberAttackPlayer() > 1
-                && Me.HealthPercent < 50)
-                if (Cast(GiftOfTheNaaru))
-                    return;
-
-            // Will of the Forsaken
-            if (Me.HaveBuff("Fear")
-                || Me.HaveBuff("Charm")
-                || Me.HaveBuff("Sleep"))
-                if (Cast(WillOfTheForsaken))
-                    return;
-
-            // Stoneform
-            if (ToolBox.HasPoisonDebuff()
-                || ToolBox.HasDiseaseDebuff()
-                || Me.HaveBuff("Bleed"))
-                if (Cast(Stoneform))
-                    return;
-
-            // Escape Artist
-            if (Me.Rooted
-                || Me.HaveBuff("Frostnova"))
-                if (Cast(EscapeArtist))
-                    return;
-
-            // Warstomp
-            if (ObjectManager.GetNumberAttackPlayer() > 1
-                && Target.GetDistance < 8)
-                if (Cast(WarStomp))
-                    return;
-
             // Intercept
             if (InBerserkStance()
                 && ObjectManager.Target.GetDistance > 12f
@@ -288,18 +229,9 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 if (Cast(Intercept))
                     return;
 
-            // Blood Fury
-            if (Target.HealthPercent > 70)
-                if (Cast(BloodFury))
-                    return;
-
-            // Berserking
-            if (Target.HealthPercent > 70)
-                if (Cast(Berserking))
-                    return;
-
             // Battle stance
-            if (InBerserkStance() && Me.Rage < 10
+            if (InBerserkStance() 
+                && Me.Rage < 10
                 && (!settings.PrioritizeBerserkStance || ObjectManager.GetNumberAttackPlayer() > 1)
                 && !_fightingACaster)
                 if (Cast(BattleStance))
@@ -465,14 +397,6 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         protected Spell BerserkerRage = new Spell("Berserker Rage");
         protected Spell Rampage = new Spell("Rampage");
         protected Spell VictoryRush = new Spell("Victory Rush");
-        protected Spell Cannibalize = new Spell("Cannibalize");
-        protected Spell WillOfTheForsaken = new Spell("Will of the Forsaken");
-        protected Spell BloodFury = new Spell("Blood Fury");
-        protected Spell Berserking = new Spell("Berserking");
-        protected Spell WarStomp = new Spell("War Stomp");
-        protected Spell Stoneform = new Spell("Stoneform");
-        protected Spell EscapeArtist = new Spell("Escape Artist");
-        protected Spell GiftOfTheNaaru = new Spell("Gift of the Naaru");
 
         protected bool Cast(Spell s)
         {
@@ -502,7 +426,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
 
         protected bool InBerserkStance()
         {
-            return Lua.LuaDoString<bool>("bs = false; if GetShapeshiftForm() == 3 then bs = true end", "bs");
+            return Lua.LuaDoString<bool>("bs = false; if GetShapeshiftForm() == 3 or GetShapeshiftForm() == 2 then bs = true end", "bs");
         }
     }
 }

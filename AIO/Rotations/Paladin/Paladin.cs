@@ -59,19 +59,14 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             {
                 try
                 {
-                    if (!Products.InPause 
-                        && !Me.IsDeadMe 
-                        && !Main.HMPrunningAway)
-                    {
+                    if (StatusChecker.OutOfCombat())
                         specialization.BuffRotation();
 
-                        if (Fight.InFight 
-                            && Me.Target > 0UL 
-                            && ObjectManager.Target.IsAttackable)
-                        {
-                            specialization.CombatRotation();
-                        }
-                    }
+                    /*if (StatusChecker.InPull())
+                        specialization.Pull();*/
+
+                    if (StatusChecker.InCombat())
+                        specialization.CombatRotation();
                 }
                 catch (Exception arg)
                 {
@@ -160,23 +155,6 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 Cast(Cleanse);
                 Lua.RunMacroText("/cleartarget");
             }
-
-            // Mana Tap
-            if (Target.Mana > 0 && Target.ManaPercentage > 10)
-                Cast(ManaTap);
-
-            // Arcane Torrent
-            if (Me.HaveBuff("Mana Tap") && Me.ManaPercentage < 50
-                || Target.IsCast && Target.GetDistance < 8)
-                Cast(ArcaneTorrent);
-
-            // Gift of the Naaru
-            if (ObjectManager.GetNumberAttackPlayer() > 1 && Me.HealthPercent < 50)
-                Cast(GiftOfTheNaaru);
-
-            // Stoneform
-            if (ToolBox.HasPoisonDebuff() || ToolBox.HasDiseaseDebuff() || Me.HaveBuff("Bleed"))
-                Cast(Stoneform);
 
             // Devotion Aura multi
             if (ObjectManager.GetNumberAttackPlayer() > 1 && settings.DevoAuraOnMulti &&
@@ -293,10 +271,6 @@ namespace WholesomeTBCAIO.Rotations.Paladin
         protected Spell Attack = new Spell("Attack");
         protected Spell CrusaderAura = new Spell("Crusader Aura");
         protected Spell AvengingWrath = new Spell("Avenging Wrath");
-        protected Spell Stoneform = new Spell("Stoneform");
-        protected Spell GiftOfTheNaaru = new Spell("Gift of the Naaru");
-        protected Spell ManaTap = new Spell("Mana Tap");
-        protected Spell ArcaneTorrent = new Spell("Arcane Torrent");
 
         protected void Cast(Spell s)
         {

@@ -143,13 +143,36 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             {
                 try
                 {
-                    if (Conditions.InGameAndConnectedAndProductStartedNotInPause && !Me.IsOnTaxi && Me.IsAlive
-                        && ObjectManager.Pet.IsValid && !Main.HMPrunningAway)
+                    if (StatusChecker.BasicConditions()
+                        && !Me.IsOnTaxi 
+                        && ObjectManager.Pet.IsValid)
                     {
                         // Pet Growl
-                        if (ObjectManager.Target.Target == Me.Guid && Me.InCombatFlagOnly && !settings.AutoGrowl
+                        if (ObjectManager.Target.Target == Me.Guid
+                            && Me.InCombatFlagOnly 
+                            && !settings.AutoGrowl
                             && !ObjectManager.Pet.HaveBuff("Feed Pet Effect"))
                             ToolBox.PetSpellCast("Growl");
+
+                        // Switch Auto Growl
+                        if (ObjectManager.Pet.IsValid)
+                        {
+                            ToolBox.TogglePetSpellAuto("Growl", settings.AutoGrowl);
+                        }
+
+                        // Feed
+                        if (Lua.LuaDoString<int>("happiness, damagePercentage, loyaltyRate = GetPetHappiness() return happiness", "") < 3
+                            && !Fight.InFight
+                            && settings.FeedPet)
+                            Feed();
+
+                        // Pet attack
+                        if (Fight.InFight 
+                            && Me.Target > 0UL
+                            && ObjectManager.Target.IsAttackable
+                            && !ObjectManager.Pet.HaveBuff("Feed Pet Effect")
+                            && ObjectManager.Pet.Target != Me.Target)
+                            Lua.LuaDoString("PetAttack();", false);
                     }
                 }
                 catch (Exception arg)
@@ -174,9 +197,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             {
                 try
                 {
-                    if (!Products.InPause 
-                        && !Me.IsDeadMe 
-                        && !Main.HMPrunningAway)
+                    if (StatusChecker.BasicConditions())
                     {
                         if (_canOnlyMelee)
                             RangeManager.SetRangeToMelee();
@@ -184,34 +205,13 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                             RangeManager.SetRange(_distanceRange);
 
                         PetManager();
-
-                        // Switch Auto Growl
-                        if (ObjectManager.Pet.IsValid)
-                        {
-                            ToolBox.TogglePetSpellAuto("Growl", settings.AutoGrowl);
-                        }
-
-                        // Feed
-                        if (Lua.LuaDoString<int>("happiness, damagePercentage, loyaltyRate = GetPetHappiness() return happiness", "") < 3
-                            && !Fight.InFight && settings.FeedPet)
-                            Feed();
-
-                        // Pet attack
-                        if (Fight.InFight && Me.Target > 0UL && ObjectManager.Target.IsAttackable
-                            && !ObjectManager.Pet.HaveBuff("Feed Pet Effect") && ObjectManager.Pet.Target != Me.Target)
-                            Lua.LuaDoString("PetAttack();", false);
-
-                        // Aspect of the Cheetah
-                        if (!Me.IsMounted && !Fight.InFight
-                            && !Me.HaveBuff("Aspect of the Cheetah")
-                            && MovementManager.InMoveTo &&
-                            Me.ManaPercentage > 60f
-                            && settings.UseAspectOfTheCheetah)
-                            Cast(AspectCheetah);
-
-                        if (Fight.InFight && Me.Target > 0UL && ObjectManager.Target.IsAttackable)
-                            specialization.CombatRotation();
                     }
+
+                    if (StatusChecker.OutOfCombat())
+                        specialization.BuffRotation();
+
+                    if (StatusChecker.InCombat())
+                        specialization.CombatRotation();
                 }
                 catch (Exception arg)
                 {
@@ -220,6 +220,18 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 Thread.Sleep(ToolBox.GetLatency() + settings.ThreadSleepCycle);
             }
             Logger.Log("Stopped.");
+        }
+
+        protected virtual void BuffRotation()
+        {
+            // Aspect of the Cheetah
+            if (!Me.IsMounted && !Fight.InFight
+                && !Me.HaveBuff("Aspect of the Cheetah")
+                && MovementManager.InMoveTo &&
+                Me.ManaPercentage > 60f
+                && settings.UseAspectOfTheCheetah)
+                if (Cast(AspectCheetah))
+                    return;
         }
 
         protected virtual void CombatRotation()
@@ -234,42 +246,6 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
             if (Target.GetDistance < 13f && !settings.BackupFromMelee)
                 _canOnlyMelee = true;
-
-            // Mana Tap
-            if (Target.Mana > 0 && Target.ManaPercentage > 10)
-                if (Cast(ManaTap))
-                    return;
-
-            // Arcane Torrent
-            if (Me.HaveBuff("Mana Tap") && Me.ManaPercentage < 50
-                || Target.IsCast && Target.GetDistance < 8)
-                if (Cast(ArcaneTorrent))
-                    return;
-
-            // Gift of the Naaru
-            if (ObjectManager.GetNumberAttackPlayer() > 1 && Me.HealthPercent < 50)
-                if (Cast(GiftOfTheNaaru))
-                    return;
-
-            // Blood Fury
-            if (Target.HealthPercent > 70)
-                if (Cast(BloodFury))
-                    return;
-
-            // Berserking
-            if (Target.HealthPercent > 70)
-                if (Cast(Berserking))
-                    return;
-
-            // Stoneform
-            if (ToolBox.HasPoisonDebuff() || ToolBox.HasDiseaseDebuff() || Me.HaveBuff("Bleed"))
-                if (Cast(Stoneform))
-                    return;
-
-            // Warstomp
-            if (ObjectManager.GetNumberAttackPlayer() > 1 && Target.GetDistance < 8)
-                if (Cast(WarStomp))
-                    return;
 
             // Aspect of the viper
             if (!Me.HaveBuff("Aspect of the Viper") && Me.ManaPercentage < 30)
@@ -472,12 +448,5 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         protected Spell KillCommand = new Spell("Kill Command");
         protected Spell Disengage = new Spell("Disengage");
         protected Spell Attack = new Spell("Attack");
-        protected Spell BloodFury = new Spell("Blood Fury");
-        protected Spell Berserking = new Spell("Berserking");
-        protected Spell WarStomp = new Spell("War Stomp");
-        protected Spell Stoneform = new Spell("Stoneform");
-        protected Spell GiftOfTheNaaru = new Spell("Gift of the Naaru");
-        protected Spell ManaTap = new Spell("Mana Tap");
-        protected Spell ArcaneTorrent = new Spell("Arcane Torrent");
     }
 }

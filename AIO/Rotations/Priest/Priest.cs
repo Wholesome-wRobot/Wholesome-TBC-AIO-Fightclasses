@@ -72,9 +72,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             {
                 try
                 {
-                    if (!Products.InPause 
-                        && !ObjectManager.Me.IsDeadMe 
-                        && !Main.HMPrunningAway)
+                    if (StatusChecker.BasicConditions())
                     {
                         if (!RangeManager.CurrentRangeIsMelee())
                         {
@@ -83,23 +81,16 @@ namespace WholesomeTBCAIO.Rotations.Priest
                             else
                                 RangeManager.SetRange(_distaneRange);
                         }
-
-                        if (!Fight.InFight)
-                        {
-                            specialization.BuffRotation();
-                        }
-
-                        if (Fight.InFight 
-                            && ObjectManager.Me.Target > 0UL 
-                            && ObjectManager.Target.IsAttackable 
-                            && ObjectManager.Target.IsAlive)
-                        {
-                            if (ObjectManager.GetNumberAttackPlayer() < 1 && !ObjectManager.Target.InCombatFlagOnly)
-                                specialization.Pull();
-                            else
-                                specialization.CombatRotation();
-                        }
                     }
+
+                    if (StatusChecker.OutOfCombat())
+                        specialization.BuffRotation();
+
+                    if (StatusChecker.InPull())
+                        specialization.Pull();
+
+                    if (StatusChecker.InCombat())
+                        specialization.CombatRotation();
                 }
                 catch (Exception arg)
                 {
@@ -189,14 +180,6 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 if (!Me.HaveBuff("ShadowForm") && ObjectManager.GetNumberAttackPlayer() < 1 && Shadowform.IsSpellUsable)
                     if (Cast(Shadowform))
                         return;
-
-                // Cannibalize
-                if (ObjectManager.GetObjectWoWUnit().Where(u => u.GetDistance <= 8 && u.IsDead && (u.CreatureTypeTarget == "Humanoid" || u.CreatureTypeTarget == "Undead")).Count() > 0)
-                {
-                    if (Me.HealthPercent < 50 && !Me.HaveBuff("Drink") && !Me.HaveBuff("Food") && Me.IsAlive && Cannibalize.KnownSpell && Cannibalize.IsSpellUsable)
-                        if (Cast(Cannibalize))
-                            return;
-                }
             }
         }
 
@@ -258,37 +241,6 @@ namespace WholesomeTBCAIO.Rotations.Priest
             int _innerFocusCD = Lua.LuaDoString<int>("local start, duration, enabled = GetSpellCooldown(\"Inner Focus\"); return start + duration - GetTime();");
             bool _shoulBeInterrupted = ToolBox.EnemyCasting();
             WoWUnit Target = ObjectManager.Target;
-
-            // Mana Tap
-            if (Target.Mana > 0 && Target.ManaPercentage > 10)
-                if (Cast(ManaTap))
-                    return;
-
-            // Arcane Torrent
-            if (Me.HaveBuff("Mana Tap") && Me.ManaPercentage < 50
-                || Target.IsCast && Target.GetDistance < 8)
-                if (Cast(ArcaneTorrent))
-                    return;
-
-            // Gift of the Naaru
-            if (ObjectManager.GetNumberAttackPlayer() > 1 && Me.HealthPercent < 50)
-                if (Cast(GiftOfTheNaaru))
-                    return;
-
-            // Will of the Forsaken
-            if (Me.HaveBuff("Fear") || Me.HaveBuff("Charm") || Me.HaveBuff("Sleep"))
-                if (Cast(WillOfTheForsaken))
-                    return;
-
-            // Stoneform
-            if (ToolBox.HasPoisonDebuff() || ToolBox.HasDiseaseDebuff() || Me.HaveBuff("Bleed"))
-                if (Cast(Stoneform))
-                    return;
-
-            // Berserking
-            if (Target.HealthPercent > 70)
-                if (Cast(Berserking))
-                    return;
 
             // Power Word Shield on multi aggro
             if (!Me.HaveBuff("Power Word: Shield") && !_hasWeakenedSoul
@@ -503,13 +455,6 @@ namespace WholesomeTBCAIO.Rotations.Priest
         protected Spell Silence = new Spell("Silence");
         protected Spell DivineSpirit = new Spell("Divine Spirit");
         protected Spell DevouringPlague = new Spell("Devouring Plague");
-        protected Spell Cannibalize = new Spell("Cannibalize");
-        protected Spell WillOfTheForsaken = new Spell("Will of the Forsaken");
-        protected Spell Berserking = new Spell("Berserking");
-        protected Spell Stoneform = new Spell("Stoneform");
-        protected Spell GiftOfTheNaaru = new Spell("Gift of the Naaru");
-        protected Spell ManaTap = new Spell("Mana Tap");
-        protected Spell ArcaneTorrent = new Spell("Arcane Torrent");
 
         protected bool Cast(Spell s, bool castEvenIfWanding = true)
         {

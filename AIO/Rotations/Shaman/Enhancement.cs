@@ -173,7 +173,6 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 && Target.GetDistance < 19f
                 && !Target.HaveBuff("Flame Shock")
                 && Target.HealthPercent > 20
-                && !_fightingACaster
                 && settings.UseFlameShock)
                 if (Cast(FlameShock))
                     return;

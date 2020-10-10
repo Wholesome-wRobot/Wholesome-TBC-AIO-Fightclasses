@@ -204,32 +204,24 @@ namespace WholesomeTBCAIO.Rotations.Mage
             {
                 try
                 {
-                    if (!Products.InPause 
-                        && !ObjectManager.Me.IsDeadMe 
-                        && !Main.HMPrunningAway)
+
+                    if (StatusChecker.BasicConditions())
                     {
                         if (_polymorphedEnemy != null && !ObjectManager.Me.InCombatFlagOnly)
                             _polymorphedEnemy = null;
-
-                        if (!Fight.InFight
-                            && !ObjectManager.Me.InCombatFlagOnly
-                            && !Me.IsMounted)
-                            specialization.BuffRotation();
-
-                        if (Fight.InFight
-                            && ObjectManager.Me.Target > 0UL
-                            && ObjectManager.Target.IsAttackable
-                            && ObjectManager.Target.IsAlive
-                            && !_isBackingUp
-                            && !_isPolymorphing)
-                        {
-                            if (ObjectManager.GetNumberAttackPlayer() < 1
-                                && !ObjectManager.Target.InCombatFlagOnly)
-                                specialization.Pull();
-                            else if (!ObjectManager.Target.HaveBuff("Polymorph") || ObjectManager.GetNumberAttackPlayer() < 1)
-                                specialization.CombatRotation();
-                        }
                     }
+
+                    if (StatusChecker.OutOfCombat())
+                        specialization.BuffRotation();
+
+                    if (StatusChecker.InPull())
+                        specialization.Pull();
+
+                    if (StatusChecker.InCombat()
+                        && !_isBackingUp
+                        && !_isPolymorphing
+                        && (!ObjectManager.Target.HaveBuff("Polymorph") || ObjectManager.GetNumberAttackPlayer() < 1))
+                        specialization.CombatRotation();
                 }
                 catch (Exception arg)
                 {
@@ -271,15 +263,6 @@ namespace WholesomeTBCAIO.Rotations.Mage
             if (Me.ManaPercentage < 30)
                 if (Cast(Evocation))
                     return;
-
-
-            // Cannibalize
-            if (ObjectManager.GetObjectWoWUnit().Where(u => u.GetDistance <= 8 && u.IsDead && (u.CreatureTypeTarget == "Humanoid" || u.CreatureTypeTarget == "Undead")).Count() > 0)
-            {
-                if (Me.HealthPercent < 50 && !Me.HaveBuff("Drink") && !Me.HaveBuff("Food") && Me.IsAlive && Cannibalize.KnownSpell && Cannibalize.IsSpellUsable)
-                    if (Cast(Cannibalize))
-                        return;
-            }
         }
 
         protected virtual void Pull()
@@ -326,42 +309,6 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 if (Cast(RemoveCurse))
                     return;
             }
-
-            // Mana Tap
-            if (Target.Mana > 0
-                && Target.ManaPercentage > 10)
-                if (Cast(ManaTap))
-                    return;
-
-            // Arcane Torrent
-            if (Me.HaveBuff("Mana Tap") && Me.ManaPercentage < 50
-                || Target.IsCast && Target.GetDistance < 8)
-                if (Cast(ArcaneTorrent))
-                    return;
-
-            // Gift of the Naaru
-            if (ObjectManager.GetNumberAttackPlayer() > 1
-                && Me.HealthPercent < 50)
-                if (Cast(GiftOfTheNaaru))
-                    return;
-
-            // Escape Artist
-            if (Me.Rooted
-                || Me.HaveBuff("Frostnova"))
-                if (Cast(EscapeArtist))
-                    return;
-
-            // Will of the Forsaken
-            if (Me.HaveBuff("Fear")
-                || Me.HaveBuff("Charm")
-                || Me.HaveBuff("Sleep"))
-                if (Cast(WillOfTheForsaken))
-                    return;
-
-            // Berserking
-            if (Target.HealthPercent > 70)
-                if (Cast(Berserking))
-                    return;
 
             // Summon Water Elemental
             if (Target.HealthPercent > 95
@@ -570,12 +517,5 @@ namespace WholesomeTBCAIO.Rotations.Mage
         protected Spell RemoveCurse = new Spell("Remove Curse");
         protected Spell IceArmor = new Spell("Ice Armor");
         protected Spell ManaShield = new Spell("Mana Shield");
-        protected Spell Cannibalize = new Spell("Cannibalize");
-        protected Spell WillOfTheForsaken = new Spell("Will of the Forsaken");
-        protected Spell Berserking = new Spell("Berserking");
-        protected Spell EscapeArtist = new Spell("Escape Artist");
-        protected Spell GiftOfTheNaaru = new Spell("Gift of the Naaru");
-        protected Spell ManaTap = new Spell("Mana Tap");
-        protected Spell ArcaneTorrent = new Spell("Arcane Torrent");
     }
 }

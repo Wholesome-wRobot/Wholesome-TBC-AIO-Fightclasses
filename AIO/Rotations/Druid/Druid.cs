@@ -116,27 +116,14 @@ namespace WholesomeTBCAIO.Rotations.Druid
             {
                 try
                 {
-                    if (!Products.InPause
-                        && !ObjectManager.Me.IsDeadMe
-                        && !Main.HMPrunningAway)
-                    {
-                        // Buff rotation
-                        if (!Fight.InFight
-                            && ObjectManager.GetNumberAttackPlayer() < 1)
-                            specialization.BuffRotation();
+                    if (StatusChecker.OutOfCombat())
+                        specialization.BuffRotation();
 
-                        // Pull & Combat rotation
-                        if (Fight.InFight
-                            && ObjectManager.Me.Target > 0UL
-                            && ObjectManager.Target.IsAttackable
-                            && ObjectManager.Target.IsAlive)
-                        {
-                            if (!ObjectManager.Me.InCombatFlagOnly)
-                                specialization.Pull();
-                            else
-                                specialization.CombatRotation();
-                        }
-                    }
+                    if (StatusChecker.InPull())
+                        specialization.Pull();
+
+                    if (StatusChecker.InCombat())
+                        specialization.CombatRotation();
                 }
                 catch (Exception arg)
                 {
@@ -631,12 +618,6 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 && !Me.HaveBuff("Cat Form")
                 && !Me.HaveBuff("Dire Bear Form"))
             {
-                // Warstomp
-                if (ObjectManager.GetNumberAttackPlayer() > 1
-                    && Target.GetDistance < 8)
-                    if (Cast(WarStomp))
-                        return;
-
                 // Moonfire
                 if (!Target.HaveBuff("Moonfire")
                     && Me.ManaPercentage > 15
@@ -709,7 +690,6 @@ namespace WholesomeTBCAIO.Rotations.Druid
         protected Spell MangleBear = new Spell("Mangle (Bear)");
         protected Spell Maim = new Spell("Maim");
         protected Spell OmenOfClarity = new Spell("Omen of Clarity");
-        protected Spell WarStomp = new Spell("War Stomp");
         protected Spell AquaticForm = new Spell("Aquatic Form");
 
         protected bool MaulOn()

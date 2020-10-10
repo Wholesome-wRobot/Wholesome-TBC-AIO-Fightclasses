@@ -1,4 +1,7 @@
-﻿namespace WholesomeTBCAIO.Rotations.Warlock
+﻿using wManager.Wow.Helpers;
+using wManager.Wow.ObjectManager;
+
+namespace WholesomeTBCAIO.Rotations.Warlock
 {
     public class Demonology : Warlock
     {
@@ -9,6 +12,17 @@
 
         protected override void Pull()
         {
+            // Pet attack
+            if (ObjectManager.Pet.Target != ObjectManager.Me.Target)
+                Lua.LuaDoString("PetAttack();", false);
+
+            // Life Tap
+            if (Me.HealthPercent > Me.ManaPercentage
+                && !Me.IsMounted
+                && settings.UseLifeTap)
+                if (Cast(LifeTap))
+                    return;
+
             base.Pull();
         }
 

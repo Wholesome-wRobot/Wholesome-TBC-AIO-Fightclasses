@@ -1,10 +1,8 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using robotManager.Helpful;
-using robotManager.Products;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
 using wManager.Events;
@@ -95,11 +93,8 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             {
                 try
                 {
-                    if (Conditions.InGameAndConnectedAndProductStartedNotInPause 
-                        && !ObjectManager.Me.IsOnTaxi 
-                        && ObjectManager.Me.IsAlive
-                        && ObjectManager.Pet.IsValid 
-                        && !Main.HMPrunningAway)
+                    if (StatusChecker.BasicConditions()
+                        && ObjectManager.Pet.IsValid )
                     {
                         // Voidwalker Torment
                         if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker")
@@ -124,27 +119,14 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             {
                 try
                 {
-                    if (!Products.InPause
-                        && !ObjectManager.Me.IsDeadMe
-                        && !Main.HMPrunningAway)
-                    {
-                        if (!Me.InCombatFlagOnly)
-                        {
-                            specialization.BuffRotation();
-                        }
+                    if (StatusChecker.OutOfCombat())
+                        specialization.BuffRotation();
 
-                        if (Fight.InFight
-                            && ObjectManager.Me.Target > 0UL
-                            && ObjectManager.Target.IsAttackable
-                            && ObjectManager.Target.IsAlive)
-                        {
-                            if (ObjectManager.GetNumberAttackPlayer() < 1
-                                && !ObjectManager.Target.InCombatFlagOnly)
-                                specialization.Pull();
-                            else
-                                specialization.CombatRotation();
-                        }
-                    }
+                    if (StatusChecker.InPull())
+                        specialization.Pull();
+
+                    if (StatusChecker.InCombat())
+                        specialization.CombatRotation();
                 }
                 catch (Exception arg)
                 {
@@ -157,249 +139,215 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
         protected virtual void BuffRotation()
         {
-            if (!Me.IsMounted)
+            // Make sure we have mana to summon
+            if (!ObjectManager.Pet.IsValid
+                && ObjectManager.Me.ManaPercentage < 95
+                && !ObjectManager.Me.HaveBuff("Drink")
+                && (SummonVoidwalker.KnownSpell && !SummonVoidwalker.IsSpellUsable && ToolBox.CountItemStacks("Soul Shard") > 0 ||
+                SummonImp.KnownSpell && !SummonImp.IsSpellUsable && !SummonVoidwalker.KnownSpell))
             {
-                // Make sure we have mana to summon
-                if (!ObjectManager.Pet.IsValid
-                    && ObjectManager.Me.ManaPercentage < 95
-                    && !ObjectManager.Me.HaveBuff("Drink")
-                    && (SummonVoidwalker.KnownSpell && !SummonVoidwalker.IsSpellUsable && ToolBox.CountItemStacks("Soul Shard") > 0 ||
-                    SummonImp.KnownSpell && !SummonImp.IsSpellUsable && !SummonVoidwalker.KnownSpell))
+                Logger.Log("Not enough mana to summon, forcing regen");
+                wManager.wManagerSetting.CurrentSetting.DrinkPercent = 95;
+                Thread.Sleep(1000);
+                return;
+            }
+            else
+                wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
+
+            // Switch Auto Torment & Suffering off
+            if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
+            {
+                ToolBox.TogglePetSpellAuto("Torment", settings.AutoTorment);
+                ToolBox.TogglePetSpellAuto("Suffering", false);
+            }
+
+            // Summon Felguard
+            if ((!ObjectManager.Pet.IsValid
+                || WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker") || WarlockPetAndConsumables.MyWarlockPet().Equals("Imp"))
+                && SummonFelguard.KnownSpell)
+            {
+                Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
+                if (!ObjectManager.Me.IsMounted)
                 {
-                    Logger.Log("Not enough mana to summon, forcing regen");
-                    wManager.wManagerSetting.CurrentSetting.DrinkPercent = 95;
-                    Thread.Sleep(1000);
+                    if (Cast(FelDomination))
+                        Thread.Sleep(200);
+                    if (Cast(SummonFelguard))
+                        return;
+                }
+            }
+
+            // Summon Felguard for mana or health
+            if (SummonFelguard.KnownSpell
+                && (ObjectManager.Pet.ManaPercentage < 20 || ObjectManager.Pet.HealthPercent < 20)
+                && ObjectManager.Pet.IsValid)
+            {
+                Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
+                if (!ObjectManager.Me.IsMounted)
+                {
+                    MovementManager.StopMove();
+                    if (Cast(FelDomination))
+                        Thread.Sleep(200);
+                    if (Cast(SummonFelguard))
+                        return;
+                }
+            }
+
+            // Summon Void Walker
+            if ((!ObjectManager.Pet.IsValid || !WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
+                && SummonVoidwalker.KnownSpell
+                && !SummonFelguard.KnownSpell)
+            {
+                Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
+                if (!ObjectManager.Me.IsMounted)
+                {
+                    MovementManager.StopMove();
+                    if (Cast(FelDomination))
+                        Thread.Sleep(200);
+                    if (Cast(SummonVoidwalker))
+                        return;
+                }
+            }
+
+            // Summon Void Walker for mana
+            if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker")
+                && SummonVoidwalker.KnownSpell
+                && ObjectManager.Pet.ManaPercentage < 20
+                && !SummonFelguard.KnownSpell)
+            {
+                Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
+                if (!ObjectManager.Me.IsMounted)
+                {
+                    MovementManager.StopMove();
+                    if (Cast(FelDomination))
+                        Thread.Sleep(200);
+                    if (Cast(SummonVoidwalker))
+                        return;
+                }
+            }
+
+            // Summon Imp
+            if (!ObjectManager.Pet.IsValid && SummonImp.KnownSpell
+                && (!SummonVoidwalker.KnownSpell || ToolBox.CountItemStacks("Soul Shard") < 1))
+            {
+                Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
+                if (!ObjectManager.Me.IsMounted)
+                {
+                    MovementManager.StopMove();
+                    if (Cast(FelDomination))
+                        Thread.Sleep(200);
+                    if (Cast(SummonImp))
+                        return;
+                }
+            }
+
+            // Life Tap
+            if (Me.HealthPercent > Me.ManaPercentage
+                && settings.UseLifeTap)
+                if (Cast(LifeTap))
+                    return;
+
+            // Unending Breath
+            if (!Me.HaveBuff("Unending Breath")
+                && UnendingBreath.KnownSpell
+                && UnendingBreath.IsSpellUsable
+                && settings.UseUnendingBreath)
+            {
+                Lua.RunMacroText("/target player");
+                if (Cast(UnendingBreath))
+                {
+                    Lua.RunMacroText("/cleartarget");
                     return;
                 }
-                else
-                    wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
+            }
 
-                // Switch Auto Torment & Suffering off
-                if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
-                {
-                    ToolBox.TogglePetSpellAuto("Torment", settings.AutoTorment);
-                    ToolBox.TogglePetSpellAuto("Suffering", false);
-                }
+            // Demon Skin
+            if (!Me.HaveBuff("Demon Skin")
+                && !DemonArmor.KnownSpell
+                && DemonSkin.KnownSpell)
+                if (Cast(DemonSkin))
+                    return;
 
-                // Summon Felguard
-                if ((!ObjectManager.Pet.IsValid
-                    || WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker") || WarlockPetAndConsumables.MyWarlockPet().Equals("Imp"))
-                    && SummonFelguard.KnownSpell)
-                {
-                    Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
-                    if (!ObjectManager.Me.IsMounted)
-                    {
-                        if (Cast(FelDomination))
-                            Thread.Sleep(200);
-                        if (Cast(SummonFelguard))
-                            return;
-                    }
-                }
+            // Demon Armor
+            if ((!Me.HaveBuff("Demon Armor") || Me.HaveBuff("Demon Skin"))
+                && DemonArmor.KnownSpell
+                && (!FelArmor.KnownSpell || FelArmor.KnownSpell && !settings.UseFelArmor))
+                if (Cast(DemonArmor))
+                    return;
 
-                // Summon Felguard for mana or health
-                if (SummonFelguard.KnownSpell
-                    && (ObjectManager.Pet.ManaPercentage < 20 || ObjectManager.Pet.HealthPercent < 20)
-                    && ObjectManager.Pet.IsValid)
-                {
-                    Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
-                    if (!ObjectManager.Me.IsMounted)
-                    {
-                        if (Cast(FelDomination))
-                            Thread.Sleep(200);
-                        if (Cast(SummonFelguard))
-                            return;
-                    }
-                }
+            // Soul Link
+            if (SoulLink.KnownSpell
+                && !Me.HaveBuff("Soul Link"))
+                if (Cast(SoulLink))
+                    return;
 
-                // Summon Void Walker
-                if ((!ObjectManager.Pet.IsValid || !WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
-                    && SummonVoidwalker.KnownSpell
-                    && !SummonFelguard.KnownSpell)
-                {
-                    Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
-                    if (!ObjectManager.Me.IsMounted)
-                    {
-                        if (Cast(FelDomination))
-                            Thread.Sleep(200);
-                        if (Cast(SummonVoidwalker))
-                            return;
-                    }
-                }
+            // Fel Armor
+            if (!Me.HaveBuff("Fel Armor")
+                && FelArmor.KnownSpell
+                && settings.UseFelArmor)
+                if (Cast(FelArmor))
+                    return;
 
-                // Summon Void Walker for mana
+            // Health Funnel
+            if (ObjectManager.Pet.HealthPercent < 50
+                && Me.HealthPercent > 40
+                && ObjectManager.Pet.GetDistance < 19
+                && !ObjectManager.Pet.InCombatFlagOnly
+                && HealthFunnel.KnownSpell)
+            {
+                Fight.StopFight();
+                MovementManager.StopMove();
                 if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker")
-                    && SummonVoidwalker.KnownSpell
-                    && ObjectManager.Pet.ManaPercentage < 20
-                    && !SummonFelguard.KnownSpell)
+                    && ToolBox.GetPetSpellIndex("Consume Shadows") != 0)
                 {
-                    Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
-                    if (!ObjectManager.Me.IsMounted)
-                    {
-                        if (Cast(FelDomination))
-                            Thread.Sleep(200);
-                        if (Cast(SummonVoidwalker))
-                            return;
-                    }
-                }
-
-                // Summon Imp
-                if (!ObjectManager.Pet.IsValid && SummonImp.KnownSpell
-                    && (!SummonVoidwalker.KnownSpell || ToolBox.CountItemStacks("Soul Shard") < 1))
-                {
-                    Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
-                    if (!ObjectManager.Me.IsMounted)
-                    {
-                        if (Cast(FelDomination))
-                            Thread.Sleep(200);
-                        if (Cast(SummonImp))
-                            return;
-                    }
-                }
-
-                // Life Tap
-                if (Me.HealthPercent > Me.ManaPercentage
-                    && settings.UseLifeTap)
-                    if (!Me.IsMounted && Cast(LifeTap))
-                        return;
-
-                // Unending Breath
-                if (!Me.HaveBuff("Unending Breath")
-                    && UnendingBreath.KnownSpell
-                    && UnendingBreath.IsSpellUsable
-                    && settings.UseUnendingBreath)
-                {
-                    Lua.RunMacroText("/target player");
-                    if (Cast(UnendingBreath))
-                    {
-                        Lua.RunMacroText("/cleartarget");
-                        return;
-                    }
-                }
-
-                // Demon Skin
-                if (!Me.HaveBuff("Demon Skin")
-                    && !DemonArmor.KnownSpell
-                    && DemonSkin.KnownSpell)
-                    if (Cast(DemonSkin))
-                        return;
-
-                // Demon Armor
-                if ((!Me.HaveBuff("Demon Armor") || Me.HaveBuff("Demon Skin"))
-                    && DemonArmor.KnownSpell
-                    && (!FelArmor.KnownSpell || FelArmor.KnownSpell && !settings.UseFelArmor))
-                    if (Cast(DemonArmor))
-                        return;
-
-                // Soul Link
-                if (SoulLink.KnownSpell
-                    && !Me.HaveBuff("Soul Link"))
-                    if (Cast(SoulLink))
-                        return;
-
-                // Fel Armor
-                if (!Me.HaveBuff("Fel Armor")
-                    && FelArmor.KnownSpell
-                    && settings.UseFelArmor)
-                    if (Cast(FelArmor))
-                        return;
-
-                // Health Funnel
-                if (ObjectManager.Pet.HealthPercent < 50
-                    && Me.HealthPercent > 40
-                    && ObjectManager.Pet.GetDistance < 19
-                    && !ObjectManager.Pet.InCombatFlagOnly
-                    && HealthFunnel.KnownSpell)
-                {
-                    Fight.StopFight();
-                    MovementManager.StopMove();
-                    if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker")
-                        && ToolBox.GetPetSpellIndex("Consume Shadows") != 0)
-                    {
-                        ToolBox.PetSpellCast("Consume Shadows");
-                        Usefuls.WaitIsCasting();
-                        MovementManager.StopMove();
-                        Thread.Sleep(500);
-                    }
-
-
-                    ToolBox.StopWandWaitGCD(UseWand, ShadowBolt);
-                    MovementManager.StopMove();
-                    MovementManager.StopMoveNewThread();
-                    if (Cast(HealthFunnel))
-                    {
-                        Thread.Sleep(500);
-                        Usefuls.WaitIsCasting();
-                        return;
-                    }
-                }
-
-                // Health Stone
-                if (!WarlockPetAndConsumables.HaveHealthstone())
-                    if (Cast(CreateHealthStone))
-                        return;
-
-                // Create Soul Stone
-                if (!WarlockPetAndConsumables.HaveSoulstone()
-                    && CreateSoulstone.KnownSpell)
-                    if (Cast(CreateSoulstone))
-                        return;
-
-                // Use Soul Stone
-                if (!Me.HaveBuff("Soulstone Resurrection")
-                    && settings.UseSoulStone
-                    && CreateSoulstone.KnownSpell
-                    && ToolBox.HaveOneInList(WarlockPetAndConsumables.SoulStones())
-                    && ToolBox.GetItemCooldown(WarlockPetAndConsumables.SoulStones()) <= 0)
-                {
-                    MovementManager.StopMove();
-                    Lua.RunMacroText("/target player");
-                    WarlockPetAndConsumables.UseSoulstone();
+                    ToolBox.PetSpellCast("Consume Shadows");
                     Usefuls.WaitIsCasting();
-                    Lua.RunMacroText("/cleartarget");
+                    MovementManager.StopMove();
+                    Thread.Sleep(500);
                 }
 
-                // Cannibalize
-                if (ObjectManager.GetObjectWoWUnit().Where(u => u.GetDistance <= 8 && u.IsDead && (u.CreatureTypeTarget == "Humanoid" || u.CreatureTypeTarget == "Undead")).Count() > 0)
+
+                ToolBox.StopWandWaitGCD(UseWand, ShadowBolt);
+                MovementManager.StopMove();
+                MovementManager.StopMoveNewThread();
+                if (Cast(HealthFunnel))
                 {
-                    if (Me.HealthPercent < 50 && !Me.HaveBuff("Drink") && !Me.HaveBuff("Food") && Me.IsAlive && Cannibalize.KnownSpell && Cannibalize.IsSpellUsable)
-                        if (Cast(Cannibalize))
-                            return;
+                    Thread.Sleep(500);
+                    Usefuls.WaitIsCasting();
+                    return;
                 }
+            }
+
+            // Health Stone
+            if (!WarlockPetAndConsumables.HaveHealthstone())
+                if (Cast(CreateHealthStone))
+                    return;
+
+            // Create Soul Stone
+            if (!WarlockPetAndConsumables.HaveSoulstone()
+                && CreateSoulstone.KnownSpell)
+            {
+                MovementManager.StopMove();
+                if (Cast(CreateSoulstone))
+                    return;
+            }
+
+            // Use Soul Stone
+            if (!Me.HaveBuff("Soulstone Resurrection")
+                && settings.UseSoulStone
+                && CreateSoulstone.KnownSpell
+                && ToolBox.HaveOneInList(WarlockPetAndConsumables.SoulStones())
+                && ToolBox.GetItemCooldown(WarlockPetAndConsumables.SoulStones()) <= 0)
+            {
+                MovementManager.StopMove();
+                Lua.RunMacroText("/target player");
+                WarlockPetAndConsumables.UseSoulstone();
+                Usefuls.WaitIsCasting();
+                Lua.RunMacroText("/cleartarget");
             }
         }
 
         protected virtual void Pull()
         {
-            // Pet attack
-            if (ObjectManager.Pet.Target != ObjectManager.Me.Target)
-                Lua.LuaDoString("PetAttack();", false);
-
-            // Life Tap
-            if (Me.HealthPercent > Me.ManaPercentage
-                && !Me.IsMounted
-                && settings.UseLifeTap)
-                if (Cast(LifeTap))
-                    return;
-
-            // Amplify Curse
-            if (AmplifyCurse.IsSpellUsable
-                && AmplifyCurse.KnownSpell)
-                AmplifyCurse.Launch();
-
-            // Siphon Life
-            if (Me.HealthPercent < 90
-                && settings.UseSiphonLife
-                && !ObjectManager.Target.HaveBuff("Siphon Life")
-                && ObjectManager.Target.GetDistance < _maxRange + 2)
-                if (Cast(SiphonLife))
-                    return;
-
-            // Unstable Affliction
-            if (ObjectManager.Target.GetDistance < _maxRange + 2
-                && !ObjectManager.Target.HaveBuff("Unstable Affliction"))
-                if (Cast(UnstableAffliction))
-                    return;
-
             // Curse of Agony
             if (ObjectManager.Target.GetDistance < _maxRange + 2
                 && !ObjectManager.Target.HaveBuff("Curse of Agony"))
@@ -436,67 +384,9 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             double _myManaPC = Me.ManaPercentage;
             bool _overLowManaThreshold = _myManaPC > _innerManaSaveThreshold;
 
-            // Multi aggro
-            /*if (ObjectManager.GetNumberAttackPlayer() > 1 && Fear.KnownSpell &&
-                (_addCheckTimer.ElapsedMilliseconds > 3000 || _addCheckTimer.ElapsedMilliseconds <= 0))
-            {
-                _addCheckTimer.Restart();
-                WoWUnit _currenTarget = ObjectManager.Target;
-                List<WoWUnit> _listUnitsAttackingMe = ObjectManager.GetUnitAttackPlayer();
-                foreach (WoWUnit unit in _listUnitsAttackingMe)
-                {
-                    Thread.Sleep(500);
-                    if (unit.Target == Me.Guid && unit.Guid != Me.Target && PetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
-                    {
-                        ulong saveTarget = Me.Target;
-                        if (Cast(SoulShatter))
-                        {
-                            _addCheckTimer.Reset();
-                            Thread.Sleep(500 + Usefuls.Latency);
-                            return;
-                        }
-                        Lua.RunMacroText("/cleartarget");
-                        Me.Target = unit.Guid;
-                        Thread.Sleep(200 + Usefuls.Latency);
-                        if (_settings.FearAdds)
-                            if (Cast(Fear))
-                            {
-                                Thread.Sleep(200 + Usefuls.Latency);
-                                Me.Target = saveTarget;
-                            }
-                    }
-                }
-            }*/
-
             // Pet attack
             if (ObjectManager.Pet.Target != ObjectManager.Me.Target)
                 Lua.LuaDoString("PetAttack();", false);
-
-            // Mana Tap
-            if (Target.Mana > 0 && Target.ManaPercentage > 10)
-                if (Cast(ManaTap))
-                    return;
-
-            // Arcane Torrent
-            if (Me.HaveBuff("Mana Tap") && Me.ManaPercentage < 50
-                || Target.IsCast && Target.GetDistance < 8)
-                if (Cast(ArcaneTorrent))
-                    return;
-
-            // Will of the Forsaken
-            if (Me.HaveBuff("Fear") || Me.HaveBuff("Charm") || Me.HaveBuff("Sleep"))
-                if (Cast(WillOfTheForsaken))
-                    return;
-
-            // Escape Artist
-            if (Me.Rooted || Me.HaveBuff("Frostnova"))
-                if (Cast(EscapeArtist))
-                    return;
-
-            // Berserking
-            if (Target.HealthPercent > 70)
-                if (Cast(Berserking))
-                    return;
 
             // Drain Soul
             if (ToolBox.CountItemStacks("Soul Shard") < settings.NumberOfSoulShards
@@ -671,12 +561,6 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         protected Spell Incinerate = new Spell("Incinerate");
         protected Spell SoulShatter = new Spell("Soulshatter");
         protected Spell FelDomination = new Spell("Fel Domination");
-        protected Spell Cannibalize = new Spell("Cannibalize");
-        protected Spell WillOfTheForsaken = new Spell("Will of the Forsaken");
-        protected Spell Berserking = new Spell("Berserking");
-        protected Spell EscapeArtist = new Spell("Escape Artist");
-        protected Spell ManaTap = new Spell("Mana Tap");
-        protected Spell ArcaneTorrent = new Spell("Arcane Torrent");
         protected Spell SoulLink = new Spell("Soul Link");
 
         protected bool Cast(Spell s, bool castEvenIfWanding = true)

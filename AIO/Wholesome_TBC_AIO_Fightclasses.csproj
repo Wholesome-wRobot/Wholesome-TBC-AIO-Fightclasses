@@ -92,7 +92,9 @@
   <ItemGroup>
     <Compile Include="AutoUpdater.cs" />
     <Compile Include="Helpers\Logger.cs" />
+    <Compile Include="Helpers\Racials.cs" />
     <Compile Include="Helpers\RangeManager.cs" />
+    <Compile Include="Helpers\StatusChecker.cs" />
     <Compile Include="Rotations\Druid\Feral.cs" />
     <Compile Include="Rotations\Hunter\BeastMastery.cs" />
     <Compile Include="Rotations\IClassRotation.cs" />

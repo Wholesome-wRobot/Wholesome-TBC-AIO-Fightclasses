@@ -195,8 +195,12 @@ namespace WholesomeTBCAIO.Helpers
                 Thread.Sleep(3000);
                 try
                 {
-                    if (Conditions.InGameAndConnectedAndProductStartedNotInPause /*&& !ObjectManager.Me.InCombatFlagOnly */
-                        && ObjectManager.Me.IsAlive && Main.isLaunched && !_isAssigning && _isInitialized && _isRunning)
+                    if (Conditions.InGameAndConnectedAndProductStartedNotInPause
+                        && ObjectManager.Me.IsAlive 
+                        && Main.isLaunched 
+                        && !_isAssigning 
+                        && _isInitialized 
+                        && _isRunning)
                     {
                         Logger.LogDebug("Assigning Talents");
                         _isAssigning = true;

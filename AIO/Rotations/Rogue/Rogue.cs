@@ -123,26 +123,14 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             {
                 try
                 {
-                    if (!Products.InPause 
-                        && !ObjectManager.Me.IsDeadMe 
-                        && !Main.HMPrunningAway)
-                    {
-                        // Buff rotation
-                        if (ObjectManager.GetNumberAttackPlayer() < 1)
-                        {
-                            specialization.BuffRotation();
-                        }
+                    if (StatusChecker.OutOfCombat())
+                        specialization.BuffRotation();
 
-                        // Pull & Combat rotation
-                        if (Fight.InFight && ObjectManager.Me.Target > 0UL && ObjectManager.Target.IsAttackable
-                            && ObjectManager.Target.IsAlive)
-                        {
-                            if (ObjectManager.GetNumberAttackPlayer() < 1 && !ObjectManager.Target.InCombatFlagOnly)
-                                specialization.Pull();
-                            else
-                                specialization.CombatRotation();
-                        }
-                    }
+                    if (StatusChecker.InPull())
+                        specialization.Pull();
+
+                    if (StatusChecker.InCombat())
+                        specialization.CombatRotation();
                 }
                 catch (Exception arg)
                 {
@@ -163,14 +151,6 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 if (settings.SprintWhenAvail && Me.HealthPercent > 80 && MovementManager.InMovement && Sprint.IsSpellUsable
                     && Sprint.KnownSpell)
                     Sprint.Launch();
-
-                // Cannibalize
-                if (ObjectManager.GetObjectWoWUnit().Where(u => u.GetDistance <= 8 && u.IsDead && (u.CreatureTypeTarget == "Humanoid" || u.CreatureTypeTarget == "Undead")).Count() > 0)
-                {
-                    if (Me.HealthPercent < 50 && !Me.HaveBuff("Drink") && !Me.HaveBuff("Food") && Me.IsAlive && Cannibalize.KnownSpell && Cannibalize.IsSpellUsable)
-                        if (Cast(Cannibalize))
-                            return;
-                }
             }
         }
 
@@ -354,41 +334,6 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                     return;
             }
 
-            // Mana Tap
-            if (Target.Mana > 0 && Target.ManaPercentage > 10)
-                if (Cast(ManaTap))
-                    return;
-
-            // Arcane Torrent
-            if (Target.IsCast && Target.GetDistance < 8)
-                if (Cast(ArcaneTorrent))
-                    return;
-
-            // Escape Artist
-            if (Me.Rooted || Me.HaveBuff("Frostnova"))
-                if (Cast(EscapeArtist))
-                    return;
-
-            // Stoneform
-            if (ToolBox.HasPoisonDebuff() || ToolBox.HasDiseaseDebuff() || Me.HaveBuff("Bleed"))
-                if (Cast(Stoneform))
-                    return;
-
-            // Will of the Forsaken
-            if (Me.HaveBuff("Fear") || Me.HaveBuff("Charm") || Me.HaveBuff("Sleep"))
-                if (Cast(WillOfTheForsaken))
-                    return;
-
-            // Blood Fury
-            if (Target.HealthPercent > 70)
-                if (Cast(BloodFury))
-                    return;
-
-            // Berserking
-            if (Target.HealthPercent > 70)
-                if (Cast(Berserking))
-                    return;
-
             // Adrenaline Rush
             if ((ObjectManager.GetNumberAttackPlayer() > 1 || Target.IsElite) && !Me.HaveBuff("Adrenaline Rush"))
                 if (Cast(AdrenalineRush))
@@ -493,14 +438,6 @@ namespace WholesomeTBCAIO.Rotations.Rogue
         protected Spell KidneyShot = new Spell("Kidney Shot");
         protected Spell Hemorrhage = new Spell("Hemorrhage");
         protected Spell GhostlyStrike = new Spell("Ghostly Strike");
-        protected Spell Cannibalize = new Spell("Cannibalize");
-        protected Spell WillOfTheForsaken = new Spell("Will of the Forsaken");
-        protected Spell BloodFury = new Spell("Blood Fury");
-        protected Spell Berserking = new Spell("Berserking");
-        protected Spell Stoneform = new Spell("Stoneform");
-        protected Spell EscapeArtist = new Spell("Escape Artist");
-        protected Spell ManaTap = new Spell("Mana Tap");
-        protected Spell ArcaneTorrent = new Spell("Arcane Torrent");
 
         protected bool Cast(Spell s)
         {

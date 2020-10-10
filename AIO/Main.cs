@@ -20,11 +20,13 @@ using WholesomeTBCAIO.Rotations.Warrior;
 public class Main : ICustomClass
 {
     private static readonly BackgroundWorker _talentThread = new BackgroundWorker();
+    private static readonly BackgroundWorker _racialsThread = new BackgroundWorker();
+    private Racials _racials = new Racials();
 
     public static string wowClass = ObjectManager.Me.WowClass.ToString();
     public static int humanReflexTime = 500;
     public static bool isLaunched;
-    public static string version = "2.0.23"; // Must match version in Version.txt
+    public static string version = "2.1.0"; // Must match version in Version.txt
     public static bool HMPrunningAway = false;
 
     private IClassRotation selectedRotation;
@@ -81,6 +83,12 @@ public class Main : ICustomClass
                 _talentThread.RunWorkerAsync();
             }
 
+            if(!_racials._isRunning)
+            {
+                _racialsThread.DoWork += _racials.DoRacialsPulse;
+                _racialsThread.RunWorkerAsync();
+            }
+
             selectedRotation.Initialize(selectedRotation);
         }
         else
@@ -96,6 +104,9 @@ public class Main : ICustomClass
         _talentThread.DoWork -= Talents.DoTalentPulse;
         _talentThread.Dispose();
         Talents._isRunning = false;
+        _racialsThread.DoWork -= _racials.DoRacialsPulse;
+        _racialsThread.RunWorkerAsync();
+        _racials._isRunning = false;
     }
 
     public void ShowConfiguration() => CombatSettings?.ShowConfiguration();

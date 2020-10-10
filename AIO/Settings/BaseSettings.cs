@@ -4,12 +4,15 @@ using MarsSettingsGUI;
 using System.ComponentModel;
 using System.Configuration;
 using wManager.Wow.ObjectManager;
+using WholesomeTBCAIO.Helpers;
 
 namespace WholesomeTBCAIO.Settings
 {
     [Serializable]
     public abstract class BaseSettings : robotManager.Helpful.Settings
     {
+        SettingsWindow settingWindow;
+
         [Setting]
         [DefaultValue(50)]
         [Category("General")]
@@ -59,12 +62,16 @@ namespace WholesomeTBCAIO.Settings
             UseDefaultTalents = true;
             Specialization = "Auto";
         }
-
-        protected virtual void OnUpdate() { }
+                
+        protected virtual void OnUpdate() {  }
 
         public void ShowConfiguration()
         {
-            var settingWindow = new SettingsWindow(this, ObjectManager.Me.WowClass.ToString());
+            settingWindow = new SettingsWindow(this, ObjectManager.Me.WowClass.ToString());
+            settingWindow.MaxWidth = 800;
+            settingWindow.MaxHeight = 800;
+            settingWindow.SaveWindowPosition = true;
+            settingWindow.Title = $"{ObjectManager.Me.Name} - {ObjectManager.Me.WowClass} ({Specialization})";
             settingWindow.ShowDialog();
             OnUpdate();
         }

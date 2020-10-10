@@ -87,45 +87,20 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             {
                 try
                 {
-                    if (!Products.InPause
-                        && !ObjectManager.Me.IsDeadMe
-                        && !Main.HMPrunningAway)
+                    if (StatusChecker.BasicConditions())
                     {
                         ApplyEnchantWeapon();
                         totemManager.CheckForTotemicCall();
-
-                        // Ghost Wolf
-                        if (Me.ManaPercentage > 50
-                            && !Me.IsIndoors
-                            && _ghostWolfTimer.ElapsedMilliseconds > 3000
-                            && settings.UseGhostWolf
-                            && !Me.IsMounted
-                            && !Fight.InFight
-                            && !Me.HaveBuff("Ghost Wolf")
-                            && !ObjectManager.Target.IsFlightMaster)
-                        {
-                            _ghostWolfTimer.Stop();
-                            Cast(GhostWolf);
-                        }
-
-                        // Buff rotation
-                        if (ObjectManager.GetNumberAttackPlayer() < 1
-                            && !Me.InCombatFlagOnly)
-                            specialization.BuffRotation();
-
-                        // Pull & Combat rotation
-                        if (Fight.InFight
-                            && ObjectManager.Me.Target > 0UL
-                            && ObjectManager.Target.IsAttackable
-                            && ObjectManager.Target.IsAlive)
-                        {
-                            if (ObjectManager.GetNumberAttackPlayer() < 1
-                                && !ObjectManager.Target.InCombatFlagOnly)
-                                specialization.Pull();
-                            else
-                                specialization.CombatRotation();
-                        }
                     }
+
+                    if (StatusChecker.OutOfCombat())
+                        specialization.BuffRotation();
+
+                    if (StatusChecker.InPull())
+                        specialization.Pull();
+
+                    if (StatusChecker.InCombat())
+                        specialization.CombatRotation();
                 }
                 catch (Exception arg)
                 {
@@ -138,8 +113,20 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
         protected virtual void BuffRotation()
         {
-            if (!Me.IsMounted && !Me.HaveBuff("Ghost Wolf") && !Me.IsCast)
+            if (!Me.HaveBuff("Ghost Wolf") && !Me.IsCast)
             {
+                // Ghost Wolf
+                if (Me.ManaPercentage > 50
+                    && !Me.IsIndoors
+                    && _ghostWolfTimer.ElapsedMilliseconds > 3000
+                    && settings.UseGhostWolf
+                    && !Me.HaveBuff("Ghost Wolf")
+                    && !ObjectManager.Target.IsFlightMaster)
+                {
+                    _ghostWolfTimer.Stop();
+                    Cast(GhostWolf);
+                }
+
                 // Lesser Healing Wave OOC
                 if (Me.HealthPercent < settings.OOCHealThreshold)
                     if (Cast(LesserHealingWave))
@@ -187,28 +174,6 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             WoWUnit Target = ObjectManager.Target;
             bool _isPoisoned = ToolBox.HasPoisonDebuff();
             bool _hasDisease = ToolBox.HasDiseaseDebuff();
-
-            // Gift of the Naaru
-            if (ObjectManager.GetNumberAttackPlayer() > 1
-                && Me.HealthPercent < 50)
-                if (Cast(GiftOfTheNaaru))
-                    return;
-
-            // Blood Fury
-            if (Target.HealthPercent > 70)
-                if (Cast(BloodFury))
-                    return;
-
-            // Berserking
-            if (Target.HealthPercent > 70)
-                if (Cast(Berserking))
-                    return;
-
-            // Warstomp
-            if (ObjectManager.GetNumberAttackPlayer() > 1
-                && Target.GetDistance < 8)
-                if (Cast(WarStomp))
-                    return;
 
             // Healing Wave + Lesser Healing Wave
             if (Me.HealthPercent < settings.HealThreshold
@@ -275,10 +240,6 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         protected Spell Stormstrike = new Spell("Stormstrike");
         protected Spell ShamanisticRage = new Spell("Shamanistic Rage");
         protected Spell Attack = new Spell("Attack");
-        protected Spell BloodFury = new Spell("Blood Fury");
-        protected Spell Berserking = new Spell("Berserking");
-        protected Spell WarStomp = new Spell("War Stomp");
-        protected Spell GiftOfTheNaaru = new Spell("Gift of the Naaru");
         protected Spell ElementalMastery = new Spell("Elemental Mastery");
         protected Spell ChainLightning = new Spell("Chain Lightning");
         protected Spell Bloodlust = new Spell("Bloodlust");
