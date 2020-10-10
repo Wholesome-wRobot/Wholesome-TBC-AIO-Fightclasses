@@ -23,7 +23,9 @@ namespace WholesomeTBCAIO.Settings
             UseSoulShatter = true;
             NumberOfSoulShards = 4;
             ActivateCombatDebug = false;
-            //FearAdds = false;
+
+            AutoAnguish = true;
+            FelguardCleave = true;
 
             Specialization = "Affliction";
         }
@@ -108,13 +110,18 @@ namespace WholesomeTBCAIO.Settings
         [Description("Use Siphon Life (Recommended only after TBC green gear)")]
         public bool UseSiphonLife { get; set; }
 
-        /*
-        [Category("Combat Rotation")]
-        [DefaultValue(false)]
-        [DisplayName("Fear additional enemies")]
-        [Description("Switch target and fear on multi aggro")]
-        public bool FearAdds { get; set; }
-        */
+        // DEMONOLOGY
+        [Category("Demonology")]
+        [DefaultValue(true)]
+        [DisplayName("Auto Anguish")]
+        [Description("If true, will let Anguish on autocast. If false, will let the AIO manage Anguish in order to save Felguard mana.")]
+        public bool AutoAnguish { get; set; }
+
+        [Category("Demonology")]
+        [DefaultValue(true)]
+        [DisplayName("Felguard Cleave")]
+        [Description("Use Felguard's Cleave")]
+        public bool FelguardCleave { get; set; }
 
         // TALENT
         [DropdownList(new string[] { "Affliction", "Demonology" })]

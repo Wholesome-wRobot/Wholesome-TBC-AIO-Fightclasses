@@ -70,6 +70,9 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                     "if name == 'Torment' then " +
                     "return 'Voidwalker' " +
                     "end " +
+                    "if name == 'Anguish' or name == 'Cleave' then " +
+                    "return 'Felguard' " +
+                    "end " +
                 "end");
         }
     }

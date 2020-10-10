@@ -27,6 +27,7 @@ namespace WholesomeTBCAIO.Helpers
         {
             return BasicConditions()
                 && !ObjectManager.Me.IsMounted
+                && !ObjectManager.Me.IsCast
                 && !Fight.InFight
                 && !ObjectManager.Me.InCombatFlagOnly;
         }

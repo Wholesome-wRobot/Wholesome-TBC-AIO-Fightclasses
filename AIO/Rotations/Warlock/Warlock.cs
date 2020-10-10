@@ -96,12 +96,30 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                     if (StatusChecker.BasicConditions()
                         && ObjectManager.Pet.IsValid )
                     {
-                        // Voidwalker Torment
-                        if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker")
+                        // Voidwalker Torment + Felguard Anguish
+                        if ((!settings.AutoTorment || !settings.AutoAnguish)
                             && ObjectManager.Target.Target == Me.Guid
-                            && Me.InCombatFlagOnly
-                            && !settings.AutoTorment)
-                            ToolBox.PetSpellCast("Torment");
+                            && Me.InCombatFlagOnly)
+                        {
+                            if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
+                                ToolBox.PetSpellCast("Torment");
+                            if (WarlockPetAndConsumables.MyWarlockPet().Equals("Felguard"))
+                                ToolBox.PetSpellCast("Anguish");
+                        }
+
+                        // Switch Auto Torment & Suffering off
+                        if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
+                        {
+                            ToolBox.TogglePetSpellAuto("Torment", settings.AutoTorment);
+                            ToolBox.TogglePetSpellAuto("Suffering", false);
+                        }
+
+                        // Switch Felguard Auto Cleave/Anguish
+                        if (WarlockPetAndConsumables.MyWarlockPet().Equals("Felguard"))
+                        {
+                            ToolBox.TogglePetSpellAuto("Cleave", settings.FelguardCleave);
+                            ToolBox.TogglePetSpellAuto("Anguish", settings.AutoAnguish);
+                        }
                     }
                 }
                 catch (Exception arg)
@@ -153,13 +171,6 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             }
             else
                 wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
-
-            // Switch Auto Torment & Suffering off
-            if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
-            {
-                ToolBox.TogglePetSpellAuto("Torment", settings.AutoTorment);
-                ToolBox.TogglePetSpellAuto("Suffering", false);
-            }
 
             // Summon Felguard
             if ((!ObjectManager.Pet.IsValid
@@ -242,7 +253,8 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             // Life Tap
             if (Me.HealthPercent > Me.ManaPercentage
-                && settings.UseLifeTap)
+                && settings.UseLifeTap
+                && !Me.IsMounted)
                 if (Cast(LifeTap))
                     return;
 
