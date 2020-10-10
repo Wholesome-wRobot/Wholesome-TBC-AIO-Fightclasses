@@ -9,6 +9,7 @@ namespace WholesomeTBCAIO.Helpers
         public static bool InCombat()
         {
             return BasicConditions()
+                && !ObjectManager.Me.IsMounted
                 && ObjectManager.Me.Target > 0UL
                 && ObjectManager.Target.IsAttackable
                 && ObjectManager.Target.IsAlive
