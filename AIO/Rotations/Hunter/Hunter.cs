@@ -160,6 +160,10 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                             ToolBox.TogglePetSpellAuto("Growl", settings.AutoGrowl);
                         }
 
+                        // Switch Charge and gore on
+                        ToolBox.TogglePetSpellAuto("Charge", true);
+                        ToolBox.TogglePetSpellAuto("Gore", true);
+
                         // Feed
                         if (Lua.LuaDoString<int>("happiness, damagePercentage, loyaltyRate = GetPetHappiness() return happiness", "") < 3
                             && !Fight.InFight

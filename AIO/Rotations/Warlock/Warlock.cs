@@ -195,10 +195,9 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
                 if (!ObjectManager.Me.IsMounted)
                 {
-                    MovementManager.StopMove();
-                    if (Cast(FelDomination))
+                    if (CastStopMove(FelDomination))
                         Thread.Sleep(200);
-                    if (Cast(SummonFelguard))
+                    if (CastStopMove(SummonFelguard))
                         return;
                 }
             }
@@ -211,10 +210,9 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
                 if (!ObjectManager.Me.IsMounted)
                 {
-                    MovementManager.StopMove();
-                    if (Cast(FelDomination))
+                    if (CastStopMove(FelDomination))
                         Thread.Sleep(200);
-                    if (Cast(SummonVoidwalker))
+                    if (CastStopMove(SummonVoidwalker))
                         return;
                 }
             }
@@ -228,10 +226,9 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
                 if (!ObjectManager.Me.IsMounted)
                 {
-                    MovementManager.StopMove();
-                    if (Cast(FelDomination))
+                    if (CastStopMove(FelDomination))
                         Thread.Sleep(200);
-                    if (Cast(SummonVoidwalker))
+                    if (CastStopMove(SummonVoidwalker))
                         return;
                 }
             }
@@ -243,10 +240,9 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
                 if (!ObjectManager.Me.IsMounted)
                 {
-                    MovementManager.StopMove();
-                    if (Cast(FelDomination))
+                    if (CastStopMove(FelDomination))
                         Thread.Sleep(200);
-                    if (Cast(SummonImp))
+                    if (CastStopMove(SummonImp))
                         return;
                 }
             }
@@ -307,21 +303,17 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && HealthFunnel.KnownSpell)
             {
                 Fight.StopFight();
-                MovementManager.StopMove();
                 if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker")
                     && ToolBox.GetPetSpellIndex("Consume Shadows") != 0)
                 {
                     ToolBox.PetSpellCast("Consume Shadows");
                     Usefuls.WaitIsCasting();
-                    MovementManager.StopMove();
                     Thread.Sleep(500);
                 }
 
 
                 ToolBox.StopWandWaitGCD(UseWand, ShadowBolt);
-                MovementManager.StopMove();
-                MovementManager.StopMoveNewThread();
-                if (Cast(HealthFunnel))
+                if (CastStopMove(HealthFunnel))
                 {
                     Thread.Sleep(500);
                     Usefuls.WaitIsCasting();
@@ -338,8 +330,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             if (!WarlockPetAndConsumables.HaveSoulstone()
                 && CreateSoulstone.KnownSpell)
             {
-                MovementManager.StopMove();
-                if (Cast(CreateSoulstone))
+                if (CastStopMove(CreateSoulstone))
                     return;
             }
 
@@ -350,7 +341,6 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && ToolBox.HaveOneInList(WarlockPetAndConsumables.SoulStones())
                 && ToolBox.GetItemCooldown(WarlockPetAndConsumables.SoulStones()) <= 0)
             {
-                MovementManager.StopMove();
                 Lua.RunMacroText("/target player");
                 WarlockPetAndConsumables.UseSoulstone();
                 Usefuls.WaitIsCasting();
@@ -577,6 +567,16 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
         protected bool Cast(Spell s, bool castEvenIfWanding = true)
         {
+            return AdvancedCast(s, castEvenIfWanding);
+        }
+
+        protected bool CastStopMove(Spell s, bool castEvenIfWanding = true)
+        {
+            return AdvancedCast(s, castEvenIfWanding, true);
+        }
+
+        protected bool AdvancedCast(Spell s, bool castEvenIfWanding = true, bool stopmove = false)
+        {
             if (!s.KnownSpell)
                 return false;
 
@@ -637,7 +637,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             CombatDebug("Launching");
             if (ObjectManager.Target.IsAlive || !Fight.InFight && ObjectManager.Target.Guid < 1)
             {
-                s.Launch(false, true, true);
+                s.Launch(stopmove, true, true);
             }
             return true;
         }
