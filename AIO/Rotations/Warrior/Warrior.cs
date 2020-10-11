@@ -60,12 +60,6 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             {
                 try
                 {
-                    if (InBerserkStance())
-                        Logger.Log("In berserker stance");
-
-                    if (InBattleStance())
-                        Logger.Log("In battle stance");
-
                     if (StatusChecker.OutOfCombat())
                         specialization.BuffRotation();
 
