@@ -397,12 +397,28 @@ namespace WholesomeTBCAIO.Helpers
 
         #region Pet
 
+        // Returns wether your pet knows the skill
+        public static bool PetKnowsSpell(string spellName)
+        {
+            bool knowsSpell = false;
+            knowsSpell = Lua.LuaDoString<bool>
+                ($"for i=1,10 do " +
+                    "local name, _, _, _, _, _, _ = GetPetActionInfo(i); " +
+                    "if name == '" + spellName + "' then " +
+                    "return true " +
+                    "end " +
+                "end");
+
+            return knowsSpell;
+        }
+
         // Casts pet dmg spell if he has over X focus
         public static void CastPetSpellIfEnoughForGrowl(string spellName, uint spellCost)
         {
             if (ObjectManager.Pet.Focus >= spellCost + 15
                 && ObjectManager.Pet.HasTarget
-                && ObjectManager.Me.InCombatFlagOnly)
+                && ObjectManager.Me.InCombatFlagOnly
+                && PetKnowsSpell(spellName))
                 PetSpellCast(spellName);
         }
 
@@ -437,25 +453,29 @@ namespace WholesomeTBCAIO.Helpers
         public static void PetSpellCast(string spellName)
         {
             int spellIndex = GetPetSpellIndex(spellName);
-            if (GetPetSpellReady(spellName))
+            if (PetKnowsSpell(spellName)
+                && GetPetSpellReady(spellName))
                 Lua.LuaDoString("CastPetAction(" + spellIndex + ");");
         }
 
         // Toggles Pet spell autocast (pass true as second argument to toggle on, or false to toggle off)
         public static void TogglePetSpellAuto(string spellName, bool toggle)
         {
-            string spellIndex = GetPetSpellIndex(spellName).ToString();
-
-            if (!spellIndex.Equals("0"))
+            if (PetKnowsSpell(spellName))
             {
-                bool autoCast = Lua.LuaDoString<bool>("local _, autostate = GetSpellAutocast(" + spellIndex + ", 'pet'); " +
-                    "return autostate == 1") || Lua.LuaDoString<bool>("local _, autostate = GetSpellAutocast('" + spellName + "', 'pet'); " +
-                    "return autostate == 1");
+                string spellIndex = GetPetSpellIndex(spellName).ToString();
 
-                if ((toggle && !autoCast) || (!toggle && autoCast))
+                if (!spellIndex.Equals("0"))
                 {
-                    //Lua.LuaDoString("ToggleSpellAutocast(" + spellIndex + ", 'pet');");
-                    Lua.LuaDoString("ToggleSpellAutocast('" + spellName + "', 'pet');");
+                    bool autoCast = Lua.LuaDoString<bool>("local _, autostate = GetSpellAutocast(" + spellIndex + ", 'pet'); " +
+                        "return autostate == 1") || Lua.LuaDoString<bool>("local _, autostate = GetSpellAutocast('" + spellName + "', 'pet'); " +
+                        "return autostate == 1");
+
+                    if ((toggle && !autoCast) || (!toggle && autoCast))
+                    {
+                        //Lua.LuaDoString("ToggleSpellAutocast(" + spellIndex + ", 'pet');");
+                        Lua.LuaDoString("ToggleSpellAutocast('" + spellName + "', 'pet');");
+                    }
                 }
             }
         }
