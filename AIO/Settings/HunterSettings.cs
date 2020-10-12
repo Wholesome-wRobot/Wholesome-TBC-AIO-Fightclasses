@@ -18,6 +18,7 @@ namespace WholesomeTBCAIO.Settings
             RapidFireOnMulti = false;
             AutoGrowl = false;
             UseAspectOfTheCheetah = true;
+            UseConcussiveShot = true;
 
             BestialWrathOnMulti = false;
 
@@ -78,6 +79,12 @@ namespace WholesomeTBCAIO.Settings
         [DisplayName("Auto Growl")]
         [Description("If true, will let Growl on autocast. If false, will let the AIO manage Growl in order to save your pet's energy.")]
         public bool AutoGrowl { get; set; }
+
+        [Category("Common")]
+        [DefaultValue(true)]
+        [DisplayName("Concussive Shot")]
+        [Description("Use Concussive Shot on low HP humanoids to keep them from fleeing")]
+        public bool UseConcussiveShot { get; set; }
 
         // BEAST MASTERY
         [Category("BeastMastery")]

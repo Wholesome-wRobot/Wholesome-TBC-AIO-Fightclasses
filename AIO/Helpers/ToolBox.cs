@@ -397,6 +397,15 @@ namespace WholesomeTBCAIO.Helpers
 
         #region Pet
 
+        // Casts pet dmg spell if he has over X focus
+        public static void CastPetSpellIfEnoughForGrowl(string spellName, uint spellCost)
+        {
+            if (ObjectManager.Pet.Focus >= spellCost + 15
+                && ObjectManager.Pet.HasTarget
+                && ObjectManager.Me.InCombatFlagOnly)
+                PetSpellCast(spellName);
+        }
+
         // Returns the index of the pet spell passed as argument
         public static int GetPetSpellIndex(string spellName)
         {

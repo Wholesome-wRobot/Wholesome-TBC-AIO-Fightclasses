@@ -160,9 +160,15 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                             ToolBox.TogglePetSpellAuto("Growl", settings.AutoGrowl);
                         }
 
-                        // Switch Charge and gore on
                         ToolBox.TogglePetSpellAuto("Charge", true);
-                        ToolBox.TogglePetSpellAuto("Gore", true);
+
+                        // Pet damage spells
+                        ToolBox.CastPetSpellIfEnoughForGrowl("Bite", 35);
+                        ToolBox.CastPetSpellIfEnoughForGrowl("Gore", 25);
+                        ToolBox.CastPetSpellIfEnoughForGrowl("Claw", 25);
+                        ToolBox.CastPetSpellIfEnoughForGrowl("Screech", 20);
+                        ToolBox.CastPetSpellIfEnoughForGrowl("Lightning Breath", 50);
+                        ToolBox.CastPetSpellIfEnoughForGrowl("Scorpid Poison", 30);
 
                         // Feed
                         if (Lua.LuaDoString<int>("happiness, damagePercentage, loyaltyRate = GetPetHappiness() return happiness", "") < 3
@@ -242,45 +248,59 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         {
             WoWUnit Target = ObjectManager.Target;
 
-            if (Target.GetDistance < 10f && !_isBackingUp)
+            if (Target.GetDistance < 10f 
+                && !_isBackingUp)
                 ToolBox.CheckAutoAttack(Attack);
 
-            if (Target.GetDistance > 10f && !_isBackingUp)
+            if (Target.GetDistance > 10f 
+                && !_isBackingUp)
                 ReenableAutoshot();
 
-            if (Target.GetDistance < 13f && !settings.BackupFromMelee)
+            if (Target.GetDistance < 13f 
+                && !settings.BackupFromMelee)
                 _canOnlyMelee = true;
 
             // Aspect of the viper
-            if (!Me.HaveBuff("Aspect of the Viper") && Me.ManaPercentage < 30)
+            if (!Me.HaveBuff("Aspect of the Viper") 
+                && Me.ManaPercentage < 30)
                 if (Cast(AspectViper))
                     return;
 
             // Aspect of the Hawk
             if (!Me.HaveBuff("Aspect of the Hawk")
                 && (Me.ManaPercentage > 90 || Me.HaveBuff("Aspect of the Cheetah"))
-                || !Me.HaveBuff("Aspect of the Hawk") && !Me.HaveBuff("Aspect of the Cheetah") && !Me.HaveBuff("Aspect of the Viper"))
+                || !Me.HaveBuff("Aspect of the Hawk") 
+                && !Me.HaveBuff("Aspect of the Cheetah") 
+                && !Me.HaveBuff("Aspect of the Viper"))
                 if (Cast(AspectHawk))
                     return;
 
             // Aspect of the Monkey
-            if (!Me.HaveBuff("Aspect of the Monkey") && !AspectHawk.KnownSpell)
+            if (!Me.HaveBuff("Aspect of the Monkey") 
+                && !AspectHawk.KnownSpell)
                 if (Cast(AspectMonkey))
                     return;
 
             // Disengage
-            if (ObjectManager.Pet.Target == Me.Target && Target.Target == Me.Guid && Target.GetDistance < 10 && !_isBackingUp)
+            if (ObjectManager.Pet.Target == Me.Target 
+                && Target.Target == Me.Guid 
+                && Target.GetDistance < 10 
+                && !_isBackingUp)
                 if (Cast(Disengage))
                     return;
 
             // Bestial Wrath
-            if (Target.GetDistance < 34f && Target.HealthPercent >= 60 && Me.ManaPercentage > 10 && BestialWrath.IsSpellUsable
-            && (settings.BestialWrathOnMulti && ObjectManager.GetUnitAttackPlayer().Count > 1 || !settings.BestialWrathOnMulti))
+            if (Target.GetDistance < 34f 
+                && Target.HealthPercent >= 60 
+                && Me.ManaPercentage > 10 
+                && BestialWrath.IsSpellUsable
+                && (settings.BestialWrathOnMulti && ObjectManager.GetUnitAttackPlayer().Count > 1 || !settings.BestialWrathOnMulti))
                 if (Cast(BestialWrath))
                     return;
 
             // Rapid Fire
-            if (Target.GetDistance < 34f && Target.HealthPercent >= 80.0
+            if (Target.GetDistance < 34f 
+                && Target.HealthPercent >= 80.0
                 && (settings.RapidFireOnMulti && ObjectManager.GetUnitAttackPlayer().Count > 1 || !settings.RapidFireOnMulti))
                 if (Cast(RapidFire))
                     return;
@@ -290,7 +310,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 return;
 
             // Raptor Strike
-            if (Target.GetDistance < 6f && !RaptorStrikeOn())
+            if (Target.GetDistance < 6f 
+                && !RaptorStrikeOn())
                 if (Cast(RaptorStrike))
                     return;
 
@@ -308,23 +329,41 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 }
 
             // Freezing Trap
-            if (ObjectManager.Pet.HaveBuff("Mend Pet") && ObjectManager.GetUnitAttackPlayer().Count > 1 && settings.UseFreezingTrap)
+            if (ObjectManager.Pet.HaveBuff("Mend Pet") 
+                && ObjectManager.GetUnitAttackPlayer().Count > 1 
+                && settings.UseFreezingTrap)
                 if (Cast(FreezingTrap))
                     return;
 
             // Mend Pet
-            if (ObjectManager.Pet.IsValid && ObjectManager.Pet.HealthPercent <= 30.0
+            if (ObjectManager.Pet.IsValid 
+                && ObjectManager.Pet.HealthPercent <= 30.0
                 && !ObjectManager.Pet.HaveBuff("Mend Pet"))
                 if (Cast(MendPet))
                     return;
 
+            // Frost Shock
+            if ((Target.CreatureTypeTarget == "Humanoid" || Target.Name.Contains("Plainstrider"))
+                && settings.UseConcussiveShot
+                && Target.HealthPercent < 20
+                && !Target.HaveBuff("Concussive Shot"))
+                if (Cast(ConcussiveShot))
+                    return;
+
             // Hunter's Mark
-            if (ObjectManager.Pet.IsValid && !HuntersMark.TargetHaveBuff && Target.GetDistance > 13f && Target.IsAlive)
+            if (ObjectManager.Pet.IsValid 
+                && !HuntersMark.TargetHaveBuff 
+                && Target.GetDistance > 13f 
+                && Target.IsAlive)
                 if (Cast(HuntersMark))
                     return;
 
             // Steady Shot
-            if (SteadyShot.KnownSpell && SteadyShot.IsSpellUsable && Me.ManaPercentage > 30 && SteadyShot.IsDistanceGood && !_isBackingUp)
+            if (SteadyShot.KnownSpell 
+                && SteadyShot.IsSpellUsable 
+                && Me.ManaPercentage > 30 
+                && SteadyShot.IsDistanceGood 
+                && !_isBackingUp)
             {
                 SteadyShot.Launch();
                 Thread.Sleep(_steadyShotSleep);
@@ -342,13 +381,17 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     return;
 
             // Intimidation
-            if (Target.GetDistance < 34f && Target.GetDistance > 10f && Target.HealthPercent >= 20
+            if (Target.GetDistance < 34f 
+                && Target.GetDistance > 10f 
+                && Target.HealthPercent >= 20
                 && Me.ManaPercentage > 10)
                 if (Cast(Intimidation))
                     return;
 
             // Arcane Shot
-            if (Target.GetDistance < 34f && Target.HealthPercent >= 30 && Me.ManaPercentage > 80
+            if (Target.GetDistance < 34f 
+                && Target.HealthPercent >= 30 
+                && Me.ManaPercentage > 80
                 && !SteadyShot.KnownSpell)
                 if (Cast(ArcaneShot))
                     return;
@@ -356,7 +399,9 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         protected void Feed()
         {
-            if (ObjectManager.Pet.IsAlive && !Me.IsCast && !ObjectManager.Pet.HaveBuff("Feed Pet Effect"))
+            if (ObjectManager.Pet.IsAlive 
+                && !Me.IsCast 
+                && !ObjectManager.Pet.HaveBuff("Feed Pet Effect"))
             {
                 _foodManager.FeedPet();
                 Thread.Sleep(400);
@@ -368,14 +413,20 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             if (!Me.IsDeadMe || !Me.IsMounted)
             {
                 // Call Pet
-                if (!ObjectManager.Pet.IsValid && CallPet.KnownSpell && !Me.IsMounted && CallPet.IsSpellUsable)
+                if (!ObjectManager.Pet.IsValid 
+                    && CallPet.KnownSpell 
+                    && !Me.IsMounted 
+                    && CallPet.IsSpellUsable)
                 {
                     CallPet.Launch();
                     Thread.Sleep(Usefuls.Latency + 1000);
                 }
 
                 // Revive Pet
-                if (ObjectManager.Pet.IsDead && RevivePet.KnownSpell && !Me.IsMounted && RevivePet.IsSpellUsable)
+                if (ObjectManager.Pet.IsDead 
+                    && RevivePet.KnownSpell 
+                    && !Me.IsMounted 
+                    && RevivePet.IsSpellUsable)
                 {
                     RevivePet.Launch();
                     Thread.Sleep(Usefuls.Latency + 1000);
@@ -383,8 +434,13 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 }
 
                 // Mend Pet
-                if (ObjectManager.Pet.IsAlive && ObjectManager.Pet.IsValid && !ObjectManager.Pet.HaveBuff("Mend Pet")
-                    && Me.IsAlive && MendPet.KnownSpell && MendPet.IsDistanceGood && ObjectManager.Pet.HealthPercent <= 60
+                if (ObjectManager.Pet.IsAlive 
+                    && ObjectManager.Pet.IsValid 
+                    && !ObjectManager.Pet.HaveBuff("Mend Pet")
+                    && Me.IsAlive 
+                    && MendPet.KnownSpell 
+                    && MendPet.IsDistanceGood 
+                    && ObjectManager.Pet.HealthPercent <= 60
                     && MendPet.IsSpellUsable)
                 {
                     MendPet.Launch();
