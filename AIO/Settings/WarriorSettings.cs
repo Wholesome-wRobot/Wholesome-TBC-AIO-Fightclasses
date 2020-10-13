@@ -18,7 +18,7 @@ namespace WholesomeTBCAIO.Settings
             UseHamstring = true;
             UseBloodRage = true;
             UseDemoralizingShout = true;
-            UseRend = true;
+            UseRend = false;
             UseCleave = true;
             AlwaysPull = false;
             UseCommandingShout = false;
@@ -60,7 +60,7 @@ namespace WholesomeTBCAIO.Settings
         public bool UseCommandingShout { get; set; }
 
         [Category("Common")]
-        [DefaultValue(true)]
+        [DefaultValue(false)]
         [DisplayName("Rend")]
         [Description("Use Rend")]
         public bool UseRend { get; set; }

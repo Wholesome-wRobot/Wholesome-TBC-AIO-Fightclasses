@@ -220,6 +220,9 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     if (StatusChecker.OutOfCombat())
                         specialization.BuffRotation();
 
+                    if (StatusChecker.InPull())
+                        specialization.Pull();
+
                     if (StatusChecker.InCombat())
                         specialization.CombatRotation();
                 }
@@ -241,6 +244,17 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 Me.ManaPercentage > 60f
                 && settings.UseAspectOfTheCheetah)
                 if (Cast(AspectCheetah))
+                    return;
+        }
+
+        protected virtual void Pull()
+        {
+            // Hunter's Mark
+            if (ObjectManager.Pet.IsValid
+                && !HuntersMark.TargetHaveBuff
+                && ObjectManager.Target.GetDistance > 13f
+                && ObjectManager.Target.IsAlive)
+                if (Cast(HuntersMark))
                     return;
         }
 
@@ -373,7 +387,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             if (!Target.HaveBuff("Serpent Sting")
                 && Target.GetDistance < 34f
                 && ToolBox.CanBleed(Me.TargetObject)
-                && Target.HealthPercent >= 80
+                && Target.HealthPercent >= 60
                 && Me.ManaPercentage > 50u
                 && !SteadyShot.KnownSpell
                 && Target.GetDistance > 13f)
