@@ -142,7 +142,8 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             // Battle stance
             if (InBerserkStance()
                 && Me.Rage < 10
-                && (!settings.PrioritizeBerserkStance || ObjectManager.GetNumberAttackPlayer() > 1)
+                && !settings.PrioritizeBerserkStance 
+                && ObjectManager.GetNumberAttackPlayer() > 1
                 && !_fightingACaster)
                 if (Cast(BattleStance))
                     return;
