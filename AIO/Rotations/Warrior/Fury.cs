@@ -53,9 +53,11 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                     if (Me.IsMounted)
                         MountTask.DismountMount();
 
-                    RangeManager.SetRange(_pullRange);
+                    RangeManager.SetRange(_pullRange + 10);
+                    Thread.Sleep(200);
                     if (Cast(pullMethod))
                         Thread.Sleep(2000);
+                    RangeManager.SetRange(_pullRange);
                 }
             }
 
@@ -152,7 +154,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             if (settings.PrioritizeBerserkStance
                 && !InBerserkStance()
                 && BerserkerStance.KnownSpell
-                && Me.Rage < 15
+                //&& Me.Rage < 15
                 && ObjectManager.GetNumberAttackPlayer() < 2)
                 if (Cast(BerserkerStance))
                     return;
@@ -195,8 +197,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                     return;
 
             // Execute
-            if (Target.HealthPercent < 20)
-                if (Cast(Execute))
+            if (Cast(Execute))
                     return;
 
             // Overpower

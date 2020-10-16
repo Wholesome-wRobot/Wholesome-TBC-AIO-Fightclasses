@@ -2,7 +2,6 @@
 using System.ComponentModel;
 using System.Threading;
 using robotManager.Helpful;
-using robotManager.Products;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
 using wManager.Events;
@@ -75,15 +74,20 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     && !MovementManager.InMovement
                     && Me.IsAlive
                     && ObjectManager.Target.IsAlive
-                    && !ObjectManager.Pet.HaveBuff("Pacifying Dust") && !_canOnlyMelee
-                    && !ObjectManager.Pet.IsStunned && !_isBackingUp
-                    && !Me.IsCast && settings.BackupFromMelee)
+                    && !ObjectManager.Pet.HaveBuff("Pacifying Dust") 
+                    && !_canOnlyMelee
+                    && !ObjectManager.Pet.IsStunned 
+                    && !_isBackingUp
+                    && !Me.IsCast
+                    && !Me.IsSwimming
+                    && settings.BackupFromMelee)
                 {
                     // Stop trying if we reached the max amount of attempts
                     if (_backupAttempts >= settings.MaxBackupAttempts)
                     {
                         Logger.Log($"Backup failed after {_backupAttempts} attempts. Going in melee");
                         _canOnlyMelee = true;
+                        RangeManager.SetRangeToMelee();
                         return;
                     }
 
@@ -145,7 +149,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 {
                     if (StatusChecker.BasicConditions()
                         && !Me.IsOnTaxi 
-                        && ObjectManager.Pet.IsValid)
+                        && ObjectManager.Pet.IsValid
+                        && !Me.IsMounted)
                     {
                         // Pet Growl
                         if (ObjectManager.Target.Target == Me.Guid
@@ -165,10 +170,10 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                         // Pet damage spells
                         ToolBox.CastPetSpellIfEnoughForGrowl("Bite", 35);
                         ToolBox.CastPetSpellIfEnoughForGrowl("Gore", 25);
+                        ToolBox.CastPetSpellIfEnoughForGrowl("Scorpid Poison", 30);
                         ToolBox.CastPetSpellIfEnoughForGrowl("Claw", 25);
                         ToolBox.CastPetSpellIfEnoughForGrowl("Screech", 20);
                         ToolBox.CastPetSpellIfEnoughForGrowl("Lightning Breath", 50);
-                        ToolBox.CastPetSpellIfEnoughForGrowl("Scorpid Poison", 30);
 
                         // Feed
                         if (Lua.LuaDoString<int>("happiness, damagePercentage, loyaltyRate = GetPetHappiness() return happiness", "") < 3
@@ -207,7 +212,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             {
                 try
                 {
-                    if (StatusChecker.BasicConditions())
+                    if (StatusChecker.BasicConditions()
+                        && !Me.IsMounted)
                     {
                         if (_canOnlyMelee)
                             RangeManager.SetRangeToMelee();
@@ -238,10 +244,11 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         protected virtual void BuffRotation()
         {
             // Aspect of the Cheetah
-            if (!Me.IsMounted && !Fight.InFight
+            if (!Me.IsMounted 
+                && !Fight.InFight
                 && !Me.HaveBuff("Aspect of the Cheetah")
-                && MovementManager.InMoveTo &&
-                Me.ManaPercentage > 60f
+                && MovementManager.InMoveTo
+                && Me.ManaPercentage > 60f
                 && settings.UseAspectOfTheCheetah)
                 if (Cast(AspectCheetah))
                     return;
@@ -296,7 +303,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     return;
 
             // Disengage
-            if (ObjectManager.Pet.Target == Me.Target 
+            if (settings.UseDisengage
+                && ObjectManager.Pet.Target == Me.Target 
                 && Target.Target == Me.Guid 
                 && Target.GetDistance < 10 
                 && !_isBackingUp)
@@ -424,7 +432,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         protected void PetManager()
         {
-            if (!Me.IsDeadMe || !Me.IsMounted)
+            if (!Me.IsDeadMe 
+                && !Me.IsMounted)
             {
                 // Call Pet
                 if (!ObjectManager.Pet.IsValid 

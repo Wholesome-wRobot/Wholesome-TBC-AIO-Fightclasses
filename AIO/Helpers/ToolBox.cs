@@ -446,7 +446,7 @@ namespace WholesomeTBCAIO.Helpers
         // Returns whether a pet spell is available (off cooldown)
         public static bool GetPetSpellReady(string spellName)
         {
-            return GetPetSpellCooldown(spellName) <= 0;
+            return GetPetSpellCooldown(spellName) < 0;
         }
 
         // Casts the pet spell passed as argument
@@ -455,7 +455,10 @@ namespace WholesomeTBCAIO.Helpers
             int spellIndex = GetPetSpellIndex(spellName);
             if (PetKnowsSpell(spellName)
                 && GetPetSpellReady(spellName))
+            {
+                Thread.Sleep(GetLatency() + 100);
                 Lua.LuaDoString("CastPetAction(" + spellIndex + ");");
+            }
         }
 
         // Toggles Pet spell autocast (pass true as second argument to toggle on, or false to toggle off)

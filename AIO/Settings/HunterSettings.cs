@@ -19,6 +19,7 @@ namespace WholesomeTBCAIO.Settings
             AutoGrowl = false;
             UseAspectOfTheCheetah = true;
             UseConcussiveShot = true;
+            UseDisengage = false;
 
             BestialWrathOnMulti = false;
 
@@ -85,6 +86,12 @@ namespace WholesomeTBCAIO.Settings
         [DisplayName("Concussive Shot")]
         [Description("Use Concussive Shot on low HP humanoids to keep them from fleeing")]
         public bool UseConcussiveShot { get; set; }
+
+        [Category("Common")]
+        [DefaultValue(false)]
+        [DisplayName("Disengage")]
+        [Description("Use Disengage")]
+        public bool UseDisengage { get; set; }
 
         // BEAST MASTERY
         [Category("BeastMastery")]
