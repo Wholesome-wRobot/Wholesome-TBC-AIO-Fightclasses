@@ -157,6 +157,13 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
         protected virtual void BuffRotation()
         {
+            // Delete additional Soul Shards
+            if (ToolBox.CountItemStacks("Soul Shard") > settings.NumberOfSoulShards)
+            {
+                Logger.Log("Deleting excess Soul Shard");
+                ToolBox.LuaDeleteOneItem("Soul Shard");
+            }
+
             // Make sure we have mana to summon
             if (!ObjectManager.Pet.IsValid
                 && ObjectManager.Me.ManaPercentage < 95
@@ -391,10 +398,20 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 Lua.LuaDoString("PetAttack();", false);
 
             // Drain Soul
-            if (ToolBox.CountItemStacks("Soul Shard") < settings.NumberOfSoulShards
-                && Target.HealthPercent < 40)
-                if (Cast(DrainSoul))
-                    return;
+            bool _shouldDrainSoul = ToolBox.CountItemStacks("Soul Shard") < settings.NumberOfSoulShards || settings.AlwaysDrainSoul;
+            if (_shouldDrainSoul
+                && Target.HealthPercent < settings.DrainSoulHP
+                && DrainSoul.KnownSpell)
+                if (settings.DrainSoulLevel1)
+                {
+                    Lua.RunMacroText("/cast Drain Soul(Rank 1)");
+                    Usefuls.WaitIsCasting();
+                }
+                else
+                {
+                    if (Cast(DrainSoul))
+                        return;
+                }
 
             // Use Health Stone
             if (Me.HealthPercent < 15)

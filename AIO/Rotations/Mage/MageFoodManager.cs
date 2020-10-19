@@ -108,11 +108,11 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 {
                     if (Drink().Contains(item.Name) && Drink().IndexOf(item.Name) < bestDrink)
                     {
-                        ToolBox.LuaDeleteItem(item.Name);
+                        ToolBox.LuaDeleteAllItems(item.Name);
                     }
                     if (Food().Contains(item.Name) && Food().IndexOf(item.Name) < bestFood)
                     {
-                        ToolBox.LuaDeleteItem(item.Name);
+                        ToolBox.LuaDeleteAllItems(item.Name);
                     }
                 }
             }

@@ -1,4 +1,5 @@
-﻿using wManager.Wow.Helpers;
+﻿using WholesomeTBCAIO.Helpers;
+using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Warlock
@@ -8,6 +9,8 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         protected override void BuffRotation()
         {
             base.BuffRotation();
+
+            //Logger.Log(ToolBox.CountItemStacks("Soul Shard").ToString());
         }
 
         protected override void Pull()

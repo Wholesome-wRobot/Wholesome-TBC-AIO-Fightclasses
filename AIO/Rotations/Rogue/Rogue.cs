@@ -47,6 +47,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             Talents.InitTalents(settings);
 
             RangeManager.SetRangeToMelee();
+            AddPoisonsToNoSellList();
 
             // Fight End
             FightEvents.OnFightEnd += (guid) =>
@@ -530,12 +531,14 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             if (!hasMainHandEnchant)
             {
                 IEnumerable<uint> DP = DeadlyPoisonDictionary
-                    .Where(i => i.Key <= Me.Level && ItemsManager.HasItemById(i.Value))
+                    .Where(i => i.Key <= Me.Level 
+                    && ItemsManager.HasItemById(i.Value))
                     .OrderByDescending(i => i.Key)
                     .Select(i => i.Value);
 
                 IEnumerable<uint> IP = InstantPoisonDictionary
-                    .Where(i => i.Key <= Me.Level && ItemsManager.HasItemById(i.Value))
+                    .Where(i => i.Key <= Me.Level 
+                    && ItemsManager.HasItemById(i.Value))
                     .OrderByDescending(i => i.Key)
                     .Select(i => i.Value);
 
@@ -554,7 +557,8 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             {
 
                 IEnumerable<uint> IP = InstantPoisonDictionary
-                    .Where(i => i.Key <= Me.Level && ItemsManager.HasItemById(i.Value))
+                    .Where(i => i.Key <= Me.Level 
+                    && ItemsManager.HasItemById(i.Value))
                     .OrderByDescending(i => i.Key)
                     .Select(i => i.Value);
 
@@ -572,29 +576,48 @@ namespace WholesomeTBCAIO.Rotations.Rogue
         }
 
         protected Dictionary<int, uint> InstantPoisonDictionary = new Dictionary<int, uint>
-    {
-        { 20, 6947 },
-        { 28, 6949 },
-        { 36, 6950 },
-        { 44, 8926 },
-        { 52, 8927 },
-        { 60, 8928 },
-        { 68, 21927 },
-        { 73, 43230 },
-        { 79, 43231 },
-    };
+        {
+            { 20, 6947 },
+            { 28, 6949 },
+            { 36, 6950 },
+            { 44, 8926 },
+            { 52, 8927 },
+            { 60, 8928 },
+            { 68, 21927 },
+            { 73, 43230 },
+            { 79, 43231 },
+        };
 
         protected Dictionary<int, uint> DeadlyPoisonDictionary = new Dictionary<int, uint>
-    {
-        { 30, 2892 },
-        { 38, 2893 },
-        { 46, 8984 },
-        { 54, 8985 },
-        { 60, 20844 },
-        { 62, 22053 },
-        { 70, 22054 },
-        { 76, 43232 },
-        { 80, 43233 },
-    };
+        {
+            { 30, 2892 },
+            { 38, 2893 },
+            { 46, 8984 },
+            { 54, 8985 },
+            { 60, 20844 },
+            { 62, 22053 },
+            { 70, 22054 },
+            { 76, 43232 },
+            { 80, 43233 },
+        };
+
+        private void AddPoisonsToNoSellList()
+        {
+            ToolBox.AddToDoNotSellList("Instant Poison");
+            ToolBox.AddToDoNotSellList("Instant Poison II");
+            ToolBox.AddToDoNotSellList("Instant Poison III");
+            ToolBox.AddToDoNotSellList("Instant Poison IV");
+            ToolBox.AddToDoNotSellList("Instant Poison V");
+            ToolBox.AddToDoNotSellList("Instant Poison VI");
+            ToolBox.AddToDoNotSellList("Instant Poison VII");
+
+            ToolBox.AddToDoNotSellList("Deadly Poison");
+            ToolBox.AddToDoNotSellList("Deadly Poison II");
+            ToolBox.AddToDoNotSellList("Deadly Poison III");
+            ToolBox.AddToDoNotSellList("Deadly Poison IV");
+            ToolBox.AddToDoNotSellList("Deadly Poison V");
+            ToolBox.AddToDoNotSellList("Deadly Poison VI");
+            ToolBox.AddToDoNotSellList("Deadly Poison VII");
+        }
     }
 }

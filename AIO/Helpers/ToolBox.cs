@@ -5,6 +5,7 @@ using System.Threading;
 using wManager.Wow.Class;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
+using wManager;
 
 namespace WholesomeTBCAIO.Helpers
 {
@@ -269,6 +270,16 @@ namespace WholesomeTBCAIO.Helpers
 
         #region Items
 
+        // Add to not sell  list
+        public static void AddToDoNotSellList(string itemName)
+        {
+            if (!wManagerSetting.CurrentSetting.DoNotSellList.Contains(itemName))
+            {
+                Logger.LogDebug($"Adding item {itemName} to Do not Sell List");
+                wManagerSetting.CurrentSetting.DoNotSellList.Add(itemName);
+            }
+        }
+
         // Return Main hand weapon type as a string
         public static string GetMHWeaponType()
         {
@@ -282,12 +293,20 @@ namespace WholesomeTBCAIO.Helpers
             return ObjectManager.Me.GetEquipedItemBySlot(wManager.Wow.Enums.InventorySlot.INVSLOT_RANGED) != 0;
         }
 
-        // Deletes item passed as string
-        public static void LuaDeleteItem(string item)
+        // Deletes items passed as string
+        public static void LuaDeleteAllItems(string item)
         {
             Lua.LuaDoString("for bag = 0, 4, 1 do for slot = 1, 32, 1 do local name = GetContainerItemLink(bag, slot); " +
                 "if name and string.find(name, \"" + item + "\") then PickupContainerItem(bag, slot); " +
                 "DeleteCursorItem(); end; end; end", false);
+        }
+
+        // Deletes items passed as string
+        public static void LuaDeleteOneItem(string item)
+        {
+            Lua.LuaDoString("for bag = 0, 4, 1 do for slot = 1, 32, 1 do local name = GetContainerItemLink(bag, slot); " +
+                "if name and string.find(name, \"" + item + "\") then PickupContainerItem(bag, slot); " +
+                "DeleteCursorItem(); return; end; end; end", false);
         }
 
         // Count the amount of the specified item stacks in your bags

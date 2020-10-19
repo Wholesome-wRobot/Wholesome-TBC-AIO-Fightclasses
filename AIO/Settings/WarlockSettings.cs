@@ -23,6 +23,9 @@ namespace WholesomeTBCAIO.Settings
             UseSoulShatter = true;
             NumberOfSoulShards = 4;
             ActivateCombatDebug = false;
+            DrainSoulLevel1 = false;
+            DrainSoulHP = 40;
+            AlwaysDrainSoul = false;
 
             AutoAnguish = true;
             FelguardCleave = true;
@@ -90,6 +93,25 @@ namespace WholesomeTBCAIO.Settings
         [DisplayName("Soul Stone")]
         [Description("Use Soul Stone (needs a third party plugin to resurrect using the Soulstone)")]
         public bool UseSoulStone { get; set; }
+
+        [Category("Common")]
+        [DefaultValue(false)]
+        [DisplayName("Drain Soul lvl1")]
+        [Description("Use Drain Soul level 1 instead of max rank")]
+        public bool DrainSoulLevel1 { get; set; }
+
+        [Category("Common")]
+        [DefaultValue(40)]
+        [DisplayName("Drain Soul HP")]
+        [Description("Use Drain Soul when the enemy HP is under this threshold")]
+        [Percentage(true)]
+        public int DrainSoulHP { get; set; }
+
+        [Category("Common")]
+        [DefaultValue(false)]
+        [DisplayName("Always Drain Soul")]
+        [Description("Always try to finish the enemy with Drain Soul (synergizes with Improved Drain Soul talent)")]
+        public bool AlwaysDrainSoul { get; set; }
 
         // AFFLICTION
         [Category("Affliction")]
