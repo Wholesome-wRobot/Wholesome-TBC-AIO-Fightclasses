@@ -489,17 +489,28 @@ namespace WholesomeTBCAIO.Helpers
 
                 if (!spellIndex.Equals("0"))
                 {
-                    bool autoCast = Lua.LuaDoString<bool>("local _, autostate = GetSpellAutocast(" + spellIndex + ", 'pet'); " +
-                        "return autostate == 1") || Lua.LuaDoString<bool>("local _, autostate = GetSpellAutocast('" + spellName + "', 'pet'); " +
-                        "return autostate == 1");
-
-                    if ((toggle && !autoCast) || (!toggle && autoCast))
+                    if ((toggle && !PetSpellIsAutocast(spellName)) || (!toggle && PetSpellIsAutocast(spellName)))
                     {
                         //Lua.LuaDoString("ToggleSpellAutocast(" + spellIndex + ", 'pet');");
                         Lua.LuaDoString("ToggleSpellAutocast('" + spellName + "', 'pet');");
                     }
                 }
             }
+        }
+
+        public static bool PetSpellIsAutocast(string spellName)
+        {
+            if (PetKnowsSpell(spellName))
+            {
+                string spellIndex = GetPetSpellIndex(spellName).ToString();
+
+                if (!spellIndex.Equals("0"))
+                {
+                    // Lua.LuaDoString<bool>("local _, autostate = GetSpellAutocast(" + spellIndex + ", 'pet'); return autostate == 1")
+                    return Lua.LuaDoString<bool>("local _, autostate = GetSpellAutocast('" + spellName + "', 'pet'); return autostate == 1");
+                }
+            }
+            return false;
         }
 
         #endregion

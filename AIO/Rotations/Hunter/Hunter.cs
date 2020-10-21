@@ -160,10 +160,9 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                             ToolBox.PetSpellCast("Growl");
 
                         // Switch Auto Growl
-                        if (ObjectManager.Pet.IsValid)
-                        {
+                        if (ObjectManager.Pet.IsValid
+                            && ToolBox.PetSpellIsAutocast("Growl") != settings.AutoGrowl)
                             ToolBox.TogglePetSpellAuto("Growl", settings.AutoGrowl);
-                        }
 
                         ToolBox.TogglePetSpellAuto("Charge", true);
 
