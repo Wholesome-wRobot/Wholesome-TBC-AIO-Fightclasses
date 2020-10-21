@@ -78,22 +78,24 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                     cancelable.Cancel = true;
             };
 
-            // Fight Loop - Go behind target when gouged
+            // Fight Loop - Go behind target when stunned
             FightEvents.OnFightLoop += (unit, cancelable) =>
             {
-                if (IsTargetStunned() && !MovementManager.InMovement && Me.IsAlive && !Me.IsCast)
+                if (IsTargetStunned() 
+                && !MovementManager.InMovement 
+                && Me.IsAlive 
+                && !Me.IsCast
+                && ObjectManager.Target.IsAlive)
                 {
-                    if (Me.IsAlive && ObjectManager.Target.IsAlive)
-                    {
-                        Vector3 position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f);
-                        MovementManager.Go(PathFinder.FindPath(position), false);
+                    Vector3 position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f);
+                    MovementManager.Go(PathFinder.FindPath(position), false);
 
-                        while (MovementManager.InMovement && Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                        && IsTargetStunned())
-                        {
-                            // Wait follow path
-                            Thread.Sleep(500);
-                        }
+                    while (MovementManager.InMovement 
+                    && StatusChecker.BasicConditions()
+                    && IsTargetStunned())
+                    {
+                        // Wait follow path
+                        Thread.Sleep(200);
                     }
                 }
             };
@@ -217,66 +219,38 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                     return;
 
             // Stealth approach
-            if (Me.HaveBuff("Stealth") && ObjectManager.Target.GetDistance > 3f && !_isStealthApproching && !_pullFromAfar)
+            if (Me.HaveBuff("Stealth") 
+                && ObjectManager.Target.GetDistance > 3f 
+                && !_isStealthApproching 
+                && !_pullFromAfar)
             {
+                float desiredDistance = RangeManager.GetMeleeRangeWithTarget() - 4f;
                 RangeManager.SetRangeToMelee();
                 _stealthApproachTimer.Start();
                 _isStealthApproching = true;
                 if (ObjectManager.Me.IsAlive && ObjectManager.Target.IsAlive)
                 {
                     while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                    && ObjectManager.Target.GetDistance > RangeManager.GetRange() - 1
+                    && ObjectManager.Target.GetDistance > 2.5f
                     && !ToolBox.CheckIfEnemiesOnPull(ObjectManager.Target, _pullRange)
                     && Fight.InFight
                     && _stealthApproachTimer.ElapsedMilliseconds <= 15000
                     && Me.HaveBuff("Stealth"))
                     {
-                        // deactivate autoattack
                         ToggleAutoAttack(false);
 
                         Vector3 position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f);
                         MovementManager.MoveTo(position);
-                        // Wait follow path
                         Thread.Sleep(50);
+                        CastOpener();
                     }
 
-                    if (ToolBox.CheckIfEnemiesOnPull(ObjectManager.Target, _pullRange) && Me.HaveBuff("Stealth"))
+                    if (ToolBox.CheckIfEnemiesOnPull(ObjectManager.Target, _pullRange) 
+                        && Me.HaveBuff("Stealth"))
                     {
                         _pullFromAfar = true;
                         if (Cast(Stealth))
                             return;
-                    }
-
-                    // Opener
-                    if (ToolBox.MeBehindTarget())
-                    {
-                        if (settings.UseGarrote)
-                            if (Cast(Garrote))
-                                MovementManager.StopMove();
-                        if (Cast(Backstab))
-                            MovementManager.StopMove();
-                        if (Cast(CheapShot))
-                            MovementManager.StopMove();
-                        if (Cast(Hemorrhage) || Cast(SinisterStrike))
-                            MovementManager.StopMove();
-                    }
-                    else
-                    {
-                        if (CheapShot.KnownSpell)
-                        {
-                            if (Cast(CheapShot))
-                                MovementManager.StopMove();
-                        }
-                        else if (HaveDaggerInMH() && Gouge.KnownSpell)
-                        {
-                            if (Cast(Gouge))
-                                MovementManager.StopMove();
-                        }
-                        else
-                        {
-                            if (Cast(Hemorrhage) || Cast(SinisterStrike))
-                                MovementManager.StopMove();
-                        }
                     }
 
                     if (_stealthApproachTimer.ElapsedMilliseconds > 15000)
@@ -284,8 +258,8 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                         Logger.Log("_stealthApproachTimer time out");
                         _pullFromAfar = true;
                     }
-
-                    ToggleAutoAttack(true);
+                    
+                    //ToggleAutoAttack(true);
                     _isStealthApproching = false;
                 }
             }
@@ -440,15 +414,44 @@ namespace WholesomeTBCAIO.Rotations.Rogue
         protected Spell Hemorrhage = new Spell("Hemorrhage");
         protected Spell GhostlyStrike = new Spell("Ghostly Strike");
 
+        private void CastOpener()
+        {
+            // Opener
+            if (ToolBox.MeBehindTarget())
+            {
+                if (settings.UseGarrote)
+                    if (Cast(Garrote))
+                        return;
+                if (Cast(Backstab))
+                    return;
+                if (Cast(CheapShot))
+                    return;
+                if (Cast(Hemorrhage) || Cast(SinisterStrike))
+                    return;
+            }
+            else
+            {
+                if (CheapShot.KnownSpell)
+                    if (Cast(CheapShot))
+                        return;
+                else if (HaveDaggerInMH() && Gouge.KnownSpell)
+                    if (Cast(Gouge))
+                        return;
+                else
+                    if (Cast(Hemorrhage) || Cast(SinisterStrike))
+                        return;
+            }
+        }
+
         protected bool Cast(Spell s)
         {
-            if (!s.KnownSpell)
+            if (!s.KnownSpell || !s.IsDistanceGood && s.Name != "Stealth")
                 return false;
 
-            CombatDebug("In cast for " + s.Name);
             if (!s.IsSpellUsable || Me.IsCast)
                 return false;
 
+            CombatDebug("In cast for " + s.Name);
             s.Launch();
             return true;
         }

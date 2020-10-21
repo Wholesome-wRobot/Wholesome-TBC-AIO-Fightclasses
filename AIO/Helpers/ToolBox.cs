@@ -511,7 +511,7 @@ namespace WholesomeTBCAIO.Helpers
         {
             if (from != null && from != Vector3.Empty)
             {
-                float rotation = -robotManager.Helpful.Math.DegreeToRadian(robotManager.Helpful.Math.RadianToDegree(targetObject.Rotation) + 90);
+                float rotation = -Math.DegreeToRadian(Math.RadianToDegree(targetObject.Rotation) + 90);
                 return new Vector3((System.Math.Sin(rotation) * radius) + from.X, (System.Math.Cos(rotation) * radius) + from.Y, from.Z);
             }
             return new Vector3(0, 0, 0);

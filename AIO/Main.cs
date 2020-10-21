@@ -26,7 +26,7 @@ public class Main : ICustomClass
     public static string wowClass = ObjectManager.Me.WowClass.ToString();
     public static int humanReflexTime = 500;
     public static bool isLaunched; 
-    public static string version = "2.1.16"; // Must match version in Version.txt
+    public static string version = "2.1.17"; // Must match version in Version.txt
     public static bool HMPrunningAway = false;
 
     private IClassRotation selectedRotation;
@@ -105,7 +105,7 @@ public class Main : ICustomClass
         _talentThread.Dispose();
         Talents._isRunning = false;
         _racialsThread.DoWork -= _racials.DoRacialsPulse;
-        _racialsThread.RunWorkerAsync();
+        _racialsThread.Dispose();
         _racials._isRunning = false;
     }
 
