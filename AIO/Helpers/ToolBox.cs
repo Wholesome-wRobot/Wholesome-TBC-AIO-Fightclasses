@@ -138,6 +138,18 @@ namespace WholesomeTBCAIO.Helpers
                 "end");
         }
 
+        // Returns the amount of stacks of a specific debuff passed as a string (ex: Arcane Blast)
+        public static int CountDebuff(string debuffName)
+        {
+            return Lua.LuaDoString<int>
+                ($"for i=1,25 do " +
+                    "local n, _, _, c, _  = UnitDebuff('player',i); " +
+                    "if n == '" + debuffName + "' then " +
+                    "return c " +
+                    "end " +
+                "end");
+        }
+
         // Returns the time left on a buff in seconds, buff name is passed as string
         public static int BuffTimeLeft(string buffName)
         {

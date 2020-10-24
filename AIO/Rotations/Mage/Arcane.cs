@@ -5,20 +5,28 @@ using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Mage
 {
-    public class Frost : Mage
+    public class Arcane : Mage
     {
         protected override void BuffRotation()
         {
             base.BuffRotation();
 
+            // Mage Armor
+            if (!Me.HaveBuff("Mage Armor")
+                && settings.ACMageArmor)
+                if (Cast(MageArmor)) 
+                    return;
+
             // Ice Armor
-            if (!Me.HaveBuff("Ice Armor"))
+                if (!Me.HaveBuff("Ice Armor")
+                && (!settings.ACMageArmor || !MageArmor.KnownSpell))
                 if (Cast(IceArmor))
                     return;
 
             // Frost Armor
-            if (!Me.HaveBuff("Frost Armor") 
-                && !IceArmor.KnownSpell)
+            if (!Me.HaveBuff("Frost Armor")
+                && !IceArmor.KnownSpell
+                && (!settings.ACMageArmor || !MageArmor.KnownSpell))
                 if (Cast(FrostArmor))
                     return;
         }
@@ -29,9 +37,23 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             WoWUnit _target = ObjectManager.Target;
 
-            // Ice Barrier
-            if (IceBarrier.IsSpellUsable && !Me.HaveBuff("Ice Barrier"))
-                if (Cast(IceBarrier))
+            // Slow
+            if (settings.ACSlow
+                && !_target.HaveBuff("Slow")
+                && Slow.IsDistanceGood)
+                if (Cast(Slow))
+                    return;
+
+            // Arcane Blast
+            if (_target.GetDistance < _distanceRange)
+                if (Cast(ArcaneBlast))
+                    return;
+
+            // Arcane Missiles
+            if (_target.GetDistance < _distanceRange
+                && Me.Level >= 6
+                && (_target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 30 || !_iCanUseWand))
+                if (CastStopMove(ArcaneMissiles))
                     return;
 
             // Frost Bolt
@@ -76,36 +98,11 @@ namespace WholesomeTBCAIO.Rotations.Mage
                     return;
             }
 
-            // Summon Water Elemental
-            if (Target.HealthPercent > 95
-                || ObjectManager.GetNumberAttackPlayer() > 1)
-                if (Cast(SummonWaterElemental))
-                    return;
-
-            // Ice Barrier
-            if (IceBarrier.IsSpellUsable
-                && !Me.HaveBuff("Ice Barrier"))
-                if (Cast(IceBarrier))
-                    return;
-
             // Mana Shield
             if (!Me.HaveBuff("Mana Shield")
                 && (Me.HealthPercent < 30 && Me.ManaPercentage > 50
                 || Me.HealthPercent < 10))
                 if (Cast(ManaShield))
-                    return;
-
-            // Cold Snap
-            if (ObjectManager.GetNumberAttackPlayer() > 1
-                && !Me.HaveBuff("Icy Veins")
-                && !IcyVeins.IsSpellUsable)
-                if (Cast(ColdSnap))
-                    return;
-
-            // Icy Veins
-            if (ObjectManager.GetNumberAttackPlayer() > 1 && settings.IcyVeinMultiPull
-                || !settings.IcyVeinMultiPull)
-                if (Cast(IcyVeins))
                     return;
 
             // Use Mana Stone
@@ -116,41 +113,75 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 _foodManager.ManaStone = "";
             }
 
-            // Ice Lance
-            if (Target.HaveBuff("Frostbite")
-                || Target.HaveBuff("Frost Nova"))
-                if (Cast(IceLance))
+            // Cast presence of mind spell
+            if (Me.HaveBuff("Presence of Mind"))
+                if (Cast(ArcaneBlast) || Cast(Fireball))
+                {
+                    Usefuls.WaitIsCasting();
+                    return;
+                }
+
+            // Presence of Mind
+            if (!Me.HaveBuff("Presence of Mind")
+                && (ObjectManager.GetNumberAttackPlayer() > 1 || !settings.PoMOnMulti)
+                && Target.HealthPercent > 50)
+                if (Cast(PresenceOfMind))
                     return;
 
-            // Frost Nova
-            if (Target.GetDistance < 6f
-                && Target.HealthPercent > 10
-                && !Target.HaveBuff("Frostbite")
-                && _polymorphedEnemy == null)
-                if (Cast(FrostNova))
+            // Arcane Power
+            if (!Me.HaveBuff("Arcane Power")
+                && (ObjectManager.GetNumberAttackPlayer() > 1 || !settings.ArcanePowerOnMulti)
+                && Target.HealthPercent > 50)
+                if (Cast(ArcanePower))
                     return;
 
-            // Fire Blast
-            if (Target.GetDistance < 20f
-                && Target.HealthPercent <= settings.FireblastThreshold
-                && !Target.HaveBuff("Frostbite") && !Target.HaveBuff("Frost Nova"))
-                if (Cast(FireBlast))
+            // Slow
+            if ((settings.ACSlow || Target.CreatureTypeTarget == "Humanoid")
+                && !Target.HaveBuff("Slow")
+                && Slow.IsDistanceGood)
+                if (Cast(Slow))
                     return;
 
             // Cone of Cold
             if (Target.GetDistance < 10
                 && settings.UseConeOfCold
-                && !_isBackingUp
-                && !MovementManager.InMovement
                 && _polymorphedEnemy == null)
                 if (Cast(ConeOfCold))
+                    return;
+
+            // Fire Blast
+            if (Target.GetDistance < 20f
+                && Target.HealthPercent <= settings.FireblastThreshold
+                && _polymorphedEnemy == null)
+                if (Cast(FireBlast))
+                    return;
+
+            bool _shouldCastArcaneBlast =
+                ArcaneBlast.KnownSpell
+                && (Me.ManaPercentage > 70
+                || Me.HaveBuff("Clearcasting")
+                || (Me.ManaPercentage > 50 && ToolBox.CountDebuff("Arcane Blast") < 3)
+                || (Me.ManaPercentage > 35 && ToolBox.CountDebuff("Arcane Blast") < 2));
+
+            // Arcane Blast
+            if (_shouldCastArcaneBlast
+                && Target.GetDistance < _distanceRange
+                && (Target.HealthPercent > settings.WandThreshold || !_iCanUseWand))
+                if (Cast(ArcaneBlast))
+                    return;
+
+            // Arcane Missiles
+            if (Target.GetDistance < _distanceRange
+                && Me.Level >= 6
+                && (Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand))
+                if (Cast(ArcaneMissiles, true))
                     return;
 
             // Frost Bolt
             if (Target.GetDistance < _distanceRange
                 && Me.Level >= 6
-                && !_isBackingUp
-                && (Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand))
+                && (Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand)
+                && _polymorphedEnemy == null)
                 if (Cast(Frostbolt, true))
                     return;
 

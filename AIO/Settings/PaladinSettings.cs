@@ -10,9 +10,11 @@ namespace WholesomeTBCAIO.Settings
         public PaladinSettings()
         {
             ManaSaveLimitPercent = 50;
-            FlashHealBetweenFights = true;
             UseExorcism = false;
             HealDuringCombat = true;
+            OOCFlashHealThreshold = 80;
+            OOCHolyLightThreshold = 50;
+            RetributionAura = false;
 
             UseBlessingOfWisdom = false;
             UseSealOfCommand = false;
@@ -40,15 +42,29 @@ namespace WholesomeTBCAIO.Settings
 
         [Category("Common")]
         [DefaultValue(true)]
-        [DisplayName("Heal between fights")]
-        [Description("Remain healed up between fights using Flash of Light")]
-        public bool FlashHealBetweenFights { get; set; }
-
-        [Category("Common")]
-        [DefaultValue(true)]
         [DisplayName("Heal during combat")]
         [Description("Use healing spells during combat")]
         public bool HealDuringCombat { get; set; }
+
+        [Category("Common")]
+        [DefaultValue(80)]
+        [DisplayName("Flash heal OOC")]
+        [Description("Health precentage under which you want out of combat Flash of Light Heal")]
+        [Percentage(true)]
+        public int OOCFlashHealThreshold { get; set; }
+
+        [Category("Common")]
+        [DefaultValue(50)]
+        [DisplayName("Holy Light OOC")]
+        [Description("Health precentage under which you want out of combat Holy Light heal")]
+        [Percentage(true)]
+        public int OOCHolyLightThreshold { get; set; }
+
+        [Category("Common")]
+        [DefaultValue(false)]
+        [DisplayName("Retribution Aura")]
+        [Description("Use Retribution AUra instead of Sanctity Aura")]
+        public bool RetributionAura { get; set; }
 
         // RETRIBUTION
         [Category("Retribution")]

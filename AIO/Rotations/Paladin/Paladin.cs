@@ -32,9 +32,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             this.specialization = specialization as Paladin;
             Talents.InitTalents(settings);
 
-            _manaSavePercent = settings.ManaSaveLimitPercent;
-            if (_manaSavePercent < 20)
-                _manaSavePercent = 20;
+            _manaSavePercent = System.Math.Max(20, settings.ManaSaveLimitPercent);
 
             // Fight end
             FightEvents.OnFightEnd += (guid) =>
@@ -83,62 +81,10 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             Logger.Log("Stopped.");
         }
 
-        protected virtual void PullRotation()
-        {
-            WoWUnit Target = ObjectManager.Target;
-
-            ToolBox.CheckAutoAttack(Attack);
-
-            // Judgement
-            if ((Me.HaveBuff("Seal of Righteousness") || Me.HaveBuff("Seal of Command"))
-                && Target.GetDistance < 10
-                && (Me.ManaPercentage >= _manaSavePercent || Me.HaveBuff("Seal of the Crusader")))
-                if (Cast(Judgement))
-                    return;
-
-            // Seal of the Crusader
-            if (!Target.HaveBuff("Judgement of the Crusader")
-                && !Me.HaveBuff("Seal of the Crusader")
-                && Me.ManaPercentage > _manaSavePercent - 20
-                && Target.IsAlive
-                && settings.UseSealOfTheCrusader)
-                if (Cast(SealOfTheCrusader))
-                    return;
-
-            // Seal of Righteousness
-            if (!Me.HaveBuff("Seal of Righteousness")
-                && !Me.HaveBuff("Seal of the Crusader")
-                && (Target.HaveBuff("Judgement of the Crusader") || Me.ManaPercentage > _manaSavePercent || !settings.UseSealOfTheCrusader)
-                && (!settings.UseSealOfCommand || !SealOfCommand.KnownSpell))
-                if (Cast(SealOfRighteousness))
-                    return;
-
-            // Seal of Command
-            if (!Me.HaveBuff("Seal of Command")
-                && !Me.HaveBuff("Seal of the Crusader")
-                && (Target.HaveBuff("Judgement of the Crusader") || Me.ManaPercentage > _manaSavePercent || !settings.UseSealOfTheCrusader)
-                && settings.UseSealOfCommand
-                && SealOfCommand.KnownSpell)
-                if (Cast(SealOfCommand))
-                    return;
-
-            // Seal of Command Rank 1
-            if (!Me.HaveBuff("Seal of Righteousness")
-                && !Me.HaveBuff("Seal of the Crusader")
-                && !Me.HaveBuff("Seal of Command")
-                && !SealOfCommand.IsSpellUsable
-                && !SealOfRighteousness.IsSpellUsable
-                && SealOfCommand.KnownSpell
-                && Me.Mana < _manaSavePercent)
-                Lua.RunMacroText("/cast Seal of Command(Rank 1)");
-        }
-
         protected virtual void BuffRotation()
         {
             // Holy Light
-            if (Me.HealthPercent < 50 
-                && !Fight.InFight 
-                && !Me.IsMounted 
+            if (Me.HealthPercent < settings.OOCHolyLightThreshold
                 && HolyLight.IsSpellUsable)
             {
                 Lua.RunMacroText("/target player");
@@ -148,9 +94,8 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             }
 
             // Flash of Light
-            if (Me.HealthPercent < 75 
-                && settings.FlashHealBetweenFights
-                && FlashOfLight.IsSpellUsable)
+            if (FlashOfLight.IsSpellUsable
+                && Me.HealthPercent < settings.OOCFlashHealThreshold)
             {
                 Lua.RunMacroText("/target player");
                 Cast(FlashOfLight);
@@ -159,16 +104,15 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             }
 
             // Sanctity Aura
-            if (!Me.HaveBuff("Sanctity Aura") 
-                && SanctityAura.KnownSpell)
+            if (!Me.HaveBuff("Sanctity Aura")
+                && !settings.RetributionAura)
                 if (Cast(SanctityAura))
                     return;
 
             // Retribution Aura
             if (!Me.HaveBuff("Retribution Aura") 
-                && !SanctityAura.KnownSpell 
-                && RetributionAura.KnownSpell)
-                if (Cast(SanctityAura))
+                && (!SanctityAura.KnownSpell || settings.RetributionAura))
+                if (Cast(RetributionAura))
                     return;
 
             // Blessing of Wisdom
@@ -195,6 +139,56 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             }
         }
 
+        protected virtual void PullRotation()
+        {
+            WoWUnit Target = ObjectManager.Target;
+
+            ToolBox.CheckAutoAttack(Attack);
+
+            // Judgement
+            if ((Me.HaveBuff("Seal of Righteousness") || Me.HaveBuff("Seal of Command"))
+                && Judgement.IsDistanceGood
+                && (Me.ManaPercentage >= _manaSavePercent || Me.HaveBuff("Seal of the Crusader")))
+                if (Cast(Judgement))
+                    return;
+
+            // Seal of the Crusader
+            if (!Target.HaveBuff("Judgement of the Crusader")
+                && !Me.HaveBuff("Seal of the Crusader")
+                && Me.ManaPercentage > _manaSavePercent - 20
+                && settings.UseSealOfTheCrusader)
+                if (Cast(SealOfTheCrusader))
+                    return;
+
+            // Seal of Righteousness
+            if (!Me.HaveBuff("Seal of Righteousness")
+                && !Me.HaveBuff("Seal of the Crusader")
+                && !settings.UseSealOfTheCrusader
+                && (Target.HaveBuff("Judgement of the Crusader") || Me.ManaPercentage > _manaSavePercent || !settings.UseSealOfTheCrusader)
+                && (!settings.UseSealOfCommand || !SealOfCommand.KnownSpell))
+                if (Cast(SealOfRighteousness))
+                    return;
+
+            // Seal of Command
+            if (!Me.HaveBuff("Seal of Command")
+                && !Me.HaveBuff("Seal of the Crusader")
+                && (Target.HaveBuff("Judgement of the Crusader") || Me.ManaPercentage > _manaSavePercent || !settings.UseSealOfTheCrusader)
+                && settings.UseSealOfCommand
+                && SealOfCommand.KnownSpell)
+                if (Cast(SealOfCommand))
+                    return;
+
+            // Seal of Command Rank 1
+            if (!Me.HaveBuff("Seal of Righteousness")
+                && !Me.HaveBuff("Seal of the Crusader")
+                && !Me.HaveBuff("Seal of Command")
+                && !SealOfCommand.IsSpellUsable
+                && !SealOfRighteousness.IsSpellUsable
+                && SealOfCommand.KnownSpell
+                && Me.Mana < _manaSavePercent)
+                Lua.RunMacroText("/cast Seal of Command(Rank 1)");
+        }
+
 
         protected virtual void CombatRotation()
         {
@@ -218,23 +212,39 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             // Sanctity Aura
             if (!Me.HaveBuff("Sanctity Aura") 
-                && SanctityAura.KnownSpell 
+                && !settings.RetributionAura
                 && ObjectManager.GetNumberAttackPlayer() <= 1)
                 if (Cast(SanctityAura))
                     return;
 
             // Retribution Aura
             if (!Me.HaveBuff("Retribution Aura") 
-                && !SanctityAura.KnownSpell 
-                && RetributionAura.KnownSpell
+                && (!SanctityAura.KnownSpell || settings.RetributionAura)
                 && ObjectManager.GetNumberAttackPlayer() <= 1)
-                if (Cast(SanctityAura))
+                if (Cast(RetributionAura))
                     return;
 
             // Lay on Hands
             if (Me.HealthPercent < 10)
                 if (Cast(LayOnHands))
                     return;
+
+            // Holy Light / Flash of Light
+            if (Me.HealthPercent < 50
+                && (Target.HealthPercent > 15 || Me.HealthPercent < 25)
+                && settings.HealDuringCombat)
+            {
+                if (!HolyLight.IsSpellUsable)
+                {
+                    if (Me.HealthPercent < 20)
+                        if (Cast(DivineShield))
+                            return;
+                    if (Cast(FlashOfLight))
+                        return;
+                }
+                if (Cast(HolyLight))
+                    return;
+            }
 
             // Avenging Wrath
             if (Me.ManaPercentage > _manaSavePercent 
@@ -309,21 +319,6 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             {
                 Lua.RunMacroText("/cast Seal of Command(Rank 1)");
                 return;
-            }
-
-            // Holy Light / Flash of Light
-            if (Me.HealthPercent < 50 && (Target.HealthPercent > 15 || Me.HealthPercent < 25) && settings.HealDuringCombat)
-            {
-                if (!HolyLight.IsSpellUsable)
-                {
-                    if (Me.HealthPercent < 20)
-                        if (Cast(DivineShield))
-                            return;
-                    if (Cast(FlashOfLight))
-                        return;
-                }
-                if (Cast(HolyLight))
-                    return;
             }
 
             // Crusader Strike

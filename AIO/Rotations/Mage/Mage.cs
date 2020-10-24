@@ -6,7 +6,6 @@ using wManager.Events;
 using wManager.Wow.Class;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
-using System.Linq;
 using WholesomeTBCAIO.Settings;
 using WholesomeTBCAIO.Helpers;
 
@@ -110,6 +109,8 @@ namespace WholesomeTBCAIO.Rotations.Mage
                             if (settings.BlinkWhenBackup)
                                 Cast(Blink);
                         }
+                        MovementManager.StopMove();
+                        Thread.Sleep(500);
                     }
                     // Using Keyboard
                     else
@@ -120,7 +121,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                         && ObjectManager.Target.GetDistance < 15f
                         && limiter <= 6)
                         {
-                            Move.Backward(Move.MoveAction.PressKey, 500);
+                            Move.Backward(Move.MoveAction.PressKey, 700);
                             limiter++;
                         }
                     }
@@ -238,16 +239,6 @@ namespace WholesomeTBCAIO.Rotations.Mage
             _foodManager.CheckIfThrowFoodAndDrinks();
             _foodManager.CheckIfHaveManaStone();
 
-            // Frost Armor
-            if (!Me.HaveBuff("Ice Armor"))
-                if (Cast(IceArmor))
-                    return;
-
-            // Frost Armor
-            if (!Me.HaveBuff("Frost Armor") && !IceArmor.KnownSpell)
-                if (Cast(FrostArmor))
-                    return;
-
             // Arcane Intellect
             if (!Me.HaveBuff("Arcane Intellect") && ArcaneIntellect.KnownSpell && ArcaneIntellect.IsSpellUsable)
             {
@@ -267,163 +258,16 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
         protected virtual void Pull()
         {
-            WoWUnit _target = ObjectManager.Target;
-
-            // Ice Barrier
-            if (IceBarrier.IsSpellUsable && !Me.HaveBuff("Ice Barrier"))
-                if (Cast(IceBarrier))
-                    return;
-
-            // Frost Bolt
-            if (_target.GetDistance < _distanceRange && Me.Level >= 6 && (_target.HealthPercent > settings.WandThreshold
-                || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 30 || !_iCanUseWand))
-                if (Cast(Frostbolt))
-                    return;
-
-            // Low level Frost Bolt
-            if (_target.GetDistance < _distanceRange && _target.HealthPercent > 30 && Me.Level < 6)
-                if (Cast(Frostbolt))
-                    return;
-
-            // Low level FireBall
-            if (_target.GetDistance < _distanceRange && !Frostbolt.KnownSpell && _target.HealthPercent > 30)
-                if (Cast(Fireball))
-                    return;
         }
 
         protected virtual void CombatRotation()
         {
-            Lua.LuaDoString("PetAttack();", false);
-            WoWUnit Target = ObjectManager.Target;
-            _usingWand = Lua.LuaDoString<bool>("isAutoRepeat = false; local name = GetSpellInfo(5019); " +
-                "if IsAutoRepeatSpell(name) then isAutoRepeat = true end", "isAutoRepeat");
+        }
 
-            // Stop wand use on multipull
-            if (_iCanUseWand && ObjectManager.GetNumberAttackPlayer() > 1)
-                _iCanUseWand = false;
-
-            // Remove Curse
-            if (ToolBox.HasCurseDebuff())
-            {
-                Thread.Sleep(Main.humanReflexTime);
-                if (Cast(RemoveCurse))
-                    return;
-            }
-
-            // Summon Water Elemental
-            if (Target.HealthPercent > 95
-                || ObjectManager.GetNumberAttackPlayer() > 1)
-                if (Cast(SummonWaterElemental))
-                    return;
-
-            // Ice Barrier
-            if (IceBarrier.IsSpellUsable
-                && !Me.HaveBuff("Ice Barrier"))
-                if (Cast(IceBarrier))
-                    return;
-
-            // Mana Shield
-            if (!Me.HaveBuff("Mana Shield")
-                && (Me.HealthPercent < 30 && Me.ManaPercentage > 50
-                || Me.HealthPercent < 10))
-                if (Cast(ManaShield))
-                    return;
-
-            // Cold Snap
-            if (ObjectManager.GetNumberAttackPlayer() > 1
-                && !Me.HaveBuff("Icy Veins")
-                && !IcyVeins.IsSpellUsable)
-                if (Cast(ColdSnap))
-                    return;
-
-            // Icy Veins
-            if (ObjectManager.GetNumberAttackPlayer() > 1 && settings.IcyVeinMultiPull
-                || !settings.IcyVeinMultiPull)
-                if (Cast(IcyVeins))
-                    return;
-
-            // Use Mana Stone
-            if ((ObjectManager.GetNumberAttackPlayer() > 1 && Me.ManaPercentage < 50 || Me.ManaPercentage < 5)
-                && _foodManager.ManaStone != "")
-            {
-                _foodManager.UseManaStone();
-                _foodManager.ManaStone = "";
-            }
-
-            // Ice Lance
-            if (Target.HaveBuff("Frostbite")
-                || Target.HaveBuff("Frost Nova"))
-                if (Cast(IceLance))
-                    return;
-
-            // Frost Nova
-            if (Target.GetDistance < 6f
-                && Target.HealthPercent > 10
-                && !Target.HaveBuff("Frostbite")
-                && _polymorphedEnemy == null)
-                if (Cast(FrostNova))
-                    return;
-
-            // Fire Blast
-            if (Target.GetDistance < 20f
-                && Target.HealthPercent <= settings.FireblastThreshold
-                && !Target.HaveBuff("Frostbite") && !Target.HaveBuff("Frost Nova"))
-                if (Cast(FireBlast))
-                    return;
-
-            // Cone of Cold
-            if (Target.GetDistance < 10
-                && settings.UseConeOfCold
-                && !_isBackingUp
-                && !MovementManager.InMovement
-                && _polymorphedEnemy == null)
-                if (Cast(ConeOfCold))
-                    return;
-
-            // Frost Bolt
-            if (Target.GetDistance < _distanceRange
-                && Me.Level >= 6
-                && (Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand))
-                if (Cast(Frostbolt, true))
-                    return;
-
-            // Low level Frost Bolt
-            if (Target.GetDistance < _distanceRange
-                && (Target.HealthPercent > 15 || Me.HealthPercent < 50)
-                && Me.Level < 6)
-                if (Cast(Frostbolt, true))
-                    return;
-
-            // Low level FireBall
-            if (Target.GetDistance < _distanceRange
-                && !Frostbolt.KnownSpell
-                && (Target.HealthPercent > 15 || Me.HealthPercent < 50))
-                if (Cast(Fireball, true))
-                    return;
-
-            // Use Wand
-            if (!_usingWand
-                && _iCanUseWand
-                && ObjectManager.Target.GetDistance <= _distanceRange
-                && !_isBackingUp
-                && !MovementManager.InMovement)
-            {
-                RangeManager.SetRange(_distanceRange);
-                if (Cast(UseWand, false))
-                    return;
-            }
-
-            // Go in melee because nothing else to do
-            if (!_usingWand
-                && !UseWand.IsSpellUsable
-                && !RangeManager.CurrentRangeIsMelee()
-                && !_isBackingUp
-                && Target.IsAlive)
-            {
-                Logger.Log("Going in melee");
-                RangeManager.SetRangeToMelee();
-                return;
-            }
+        protected bool CastStopMove(Spell s, bool castEvenIfWanding = true)
+        {
+            MovementManager.StopMove();
+            return Cast(s, castEvenIfWanding);
         }
 
         protected bool Cast(Spell s, bool castEvenIfWanding = true)
@@ -441,7 +285,8 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 return false;
             }
 
-            if (_usingWand && !castEvenIfWanding || _isBackingUp && !s.Name.Equals("Blink"))
+            if (_usingWand && !castEvenIfWanding 
+                || _isBackingUp && !s.Name.Equals("Blink"))
             {
                 CombatDebug("Didn't cast because we were backing up or wanding");
                 return false;
@@ -517,5 +362,11 @@ namespace WholesomeTBCAIO.Rotations.Mage
         protected Spell RemoveCurse = new Spell("Remove Curse");
         protected Spell IceArmor = new Spell("Ice Armor");
         protected Spell ManaShield = new Spell("Mana Shield");
+        protected Spell ArcaneMissiles = new Spell("Arcane Missiles");
+        protected Spell PresenceOfMind = new Spell("Presence of Mind");
+        protected Spell ArcanePower = new Spell("Arcane Power");
+        protected Spell Slow = new Spell("Slow");
+        protected Spell MageArmor = new Spell("Mage Armor");
+        protected Spell ArcaneBlast = new Spell("Arcane Blast");
     }
 }
