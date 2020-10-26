@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using robotManager.Helpful;
-using robotManager.Products;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
 using wManager.Events;
@@ -21,7 +19,6 @@ namespace WholesomeTBCAIO.Rotations.Priest
         protected Stopwatch _dispelTimer = new Stopwatch();
 
         protected readonly float _distaneRange = 26f;
-        protected bool _usingWand = false;
         protected bool _iCanUseWand = ToolBox.HaveRangedWeaponEquipped();
         protected int _innerManaSaveThreshold = 20;
         protected int _wandThreshold;
@@ -43,7 +40,6 @@ namespace WholesomeTBCAIO.Rotations.Priest
             // Fight end
             FightEvents.OnFightEnd += (guid) =>
             {
-                _usingWand = false;
                 _goInMFRange = false;
                 _dispelTimer.Reset();
                 _iCanUseWand = false;
@@ -230,8 +226,6 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
         protected virtual void CombatRotation()
         {
-            _usingWand = Lua.LuaDoString<bool>("isAutoRepeat = false; local name = GetSpellInfo(5019); " +
-                "if IsAutoRepeatSpell(name) then isAutoRepeat = true end", "isAutoRepeat");
             bool _hasMagicDebuff = ToolBox.HasMagicDebuff();
             bool _hasDisease = ToolBox.HasDiseaseDebuff();
             bool _hasWeakenedSoul = ToolBox.HasDebuff("Weakened Soul");
@@ -300,7 +294,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             if (_hasMagicDebuff && _myManaPC > 10 && DispelMagic.KnownSpell && DispelMagic.IsSpellUsable
                 && (_dispelTimer.ElapsedMilliseconds > 10000 || _dispelTimer.ElapsedMilliseconds <= 0))
             {
-                if (_usingWand)
+                if (ToolBox.UsingWand())
                     ToolBox.StopWandWaitGCD(UseWand, Smite);
                 Thread.Sleep(Main.humanReflexTime);
                 Lua.RunMacroText("/target player");
@@ -409,7 +403,9 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     return;
 
             // Use Wand
-            if (!_usingWand && _iCanUseWand && Target.GetDistance <= _distaneRange + 2)
+            if (!ToolBox.UsingWand() 
+                && _iCanUseWand 
+                && Target.GetDistance <= _distaneRange + 2)
             {
                 RangeManager.SetRange(_distaneRange);
                 if (Cast(UseWand, false))
@@ -417,7 +413,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             }
 
             // Go in melee because nothing else to do
-            if (!_usingWand
+            if (!ToolBox.UsingWand()
                 && !_iCanUseWand
                 && !RangeManager.CurrentRangeIsMelee()
                 && Target.IsAlive)
@@ -471,7 +467,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return false;
             }
 
-            if (_usingWand && !castEvenIfWanding)
+            if (ToolBox.UsingWand() && !castEvenIfWanding)
             {
                 CombatDebug("Didn't cast because we were backing up or wanding");
                 return false;
@@ -483,7 +479,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return false;
             }
 
-            if (_usingWand && castEvenIfWanding)
+            if (ToolBox.UsingWand() && castEvenIfWanding)
                 ToolBox.StopWandWaitGCD(UseWand, Smite);
 
             if (_spellCD < 2f && _spellCD > 0f)

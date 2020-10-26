@@ -229,6 +229,12 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 if (Cast(LayOnHands))
                     return;
 
+            // Hammer of Justice
+            if (Me.HealthPercent < 50
+                && Me.ManaPercentage > _manaSavePercent)
+                if (Cast(HammerOfJustice))
+                    return;
+
             // Holy Light / Flash of Light
             if (Me.HealthPercent < 50
                 && (Target.HealthPercent > 15 || Me.HealthPercent < 25)
@@ -250,12 +256,6 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if (Me.ManaPercentage > _manaSavePercent 
                 && ObjectManager.GetNumberAttackPlayer() > 1)
                 if (Cast(AvengingWrath))
-                    return;
-
-            // Hammer of Justice
-            if (Me.HealthPercent < 50 
-                && Me.ManaPercentage > _manaSavePercent)
-                if (Cast(HammerOfJustice))
                     return;
 
             // Exorcism

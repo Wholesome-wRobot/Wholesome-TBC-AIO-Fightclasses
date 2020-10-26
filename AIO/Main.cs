@@ -26,7 +26,7 @@ public class Main : ICustomClass
     public static string wowClass = ObjectManager.Me.WowClass.ToString();
     public static int humanReflexTime = 500;
     public static bool isLaunched; 
-    public static string version = "2.1.2"; // Must match version in Version.txt
+    public static string version = "2.1.3"; // Must match version in Version.txt
     public static bool HMPrunningAway = false;
 
     private IClassRotation selectedRotation;
@@ -123,6 +123,7 @@ public class Main : ICustomClass
             case "BeastMaster": return new BeastMastery();
             case "Frost": return new Frost();
             case "Arcane": return new Arcane();
+            case "Fire": return new Fire();
             case "Retribution": return new Retribution();
             case "Shadow": return new Shadow();
             case "Combat": return new Combat();

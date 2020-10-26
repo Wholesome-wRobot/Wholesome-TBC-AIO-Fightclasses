@@ -31,6 +31,13 @@ namespace WholesomeTBCAIO.Helpers
                 wandSpell.Launch();
         }
 
+        // Check if we're currently wanding
+        public static bool UsingWand()
+        {
+            return Lua.LuaDoString<bool>("isAutoRepeat = false; local name = GetSpellInfo(5019); " +
+                "if IsAutoRepeatSpell(name) then isAutoRepeat = true end", "isAutoRepeat");
+        }
+
         // Returns the cooldown of the spell passed as argument
         public static float GetSpellCooldown(string spellName)
         {

@@ -21,7 +21,6 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         protected WoWLocalPlayer Me = ObjectManager.Me;
 
         protected float _maxRange = 27f;
-        protected bool _usingWand = false;
         protected int _innerManaSaveThreshold = 20;
         protected bool _iCanUseWand = ToolBox.HaveRangedWeaponEquipped();
         protected int _saveDrinkPercent = wManager.wManagerSetting.CurrentSetting.DrinkPercent;
@@ -50,7 +49,6 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             // Fight end
             FightEvents.OnFightEnd += (guid) =>
             {
-                _usingWand = false;
                 _iCanUseWand = false;
                 RangeManager.SetRange(_maxRange);
                 _addCheckTimer.Reset();
@@ -386,8 +384,6 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
         protected virtual void CombatRotation()
         {
-            _usingWand = Lua.LuaDoString<bool>("isAutoRepeat = false; local name = GetSpellInfo(5019); " +
-                "if IsAutoRepeatSpell(name) then isAutoRepeat = true end", "isAutoRepeat");
             WoWUnit Me = ObjectManager.Me;
             WoWUnit Target = ObjectManager.Target;
             double _myManaPC = Me.ManaPercentage;
@@ -532,7 +528,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                     return;
 
             // Use Wand
-            if (!_usingWand
+            if (!ToolBox.UsingWand()
                 && _iCanUseWand
                 && ObjectManager.Target.GetDistance <= _maxRange + 2)
             {
@@ -542,7 +538,8 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             }
 
             // Go in melee because nothing else to do
-            if (!_usingWand && !UseWand.IsSpellUsable
+            if (!ToolBox.UsingWand() 
+                && !UseWand.IsSpellUsable
                 && !RangeManager.CurrentRangeIsMelee()
                 && Target.IsAlive)
             {
@@ -607,7 +604,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 return false;
             }
 
-            if (_usingWand && !castEvenIfWanding)
+            if (ToolBox.UsingWand() && !castEvenIfWanding)
             {
                 CombatDebug("Didn't cast because we were backing up or wanding");
                 return false;
@@ -619,7 +616,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 return false;
             }
 
-            if (_usingWand && castEvenIfWanding)
+            if (ToolBox.UsingWand() && castEvenIfWanding)
                 ToolBox.StopWandWaitGCD(UseWand, ShadowBolt);
 
             if (_spellCD < 2f && _spellCD > 0f)

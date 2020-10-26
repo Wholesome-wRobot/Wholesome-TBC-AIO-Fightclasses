@@ -5,7 +5,7 @@ using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Mage
 {
-    public class Frost : Mage
+    public class Fire : Mage
     {
         protected override void BuffRotation()
         {
@@ -17,7 +17,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                     return;
 
             // Frost Armor
-            if (!Me.HaveBuff("Frost Armor") 
+            if (!Me.HaveBuff("Frost Armor")
                 && !IceArmor.KnownSpell)
                 if (Cast(FrostArmor))
                     return;
@@ -29,29 +29,14 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             WoWUnit _target = ObjectManager.Target;
 
-            // Ice Barrier
-            if (IceBarrier.IsSpellUsable && !Me.HaveBuff("Ice Barrier"))
-                if (Cast(IceBarrier))
+            // Combustion
+            if (!Me.HaveBuff("Combustion"))
+                if (Cast(Combustion))
                     return;
 
-            // Frost Bolt
-            if (_target.GetDistance < _distanceRange
-                && Me.Level >= 6
+            // Fireball
+            if (_target.GetDistance < 33f
                 && (_target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 30 || !_iCanUseWand))
-                if (Cast(Frostbolt))
-                    return;
-
-            // Low level Frost Bolt
-            if (_target.GetDistance < _distanceRange
-                && _target.HealthPercent > 30
-                && Me.Level < 6)
-                if (Cast(Frostbolt))
-                    return;
-
-            // Low level FireBall
-            if (_target.GetDistance < _distanceRange
-                && !Frostbolt.KnownSpell
-                && _target.HealthPercent > 30)
                 if (Cast(Fireball))
                     return;
         }
@@ -74,36 +59,11 @@ namespace WholesomeTBCAIO.Rotations.Mage
                     return;
             }
 
-            // Summon Water Elemental
-            if (Target.HealthPercent > 95
-                || ObjectManager.GetNumberAttackPlayer() > 1)
-                if (Cast(SummonWaterElemental))
-                    return;
-
-            // Ice Barrier
-            if (IceBarrier.IsSpellUsable
-                && !Me.HaveBuff("Ice Barrier"))
-                if (Cast(IceBarrier))
-                    return;
-
             // Mana Shield
             if (!Me.HaveBuff("Mana Shield")
                 && (Me.HealthPercent < 30 && Me.ManaPercentage > 50
                 || Me.HealthPercent < 10))
                 if (Cast(ManaShield))
-                    return;
-
-            // Cold Snap
-            if (ObjectManager.GetNumberAttackPlayer() > 1
-                && !Me.HaveBuff("Icy Veins")
-                && !IcyVeins.IsSpellUsable)
-                if (Cast(ColdSnap))
-                    return;
-
-            // Icy Veins
-            if (ObjectManager.GetNumberAttackPlayer() > 1 && settings.IcyVeinMultiPull
-                || !settings.IcyVeinMultiPull)
-                if (Cast(IcyVeins))
                     return;
 
             // Use Mana Stone
@@ -114,55 +74,43 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 _foodManager.ManaStone = "";
             }
 
-            // Ice Lance
-            if (Target.HaveBuff("Frostbite")
-                || Target.HaveBuff("Frost Nova"))
-                if (Cast(IceLance))
+            // Combustion
+            if (!Me.HaveBuff("Combustion"))
+                if (Cast(Combustion))
                     return;
 
-            // Frost Nova
-            if (Target.GetDistance < 6f
-                && Target.HealthPercent > 10
-                && !Target.HaveBuff("Frostbite")
+            // Blast Wave
+            if (settings.BlastWaveOnMulti
+                && ToolBox.CheckIfEnemiesClose(10)
+                && ObjectManager.GetNumberAttackPlayer() > 1)
+                if (Cast(BlastWave))
+                    return;
+
+            // Dragon's Breath
+            if (Target.GetDistance < 10
+                && settings.UseDragonsBreath
                 && _polymorphedEnemy == null)
-                if (Cast(FrostNova))
+                if (Cast(DragonsBreath))
                     return;
 
             // Fire Blast
             if (Target.GetDistance < 20f
                 && Target.HealthPercent <= settings.FireblastThreshold
-                && !Target.HaveBuff("Frostbite") && !Target.HaveBuff("Frost Nova"))
+                && _polymorphedEnemy == null)
                 if (Cast(FireBlast))
                     return;
 
             // Cone of Cold
             if (Target.GetDistance < 10
                 && settings.UseConeOfCold
-                && !_isBackingUp
-                && !MovementManager.InMovement
                 && _polymorphedEnemy == null)
                 if (Cast(ConeOfCold))
                     return;
 
-            // Frost Bolt
-            if (Target.GetDistance < _distanceRange
-                && Me.Level >= 6
-                && !_isBackingUp
-                && (Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand))
-                if (Cast(Frostbolt, true))
-                    return;
-
-            // Low level Frost Bolt
-            if (Target.GetDistance < _distanceRange
-                && (Target.HealthPercent > 15 || Me.HealthPercent < 50)
-                && Me.Level < 6)
-                if (Cast(Frostbolt, true))
-                    return;
-
-            // Low level FireBall
-            if (Target.GetDistance < _distanceRange
-                && !Frostbolt.KnownSpell
-                && (Target.HealthPercent > 15 || Me.HealthPercent < 50))
+            // FireBall
+            if (Target.GetDistance < 33f
+                && (Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand)
+                && _polymorphedEnemy == null)
                 if (Cast(Fireball, true))
                     return;
 

@@ -13,6 +13,7 @@ namespace WholesomeTBCAIO.Settings
             UsePolymorph = true;
             WandThreshold = 30;
             BlinkWhenBackup = true;
+            UseCounterspell = true;
 
             UseConeOfCold = true;
             IcyVeinMultiPull = true;
@@ -22,6 +23,9 @@ namespace WholesomeTBCAIO.Settings
             ACSlow = true;
             ArcanePowerOnMulti = false;
             PoMOnMulti = false;
+
+            UseDragonsBreath = true;
+            BlastWaveOnMulti = true;
 
             Specialization = "Frost";
         }
@@ -35,10 +39,11 @@ namespace WholesomeTBCAIO.Settings
         public int WandThreshold { get; set; }
 
         [Category("Common")]
-        [DefaultValue(true)]
-        [DisplayName("Use Polymorph")]
-        [Description("Use Polymorph on multiaggro")]
-        public bool UsePolymorph { get; set; }
+        [DefaultValue(30)]
+        [DisplayName("Fire Blast Threshold")]
+        [Description("Enemy HP % under which Fire Blast should be used")]
+        [Percentage(true)]
+        public int FireblastThreshold { get; set; }
 
         [Category("Common")]
         [DefaultValue(true)]
@@ -47,11 +52,16 @@ namespace WholesomeTBCAIO.Settings
         public bool UseConeOfCold { get; set; }
 
         [Category("Common")]
-        [DefaultValue(30)]
-        [DisplayName("Fire Blast Threshold")]
-        [Description("Enemy HP % under which Fire Blast should be used")]
-        [Percentage(true)]
-        public int FireblastThreshold { get; set; }
+        [DefaultValue(true)]
+        [DisplayName("Use Polymorph")]
+        [Description("Use Polymorph on multiaggro")]
+        public bool UsePolymorph { get; set; }
+
+        [Category("Common")]
+        [DefaultValue(true)]
+        [DisplayName("Counterspell")]
+        [Description("Use Counterspell")]
+        public bool UseCounterspell { get; set; }
 
         // ARCANE
         [Category("Arcane")]
@@ -97,8 +107,21 @@ namespace WholesomeTBCAIO.Settings
         [Description("If set to True, will backup using Click To Move. If false, will use the keyboard")]
         public bool BackupUsingCTM { get; set; }
 
+        // FIRE
+        [Category("Fire")]
+        [DefaultValue(true)]
+        [DisplayName("Dragon's Breath")]
+        [Description("Use Dragon's Breath")]
+        public bool UseDragonsBreath { get; set; }
+
+        [Category("Fire")]
+        [DefaultValue(true)]
+        [DisplayName("Blast Wave on multi")]
+        [Description("Use Blast Wave on multipull")]
+        public bool BlastWaveOnMulti { get; set; }
+
         // TALENT
-        [DropdownList(new string[] { "Frost", "Arcane" })]
+        [DropdownList(new string[] { "Frost", "Arcane", "Fire" })]
         public override string Specialization { get; set; }
     }
 }

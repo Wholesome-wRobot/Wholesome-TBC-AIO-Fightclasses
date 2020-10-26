@@ -83,8 +83,6 @@ namespace WholesomeTBCAIO.Rotations.Mage
             base.CombatRotation();
             Lua.LuaDoString("PetAttack();", false);
             WoWUnit Target = ObjectManager.Target;
-            _usingWand = Lua.LuaDoString<bool>("isAutoRepeat = false; local name = GetSpellInfo(5019); " +
-                "if IsAutoRepeatSpell(name) then isAutoRepeat = true end", "isAutoRepeat");
 
             // Stop wand use on multipull
             if (_iCanUseWand && ObjectManager.GetNumberAttackPlayer() > 1)
@@ -200,7 +198,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                     return;
 
             // Use Wand
-            if (!_usingWand
+            if (!ToolBox.UsingWand()
                 && _iCanUseWand
                 && ObjectManager.Target.GetDistance <= _distanceRange
                 && !_isBackingUp
@@ -212,7 +210,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             }
 
             // Go in melee because nothing else to do
-            if (!_usingWand
+            if (!ToolBox.UsingWand()
                 && !UseWand.IsSpellUsable
                 && !RangeManager.CurrentRangeIsMelee()
                 && !_isBackingUp

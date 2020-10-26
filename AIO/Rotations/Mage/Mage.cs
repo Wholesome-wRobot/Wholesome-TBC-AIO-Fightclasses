@@ -21,7 +21,6 @@ namespace WholesomeTBCAIO.Rotations.Mage
         protected WoWUnit _polymorphedEnemy = null;
 
         protected float _distanceRange = 28f;
-        protected bool _usingWand = false;
         protected bool _isBackingUp = false;
         protected bool _iCanUseWand = ToolBox.HaveRangedWeaponEquipped();
         protected bool _isPolymorphing;
@@ -37,6 +36,8 @@ namespace WholesomeTBCAIO.Rotations.Mage
             this.specialization = specialization as Mage;
             Talents.InitTalents(settings);
 
+            _distanceRange = specialization is Fire ? 33f : _distanceRange;
+
             RangeManager.SetRange(_distanceRange);
 
             // Fight end
@@ -44,7 +45,6 @@ namespace WholesomeTBCAIO.Rotations.Mage
             {
                 _isBackingUp = false;
                 _iCanUseWand = false;
-                _usingWand = false;
                 _polymorphableEnemyInThisFight = false;
                 _isPolymorphing = false;
                 RangeManager.SetRange(_distanceRange);
@@ -193,7 +193,6 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
         public void Dispose()
         {
-            _usingWand = false;
             _isBackingUp = false;
             Logger.Log("Stopped in progress.");
         }
@@ -262,6 +261,11 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
         protected virtual void CombatRotation()
         {
+            // CounterSpell
+            if (settings.UseCounterspell
+                && ToolBox.EnemyCasting())
+                if (Cast(CounterSpell))
+                    return;
         }
 
         protected bool CastStopMove(Spell s, bool castEvenIfWanding = true)
@@ -285,7 +289,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 return false;
             }
 
-            if (_usingWand && !castEvenIfWanding 
+            if (ToolBox.UsingWand() && !castEvenIfWanding 
                 || _isBackingUp && !s.Name.Equals("Blink"))
             {
                 CombatDebug("Didn't cast because we were backing up or wanding");
@@ -298,7 +302,8 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 return false;
             }
 
-            if (_usingWand && castEvenIfWanding)
+            if (ToolBox.UsingWand() 
+                && castEvenIfWanding)
                 ToolBox.StopWandWaitGCD(UseWand, Fireball);
 
             if (_spellCD < 2f && _spellCD > 0f)
@@ -368,5 +373,8 @@ namespace WholesomeTBCAIO.Rotations.Mage
         protected Spell Slow = new Spell("Slow");
         protected Spell MageArmor = new Spell("Mage Armor");
         protected Spell ArcaneBlast = new Spell("Arcane Blast");
+        protected Spell Combustion = new Spell("Combustion");
+        protected Spell DragonsBreath = new Spell("Dragon's Breath");
+        protected Spell BlastWave = new Spell("Blast Wave");
     }
 }
