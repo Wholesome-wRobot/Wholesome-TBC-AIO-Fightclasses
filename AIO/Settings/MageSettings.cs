@@ -14,6 +14,7 @@ namespace WholesomeTBCAIO.Settings
             WandThreshold = 30;
             BlinkWhenBackup = true;
             UseCounterspell = true;
+            UseDampenMagic = true;
 
             UseConeOfCold = true;
             IcyVeinMultiPull = true;
@@ -62,6 +63,12 @@ namespace WholesomeTBCAIO.Settings
         [DisplayName("Counterspell")]
         [Description("Use Counterspell")]
         public bool UseCounterspell { get; set; }
+
+        [Category("Common")]
+        [DefaultValue(true)]
+        [DisplayName("Dampen Magic")]
+        [Description("Use Dampen Magic")]
+        public bool UseDampenMagic { get; set; }
 
         // ARCANE
         [Category("Arcane")]

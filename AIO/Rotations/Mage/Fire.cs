@@ -37,12 +37,16 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // Fireball
             if (_target.GetDistance < 33f
                 && (_target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 30 || !_iCanUseWand))
-                if (Cast(Fireball))
+                if (CastStopMove(Fireball))
                     return;
         }
 
         protected override void CombatRotation()
         {
+            // Reactivate auto attack (after dragon's breath)
+            if (!ToolBox.UsingWand())
+                ToolBox.CheckAutoAttack(Attack);
+
             base.CombatRotation();
             Lua.LuaDoString("PetAttack();", false);
             WoWUnit Target = ObjectManager.Target;
@@ -87,8 +91,9 @@ namespace WholesomeTBCAIO.Rotations.Mage
                     return;
 
             // Dragon's Breath
-            if (Target.GetDistance < 10
+            if (Target.GetDistance <= 10f
                 && settings.UseDragonsBreath
+                && (Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand)
                 && _polymorphedEnemy == null)
                 if (Cast(DragonsBreath))
                     return;
@@ -96,7 +101,8 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // Fire Blast
             if (Target.GetDistance < 20f
                 && Target.HealthPercent <= settings.FireblastThreshold
-                && _polymorphedEnemy == null)
+                && (Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand)
+                && !Target.HaveBuff("Polymorph"))
                 if (Cast(FireBlast))
                     return;
 
@@ -110,7 +116,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // FireBall
             if (Target.GetDistance < 33f
                 && (Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand)
-                && _polymorphedEnemy == null)
+                && !Target.HaveBuff("Polymorph"))
                 if (Cast(Fireball, true))
                     return;
 

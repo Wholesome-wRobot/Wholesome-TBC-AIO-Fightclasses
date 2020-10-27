@@ -11,7 +11,6 @@ namespace WholesomeTBCAIO.Helpers
 {
     public class ToolBox
     {
-
         #region Combat
 
         // Stops using wand and waits for its CD to be over
@@ -236,7 +235,6 @@ namespace WholesomeTBCAIO.Helpers
 
             foreach (WoWUnit unit in surroundingEnemies)
             {
-                bool flagHostile = unit.Reaction.ToString().Equals("Hostile");
                 float distanceFromTarget = unit.Position.DistanceTo(target.Position);
 
                 if (unit.IsAlive
@@ -246,7 +244,7 @@ namespace WholesomeTBCAIO.Helpers
                     && !unit.PlayerControlled
                     && unit.IsAttackable
                     && distanceFromTarget < closestUnitDistance
-                    && flagHostile
+                    && unit.Reaction.ToString().Equals("Hostile")
                     && unit.Guid != target.Guid)
                 {
                     closestUnit = unit;

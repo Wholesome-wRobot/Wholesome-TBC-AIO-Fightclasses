@@ -38,21 +38,21 @@ namespace WholesomeTBCAIO.Rotations.Mage
             if (_target.GetDistance < _distanceRange
                 && Me.Level >= 6
                 && (_target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 30 || !_iCanUseWand))
-                if (Cast(Frostbolt))
+                if (CastStopMove(Frostbolt))
                     return;
 
             // Low level Frost Bolt
             if (_target.GetDistance < _distanceRange
                 && _target.HealthPercent > 30
                 && Me.Level < 6)
-                if (Cast(Frostbolt))
+                if (CastStopMove(Frostbolt))
                     return;
 
             // Low level FireBall
             if (_target.GetDistance < _distanceRange
                 && !Frostbolt.KnownSpell
                 && _target.HealthPercent > 30)
-                if (Cast(Fireball))
+                if (CastStopMove(Fireball))
                     return;
         }
 
@@ -131,7 +131,8 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // Fire Blast
             if (Target.GetDistance < 20f
                 && Target.HealthPercent <= settings.FireblastThreshold
-                && !Target.HaveBuff("Frostbite") && !Target.HaveBuff("Frost Nova"))
+                && !Target.HaveBuff("Frostbite") 
+                && !Target.HaveBuff("Frost Nova"))
                 if (Cast(FireBlast))
                     return;
 

@@ -239,10 +239,26 @@ namespace WholesomeTBCAIO.Rotations.Mage
             _foodManager.CheckIfHaveManaStone();
 
             // Arcane Intellect
-            if (!Me.HaveBuff("Arcane Intellect") && ArcaneIntellect.KnownSpell && ArcaneIntellect.IsSpellUsable)
+            if (!Me.HaveBuff("Arcane Intellect") 
+                && ArcaneIntellect.KnownSpell 
+                && ArcaneIntellect.IsSpellUsable)
             {
                 Lua.RunMacroText("/target player");
                 if (Cast(ArcaneIntellect))
+                {
+                    Lua.RunMacroText("/cleartarget");
+                    return;
+                }
+            }
+
+            // Dampen Magic
+            if (!Me.HaveBuff("Dampen Magic")
+                && settings.UseDampenMagic
+                && DampenMagic.KnownSpell
+                && DampenMagic.IsSpellUsable)
+            {
+                Lua.RunMacroText("/target player");
+                if (Cast(DampenMagic))
                 {
                     Lua.RunMacroText("/cleartarget");
                     return;
@@ -376,5 +392,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
         protected Spell Combustion = new Spell("Combustion");
         protected Spell DragonsBreath = new Spell("Dragon's Breath");
         protected Spell BlastWave = new Spell("Blast Wave");
+        protected Spell Attack = new Spell("Attack");
+        protected Spell DampenMagic = new Spell("Dampen Magic");
     }
 }
