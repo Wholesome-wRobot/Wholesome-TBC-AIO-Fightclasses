@@ -49,73 +49,22 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             RangeManager.SetRangeToMelee();
             AddPoisonsToNoSellList();
 
-            // Fight End
-            FightEvents.OnFightEnd += (guid) =>
-            {
-                _meleeTimer.Reset();
-                _pullMeleeTimer.Reset();
-                _stealthApproachTimer.Reset();
-                _fightingACaster = false;
-                _pullFromAfar = false;
-                _isStealthApproching = false;
-                _myBestBandage = null;
-                RangeManager.SetRangeToMelee();
-            };
-
-            // Fight Start
-            FightEvents.OnFightStart += (unit, cancelable) =>
-            {
-                _myBestBandage = ToolBox.GetBestMatchingItem(Bandages());
-                if (_myBestBandage != null)
-                    Logger.LogDebug("Found best bandage : " + _myBestBandage);
-            };
-
-            // We override movement to target when approaching in Stealth
-            MovementEvents.OnMoveToPulse += (point, cancelable) =>
-            {
-                if (_isStealthApproching &&
-                !point.ToString().Equals(ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f).ToString()))
-                    cancelable.Cancel = true;
-            };
-
-            // Fight Loop - Go behind target when stunned
-            FightEvents.OnFightLoop += (unit, cancelable) =>
-            {
-                if (IsTargetStunned() 
-                && !MovementManager.InMovement 
-                && Me.IsAlive 
-                && !Me.IsCast
-                && ObjectManager.Target.IsAlive)
-                {
-                    Vector3 position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f);
-                    MovementManager.Go(PathFinder.FindPath(position), false);
-
-                    while (MovementManager.InMovement 
-                    && StatusChecker.BasicConditions()
-                    && IsTargetStunned())
-                    {
-                        // Wait follow path
-                        Thread.Sleep(200);
-                    }
-                }
-            };
-
-            // BL Hook
-            OthersEvents.OnAddBlackListGuid += (guid, timeInMilisec, isSessionBlacklist, cancelable) =>
-            {
-                if (Me.HaveBuff("Stealth") && !_pullFromAfar)
-                {
-                    Logger.LogDebug("BL : " + guid + " ms : " + timeInMilisec + " is session: " + isSessionBlacklist);
-                    Logger.Log("Cancelling Blacklist event");
-                    cancelable.Cancel = true;
-                }
-            };
+            FightEvents.OnFightEnd += FightEndHandler;
+            FightEvents.OnFightStart += FightStartHandler;
+            MovementEvents.OnMoveToPulse += MoveToPulseHandler;
+            FightEvents.OnFightLoop += FightLoopHandler;
+            OthersEvents.OnAddBlackListGuid += BlackListHandler;
 
             Rotation();
         }
 
         public void Dispose()
         {
+            FightEvents.OnFightEnd -= FightEndHandler;
+            FightEvents.OnFightStart -= FightStartHandler;
+            MovementEvents.OnMoveToPulse -= MoveToPulseHandler;
+            FightEvents.OnFightLoop -= FightLoopHandler;
+            OthersEvents.OnAddBlackListGuid -= BlackListHandler;
             Logger.Log("Stop in progress.");
         }
 
@@ -161,7 +110,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
         {
             // Check if surrounding enemies
             if (ObjectManager.Target.GetDistance < _pullRange && !_pullFromAfar)
-                _pullFromAfar = ToolBox.CheckIfEnemiesOnPull(ObjectManager.Target, _pullRange);
+                _pullFromAfar = ToolBox.CheckIfEnemiesAround(ObjectManager.Target, _pullRange);
 
             // Pull from afar
             if (_pullFromAfar && _pullMeleeTimer.ElapsedMilliseconds < 5000 || settings.AlwaysPull
@@ -232,7 +181,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 {
                     while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
                     && ObjectManager.Target.GetDistance > 2.5f
-                    && !ToolBox.CheckIfEnemiesOnPull(ObjectManager.Target, _pullRange)
+                    && !ToolBox.CheckIfEnemiesAround(ObjectManager.Target, _pullRange)
                     && Fight.InFight
                     && _stealthApproachTimer.ElapsedMilliseconds <= 15000
                     && Me.HaveBuff("Stealth"))
@@ -245,7 +194,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                         CastOpener();
                     }
 
-                    if (ToolBox.CheckIfEnemiesOnPull(ObjectManager.Target, _pullRange) 
+                    if (ToolBox.CheckIfEnemiesAround(ObjectManager.Target, _pullRange) 
                         && Me.HaveBuff("Stealth"))
                     {
                         _pullFromAfar = true;
@@ -621,6 +570,64 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             ToolBox.AddToDoNotSellList("Deadly Poison V");
             ToolBox.AddToDoNotSellList("Deadly Poison VI");
             ToolBox.AddToDoNotSellList("Deadly Poison VII");
+        }
+
+        // EVENT HANDLERS
+        private void BlackListHandler(ulong guid, int timeInMilisec, bool isSessionBlacklist, CancelEventArgs cancelable)
+        {
+            if (Me.HaveBuff("Stealth") && !_pullFromAfar)
+            {
+                Logger.LogDebug("BL : " + guid + " ms : " + timeInMilisec + " is session: " + isSessionBlacklist);
+                Logger.Log("Cancelling Blacklist event");
+                cancelable.Cancel = true;
+            }
+        }
+
+        private void FightEndHandler(ulong guid)
+        {
+            _meleeTimer.Reset();
+            _pullMeleeTimer.Reset();
+            _stealthApproachTimer.Reset();
+            _fightingACaster = false;
+            _pullFromAfar = false;
+            _isStealthApproching = false;
+            _myBestBandage = null;
+            RangeManager.SetRangeToMelee();
+        }
+
+        private void FightStartHandler(WoWUnit unit, CancelEventArgs cancel)
+        {
+            _myBestBandage = ToolBox.GetBestMatchingItem(Bandages());
+            if (_myBestBandage != null)
+                Logger.LogDebug("Found best bandage : " + _myBestBandage);
+        }
+
+        private void FightLoopHandler(WoWUnit unit, CancelEventArgs cancel)
+        {
+            if (IsTargetStunned()
+            && !MovementManager.InMovement
+            && Me.IsAlive
+            && !Me.IsCast
+            && ObjectManager.Target.IsAlive)
+            {
+                Vector3 position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f);
+                MovementManager.Go(PathFinder.FindPath(position), false);
+
+                while (MovementManager.InMovement
+                && StatusChecker.BasicConditions()
+                && IsTargetStunned())
+                {
+                    // Wait follow path
+                    Thread.Sleep(200);
+                }
+            }
+        }
+
+        private void MoveToPulseHandler(Vector3 point, CancelEventArgs cancelable)
+        {
+            if (_isStealthApproching &&
+            !point.ToString().Equals(ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f).ToString()))
+                cancelable.Cancel = true;
         }
     }
 }

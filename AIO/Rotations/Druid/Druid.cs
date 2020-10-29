@@ -10,6 +10,7 @@ using wManager.Wow.ObjectManager;
 using System.Collections.Generic;
 using WholesomeTBCAIO.Settings;
 using WholesomeTBCAIO.Helpers;
+using System.ComponentModel;
 
 namespace WholesomeTBCAIO.Rotations.Druid
 {
@@ -40,66 +41,11 @@ namespace WholesomeTBCAIO.Rotations.Druid
             this.specialization = specialization as Druid;
             Talents.InitTalents(settings);
 
-            // Fight end
-            FightEvents.OnFightEnd += (guid) =>
-            {
-                _fightingACaster = false;
-                _meleeTimer.Reset();
-                _pullMeleeTimer.Reset();
-                _stealthApproachTimer.Reset();
-                _pullFromAfar = false;
-                RangeManager.SetRange(_pullRange);
-                _isStealthApproching = false;
-            };
-
-            // Fight start
-            FightEvents.OnFightStart += (unit, cancelable) =>
-            {
-                if (Regrowth.KnownSpell)
-                {
-                    string bearFormSpell = DireBearForm.KnownSpell ? "Dire Bear Form" : "Bear Form";
-                    _bigHealComboCost = ToolBox.GetSpellCost("Regrowth") + ToolBox.GetSpellCost("Rejuvenation") +
-                    ToolBox.GetSpellCost(bearFormSpell);
-                    _smallHealComboCost = ToolBox.GetSpellCost("Regrowth") + ToolBox.GetSpellCost(bearFormSpell);
-                }
-            };
-
-            // Fight Loop
-            FightEvents.OnFightLoop += (unit, cancelable) =>
-            {
-                if ((ObjectManager.Target.HaveBuff("Pounce") || ObjectManager.Target.HaveBuff("Maim"))
-                && !MovementManager.InMovement && Me.IsAlive && !Me.IsCast)
-                {
-                    if (Me.IsAlive && ObjectManager.Target.IsAlive)
-                    {
-                        Vector3 position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f);
-                        MovementManager.Go(PathFinder.FindPath(position), false);
-
-                        while (MovementManager.InMovement && Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                        && (ObjectManager.Target.HaveBuff("Pounce") || ObjectManager.Target.HaveBuff("Maim")))
-                        {
-                            // Wait follow path
-                            Thread.Sleep(500);
-                        }
-                    }
-                }
-            };
-
-            // We override movement to target when approaching in prowl
-            MovementEvents.OnMoveToPulse += (point, cancelable) =>
-            {
-                if (_isStealthApproching &&
-                !point.ToString().Equals(ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f).ToString()))
-                    cancelable.Cancel = true;
-            };
-
-            // BL Hook
-            OthersEvents.OnAddBlackListGuid += (guid, timeInMilisec, isSessionBlacklist, cancelable) =>
-            {
-                Logger.LogDebug("BL : " + guid + " ms : " + timeInMilisec + " is session: " + isSessionBlacklist);
-                if (Me.HaveBuff("Prowl"))
-                    cancelable.Cancel = true;
-            };
+            FightEvents.OnFightEnd += FightEndHandler;
+            FightEvents.OnFightStart += FightStartHandler;
+            FightEvents.OnFightLoop += FightLoopHandler;
+            MovementEvents.OnMoveToPulse += MoveToPulseHandler;
+            OthersEvents.OnAddBlackListGuid += BlackListHandler;
 
             Rotation();
         }
@@ -107,6 +53,11 @@ namespace WholesomeTBCAIO.Rotations.Druid
         public void Dispose()
         {
             Logger.Log("Stop in progress.");
+            FightEvents.OnFightEnd -= FightEndHandler;
+            FightEvents.OnFightStart -= FightStartHandler;
+            FightEvents.OnFightLoop -= FightLoopHandler;
+            MovementEvents.OnMoveToPulse -= MoveToPulseHandler;
+            OthersEvents.OnAddBlackListGuid -= BlackListHandler;
         }
 
         private void Rotation()
@@ -253,7 +204,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
             // Check if surrounding enemies
             if (!_pullFromAfar)
-                _pullFromAfar = ToolBox.CheckIfEnemiesOnPull(ObjectManager.Target, 20f);
+                _pullFromAfar = ToolBox.CheckIfEnemiesAround(ObjectManager.Target, 20f);
 
             // Get in pull distance
             if (_pullFromAfar && ObjectManager.Target.GetDistance >= _pullRange)
@@ -319,7 +270,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
                         while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
                         && (ObjectManager.Target.GetDistance > 4f || !Claw.IsSpellUsable)
-                        && !ToolBox.CheckIfEnemiesOnPull(ObjectManager.Target, 20f)
+                        && !ToolBox.CheckIfEnemiesAround(ObjectManager.Target, 20f)
                         && Fight.InFight
                         && _stealthApproachTimer.ElapsedMilliseconds <= 7000
                         && Me.HaveBuff("Prowl"))
@@ -793,6 +744,63 @@ namespace WholesomeTBCAIO.Rotations.Druid
         {
             if (settings.ActivateCombatDebug)
                 Logger.CombatDebug(s);
+        }
+
+        // EVENT HANDLERS
+        private void BlackListHandler(ulong guid, int timeInMilisec, bool isSessionBlacklist, CancelEventArgs cancelable)
+        {
+            Logger.LogDebug("BL : " + guid + " ms : " + timeInMilisec + " is session: " + isSessionBlacklist);
+            if (Me.HaveBuff("Prowl"))
+                cancelable.Cancel = true;
+        }
+
+        private void FightEndHandler(ulong guid)
+        {
+            _fightingACaster = false;
+            _meleeTimer.Reset();
+            _pullMeleeTimer.Reset();
+            _stealthApproachTimer.Reset();
+            _pullFromAfar = false;
+            RangeManager.SetRange(_pullRange);
+            _isStealthApproching = false;
+        }
+
+        private void FightStartHandler(WoWUnit unit, CancelEventArgs cancel)
+        {
+            if (Regrowth.KnownSpell)
+            {
+                string bearFormSpell = DireBearForm.KnownSpell ? "Dire Bear Form" : "Bear Form";
+                _bigHealComboCost = ToolBox.GetSpellCost("Regrowth") + ToolBox.GetSpellCost("Rejuvenation") +
+                ToolBox.GetSpellCost(bearFormSpell);
+                _smallHealComboCost = ToolBox.GetSpellCost("Regrowth") + ToolBox.GetSpellCost(bearFormSpell);
+            }
+        }
+
+        private void FightLoopHandler(WoWUnit unit, CancelEventArgs cancel)
+        {
+            if ((ObjectManager.Target.HaveBuff("Pounce") || ObjectManager.Target.HaveBuff("Maim"))
+            && !MovementManager.InMovement && Me.IsAlive && !Me.IsCast)
+            {
+                if (Me.IsAlive && ObjectManager.Target.IsAlive)
+                {
+                    Vector3 position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f);
+                    MovementManager.Go(PathFinder.FindPath(position), false);
+
+                    while (MovementManager.InMovement && Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
+                    && (ObjectManager.Target.HaveBuff("Pounce") || ObjectManager.Target.HaveBuff("Maim")))
+                    {
+                        // Wait follow path
+                        Thread.Sleep(500);
+                    }
+                }
+            }
+        }
+
+        private void MoveToPulseHandler(Vector3 point, CancelEventArgs cancelable)
+        {
+            if (_isStealthApproching &&
+            !point.ToString().Equals(ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f).ToString()))
+                cancelable.Cancel = true;
         }
     }
 }

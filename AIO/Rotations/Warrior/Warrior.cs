@@ -36,20 +36,14 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             this.specialization = specialization as Warrior;
             Talents.InitTalents(settings);
 
-            FightEvents.OnFightEnd += (guid) =>
-            {
-                _fightingACaster = false;
-                _meleeTimer.Reset();
-                _pullMeleeTimer.Reset();
-                _pullFromAfar = false;
-                RangeManager.SetRange(RangeManager.DefaultMeleeRange);
-            };
+            FightEvents.OnFightEnd += FightEndHandler;
 
             Rotation();
         }
 
         public void Dispose()
         {
+            FightEvents.OnFightEnd -= FightEndHandler;
             Logger.Log("Stop in progress.");
         }
 
@@ -162,6 +156,16 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         protected bool InBerserkStance()
         {
             return Lua.LuaDoString<bool>("bs = false; if GetShapeshiftForm() == 3 or GetShapeshiftForm() == 2 then bs = true end", "bs");
+        }
+
+        // EVENT HANDLERS
+        private void FightEndHandler(ulong guid)
+        {
+            _fightingACaster = false;
+            _meleeTimer.Reset();
+            _pullMeleeTimer.Reset();
+            _pullFromAfar = false;
+            RangeManager.SetRange(RangeManager.DefaultMeleeRange);
         }
     }
 }

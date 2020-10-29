@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
 using robotManager.Helpful;
@@ -6,6 +7,7 @@ using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
 using wManager.Events;
 using wManager.Wow.Class;
+using wManager.Wow.Enums;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 
@@ -27,6 +29,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         protected int _steadyShotSleep = 0;
         protected bool _canOnlyMelee = false;
 
+        DateTime lastAuto;
+
         protected Hunter specialization;
 
         public void Initialize(IClassRotation specialization)
@@ -40,102 +44,10 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             _petPulseThread.DoWork += PetThread;
             _petPulseThread.RunWorkerAsync();
 
-            // Set Steady Shot delay
-            if (settings.RangedWeaponSpeed > 2000)
-            {
-                _steadyShotSleep = settings.RangedWeaponSpeed - 1600;
-            }
-            else
-            {
-                _steadyShotSleep = 500;
-            }
-            Logger.LogDebug("Steady Shot delay set to : " + _steadyShotSleep.ToString() + "ms");
-
-            FightEvents.OnFightStart += (unit, cancelable) =>
-            {
-                if (ObjectManager.Target.GetDistance >= 13f && !AutoShot.IsSpellUsable && !_isBackingUp)
-                    _canOnlyMelee = true;
-                else
-                    _canOnlyMelee = false;
-            };
-
-            FightEvents.OnFightEnd += (guid) =>
-            {
-                _isBackingUp = false;
-                _backupAttempts = 0;
-                _autoshotRepeating = false;
-                _canOnlyMelee = false;
-            };
-
-            FightEvents.OnFightLoop += (unit, cancelable) =>
-            {
-                // Do we need to backup?
-                if (ObjectManager.Target.GetDistance < 10f && ObjectManager.Target.IsTargetingMyPet
-                    && !MovementManager.InMovement
-                    && Me.IsAlive
-                    && ObjectManager.Target.IsAlive
-                    && !ObjectManager.Pet.HaveBuff("Pacifying Dust") 
-                    && !_canOnlyMelee
-                    && !ObjectManager.Pet.IsStunned 
-                    && !_isBackingUp
-                    && !Me.IsCast
-                    && !Me.IsSwimming
-                    && settings.BackupFromMelee)
-                {
-                    // Stop trying if we reached the max amount of attempts
-                    if (_backupAttempts >= settings.MaxBackupAttempts)
-                    {
-                        Logger.Log($"Backup failed after {_backupAttempts} attempts. Going in melee");
-                        _canOnlyMelee = true;
-                        RangeManager.SetRangeToMelee();
-                        return;
-                    }
-
-                    _isBackingUp = true;
-
-                    // Using CTM
-                    if (settings.BackupUsingCTM)
-                    {
-                        Vector3 position = ToolBox.BackofVector3(Me.Position, Me, 12f);
-                        MovementManager.Go(PathFinder.FindPath(position), false);
-                        Thread.Sleep(500);
-
-                        // Backup loop
-                        int limiter = 0;
-                        while (MovementManager.InMoveTo
-                        && Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                        && ObjectManager.Me.IsAlive
-                        && ObjectManager.Target.GetDistance < 10f
-                        && limiter < 10)
-                        {
-                            // Wait follow path
-                            Thread.Sleep(300);
-                            limiter++;
-                        }
-                    }
-                    // Using Keyboard
-                    else
-                    {
-                        int limiter = 0;
-                        while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                        && ObjectManager.Me.IsAlive
-                        && ObjectManager.Target.GetDistance < 10f
-                        && limiter <= 6)
-                        {
-                            Move.Backward(Move.MoveAction.PressKey, 500);
-                            limiter++;
-                        }
-                    }
-
-                    _backupAttempts++;
-                    Logger.Log($"Backup attempt : {_backupAttempts}");
-                    _isBackingUp = false;
-
-                    if (RaptorStrikeOn())
-                        Cast(RaptorStrike);
-                    ReenableAutoshot();
-                }
-            };
+            EventsLuaWithArgs.OnEventsLuaWithArgs += AutoShotEventHandler;
+            FightEvents.OnFightStart += FightStartHandler;
+            FightEvents.OnFightEnd += FightEndHandler;
+            FightEvents.OnFightLoop += FightLoopHandler;
 
             Rotation();
         }
@@ -202,6 +114,10 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             Logger.Log("Stop in progress.");
             _petPulseThread.DoWork -= PetThread;
             _petPulseThread.Dispose();
+            EventsLuaWithArgs.OnEventsLuaWithArgs -= AutoShotEventHandler;
+            FightEvents.OnFightStart -= FightStartHandler;
+            FightEvents.OnFightEnd -= FightEndHandler;
+            FightEvents.OnFightLoop -= FightLoopHandler;
         }
 
         private void Rotation()
@@ -266,6 +182,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         protected virtual void CombatRotation()
         {
+            double lastAutoInMilliseconds = (DateTime.Now - lastAuto).TotalMilliseconds;
+
             WoWUnit Target = ObjectManager.Target;
 
             if (Target.GetDistance < 10f 
@@ -342,7 +260,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     return;
 
             // Feign Death
-            if (Me.HealthPercent < 20)
+            if (Me.HealthPercent < 20
+                || (ObjectManager.GetNumberAttackPlayer() > 0 && ObjectManager.GetUnitAttackPlayer().Count > 1))
                 if (Cast(FeignDeath))
                 {
                     Fight.StopFight();
@@ -363,12 +282,20 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 if (Cast(MendPet))
                     return;
 
-            // Frost Shock
+            // Concussive Shot
             if ((Target.CreatureTypeTarget == "Humanoid" || Target.Name.Contains("Plainstrider"))
                 && settings.UseConcussiveShot
                 && Target.HealthPercent < 20
                 && !Target.HaveBuff("Concussive Shot"))
                 if (Cast(ConcussiveShot))
+                    return;
+
+            // Wing Clip
+            if ((Target.CreatureTypeTarget == "Humanoid" || Target.Name.Contains("Plainstrider"))
+                && settings.UseConcussiveShot
+                && Target.HealthPercent < 20
+                && !Target.HaveBuff("Wing Clip"))
+                if (Cast(WingClip))
                     return;
 
             // Hunter's Mark
@@ -380,14 +307,16 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     return;
 
             // Steady Shot
-            if (SteadyShot.KnownSpell 
+            if (lastAutoInMilliseconds > 100
+                && lastAutoInMilliseconds < 500
+                && SteadyShot.KnownSpell 
                 && SteadyShot.IsSpellUsable 
                 && Me.ManaPercentage > 30 
                 && SteadyShot.IsDistanceGood 
                 && !_isBackingUp)
             {
                 SteadyShot.Launch();
-                Thread.Sleep(_steadyShotSleep);
+                Logger.Log(lastAutoInMilliseconds.ToString());
             }
 
             // Serpent Sting
@@ -413,6 +342,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             if (Target.GetDistance < 34f 
                 && Target.HealthPercent >= 30 
                 && Me.ManaPercentage > 80
+                && ArcaneShot.IsDistanceGood
                 && !SteadyShot.KnownSpell)
                 if (Cast(ArcaneShot))
                     return;
@@ -473,7 +403,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         protected bool Cast(Spell s)
         {
-            if (!s.KnownSpell)
+            if (!s.KnownSpell || !s.IsDistanceGood)
                 return false;
 
             CombatDebug("In cast for " + s.Name);
@@ -530,5 +460,108 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         protected Spell KillCommand = new Spell("Kill Command");
         protected Spell Disengage = new Spell("Disengage");
         protected Spell Attack = new Spell("Attack");
+
+        // EVENT HANDLERS
+        private void AutoShotEventHandler(LuaEventsId id, List<string> args)
+        {
+            if (id == LuaEventsId.COMBAT_LOG_EVENT && args[9] == "Auto Shot")
+            {
+                //Logger.Log("********** EVENT *************");
+                Logger.Log($"AUTO {args[11]}");
+                /*
+                for (int i = 0; i < args.Count; i++)
+                {
+                    Logger.Log($"{i} : {args[i]}");
+                }
+                */
+                lastAuto = DateTime.Now;
+            }
+        }
+
+        private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)
+        {
+            if (ObjectManager.Target.GetDistance >= 13f && !AutoShot.IsSpellUsable && !_isBackingUp)
+                _canOnlyMelee = true;
+            else
+                _canOnlyMelee = false;
+        }
+
+        private void FightLoopHandler(WoWUnit unit, CancelEventArgs cancelable)
+        {
+            // Do we need to backup?
+            if (ObjectManager.Target.GetDistance < 10f && ObjectManager.Target.IsTargetingMyPet
+                && !MovementManager.InMovement
+                && Me.IsAlive
+                && ObjectManager.Target.IsAlive
+                && !ObjectManager.Pet.HaveBuff("Pacifying Dust")
+                && !_canOnlyMelee
+                && !ObjectManager.Pet.IsStunned
+                && !_isBackingUp
+                && !Me.IsCast
+                && !Me.IsSwimming
+                && settings.BackupFromMelee)
+            {
+                // Stop trying if we reached the max amount of attempts
+                if (_backupAttempts >= settings.MaxBackupAttempts)
+                {
+                    Logger.Log($"Backup failed after {_backupAttempts} attempts. Going in melee");
+                    _canOnlyMelee = true;
+                    RangeManager.SetRangeToMelee();
+                    return;
+                }
+
+                _isBackingUp = true;
+
+                // Using CTM
+                if (settings.BackupUsingCTM)
+                {
+                    Vector3 position = ToolBox.BackofVector3(Me.Position, Me, 12f);
+                    MovementManager.Go(PathFinder.FindPath(position), false);
+                    Thread.Sleep(500);
+
+                    // Backup loop
+                    int limiter = 0;
+                    while (MovementManager.InMoveTo
+                    && Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
+                    && ObjectManager.Me.IsAlive
+                    && ObjectManager.Target.GetDistance < 10f
+                    && limiter < 10)
+                    {
+                        // Wait follow path
+                        Thread.Sleep(300);
+                        limiter++;
+                    }
+                }
+                // Using Keyboard
+                else
+                {
+                    int limiter = 0;
+                    while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
+                    && ObjectManager.Me.IsAlive
+                    && ObjectManager.Target.GetDistance < 10f
+                    && limiter <= 6)
+                    {
+                        Move.Backward(Move.MoveAction.PressKey, 500);
+                        limiter++;
+                    }
+                }
+
+                _backupAttempts++;
+                Logger.Log($"Backup attempt : {_backupAttempts}");
+                _isBackingUp = false;
+
+                if (RaptorStrikeOn())
+                    Cast(RaptorStrike);
+                ReenableAutoshot();
+            }
+        }
+
+        private void FightEndHandler(ulong guid)
+        {
+            _isBackingUp = false;
+            _backupAttempts = 0;
+            _autoshotRepeating = false;
+            _canOnlyMelee = false;
+        }
     }
 }

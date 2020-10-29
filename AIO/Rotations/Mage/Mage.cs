@@ -8,6 +8,7 @@ using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 using WholesomeTBCAIO.Settings;
 using WholesomeTBCAIO.Helpers;
+using System.ComponentModel;
 
 namespace WholesomeTBCAIO.Rotations.Mage
 {
@@ -40,153 +41,9 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             RangeManager.SetRange(_distanceRange);
 
-            // Fight end
-            FightEvents.OnFightEnd += (guid) =>
-            {
-                _isBackingUp = false;
-                _iCanUseWand = false;
-                _polymorphableEnemyInThisFight = false;
-                _isPolymorphing = false;
-                RangeManager.SetRange(_distanceRange);
-
-                if (!Fight.InFight
-                && Me.InCombatFlagOnly
-                && _polymorphedEnemy != null
-                && ObjectManager.GetNumberAttackPlayer() < 1
-                && _polymorphedEnemy.IsAlive)
-                {
-                    Logger.Log($"Starting fight with {_polymorphedEnemy.Name} (polymorphed)");
-                    Fight.InFight = false;
-                    Fight.CurrentTarget = _polymorphedEnemy;
-                    ulong _enemyGUID = _polymorphedEnemy.Guid;
-                    _polymorphedEnemy = null;
-                    Fight.StartFight(_enemyGUID);
-                }
-            };
-
-            // Fight start
-            FightEvents.OnFightStart += (unit, cancelable) =>
-            {
-                _iCanUseWand = ToolBox.HaveRangedWeaponEquipped();
-            };
-
-            // Fight Loop
-            FightEvents.OnFightLoop += (unit, cancelable) =>
-            {
-                // Do we need to backup?
-                if ((ObjectManager.Target.HaveBuff("Frostbite") || ObjectManager.Target.HaveBuff("Frost Nova"))
-                    && ObjectManager.Target.GetDistance < 10f
-                    && Me.IsAlive
-                    && ObjectManager.Target.IsAlive
-                    && !_isBackingUp
-                    && !Me.IsCast
-                    && !RangeManager.CurrentRangeIsMelee()
-                    && ObjectManager.Target.HealthPercent > 5
-                    && !_isPolymorphing)
-                {
-                    _isBackingUp = true;
-                    int limiter = 0;
-
-                    // Using CTM
-                    if (settings.BackupUsingCTM)
-                    {
-                        Vector3 position = ToolBox.BackofVector3(Me.Position, Me, 15f);
-                        MovementManager.Go(PathFinder.FindPath(position), false);
-                        Thread.Sleep(500);
-
-                        // Backup loop
-                        while (MovementManager.InMoveTo
-                            && Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                            && ObjectManager.Target.GetDistance < 15f
-                            && ObjectManager.Me.IsAlive
-                            && ObjectManager.Target.IsAlive
-                            && (ObjectManager.Target.HaveBuff("Frostbite") || ObjectManager.Target.HaveBuff("Frost Nova"))
-                            && limiter < 10)
-                        {
-                            // Wait follow path
-                            Thread.Sleep(300);
-                            limiter++;
-                            if (settings.BlinkWhenBackup)
-                                Cast(Blink);
-                        }
-                        MovementManager.StopMove();
-                        Thread.Sleep(500);
-                    }
-                    // Using Keyboard
-                    else
-                    {
-                        while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                        && ObjectManager.Me.IsAlive
-                        && ObjectManager.Target.IsAlive
-                        && ObjectManager.Target.GetDistance < 15f
-                        && limiter <= 6)
-                        {
-                            Move.Backward(Move.MoveAction.PressKey, 700);
-                            limiter++;
-                        }
-                    }
-                    _isBackingUp = false;
-                }
-
-                // Polymorph
-                if (settings.UsePolymorph
-                    && ObjectManager.GetNumberAttackPlayer() > 1
-                    && Polymorph.KnownSpell
-                    && !_isBackingUp
-                    && _polymorphableEnemyInThisFight)
-                {
-                    WoWUnit myNearbyPolymorphed = null;
-                    // Detect if a polymorph cast has succeeded
-                    if (_polymorphedEnemy != null)
-                        myNearbyPolymorphed = ObjectManager.GetObjectWoWUnit().Find(u => u.HaveBuff("Polymorph") && u.Guid == _polymorphedEnemy.Guid);
-
-                    // If we don't have a polymorphed enemy
-                    if (myNearbyPolymorphed == null)
-                    {
-                        _polymorphedEnemy = null;
-                        _isPolymorphing = true;
-                        WoWUnit firstTarget = ObjectManager.Target;
-                        WoWUnit potentialPolymorphTarget = null;
-
-                        // Select our attackers one by one for potential polymorphs
-                        foreach (WoWUnit enemy in ObjectManager.GetUnitAttackPlayer())
-                        {
-                            Interact.InteractGameObject(enemy.GetBaseAddress);
-
-                            if ((enemy.CreatureTypeTarget == "Beast" || enemy.CreatureTypeTarget == "Humanoid")
-                            && enemy.Guid != firstTarget.Guid)
-                            {
-                                potentialPolymorphTarget = enemy;
-                                break;
-                            }
-                        }
-
-                        if (potentialPolymorphTarget == null)
-                            _polymorphableEnemyInThisFight = false;
-
-                        // Polymorph cast
-                        if (potentialPolymorphTarget != null && _polymorphedEnemy == null)
-                        {
-                            Interact.InteractGameObject(potentialPolymorphTarget.GetBaseAddress);
-                            while (!Cast(Polymorph)
-                       && ObjectManager.Target.IsAlive
-                       && ObjectManager.Me.IsAlive
-                       && Main.isLaunched
-                       && !Products.InPause)
-                            {
-                                Thread.Sleep(200);
-                            }
-                            _polymorphedEnemy = potentialPolymorphTarget;
-                            Usefuls.WaitIsCasting();
-                            Thread.Sleep(500);
-                        }
-
-                        // Get back to actual target
-                        Interact.InteractGameObject(firstTarget.GetBaseAddress);
-                        _isPolymorphing = false;
-                    }
-                }
-            };
+            FightEvents.OnFightEnd += FightEndHandler;
+            FightEvents.OnFightStart += FightStartHandler;
+            FightEvents.OnFightLoop += FightLoopHandler;
 
             Rotation();
         }
@@ -194,6 +51,9 @@ namespace WholesomeTBCAIO.Rotations.Mage
         public void Dispose()
         {
             _isBackingUp = false;
+            FightEvents.OnFightEnd -= FightEndHandler;
+            FightEvents.OnFightStart -= FightStartHandler;
+            FightEvents.OnFightLoop -= FightLoopHandler;
             Logger.Log("Stopped in progress.");
         }
 
@@ -394,5 +254,151 @@ namespace WholesomeTBCAIO.Rotations.Mage
         protected Spell BlastWave = new Spell("Blast Wave");
         protected Spell Attack = new Spell("Attack");
         protected Spell DampenMagic = new Spell("Dampen Magic");
+
+        // EVENT HANDLERS
+        private void FightEndHandler(ulong guid)
+        {
+            _isBackingUp = false;
+            _iCanUseWand = false;
+            _polymorphableEnemyInThisFight = false;
+            _isPolymorphing = false;
+            RangeManager.SetRange(_distanceRange);
+
+            if (!Fight.InFight
+            && Me.InCombatFlagOnly
+            && _polymorphedEnemy != null
+            && ObjectManager.GetNumberAttackPlayer() < 1
+            && _polymorphedEnemy.IsAlive)
+            {
+                Logger.Log($"Starting fight with {_polymorphedEnemy.Name} (polymorphed)");
+                Fight.InFight = false;
+                Fight.CurrentTarget = _polymorphedEnemy;
+                ulong _enemyGUID = _polymorphedEnemy.Guid;
+                _polymorphedEnemy = null;
+                Fight.StartFight(_enemyGUID);
+            }
+        }
+
+        private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)
+        {
+            _iCanUseWand = ToolBox.HaveRangedWeaponEquipped();
+        }
+
+        private void FightLoopHandler(WoWUnit unit, CancelEventArgs cancelable)
+        {
+            // Do we need to backup?
+            if ((ObjectManager.Target.HaveBuff("Frostbite") || ObjectManager.Target.HaveBuff("Frost Nova"))
+                && ObjectManager.Target.GetDistance < 10f
+                && Me.IsAlive
+                && ObjectManager.Target.IsAlive
+                && !_isBackingUp
+                && !Me.IsCast
+                && !RangeManager.CurrentRangeIsMelee()
+                && ObjectManager.Target.HealthPercent > 5
+                && !_isPolymorphing)
+            {
+                _isBackingUp = true;
+                int limiter = 0;
+
+                // Using CTM
+                if (settings.BackupUsingCTM)
+                {
+                    Vector3 position = ToolBox.BackofVector3(Me.Position, Me, 15f);
+                    MovementManager.Go(PathFinder.FindPath(position), false);
+                    Thread.Sleep(500);
+
+                    // Backup loop
+                    while (MovementManager.InMoveTo
+                        && Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
+                        && ObjectManager.Target.GetDistance < 15f
+                        && ObjectManager.Me.IsAlive
+                        && ObjectManager.Target.IsAlive
+                        && (ObjectManager.Target.HaveBuff("Frostbite") || ObjectManager.Target.HaveBuff("Frost Nova"))
+                        && limiter < 10)
+                    {
+                        // Wait follow path
+                        Thread.Sleep(300);
+                        limiter++;
+                        if (settings.BlinkWhenBackup)
+                            Cast(Blink);
+                    }
+                    MovementManager.StopMove();
+                    Thread.Sleep(500);
+                }
+                // Using Keyboard
+                else
+                {
+                    while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
+                    && ObjectManager.Me.IsAlive
+                    && ObjectManager.Target.IsAlive
+                    && ObjectManager.Target.GetDistance < 15f
+                    && limiter <= 6)
+                    {
+                        Move.Backward(Move.MoveAction.PressKey, 700);
+                        limiter++;
+                    }
+                }
+                _isBackingUp = false;
+            }
+
+            // Polymorph
+            if (settings.UsePolymorph
+                && ObjectManager.GetNumberAttackPlayer() > 1
+                && Polymorph.KnownSpell
+                && !_isBackingUp
+                && _polymorphableEnemyInThisFight)
+            {
+                WoWUnit myNearbyPolymorphed = null;
+                // Detect if a polymorph cast has succeeded
+                if (_polymorphedEnemy != null)
+                    myNearbyPolymorphed = ObjectManager.GetObjectWoWUnit().Find(u => u.HaveBuff("Polymorph") && u.Guid == _polymorphedEnemy.Guid);
+
+                // If we don't have a polymorphed enemy
+                if (myNearbyPolymorphed == null)
+                {
+                    _polymorphedEnemy = null;
+                    _isPolymorphing = true;
+                    WoWUnit firstTarget = ObjectManager.Target;
+                    WoWUnit potentialPolymorphTarget = null;
+
+                    // Select our attackers one by one for potential polymorphs
+                    foreach (WoWUnit enemy in ObjectManager.GetUnitAttackPlayer())
+                    {
+                        Interact.InteractGameObject(enemy.GetBaseAddress);
+
+                        if ((enemy.CreatureTypeTarget == "Beast" || enemy.CreatureTypeTarget == "Humanoid")
+                        && enemy.Guid != firstTarget.Guid)
+                        {
+                            potentialPolymorphTarget = enemy;
+                            break;
+                        }
+                    }
+
+                    if (potentialPolymorphTarget == null)
+                        _polymorphableEnemyInThisFight = false;
+
+                    // Polymorph cast
+                    if (potentialPolymorphTarget != null && _polymorphedEnemy == null)
+                    {
+                        Interact.InteractGameObject(potentialPolymorphTarget.GetBaseAddress);
+                        while (!Cast(Polymorph)
+                   && ObjectManager.Target.IsAlive
+                   && ObjectManager.Me.IsAlive
+                   && Main.isLaunched
+                   && !Products.InPause)
+                        {
+                            Thread.Sleep(200);
+                        }
+                        _polymorphedEnemy = potentialPolymorphTarget;
+                        Usefuls.WaitIsCasting();
+                        Thread.Sleep(500);
+                    }
+
+                    // Get back to actual target
+                    Interact.InteractGameObject(firstTarget.GetBaseAddress);
+                    _isPolymorphing = false;
+                }
+            }
+        }
     }
 }

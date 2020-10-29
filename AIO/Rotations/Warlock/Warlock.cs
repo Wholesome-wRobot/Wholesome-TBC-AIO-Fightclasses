@@ -46,42 +46,21 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             else
                 Lua.LuaDoString("PetDefensiveMode();");
 
-            // Fight end
-            FightEvents.OnFightEnd += (guid) =>
-            {
-                _iCanUseWand = false;
-                RangeManager.SetRange(_maxRange);
-                _addCheckTimer.Reset();
-                if (settings.PetInPassiveWhenOOC)
-                    Lua.LuaDoString("PetPassiveMode();");
-            };
-
-            // Fight start
-            FightEvents.OnFightStart += (unit, cancelable) =>
-            {
-                if (UseWand.IsSpellUsable)
-                    _iCanUseWand = true;
-                Lua.LuaDoString("PetDefensiveMode();");
-
-                // Imp Firebolt
-                if (WarlockPetAndConsumables.MyWarlockPet().Equals("Imp"))
-                    ToolBox.TogglePetSpellAuto("Firebolt", true);
-
-                // Imp BloodPact
-                if (WarlockPetAndConsumables.MyWarlockPet().Equals("Imp"))
-                    ToolBox.TogglePetSpellAuto("Blood Pact", true);
-            };
+            FightEvents.OnFightEnd += FightEndHandler;
+            FightEvents.OnFightStart += FightStartHandler;
 
             Rotation();
         }
 
         public void Dispose()
         {
-            Logger.Log("Stop in progress.");
             _petPulseThread.DoWork -= PetThread;
             _petPulseThread.Dispose();
             Lua.LuaDoString("PetPassiveMode();");
+            FightEvents.OnFightEnd -= FightEndHandler;
+            FightEvents.OnFightStart -= FightStartHandler;
             wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
+            Logger.Log("Stop in progress.");
         }
 
         // Pet thread
@@ -370,6 +349,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             // Immolate
             if (ObjectManager.Target.GetDistance < _maxRange + 2
                 && !ObjectManager.Target.HaveBuff("Immolate")
+                && !ObjectManager.Target.HaveBuff("Fire Ward")
                 && !Corruption.KnownSpell
                 && ToolBox.CanBleed(ObjectManager.Target))
                 if (Cast(Immolate))
@@ -408,6 +388,13 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                     if (Cast(DrainSoul))
                         return;
                 }
+
+            // How of Terror
+            if (HowlOfTerror.KnownSpell
+                && HowlOfTerror.IsSpellUsable
+                && ToolBox.GetNumberEnemiesAround(10f, Me) > 1)
+                if (Cast(HowlOfTerror))
+                    return;
 
             // Use Health Stone
             if (Me.HealthPercent < 15)
@@ -465,6 +452,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             // Immolate
             if (ObjectManager.Target.GetDistance < _maxRange
                 && !Target.HaveBuff("Immolate")
+                && !ObjectManager.Target.HaveBuff("Fire Ward")
                 && _overLowManaThreshold
                 && Target.HealthPercent > 30
                 && (settings.UseImmolateHighLevel || !UnstableAffliction.KnownSpell)
@@ -504,7 +492,8 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                     return;
 
             // Incinerate
-            if (ObjectManager.Target.GetDistance < _maxRange && Target.HaveBuff("Immolate")
+            if (ObjectManager.Target.GetDistance < _maxRange 
+                && Target.HaveBuff("Immolate")
                 && _overLowManaThreshold
                 && Target.HealthPercent > 30
                 && settings.UseIncinerate)
@@ -578,6 +567,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         protected Spell SoulShatter = new Spell("Soulshatter");
         protected Spell FelDomination = new Spell("Fel Domination");
         protected Spell SoulLink = new Spell("Soul Link");
+        protected Spell HowlOfTerror = new Spell("Howl of Terror");
 
         protected bool Cast(Spell s, bool castEvenIfWanding = true)
         {
@@ -660,6 +650,31 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         {
             if (settings.ActivateCombatDebug)
                 Logger.CombatDebug(s);
+        }
+
+        // EVENT HANDLERS
+        private void FightEndHandler(ulong guid)
+        {
+            _iCanUseWand = false;
+            RangeManager.SetRange(_maxRange);
+            _addCheckTimer.Reset();
+            if (settings.PetInPassiveWhenOOC)
+                Lua.LuaDoString("PetPassiveMode();");
+        }
+
+        private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)
+        {
+            if (UseWand.IsSpellUsable)
+                _iCanUseWand = true;
+            Lua.LuaDoString("PetDefensiveMode();");
+
+            // Imp Firebolt
+            if (WarlockPetAndConsumables.MyWarlockPet().Equals("Imp"))
+                ToolBox.TogglePetSpellAuto("Firebolt", true);
+
+            // Imp BloodPact
+            if (WarlockPetAndConsumables.MyWarlockPet().Equals("Imp"))
+                ToolBox.TogglePetSpellAuto("Blood Pact", true);
         }
     }
 }

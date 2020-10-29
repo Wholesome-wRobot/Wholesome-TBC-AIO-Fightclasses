@@ -199,6 +199,28 @@ namespace WholesomeTBCAIO.Helpers
 
         #region Misc
 
+        public static int GetNumberEnemiesAround(float distance, WoWUnit unit)
+        {
+            List<WoWUnit> surroundingEnemies = ObjectManager.GetObjectWoWUnit();
+
+            int result = 0;
+
+            foreach (WoWUnit unitAround in surroundingEnemies)
+            {
+                if (unitAround.IsAlive 
+                    && !unitAround.IsTapDenied 
+                    && unitAround.IsValid 
+                    && !unitAround.IsTaggedByOther 
+                    && unitAround.IsAttackable 
+                    && unitAround.Position.DistanceTo(unit.Position) < distance
+                    && unitAround.Guid != ObjectManager.Target.Guid)
+                {
+                    result++;
+                }
+            }
+            return result;
+        }
+
         // Returns whether units, hostile or not, are close to the player. Distance must be passed as argument
         public static bool CheckIfEnemiesClose(float distance)
         {
@@ -227,7 +249,7 @@ namespace WholesomeTBCAIO.Helpers
         }
 
         // Returns whether hostile units are close to the target. Target and distance must be passed as argument
-        public static bool CheckIfEnemiesOnPull(WoWUnit target, float distance)
+        public static bool CheckIfEnemiesAround(WoWUnit target, float distance)
         {
             List<WoWUnit> surroundingEnemies = ObjectManager.GetObjectWoWUnit();
             WoWUnit closestUnit = null;

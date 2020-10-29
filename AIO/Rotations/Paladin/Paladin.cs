@@ -34,12 +34,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             _manaSavePercent = System.Math.Max(20, settings.ManaSaveLimitPercent);
 
-            // Fight end
-            FightEvents.OnFightEnd += (guid) =>
-            {
-                _purifyTimer.Reset();
-                _cleanseTimer.Reset();
-            };
+            FightEvents.OnFightEnd += FightEndHandler;
 
             Rotation();
         }
@@ -47,6 +42,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
         public void Dispose()
         {
+            FightEvents.OnFightEnd -= FightEndHandler;
             Logger.Log("Stop in progress.");
         }
 
@@ -379,6 +375,13 @@ namespace WholesomeTBCAIO.Rotations.Paladin
         protected Spell Attack = new Spell("Attack");
         protected Spell CrusaderAura = new Spell("Crusader Aura");
         protected Spell AvengingWrath = new Spell("Avenging Wrath");
+
+        // EVENT HANDLERS
+        private void FightEndHandler(ulong guid)
+        {
+            _purifyTimer.Reset();
+            _cleanseTimer.Reset();
+        }
 
         protected bool Cast(Spell s)
         {

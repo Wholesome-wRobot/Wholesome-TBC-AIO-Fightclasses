@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Threading;
 using robotManager.Helpful;
-using robotManager.Products;
 using wManager.Events;
 using wManager.Wow.Class;
 using wManager.Wow.Helpers;
@@ -10,6 +9,9 @@ using wManager.Wow.ObjectManager;
 using System.Collections.Generic;
 using WholesomeTBCAIO.Settings;
 using WholesomeTBCAIO.Helpers;
+using System.ComponentModel;
+using robotManager.FiniteStateMachine;
+using robotManager.Events;
 
 namespace WholesomeTBCAIO.Rotations.Shaman
 {
@@ -44,32 +46,10 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             _ghostWolfTimer.Start();
             RangeManager.SetRange(_pullRange);
 
-            FightEvents.OnFightEnd += (guid) =>
-            {
-                _ghostWolfTimer.Restart();
-                _fightingACaster = false;
-                _meleeTimer.Reset();
-                _pullMeleeTimer.Reset();
-                _pullAttempt = 0;
-            };
-
-            FightEvents.OnFightStart += (unit, cancelable) =>
-            {
-                _ghostWolfTimer.Reset();
-                RangeManager.SetRange(_pullRange);
-            };
-
-            robotManager.Events.FiniteStateMachineEvents.OnRunState += (engine, state, cancelable) =>
-            {
-                if (state.DisplayName == "Regeneration")
-                    _ghostWolfTimer.Reset();
-            };
-
-            robotManager.Events.FiniteStateMachineEvents.OnAfterRunState += (engine, state) =>
-            {
-                if (state.DisplayName == "Regeneration")
-                    _ghostWolfTimer.Restart();
-            };
+            FightEvents.OnFightEnd += FightEndHandler;
+            FightEvents.OnFightStart += FightStartHandler;
+            FiniteStateMachineEvents.OnRunState += RunStateHandler;
+            FiniteStateMachineEvents.OnAfterRunState += AfterRunStateHandler;
 
             Rotation();
         }
@@ -77,6 +57,10 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
         public void Dispose()
         {
+            FightEvents.OnFightEnd -= FightEndHandler;
+            FightEvents.OnFightStart -= FightStartHandler;
+            FiniteStateMachineEvents.OnRunState -= RunStateHandler;
+            FiniteStateMachineEvents.OnAfterRunState -= AfterRunStateHandler;
             Logger.Log("Stop in progress.");
         }
 
@@ -338,5 +322,33 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
         protected bool HaveOffHandWheapon => Lua.LuaDoString<bool>(@"local hasWeapon = OffhandHasWeapon()
                 return hasWeapon");
+
+        // EVENT HANDLERS
+        private void FightEndHandler(ulong guid)
+        {
+            _ghostWolfTimer.Restart();
+            _fightingACaster = false;
+            _meleeTimer.Reset();
+            _pullMeleeTimer.Reset();
+            _pullAttempt = 0;
+        }
+
+        private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)
+        {
+            _ghostWolfTimer.Reset();
+            RangeManager.SetRange(_pullRange);
+        }
+
+        private void RunStateHandler(Engine engine, State state, CancelEventArgs cancelable)
+        {
+            if (state.DisplayName == "Regeneration")
+                _ghostWolfTimer.Reset();
+        }
+
+        private void AfterRunStateHandler(Engine engine, State state)
+        {
+            if (state.DisplayName == "Regeneration")
+                _ghostWolfTimer.Restart();
+        }
     }
 }

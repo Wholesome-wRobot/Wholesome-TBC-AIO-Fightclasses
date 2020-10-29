@@ -19,7 +19,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
 
             // Check if surrounding enemies
             if (ObjectManager.Target.GetDistance < _pullRange && !_pullFromAfar)
-                _pullFromAfar = ToolBox.CheckIfEnemiesOnPull(ObjectManager.Target, _pullRange);
+                _pullFromAfar = ToolBox.CheckIfEnemiesAround(ObjectManager.Target, _pullRange);
 
             // Check stance
             if (!InBattleStance()

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading;
 using robotManager.Helpful;
@@ -37,20 +38,8 @@ namespace WholesomeTBCAIO.Rotations.Priest
             _wandThreshold = settings.WandThreshold > 100 ? 50 : settings.WandThreshold;
             RangeManager.SetRange(_distaneRange);
 
-            // Fight end
-            FightEvents.OnFightEnd += (guid) =>
-            {
-                _goInMFRange = false;
-                _dispelTimer.Reset();
-                _iCanUseWand = false;
-                RangeManager.SetRange(_distaneRange);
-            };
-
-            // Fight start
-            FightEvents.OnFightStart += (unit, cancelable) =>
-            {
-                _iCanUseWand = ToolBox.HaveRangedWeaponEquipped();
-            };
+            FightEvents.OnFightEnd += FightEndHandler;
+            FightEvents.OnFightStart += FightStartHandler;
 
             Rotation();
         }
@@ -58,6 +47,8 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
         public void Dispose()
         {
+            FightEvents.OnFightEnd -= FightEndHandler;
+            FightEvents.OnFightStart -= FightStartHandler;
             Logger.Log("Stop in progress.");
         }
 
@@ -524,6 +515,20 @@ namespace WholesomeTBCAIO.Rotations.Priest
         {
             if (settings.ActivateCombatDebug)
                 Logger.CombatDebug(s);
+        }
+
+        // EVENT HANDLERS
+        private void FightEndHandler(ulong guid)
+        {
+            _goInMFRange = false;
+            _dispelTimer.Reset();
+            _iCanUseWand = false;
+            RangeManager.SetRange(_distaneRange);
+        }
+
+        private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)
+        {
+            _iCanUseWand = ToolBox.HaveRangedWeaponEquipped();
         }
     }
 }

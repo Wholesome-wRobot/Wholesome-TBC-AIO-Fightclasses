@@ -9,7 +9,6 @@ namespace WholesomeTBCAIO.Settings
     {
         public HunterSettings()
         {
-            RangedWeaponSpeed = 2500;
             BackupFromMelee = true;
             MaxBackupAttempts = 3;
             BackupUsingCTM = false;
@@ -27,12 +26,6 @@ namespace WholesomeTBCAIO.Settings
         }
 
         // COMMON
-        [Category("Common")]
-        [DefaultValue(2500)]
-        [DisplayName("Weapon speed")]
-        [Description("Ranged weapon speed in milliseconds (used to delay Steady shot)")]
-        public int RangedWeaponSpeed { get; set; }
-
         [Category("Common")]
         [DefaultValue(true)]
         [DisplayName("Backup from melee")]
