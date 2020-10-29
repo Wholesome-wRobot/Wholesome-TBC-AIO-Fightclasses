@@ -160,10 +160,9 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         {
             // Aspect of the Cheetah
             if (!Me.IsMounted 
-                && !Fight.InFight
                 && !Me.HaveBuff("Aspect of the Cheetah")
                 && MovementManager.InMoveTo
-                && Me.ManaPercentage > 60f
+                && Me.ManaPercentage > 60
                 && settings.UseAspectOfTheCheetah)
                 if (Cast(AspectCheetah))
                     return;
@@ -285,6 +284,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             // Concussive Shot
             if ((Target.CreatureTypeTarget == "Humanoid" || Target.Name.Contains("Plainstrider"))
                 && settings.UseConcussiveShot
+                && ConcussiveShot.IsDistanceGood
                 && Target.HealthPercent < 20
                 && !Target.HaveBuff("Concussive Shot"))
                 if (Cast(ConcussiveShot))
@@ -293,6 +293,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             // Wing Clip
             if ((Target.CreatureTypeTarget == "Humanoid" || Target.Name.Contains("Plainstrider"))
                 && settings.UseConcussiveShot
+                && WingClip.IsDistanceGood
                 && Target.HealthPercent < 20
                 && !Target.HaveBuff("Wing Clip"))
                 if (Cast(WingClip))
@@ -403,7 +404,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         protected bool Cast(Spell s)
         {
-            if (!s.KnownSpell || !s.IsDistanceGood)
+            if (!s.KnownSpell)
                 return false;
 
             CombatDebug("In cast for " + s.Name);
