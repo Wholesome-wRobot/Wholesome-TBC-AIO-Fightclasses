@@ -468,7 +468,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             if (id == LuaEventsId.COMBAT_LOG_EVENT && args[9] == "Auto Shot")
             {
                 //Logger.Log("********** EVENT *************");
-                Logger.Log($"AUTO {args[11]}");
+                //Logger.Log($"AUTO {args[11]}");
                 /*
                 for (int i = 0; i < args.Count; i++)
                 {
