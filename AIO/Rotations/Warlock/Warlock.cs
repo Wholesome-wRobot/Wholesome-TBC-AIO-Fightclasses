@@ -244,12 +244,8 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && UnendingBreath.IsSpellUsable
                 && settings.UseUnendingBreath)
             {
-                Lua.RunMacroText("/target player");
-                if (Cast(UnendingBreath))
-                {
-                    Lua.RunMacroText("/cleartarget");
+                if (CastOnSelf(UnendingBreath))
                     return;
-                }
             }
 
             // Demon Skin
@@ -574,12 +570,17 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             return AdvancedCast(s, castEvenIfWanding);
         }
 
+        protected bool CastOnSelf(Spell s, bool castEvenIfWanding = true, bool stopMove = false)
+        {
+            return AdvancedCast(s, castEvenIfWanding, stopMove, true);
+        }
+
         protected bool CastStopMove(Spell s, bool castEvenIfWanding = true)
         {
             return AdvancedCast(s, castEvenIfWanding, true);
         }
 
-        protected bool AdvancedCast(Spell s, bool castEvenIfWanding = true, bool stopmove = false)
+        protected bool AdvancedCast(Spell s, bool castEvenIfWanding = true, bool stopmove = false, bool onSelf = false)
         {
             if (!s.KnownSpell)
                 return false;

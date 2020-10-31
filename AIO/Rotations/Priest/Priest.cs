@@ -116,23 +116,15 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 // OOC Power Word Fortitude
                 if (!Me.HaveBuff("Power Word: Fortitude") && PowerWordFortitude.KnownSpell && PowerWordFortitude.IsSpellUsable)
                 {
-                    Lua.RunMacroText("/target player");
-                    if (Cast(PowerWordFortitude))
-                    {
-                        Lua.RunMacroText("/cleartarget");
+                    if (Cast(PowerWordFortitude, false, true))
                         return;
-                    }
                 }
 
                 // OOC Divine Spirit
                 if (!Me.HaveBuff("Divine Spirit") && DivineSpirit.KnownSpell && DivineSpirit.IsSpellUsable)
                 {
-                    Lua.RunMacroText("/target player");
-                    if (Cast(DivineSpirit))
-                    {
-                        Lua.RunMacroText("/cleartarget");
+                    if (Cast(DivineSpirit, false, true))
                         return;
-                    }
                 }
 
                 // OOC Inner Fire
@@ -143,24 +135,16 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 // OOC Shadowguard
                 if (!Me.HaveBuff("Shadowguard") && settings.UseShadowGuard && Shadowguard.KnownSpell && Shadowguard.IsSpellUsable)
                 {
-                    Lua.RunMacroText("/target player");
-                    if (Cast(Shadowguard))
-                    {
-                        Lua.RunMacroText("/cleartarget");
+                    if (Cast(Shadowguard, false, true))
                         return;
-                    }
                 }
 
                 // OOC Shadow Protection
                 if (!Me.HaveBuff("Shadow Protection") && ShadowProtection.KnownSpell && settings.UseShadowProtection
                     && ShadowProtection.KnownSpell && ShadowProtection.IsSpellUsable)
                 {
-                    Lua.RunMacroText("/target player");
-                    if (Cast(ShadowProtection))
-                    {
-                        Lua.RunMacroText("/cleartarget");
+                    if (Cast(ShadowProtection, false, true))
                         return;
-                    }
                 }
 
                 // OOC ShadowForm
@@ -285,14 +269,9 @@ namespace WholesomeTBCAIO.Rotations.Priest
             if (_hasMagicDebuff && _myManaPC > 10 && DispelMagic.KnownSpell && DispelMagic.IsSpellUsable
                 && (_dispelTimer.ElapsedMilliseconds > 10000 || _dispelTimer.ElapsedMilliseconds <= 0))
             {
-                if (ToolBox.UsingWand())
-                    ToolBox.StopWandWaitGCD(UseWand, Smite);
                 Thread.Sleep(Main.humanReflexTime);
-                Lua.RunMacroText("/target player");
-                Lua.RunMacroText("/cast Dispel Magic");
-                _dispelTimer.Restart();
-                ToolBox.WaitGlobalCoolDown(Smite);
-                return;
+                if (Cast(DispelMagic, true, true))
+                    return;
             }
 
             // Vampiric Touch
@@ -443,7 +422,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
         protected Spell DivineSpirit = new Spell("Divine Spirit");
         protected Spell DevouringPlague = new Spell("Devouring Plague");
 
-        protected bool Cast(Spell s, bool castEvenIfWanding = true)
+        protected bool Cast(Spell s, bool castEvenIfWanding = true, bool onSelf = false)
         {
             if (!s.KnownSpell)
                 return false;
@@ -505,7 +484,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             CombatDebug("Launching");
             if (ObjectManager.Target.IsAlive || !Fight.InFight && ObjectManager.Target.Guid < 1)
             {
-                s.Launch();
+                s.Launch(false, false, true, onSelf);
                 Usefuls.WaitIsCasting();
             }
             return true;

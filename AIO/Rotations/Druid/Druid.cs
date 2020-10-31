@@ -113,13 +113,9 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     && RemoveCurse.KnownSpell
                     && RemoveCurse.IsSpellUsable)
                 {
-                    Lua.RunMacroText("/target player");
                     Thread.Sleep(200);
-                    if (Cast(RemoveCurse))
-                    {
-                        Lua.RunMacroText("/cleartarget");
+                    if (Cast(RemoveCurse, true))
                         return;
-                    }
                 }
 
                 // Abolish Poison
@@ -127,13 +123,9 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     && RemoveCurse.KnownSpell
                     && RemoveCurse.IsSpellUsable)
                 {
-                    Lua.RunMacroText("/target player");
                     Thread.Sleep(200);
-                    if (Cast(AbolishPoison))
-                    {
-                        Lua.RunMacroText("/cleartarget");
+                    if (Cast(AbolishPoison, true))
                         return;
-                    }
                 }
 
                 // Mark of the Wild
@@ -141,11 +133,9 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     && MarkOfTheWild.KnownSpell
                     && MarkOfTheWild.IsSpellUsable)
                 {
-                    Lua.RunMacroText("/target player");
                     Thread.Sleep(200);
-                    if (Cast(MarkOfTheWild))
-                        Lua.RunMacroText("/cleartarget");
-                    return;
+                    if (Cast(MarkOfTheWild, true))
+                        return;
                 }
 
                 // Thorns
@@ -153,11 +143,9 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     && Thorns.KnownSpell
                     && Thorns.IsSpellUsable)
                 {
-                    Lua.RunMacroText("/target player");
                     Thread.Sleep(200);
-                    if (Cast(Thorns))
-                        Lua.RunMacroText("/cleartarget");
-                    return;
+                    if (Cast(Thorns, true))
+                        return;
                 }
 
                 // Omen of Clarity
@@ -684,7 +672,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             return false;
         }
 
-        protected bool Cast(Spell s)
+        protected bool Cast(Spell s, bool onSelf = false)
         {
             if (!s.KnownSpell)
                 return false;
@@ -736,7 +724,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
             CombatDebug("Launching");
             if (ObjectManager.Target.IsAlive || !Fight.InFight && ObjectManager.Target.Guid < 1)
-                s.Launch();
+                s.Launch(false, false, true, onSelf);
             return true;
         }
 

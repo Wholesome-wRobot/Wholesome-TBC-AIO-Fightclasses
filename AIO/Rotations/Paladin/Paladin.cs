@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Threading;
 using robotManager.Helpful;
-using robotManager.Products;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
 using wManager.Events;
@@ -82,22 +81,14 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // Holy Light
             if (Me.HealthPercent < settings.OOCHolyLightThreshold
                 && HolyLight.IsSpellUsable)
-            {
-                Lua.RunMacroText("/target player");
-                Cast(HolyLight);
-                Lua.RunMacroText("/cleartarget");
-                return;
-            }
+                if (Cast(HolyLight, true))
+                    return;
 
             // Flash of Light
             if (FlashOfLight.IsSpellUsable
                 && Me.HealthPercent < settings.OOCFlashHealThreshold)
-            {
-                Lua.RunMacroText("/target player");
-                Cast(FlashOfLight);
-                Lua.RunMacroText("/cleartarget");
-                return;
-            }
+                if (Cast(FlashOfLight, true))
+                    return;
 
             // Sanctity Aura
             if (!Me.HaveBuff("Sanctity Aura")
@@ -115,24 +106,16 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if (settings.UseBlessingOfWisdom 
                 && !Me.HaveBuff("Blessing of Wisdom")
                 && BlessingOfWisdom.IsSpellUsable)
-            {
-                Lua.RunMacroText("/target player");
-                Cast(BlessingOfWisdom);
-                Lua.RunMacroText("/cleartarget");
-                return;
-            }
+                if (Cast(BlessingOfWisdom, true))
+                    return;
 
             // Blessing of Might
             if (!settings.UseBlessingOfWisdom 
                 && !Me.HaveBuff("Blessing of Might")
                 && !Me.IsMounted 
                 && BlessingOfMight.IsSpellUsable)
-            {
-                Lua.RunMacroText("/target player");
-                Cast(BlessingOfMight);
-                Lua.RunMacroText("/cleartarget");
-                return;
-            }
+                if (Cast(BlessingOfMight, true))
+                    return;
         }
 
         protected virtual void PullRotation()
@@ -333,9 +316,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             {
                 _purifyTimer.Restart();
                 Thread.Sleep(Main.humanReflexTime);
-                Lua.RunMacroText("/target player");
-                Cast(Purify);
-                Lua.RunMacroText("/cleartarget");
+                Cast(Purify, true);
                 return;
             }
 
@@ -345,9 +326,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             {
                 _cleanseTimer.Restart();
                 Thread.Sleep(Main.humanReflexTime);
-                Lua.RunMacroText("/target player");
-                Cast(Cleanse);
-                Lua.RunMacroText("/cleartarget");
+                Cast(Cleanse, true);
                 return;
             }
         }
@@ -383,13 +362,13 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             _cleanseTimer.Reset();
         }
 
-        protected bool Cast(Spell s)
+        protected bool Cast(Spell s, bool onSelf = false)
         {
             CombatDebug("In cast for " + s.Name);
             if (!s.IsSpellUsable || !s.KnownSpell)
                 return false;
                 
-            s.Launch();
+            s.Launch(false, false, true, onSelf);
             return true;
         }
 

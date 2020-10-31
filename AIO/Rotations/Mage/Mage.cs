@@ -103,12 +103,8 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 && ArcaneIntellect.KnownSpell 
                 && ArcaneIntellect.IsSpellUsable)
             {
-                Lua.RunMacroText("/target player");
-                if (Cast(ArcaneIntellect))
-                {
-                    Lua.RunMacroText("/cleartarget");
+                if (CastOnSelf(ArcaneIntellect))
                     return;
-                }
             }
 
             // Dampen Magic
@@ -117,12 +113,8 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 && DampenMagic.KnownSpell
                 && DampenMagic.IsSpellUsable)
             {
-                Lua.RunMacroText("/target player");
-                if (Cast(DampenMagic))
-                {
-                    Lua.RunMacroText("/cleartarget");
+                if (CastOnSelf(DampenMagic))
                     return;
-                }
             }
 
             // Evocation
@@ -144,13 +136,18 @@ namespace WholesomeTBCAIO.Rotations.Mage
                     return;
         }
 
+        protected bool CastOnSelf(Spell s, bool castEvenIfWanding = false)
+        {
+            return Cast(s, castEvenIfWanding, true);
+        }
+
         protected bool CastStopMove(Spell s, bool castEvenIfWanding = true)
         {
             MovementManager.StopMove();
             return Cast(s, castEvenIfWanding);
         }
 
-        protected bool Cast(Spell s, bool castEvenIfWanding = true)
+        protected bool Cast(Spell s, bool castEvenIfWanding = true, bool onSelf = false)
         {
             if (!s.KnownSpell)
                 return false;
@@ -213,7 +210,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             CombatDebug("Launching");
             if (ObjectManager.Target.IsAlive || !Fight.InFight && ObjectManager.Target.Guid < 1)
-                s.Launch();
+                s.Launch(false, false, true, onSelf);
             return true;
         }
 

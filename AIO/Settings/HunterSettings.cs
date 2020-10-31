@@ -21,6 +21,7 @@ namespace WholesomeTBCAIO.Settings
             UseDisengage = false;
 
             BestialWrathOnMulti = false;
+            IntimidationInterrupt = true;
 
             Specialization = "BeastMaster";
         }
@@ -92,6 +93,12 @@ namespace WholesomeTBCAIO.Settings
         [DisplayName("BW on multi")]
         [Description("Only use Bestial Wrath on multi aggro. If set to False, Bestial Wrath will be used as soon at available")]
         public bool BestialWrathOnMulti { get; set; }
+
+        [Category("BeastMastery")]
+        [DefaultValue(true)]
+        [DisplayName("Intimidation interrupt")]
+        [Description("Use Intimidation to interrupt enemy casting")]
+        public bool IntimidationInterrupt { get; set; }
 
         // TALENT
         [DropdownList(new string[] { "BeastMaster" })]

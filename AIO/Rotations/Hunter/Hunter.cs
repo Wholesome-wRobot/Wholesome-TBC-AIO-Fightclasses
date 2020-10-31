@@ -276,6 +276,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
             // Mend Pet
             if (ObjectManager.Pet.IsValid 
+                && ObjectManager.Pet.IsAlive
                 && ObjectManager.Pet.HealthPercent <= 30.0
                 && !ObjectManager.Pet.HaveBuff("Mend Pet"))
                 if (Cast(MendPet))
@@ -335,7 +336,15 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             if (Target.GetDistance < 34f 
                 && Target.GetDistance > 10f 
                 && Target.HealthPercent >= 20
-                && Me.ManaPercentage > 10)
+                && Me.ManaPercentage > 10
+                && !settings.IntimidationInterrupt)
+                if (Cast(Intimidation))
+                    return;
+
+            // Intimidation interrupt
+            if (Target.GetDistance < 34f
+                && ToolBox.EnemyCasting()
+                && settings.IntimidationInterrupt)
                 if (Cast(Intimidation))
                     return;
 
@@ -500,7 +509,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && !_isBackingUp
                 && !Me.IsCast
                 && !Me.IsSwimming
-                && settings.BackupFromMelee)
+                && settings.BackupFromMelee
+                && (!RaptorStrikeOn() || ObjectManager.Target.GetDistance > RangeManager.GetMeleeRangeWithTarget()))
             {
                 // Stop trying if we reached the max amount of attempts
                 if (_backupAttempts >= settings.MaxBackupAttempts)
