@@ -29,7 +29,6 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
         public void Initialize(IClassRotation specialization)
         {
-            Logger.Log("Initialized");
             settings = WarlockSettings.Current;
 
             this.specialization = specialization as Warlock;
@@ -60,7 +59,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             FightEvents.OnFightEnd -= FightEndHandler;
             FightEvents.OnFightStart -= FightStartHandler;
             wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
-            Logger.Log("Stop in progress.");
+            Logger.Log("Disposed");
         }
 
         // Pet thread
@@ -109,7 +108,6 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
         private void Rotation()
         {
-            Logger.Log("Started");
             while (Main.isLaunched)
             {
                 try

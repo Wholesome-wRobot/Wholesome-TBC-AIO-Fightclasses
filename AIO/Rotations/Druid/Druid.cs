@@ -34,7 +34,6 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
         public void Initialize(IClassRotation specialization)
         {
-            Logger.Log("Initialized");
             RangeManager.SetRange(_pullRange);
             settings = DruidSettings.Current;
 
@@ -52,7 +51,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
         public void Dispose()
         {
-            Logger.Log("Stop in progress.");
+            Logger.Log("Disposed");
             FightEvents.OnFightEnd -= FightEndHandler;
             FightEvents.OnFightStart -= FightStartHandler;
             FightEvents.OnFightLoop -= FightLoopHandler;
@@ -62,7 +61,6 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
         private void Rotation()
         {
-            Logger.Log("Started");
             while (Main.isLaunched)
             {
                 try

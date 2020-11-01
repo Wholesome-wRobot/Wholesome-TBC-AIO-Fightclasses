@@ -35,7 +35,6 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         public void Initialize(IClassRotation specialization)
         {
-            Logger.Log("Initialized");
             settings = HunterSettings.Current;
 
             this.specialization = specialization as Hunter;
@@ -111,18 +110,17 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         public void Dispose()
         {
-            Logger.Log("Stop in progress.");
             _petPulseThread.DoWork -= PetThread;
             _petPulseThread.Dispose();
             EventsLuaWithArgs.OnEventsLuaWithArgs -= AutoShotEventHandler;
             FightEvents.OnFightStart -= FightStartHandler;
             FightEvents.OnFightEnd -= FightEndHandler;
             FightEvents.OnFightLoop -= FightLoopHandler;
+            Logger.Log("Disposed");
         }
 
         private void Rotation()
         {
-            Logger.Log("Started");
             while (Main.isLaunched)
             {
                 try
@@ -318,7 +316,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && !_isBackingUp)
             {
                 SteadyShot.Launch();
-                Logger.Log(lastAutoInMilliseconds.ToString());
+                //Logger.Log(lastAutoInMilliseconds.ToString());
             }
 
             // Serpent Sting

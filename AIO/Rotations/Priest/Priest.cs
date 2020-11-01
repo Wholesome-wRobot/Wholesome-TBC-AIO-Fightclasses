@@ -29,7 +29,6 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
         public void Initialize(IClassRotation specialization)
         {
-            Logger.Log("Initialized");
             settings = PriestSettings.Current;
 
             this.specialization = specialization as Priest;
@@ -49,12 +48,11 @@ namespace WholesomeTBCAIO.Rotations.Priest
         {
             FightEvents.OnFightEnd -= FightEndHandler;
             FightEvents.OnFightStart -= FightStartHandler;
-            Logger.Log("Stop in progress.");
+            Logger.Log("Disposed");
         }
 
         private void Rotation()
         {
-            Logger.Log("Started");
             while (Main.isLaunched)
             {
                 try

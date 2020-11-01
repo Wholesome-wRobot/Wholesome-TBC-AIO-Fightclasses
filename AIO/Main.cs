@@ -28,7 +28,7 @@ public class Main : ICustomClass
     public static string wowClass = ObjectManager.Me.WowClass.ToString();
     public static int humanReflexTime = 500;
     public static bool isLaunched; 
-    public static string version = "2.1.44"; // Must match version in Version.txt
+    public static string version = "2.1.45"; // Must match version in Version.txt
     public static bool HMPrunningAway = false;
 
     private IClassRotation selectedRotation;
@@ -42,8 +42,7 @@ public class Main : ICustomClass
     {
         AIOTBCSettings.Load();
         AutoUpdater.CheckUpdate(version);
-        Logger.Log($"FC version {version}. Discovering class and finding rotation...");
-        Logger.Log($"Wow version : {Lua.LuaDoString<string>("v, b, d, t = GetBuildInfo(); return v")}");
+        Logger.Log($"Launching version {version} on client {Lua.LuaDoString<string>("v, b, d, t = GetBuildInfo(); return v")}");
 
         selectedRotation = ChooseRotation();
 
@@ -99,7 +98,6 @@ public class Main : ICustomClass
     private IClassRotation ChooseRotation()
     {
         string spec = CombatSettings.Specialization;
-        Logger.Log($"Specialization : {spec}");
         switch (spec)
         {
             case "Enhancement": return new Enhancement();

@@ -31,7 +31,6 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
         public void Initialize(IClassRotation specialization)
         {
-            Logger.Log("Initialized.");
             settings = MageSettings.Current;
 
             this.specialization = specialization as Mage;
@@ -54,12 +53,11 @@ namespace WholesomeTBCAIO.Rotations.Mage
             FightEvents.OnFightEnd -= FightEndHandler;
             FightEvents.OnFightStart -= FightStartHandler;
             FightEvents.OnFightLoop -= FightLoopHandler;
-            Logger.Log("Stopped in progress.");
+            Logger.Log("Disposed");
         }
 
         private void Rotation()
         {
-            Logger.Log("Started");
             while (Main.isLaunched)
             {
                 try

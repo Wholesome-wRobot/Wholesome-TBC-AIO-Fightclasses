@@ -27,16 +27,14 @@ namespace WholesomeTBCAIO.Helpers
                 if (settings.UseDefaultTalents)
                 {
                     SetTalentCodes(settings.Specialization);
-                    Logger.Log("Your are using the following default talents build:");
                 }
                 else
                 {
                     SetTalentCodes(settings.TalentCodes);
-                    Logger.Log("Your are using the following custom talents build:");
                 }
 
                 if (_talentsCodes.Count() > 0)
-                    Logger.Log(_talentsCodes.Last());
+                    Logger.Log($"Talents code: {_talentsCodes.Last()}");
                 else
                     Logger.LogError("No talent code");
 

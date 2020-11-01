@@ -40,7 +40,6 @@ namespace WholesomeTBCAIO.Rotations.Rogue
 
         public void Initialize(IClassRotation specialization)
         {
-            Logger.Log("Initialized");
             settings = RogueSettings.Current;
 
             this.specialization = specialization as Rogue;
@@ -65,12 +64,11 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             MovementEvents.OnMoveToPulse -= MoveToPulseHandler;
             FightEvents.OnFightLoop -= FightLoopHandler;
             OthersEvents.OnAddBlackListGuid -= BlackListHandler;
-            Logger.Log("Stop in progress.");
+            Logger.Log("Disposed");
         }
 
         private void Rotation()
         {
-            Logger.Log("Started");
             while (Main.isLaunched)
             {
                 try

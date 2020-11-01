@@ -37,7 +37,6 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
         public void Initialize(IClassRotation specialization)
         {
-            Logger.Log("Initialized");
             settings = ShamanSettings.Current;
 
             this.specialization = specialization as Shaman;
@@ -61,12 +60,11 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             FightEvents.OnFightStart -= FightStartHandler;
             FiniteStateMachineEvents.OnRunState -= RunStateHandler;
             FiniteStateMachineEvents.OnAfterRunState -= AfterRunStateHandler;
-            Logger.Log("Stop in progress.");
+            Logger.Log("Disposed");
         }
 
         private void Rotation()
         {
-            Logger.Log("Started");
             while (Main.isLaunched)
             {
                 try
