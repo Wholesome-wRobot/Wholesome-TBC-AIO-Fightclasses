@@ -221,6 +221,13 @@ namespace WholesomeTBCAIO.Rotations.Druid
             if (_casterEnemies.Contains(ObjectManager.Target.Name))
                 _fightingACaster = true;
 
+            // Bear Form
+            if (!CatForm.KnownSpell
+                && !Me.HaveBuff("Bear Form") 
+                && !_pullFromAfar)
+                if (Cast(BearForm))
+                    return;
+
             // Cat Form
             if (!Me.HaveBuff("Cat Form") && !_pullFromAfar)
                 if (Cast(CatForm))
@@ -722,7 +729,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
             CombatDebug("Launching");
             if (ObjectManager.Target.IsAlive || !Fight.InFight && ObjectManager.Target.Guid < 1)
-                s.Launch(false, false, true, onSelf);
+                s.Launch(false, true, true, onSelf);
             return true;
         }
 

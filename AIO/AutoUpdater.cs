@@ -55,9 +55,8 @@ using wManager.Wow.Helpers;
                 var onlineFileContent = new WebClient { Encoding = Encoding.UTF8 }.DownloadData(onlineFile);
                 if (onlineFileContent != null && onlineFileContent.Length > 0)
                 {
-                    Logger.Log($"Your version : {MyCurrentVersion}");
-                    Logger.Log($"Online Version : {onlineVersionContent}");
-                    Logger.Log("Trying to update");
+                    Logger.Log($"Your version : {MyCurrentVersion} - Online Version : {onlineVersionContent}");
+                    Logger.Log("Updating");
                     System.IO.File.WriteAllBytes(currentFile, onlineFileContent); // replace user file by online file
                     Thread.Sleep(5000);
                     new Thread(CustomClass.ResetCustomClass).Start();
