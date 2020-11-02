@@ -255,6 +255,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     && ObjectManager.Target.GetDistance > 3f
                     && !_isStealthApproching)
                 {
+                    float desiredDistance = RangeManager.GetMeleeRangeWithTarget() - 4f;
                     _stealthApproachTimer.Start();
                     _isStealthApproching = true;
                     if (ObjectManager.Me.IsAlive
@@ -262,7 +263,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     {
 
                         while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                        && (ObjectManager.Target.GetDistance > 4f || !Claw.IsSpellUsable)
+                        && (ObjectManager.Target.GetDistance > 2.5f || !Claw.IsSpellUsable)
                         && !ToolBox.CheckIfEnemiesAround(ObjectManager.Target, 20f)
                         && Fight.InFight
                         && _stealthApproachTimer.ElapsedMilliseconds <= 7000
@@ -270,25 +271,14 @@ namespace WholesomeTBCAIO.Rotations.Druid
                         {
                             Vector3 position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f);
                             MovementManager.MoveTo(position);
-                            // Wait follow path
                             Thread.Sleep(50);
-                        }
-
-                        if (Me.Energy > 80)
-                            if (Cast(Pounce))
-                                MovementManager.StopMove();
-
-                        if (!Pounce.KnownSpell || Me.Energy <= 80 || !Me.HaveBuff("Prowl"))
-                        {
-                            Cast(Ravage);
-                            if (Cast(Shred) || Cast(Rake) || Cast(Claw))
-                                MovementManager.StopMove();
+                            CastOpener();
                         }
 
                         if (_stealthApproachTimer.ElapsedMilliseconds > 7000)
                             _pullFromAfar = true;
 
-                        ToolBox.CheckAutoAttack(Attack);
+                        //ToolBox.CheckAutoAttack(Attack);
                         _isStealthApproching = false;
                     }
                 }
@@ -669,12 +659,37 @@ namespace WholesomeTBCAIO.Rotations.Druid
             {
                 Logger.Log("Pulling with Moonfire (Rank 1)");
                 Lua.RunMacroText("/cast Moonfire(Rank 1)");
+                Usefuls.WaitIsCasting();
                 return true;
             }
             else if (Cast(Wrath))
                 return true;
 
             return false;
+        }
+
+        private void CastOpener()
+        {
+            if (Claw.IsDistanceGood)
+            {
+                if (Me.Energy > 80)
+                    if (Cast(Pounce))
+                        return;
+
+                // Opener
+                if (ToolBox.MeBehindTarget())
+                {
+                    if (Cast(Ravage))
+                        return;
+                    if (Cast(Shred))
+                        return;
+                }
+
+                if (Cast(Rake))
+                    return;
+                if (Cast(Claw))
+                    return;
+            }
         }
 
         protected bool Cast(Spell s, bool onSelf = false)
