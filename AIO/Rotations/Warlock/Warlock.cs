@@ -162,9 +162,9 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
                 if (!ObjectManager.Me.IsMounted)
                 {
-                    if (Cast(FelDomination))
+                    if (CastStopMove(FelDomination))
                         Thread.Sleep(200);
-                    if (Cast(SummonFelguard))
+                    if (CastStopMove(SummonFelguard))
                         return;
                 }
             }
@@ -301,7 +301,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             // Health Stone
             if (!WarlockPetAndConsumables.HaveHealthstone())
-                if (Cast(CreateHealthStone))
+                if (CastStopMove(CreateHealthStone))
                     return;
 
             // Create Soul Stone
@@ -319,8 +319,10 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && ToolBox.HaveOneInList(WarlockPetAndConsumables.SoulStones())
                 && ToolBox.GetItemCooldown(WarlockPetAndConsumables.SoulStones()) <= 0)
             {
+                MovementManager.StopMoveNewThread();
+                MovementManager.StopMoveToNewThread();
                 Lua.RunMacroText("/target player");
-                WarlockPetAndConsumables.UseSoulstone();
+                ToolBox.UseFirstMatchingItem(WarlockPetAndConsumables.SoulStones());
                 Usefuls.WaitIsCasting();
                 Lua.RunMacroText("/cleartarget");
             }

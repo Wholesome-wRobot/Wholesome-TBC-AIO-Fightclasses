@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Threading;
 using robotManager.Helpful;
-using robotManager.Products;
 using wManager.Events;
 using wManager.Wow.Class;
 using wManager.Wow.Helpers;

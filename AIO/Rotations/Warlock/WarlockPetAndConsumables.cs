@@ -52,12 +52,6 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             return ToolBox.HaveOneInList(SoulStones());
         }
 
-        // Use Soulstone
-        public static void UseSoulstone()
-        {
-            ToolBox.UseFirstMatchingItem(SoulStones());
-        }
-
         // Returns which pet the warlock has summoned
         public static string MyWarlockPet()
         {
