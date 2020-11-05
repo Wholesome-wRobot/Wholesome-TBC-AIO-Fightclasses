@@ -50,6 +50,7 @@ namespace WholesomeTBCAIO.Helpers
             if (!s.KnownSpell 
                 || IsBackingUp 
                 || ObjectManager.Me.IsCast 
+                || ObjectManager.Me.CastingTimeLeft > Usefuls.Latency
                 || ObjectManager.Me.IsStunned)
                 return false;
 
