@@ -89,6 +89,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AutoUpdater.cs" />
+    <Compile Include="Helpers\Cast.cs" />
     <Compile Include="Helpers\Logger.cs" />
     <Compile Include="Helpers\Racials.cs" />
     <Compile Include="Helpers\RangeManager.cs" />

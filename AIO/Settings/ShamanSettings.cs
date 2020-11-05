@@ -10,7 +10,6 @@ namespace WholesomeTBCAIO.Settings
         public ShamanSettings()
         {
             UseLightningShield = false;
-            UseGhostWolf = true;
             UseTotemicCall = true;
             UseFlameShock = true;
             UseWaterShield = true;
@@ -41,11 +40,6 @@ namespace WholesomeTBCAIO.Settings
         }
 
         // COMMON
-        [Category("Common")]
-        [DefaultValue(true)]
-        [DisplayName("Ghost Wolf")]
-        [Description("Use Ghost Wolf")]
-        public bool UseGhostWolf { get; set; }
 
         [Category("Common")]
         [DefaultValue(60)]

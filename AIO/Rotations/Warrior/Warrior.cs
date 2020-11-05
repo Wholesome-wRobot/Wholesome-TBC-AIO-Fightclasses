@@ -7,7 +7,6 @@ using wManager.Wow.Class;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 using System.Collections.Generic;
-using wManager.Wow.Bot.Tasks;
 using WholesomeTBCAIO.Settings;
 using WholesomeTBCAIO.Helpers;
 
@@ -16,6 +15,8 @@ namespace WholesomeTBCAIO.Rotations.Warrior
     public class Warrior : IClassRotation
     {
         public static WarriorSettings settings;
+
+        protected Cast cast;
 
         protected Stopwatch _pullMeleeTimer = new Stopwatch();
         protected Stopwatch _meleeTimer = new Stopwatch();
@@ -31,6 +32,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         public void Initialize(IClassRotation specialization)
         {
             settings = WarriorSettings.Current;
+            cast = new Cast(BattleShout, settings.ActivateCombatDebug, null);
 
             this.specialization = specialization as Warrior;
             Talents.InitTalents(settings);
@@ -78,14 +80,14 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 if (!Me.HaveBuff("Battle Shout")
                     && BattleShout.IsSpellUsable &&
                     (!settings.UseCommandingShout || !CommandingShout.KnownSpell))
-                    if (Cast(BattleShout))
+                    if (cast.Normal(BattleShout))
                         return;
 
                 // Commanding Shout
                 if (!Me.HaveBuff("Commanding Shout")
                     && settings.UseCommandingShout
                     && CommandingShout.KnownSpell)
-                    if (Cast(CommandingShout))
+                    if (cast.Normal(CommandingShout))
                         return;
             }
         }
@@ -124,22 +126,6 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         protected Spell Rampage = new Spell("Rampage");
         protected Spell VictoryRush = new Spell("Victory Rush");
         protected Spell Whirlwind = new Spell("Whirlwind");
-
-        protected bool Cast(Spell s)
-        {
-            CombatDebug("In cast for " + s.Name);
-            if (!s.IsSpellUsable || !s.KnownSpell || Me.IsCast)
-                return false;
-
-            s.Launch();
-            return true;
-        }
-
-        protected void CombatDebug(string s)
-        {
-            if (settings.ActivateCombatDebug)
-                Logger.CombatDebug(s);
-        }
 
         protected bool HeroicStrikeOn()
         {

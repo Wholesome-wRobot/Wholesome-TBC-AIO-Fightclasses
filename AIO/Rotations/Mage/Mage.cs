@@ -16,13 +16,14 @@ namespace WholesomeTBCAIO.Rotations.Mage
     {
         public static MageSettings settings;
 
+        protected Cast cast;
+
         protected MageFoodManager _foodManager = new MageFoodManager();
 
         protected WoWLocalPlayer Me = ObjectManager.Me;
         protected WoWUnit _polymorphedEnemy = null;
 
         protected float _distanceRange = 28f;
-        protected bool _isBackingUp = false;
         protected bool _iCanUseWand = ToolBox.HaveRangedWeaponEquipped();
         protected bool _isPolymorphing;
         protected bool _polymorphableEnemyInThisFight = true;
@@ -32,6 +33,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
         public void Initialize(IClassRotation specialization)
         {
             settings = MageSettings.Current;
+            cast = new Cast(Fireball, settings.ActivateCombatDebug, UseWand);
 
             this.specialization = specialization as Mage;
             Talents.InitTalents(settings);
@@ -49,7 +51,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
         public void Dispose()
         {
-            _isBackingUp = false;
+            cast.IsBackingUp = false;
             FightEvents.OnFightEnd -= FightEndHandler;
             FightEvents.OnFightStart -= FightStartHandler;
             FightEvents.OnFightLoop -= FightLoopHandler;
@@ -76,7 +78,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                         specialization.Pull();
 
                     if (StatusChecker.InCombat()
-                        && !_isBackingUp
+                        && !cast.IsBackingUp
                         && !_isPolymorphing
                         && (!ObjectManager.Target.HaveBuff("Polymorph") || ObjectManager.GetNumberAttackPlayer() < 1))
                         specialization.CombatRotation();
@@ -101,7 +103,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 && ArcaneIntellect.KnownSpell 
                 && ArcaneIntellect.IsSpellUsable)
             {
-                if (CastOnSelf(ArcaneIntellect))
+                if (cast.OnSelf(ArcaneIntellect))
                     return;
             }
 
@@ -111,13 +113,13 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 && DampenMagic.KnownSpell
                 && DampenMagic.IsSpellUsable)
             {
-                if (CastOnSelf(DampenMagic))
+                if (cast.OnSelf(DampenMagic))
                     return;
             }
 
             // Evocation
             if (Me.ManaPercentage < 30)
-                if (Cast(Evocation))
+                if (cast.Normal(Evocation))
                     return;
         }
 
@@ -130,92 +132,8 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // CounterSpell
             if (settings.UseCounterspell
                 && ToolBox.EnemyCasting())
-                if (Cast(CounterSpell))
+                if (cast.Normal(CounterSpell))
                     return;
-        }
-
-        protected bool CastOnSelf(Spell s, bool castEvenIfWanding = false)
-        {
-            return Cast(s, castEvenIfWanding, true);
-        }
-
-        protected bool CastStopMove(Spell s, bool castEvenIfWanding = true)
-        {
-            MovementManager.StopMove();
-            return Cast(s, castEvenIfWanding);
-        }
-
-        protected bool Cast(Spell s, bool castEvenIfWanding = true, bool onSelf = false)
-        {
-            if (!s.KnownSpell)
-                return false;
-
-            CombatDebug("*----------- INTO CAST FOR " + s.Name);
-            float _spellCD = ToolBox.GetSpellCooldown(s.Name);
-            CombatDebug("Cooldown is " + _spellCD);
-
-            if (ToolBox.GetSpellCost(s.Name) > Me.Mana)
-            {
-                CombatDebug(s.Name + ": Not enough mana, SKIPPING");
-                return false;
-            }
-
-            if (ToolBox.UsingWand() && !castEvenIfWanding 
-                || _isBackingUp && !s.Name.Equals("Blink"))
-            {
-                CombatDebug("Didn't cast because we were backing up or wanding");
-                return false;
-            }
-
-            if (_spellCD >= 2f)
-            {
-                CombatDebug("Didn't cast because cd is too long");
-                return false;
-            }
-
-            if (ToolBox.UsingWand() 
-                && castEvenIfWanding)
-                ToolBox.StopWandWaitGCD(UseWand, Fireball);
-
-            if (_spellCD < 2f && _spellCD > 0f)
-            {
-                if (ToolBox.GetSpellCastTime(s.Name) < 1f)
-                {
-                    CombatDebug(s.Name + " is instant and low CD, recycle");
-                    return true;
-                }
-
-                int t = 0;
-                while (ToolBox.GetSpellCooldown(s.Name) > 0)
-                {
-                    Thread.Sleep(50);
-                    t += 50;
-                    if (t > 2000)
-                    {
-                        CombatDebug(s.Name + ": waited for tool long, give up");
-                        return false;
-                    }
-                }
-                Thread.Sleep(100 + Usefuls.Latency);
-                CombatDebug(s.Name + ": waited " + (t + 100) + " for it to be ready");
-            }
-
-            if (!s.IsSpellUsable)
-            {
-                CombatDebug("Didn't cast because spell somehow not usable");
-                return false;
-            }
-
-            CombatDebug("Launching");
-            if (ObjectManager.Target.IsAlive || !Fight.InFight && ObjectManager.Target.Guid < 1)
-                s.Launch(false, false, true, onSelf);
-            return true;
-        }
-
-        protected void CombatDebug(string s)
-        {
-            if (settings.ActivateCombatDebug)
-                Logger.CombatDebug(s);
         }
 
         protected Spell FrostArmor = new Spell("Frost Armor");
@@ -253,7 +171,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
         // EVENT HANDLERS
         private void FightEndHandler(ulong guid)
         {
-            _isBackingUp = false;
+            cast.IsBackingUp = false;
             _iCanUseWand = false;
             _polymorphableEnemyInThisFight = false;
             _isPolymorphing = false;
@@ -286,13 +204,13 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 && ObjectManager.Target.GetDistance < 10f
                 && Me.IsAlive
                 && ObjectManager.Target.IsAlive
-                && !_isBackingUp
+                && !cast.IsBackingUp
                 && !Me.IsCast
                 && !RangeManager.CurrentRangeIsMelee()
                 && ObjectManager.Target.HealthPercent > 5
                 && !_isPolymorphing)
             {
-                _isBackingUp = true;
+                cast.IsBackingUp = true;
                 int limiter = 0;
 
                 // Using CTM
@@ -315,7 +233,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                         Thread.Sleep(300);
                         limiter++;
                         if (settings.BlinkWhenBackup)
-                            Cast(Blink);
+                            cast.Normal(Blink);
                     }
                     MovementManager.StopMove();
                     Thread.Sleep(500);
@@ -333,14 +251,14 @@ namespace WholesomeTBCAIO.Rotations.Mage
                         limiter++;
                     }
                 }
-                _isBackingUp = false;
+                cast.IsBackingUp = false;
             }
 
             // Polymorph
             if (settings.UsePolymorph
                 && ObjectManager.GetNumberAttackPlayer() > 1
                 && Polymorph.KnownSpell
-                && !_isBackingUp
+                && !cast.IsBackingUp
                 && _polymorphableEnemyInThisFight)
             {
                 WoWUnit myNearbyPolymorphed = null;
@@ -376,11 +294,11 @@ namespace WholesomeTBCAIO.Rotations.Mage
                     if (potentialPolymorphTarget != null && _polymorphedEnemy == null)
                     {
                         Interact.InteractGameObject(potentialPolymorphTarget.GetBaseAddress);
-                        while (!Cast(Polymorph)
-                   && ObjectManager.Target.IsAlive
-                   && ObjectManager.Me.IsAlive
-                   && Main.isLaunched
-                   && !Products.InPause)
+                        while (!cast.Normal(Polymorph)
+                           && ObjectManager.Target.IsAlive
+                           && ObjectManager.Me.IsAlive
+                           && Main.isLaunched
+                           && !Products.InPause)
                         {
                             Thread.Sleep(200);
                         }

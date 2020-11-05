@@ -14,20 +14,20 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // Mage Armor
             if (!Me.HaveBuff("Mage Armor")
                 && settings.ACMageArmor)
-                if (Cast(MageArmor)) 
+                if (cast.Normal(MageArmor)) 
                     return;
 
             // Ice Armor
                 if (!Me.HaveBuff("Ice Armor")
                 && (!settings.ACMageArmor || !MageArmor.KnownSpell))
-                if (Cast(IceArmor))
+                if (cast.Normal(IceArmor))
                     return;
 
             // Frost Armor
             if (!Me.HaveBuff("Frost Armor")
                 && !IceArmor.KnownSpell
                 && (!settings.ACMageArmor || !MageArmor.KnownSpell))
-                if (Cast(FrostArmor))
+                if (cast.Normal(FrostArmor))
                     return;
         }
 
@@ -41,40 +41,40 @@ namespace WholesomeTBCAIO.Rotations.Mage
             if (settings.ACSlow
                 && !_target.HaveBuff("Slow")
                 && Slow.IsDistanceGood)
-                if (Cast(Slow))
+                if (cast.Normal(Slow))
                     return;
 
             // Arcane Blast
             if (_target.GetDistance < _distanceRange)
-                if (Cast(ArcaneBlast))
+                if (cast.Normal(ArcaneBlast))
                     return;
 
             // Arcane Missiles
             if (_target.GetDistance < _distanceRange
                 && Me.Level >= 6
                 && (_target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 30 || !_iCanUseWand))
-                if (CastStopMove(ArcaneMissiles))
+                if (cast.Normal(ArcaneMissiles))
                     return;
 
             // Frost Bolt
             if (_target.GetDistance < _distanceRange
                 && Me.Level >= 6
                 && (_target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 30 || !_iCanUseWand))
-                if (Cast(Frostbolt))
+                if (cast.Normal(Frostbolt))
                     return;
 
             // Low level Frost Bolt
             if (_target.GetDistance < _distanceRange
                 && _target.HealthPercent > 30
                 && Me.Level < 6)
-                if (Cast(Frostbolt))
+                if (cast.Normal(Frostbolt))
                     return;
 
             // Low level FireBall
             if (_target.GetDistance < _distanceRange
                 && !Frostbolt.KnownSpell
                 && _target.HealthPercent > 30)
-                if (Cast(Fireball))
+                if (cast.Normal(Fireball))
                     return;
         }
 
@@ -92,7 +92,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             if (ToolBox.HasCurseDebuff())
             {
                 Thread.Sleep(Main.humanReflexTime);
-                if (Cast(RemoveCurse))
+                if (cast.OnSelf(RemoveCurse))
                     return;
             }
 
@@ -100,7 +100,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             if (!Me.HaveBuff("Mana Shield")
                 && (Me.HealthPercent < 30 && Me.ManaPercentage > 50
                 || Me.HealthPercent < 10))
-                if (Cast(ManaShield))
+                if (cast.Normal(ManaShield))
                     return;
 
             // Use Mana Stone
@@ -113,7 +113,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Cast presence of mind spell
             if (Me.HaveBuff("Presence of Mind"))
-                if (Cast(ArcaneBlast) || Cast(Fireball))
+                if (cast.Normal(ArcaneBlast) || cast.Normal(Fireball))
                 {
                     Usefuls.WaitIsCasting();
                     return;
@@ -123,35 +123,35 @@ namespace WholesomeTBCAIO.Rotations.Mage
             if (!Me.HaveBuff("Presence of Mind")
                 && (ObjectManager.GetNumberAttackPlayer() > 1 || !settings.PoMOnMulti)
                 && Target.HealthPercent > 50)
-                if (Cast(PresenceOfMind))
+                if (cast.Normal(PresenceOfMind))
                     return;
 
             // Arcane Power
             if (!Me.HaveBuff("Arcane Power")
                 && (ObjectManager.GetNumberAttackPlayer() > 1 || !settings.ArcanePowerOnMulti)
                 && Target.HealthPercent > 50)
-                if (Cast(ArcanePower))
+                if (cast.Normal(ArcanePower))
                     return;
 
             // Slow
             if ((settings.ACSlow || Target.CreatureTypeTarget == "Humanoid")
                 && !Target.HaveBuff("Slow")
                 && Slow.IsDistanceGood)
-                if (Cast(Slow))
+                if (cast.Normal(Slow))
                     return;
 
             // Cone of Cold
             if (Target.GetDistance < 10
                 && settings.UseConeOfCold
                 && _polymorphedEnemy == null)
-                if (Cast(ConeOfCold))
+                if (cast.Normal(ConeOfCold))
                     return;
 
             // Fire Blast
             if (Target.GetDistance < 20f
                 && Target.HealthPercent <= settings.FireblastThreshold
                 && _polymorphedEnemy == null)
-                if (Cast(FireBlast))
+                if (cast.Normal(FireBlast))
                     return;
 
             bool _shouldCastArcaneBlast =
@@ -165,14 +165,14 @@ namespace WholesomeTBCAIO.Rotations.Mage
             if (_shouldCastArcaneBlast
                 && Target.GetDistance < _distanceRange
                 && (Target.HealthPercent > settings.WandThreshold || !_iCanUseWand))
-                if (Cast(ArcaneBlast))
+                if (cast.Normal(ArcaneBlast))
                     return;
 
             // Arcane Missiles
             if (Target.GetDistance < _distanceRange
                 && Me.Level >= 6
                 && (Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand))
-                if (Cast(ArcaneMissiles, true))
+                if (cast.Normal(ArcaneMissiles, true))
                     return;
 
             // Frost Bolt
@@ -180,32 +180,44 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 && Me.Level >= 6
                 && (Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand)
                 && _polymorphedEnemy == null)
-                if (Cast(Frostbolt, true))
+                if (cast.Normal(Frostbolt, true))
                     return;
 
             // Low level Frost Bolt
             if (Target.GetDistance < _distanceRange
                 && (Target.HealthPercent > 15 || Me.HealthPercent < 50)
                 && Me.Level < 6)
-                if (Cast(Frostbolt, true))
+                if (cast.Normal(Frostbolt, true))
                     return;
 
             // Low level FireBall
             if (Target.GetDistance < _distanceRange
                 && !Frostbolt.KnownSpell
                 && (Target.HealthPercent > 15 || Me.HealthPercent < 50))
-                if (Cast(Fireball, true))
+                if (cast.Normal(Fireball, true))
+                    return;
+
+            // Stop wand if banned
+            if (ToolBox.UsingWand()
+                && cast.BannedSpells.Contains("Shoot"))
+                if (cast.Normal(UseWand))
+                    return;
+
+            // Spell if wand banned
+            if (cast.BannedSpells.Contains("Shoot")
+                && Target.GetDistance < _distanceRange)
+                if (cast.Normal(ArcaneBlast) || cast.Normal(ArcaneMissiles) || cast.Normal(Frostbolt) || cast.Normal(Fireball))
                     return;
 
             // Use Wand
             if (!ToolBox.UsingWand()
                 && _iCanUseWand
                 && ObjectManager.Target.GetDistance <= _distanceRange
-                && !_isBackingUp
+                && !cast.IsBackingUp
                 && !MovementManager.InMovement)
             {
                 RangeManager.SetRange(_distanceRange);
-                if (Cast(UseWand, false))
+                if (cast.Normal(UseWand, false))
                     return;
             }
 
@@ -213,7 +225,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             if (!ToolBox.UsingWand()
                 && !UseWand.IsSpellUsable
                 && !RangeManager.CurrentRangeIsMelee()
-                && !_isBackingUp
+                && !cast.IsBackingUp
                 && Target.IsAlive)
             {
                 Logger.Log("Going in melee");

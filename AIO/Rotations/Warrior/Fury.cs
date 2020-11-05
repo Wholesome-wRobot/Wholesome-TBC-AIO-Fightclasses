@@ -26,7 +26,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 && ObjectManager.Me.Rage < 10
                 && !_pullFromAfar
                 && !settings.AlwaysPull)
-                Cast(BattleStance);
+                cast.Normal(BattleStance);
 
             // Pull from afar
             if (_pullFromAfar
@@ -55,7 +55,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
 
                     RangeManager.SetRange(_pullRange + 10);
                     Thread.Sleep(200);
-                    if (Cast(pullMethod))
+                    if (cast.Normal(pullMethod))
                         Thread.Sleep(2000);
                     RangeManager.SetRange(_pullRange);
                 }
@@ -82,7 +82,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 && ObjectManager.Target.GetDistance > 9f
                 && ObjectManager.Target.GetDistance < 24f
                 && !_pullFromAfar)
-                if (Cast(Charge))
+                if (cast.Normal(Charge))
                     return;
 
             // Charge Berserker Stance
@@ -90,7 +90,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 && ObjectManager.Target.GetDistance > 9f
                 && ObjectManager.Target.GetDistance < 24f
                 && !_pullFromAfar)
-                if (Cast(Intercept))
+                if (cast.Normal(Intercept))
                     return;
         }
 
@@ -138,7 +138,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             if (InBerserkStance()
                 && ObjectManager.Target.GetDistance > 12f
                 && ObjectManager.Target.GetDistance < 24f)
-                if (Cast(Intercept))
+                if (cast.Normal(Intercept))
                     return;
 
             // Battle stance
@@ -147,7 +147,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 && !settings.PrioritizeBerserkStance 
                 && ObjectManager.GetNumberAttackPlayer() > 1
                 && !_fightingACaster)
-                if (Cast(BattleStance))
+                if (cast.Normal(BattleStance))
                     return;
 
             // Berserker stance
@@ -156,7 +156,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 && BerserkerStance.KnownSpell
                 //&& Me.Rage < 15
                 && ObjectManager.GetNumberAttackPlayer() < 2)
-                if (Cast(BerserkerStance))
+                if (cast.Normal(BerserkerStance))
                     return;
 
             // Fighting a caster
@@ -166,7 +166,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 && Me.Rage < 20
                 && ObjectManager.GetNumberAttackPlayer() < 2)
             {
-                if (Cast(BerserkerStance))
+                if (cast.Normal(BerserkerStance))
                     return;
             }
 
@@ -175,62 +175,62 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 && InBerserkStance())
             {
                 Thread.Sleep(Main.humanReflexTime);
-                if (Cast(Pummel))
+                if (cast.Normal(Pummel))
                     return;
             }
 
             // Victory Rush
             if (VictoryRush.KnownSpell)
-                if (Cast(VictoryRush))
+                if (cast.Normal(VictoryRush))
                     return;
 
             // Rampage
             if (Rampage.KnownSpell
                 && (!Me.HaveBuff("Rampage") || Me.HaveBuff("Rampage") && ToolBox.BuffTimeLeft("Rampage") < 10))
-                if (Cast(Rampage))
+                if (cast.Normal(Rampage))
                     return;
 
             // Berserker Rage
             if (InBerserkStance()
                 && Target.HealthPercent > 70)
-                if (Cast(BerserkerRage))
+                if (cast.Normal(BerserkerRage))
                     return;
 
             // Execute
-            if (Cast(Execute))
+            if (cast.Normal(Execute))
                     return;
 
             // Overpower
             if (Overpower.IsSpellUsable)
             {
                 Thread.Sleep(Main.humanReflexTime);
-                if (Cast(Overpower))
+                if (cast.Normal(Overpower))
                     return;
             }
 
             // Bloodthirst
             if (_inMeleeRange)
-                if (Cast(Bloodthirst))
+                if (cast.Normal(Bloodthirst))
                     return;
 
             // Whirlwind
             if (_inMeleeRange
                 && InBerserkStance()
                 && Me.Rage > 30)
-                if (Cast(Whirlwind))
+                if (cast.Normal(Whirlwind))
                     return;
 
             // Sweeping Strikes
             if (_inMeleeRange
                 && ObjectManager.GetNumberAttackPlayer() > 1
                 && ToolBox.CheckIfEnemiesClose(15f))
-                if (Cast(SweepingStrikes))
+                if (cast.Normal(SweepingStrikes))
                     return;
 
             // Retaliation
             if (_inMeleeRange && ObjectManager.GetNumberAttackPlayer() > 1
                 && ToolBox.CheckIfEnemiesClose(15f))
-                if (Cast(Retaliation) && (!SweepingStrikes.IsSpellUsable || !SweepingStrikes.KnownSpell))
+                if (cast.Normal(Retaliation) && (!SweepingStrikes.IsSpellUsable || !SweepingStrikes.KnownSpell))
                     return;
 
             // Cleave
@@ -239,13 +239,13 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 && ToolBox.CheckIfEnemiesClose(15f) &&
                 (!SweepingStrikes.IsSpellUsable || !SweepingStrikes.KnownSpell) && ObjectManager.Me.Rage > 40
                 && settings.UseCleave)
-                if (Cast(Cleave))
+                if (cast.Normal(Cleave))
                     return;
 
             // Blood Rage
             if (settings.UseBloodRage
                 && Me.HealthPercent > 90)
-                if (Cast(BloodRage))
+                if (cast.Normal(BloodRage))
                     return;
 
             // Hamstring
@@ -254,20 +254,20 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 && settings.UseHamstring
                 && Target.HealthPercent < 40
                 && !Target.HaveBuff("Hamstring"))
-                if (Cast(Hamstring))
+                if (cast.Normal(Hamstring))
                     return;
 
             // Commanding Shout
             if (!Me.HaveBuff("Commanding Shout")
                 && settings.UseCommandingShout
                 && CommandingShout.KnownSpell)
-                if (Cast(CommandingShout))
+                if (cast.Normal(CommandingShout))
                     return;
 
             // Battle Shout
             if (!Me.HaveBuff("Battle Shout")
                 && (!settings.UseCommandingShout || !CommandingShout.KnownSpell))
-                if (Cast(BattleShout))
+                if (cast.Normal(BattleShout))
                     return;
 
             // Rend
@@ -276,14 +276,14 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 && _inMeleeRange
                 && settings.UseRend
                 && Target.HealthPercent > 25)
-                if (Cast(Rend))
+                if (cast.Normal(Rend))
                     return;
 
             // Demoralizing Shout
             if (settings.UseDemoralizingShout
                 && !Target.HaveBuff("Demoralizing Shout")
                 && (ObjectManager.GetNumberAttackPlayer() > 1 || !ToolBox.CheckIfEnemiesClose(15f)) && _inMeleeRange)
-                if (Cast(DemoralizingShout))
+                if (cast.Normal(DemoralizingShout))
                     return;
 
             // Heroic Strike (after whirlwind)
@@ -291,7 +291,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 && Whirlwind.KnownSpell
                 && !HeroicStrikeOn()
                 &&  Me.Rage > 60)
-                if (Cast(HeroicStrike))
+                if (cast.Normal(HeroicStrike))
                     return;
 
             // Heroic Strike (before whirlwind)
@@ -299,7 +299,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 && !Whirlwind.KnownSpell
                 && !HeroicStrikeOn()
                 && (!_saveRage || Me.Rage > 60))
-                if (Cast(HeroicStrike))
+                if (cast.Normal(HeroicStrike))
                     return;
         }
     }

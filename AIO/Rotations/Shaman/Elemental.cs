@@ -24,13 +24,13 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
             // Elemental Mastery
             if (!Me.HaveBuff("Elemental Mastery"))
-                if (Cast(ElementalMastery))
+                if (cast.Normal(ElementalMastery))
                     return;
 
             // Lightning Bolt
             if (ObjectManager.Target.GetDistance <= _pullRange)
             {
-                if (Cast(LightningBolt))
+                if (cast.Normal(LightningBolt))
                     return;
             }
         }
@@ -67,7 +67,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     _casterEnemies.Add(Target.Name);
                 _fightingACaster = true;
                 Thread.Sleep(Main.humanReflexTime);
-                if (Cast(EarthShock))
+                if (cast.Normal(EarthShock))
                     return;
             }
 
@@ -77,7 +77,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 && Target.HealthPercent < 40
                 && !Target.HaveBuff("Frost Shock")
                 && !Me.HaveBuff("Focused Casting"))
-                if (Cast(FrostShock))
+                if (cast.Normal(FrostShock))
                     return;
 
             // Totems
@@ -90,7 +90,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             if (settings.ELChainLightningOnMulti
                 && ObjectManager.GetNumberAttackPlayer() > 1
                 && Me.ManaPercentage > 20)
-                if (Cast(ChainLightning))
+                if (cast.Normal(ChainLightning))
                     return;
 
             // Earth Shock DPS
@@ -100,7 +100,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 && Target.HealthPercent > 25
                 && Me.ManaPercentage > settings.ELShockDPSMana
                 && !Me.HaveBuff("Focused Casting"))
-                if (Cast(EarthShock))
+                if (cast.Normal(EarthShock))
                     return;
 
             // Flame Shock DPS
@@ -111,7 +111,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 && settings.UseFlameShock
                 && Me.ManaPercentage > settings.ELShockDPSMana
                 && !Me.HaveBuff("Focused Casting"))
-                if (Cast(FlameShock))
+                if (cast.Normal(FlameShock))
                     return;
 
             // Lightning Bolt
@@ -119,7 +119,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 && (Target.HealthPercent > settings.ELLBHealthThreshold || Me.HaveBuff("Clearcasting") || Me.HaveBuff("Focused Casting"))
                 && Me.ManaPercentage > 15)
             {
-                if (Cast(LightningBolt))
+                if (cast.Normal(LightningBolt))
                     return;
             }
 

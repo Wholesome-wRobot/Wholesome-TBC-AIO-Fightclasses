@@ -16,6 +16,8 @@ namespace WholesomeTBCAIO.Rotations.Warlock
     {
         public static WarlockSettings settings;
 
+        protected Cast cast;
+
         protected BackgroundWorker _petPulseThread = new BackgroundWorker();
         protected Stopwatch _addCheckTimer = new Stopwatch();
         protected WoWLocalPlayer Me = ObjectManager.Me;
@@ -30,6 +32,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         public void Initialize(IClassRotation specialization)
         {
             settings = WarlockSettings.Current;
+            cast = new Cast(ShadowBolt, settings.ActivateCombatDebug, UseWand);
 
             this.specialization = specialization as Warlock;
             Talents.InitTalents(settings);
@@ -162,9 +165,9 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
                 if (!ObjectManager.Me.IsMounted)
                 {
-                    if (CastStopMove(FelDomination))
+                    if (cast.Normal(FelDomination))
                         Thread.Sleep(200);
-                    if (CastStopMove(SummonFelguard))
+                    if (cast.Normal(SummonFelguard))
                         return;
                 }
             }
@@ -177,9 +180,9 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
                 if (!ObjectManager.Me.IsMounted)
                 {
-                    if (CastStopMove(FelDomination))
+                    if (cast.Normal(FelDomination))
                         Thread.Sleep(200);
-                    if (CastStopMove(SummonFelguard))
+                    if (cast.Normal(SummonFelguard))
                         return;
                 }
             }
@@ -192,9 +195,9 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
                 if (!ObjectManager.Me.IsMounted)
                 {
-                    if (CastStopMove(FelDomination))
+                    if (cast.Normal(FelDomination))
                         Thread.Sleep(200);
-                    if (CastStopMove(SummonVoidwalker))
+                    if (cast.Normal(SummonVoidwalker))
                         return;
                 }
             }
@@ -208,9 +211,9 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
                 if (!ObjectManager.Me.IsMounted)
                 {
-                    if (CastStopMove(FelDomination))
+                    if (cast.Normal(FelDomination))
                         Thread.Sleep(200);
-                    if (CastStopMove(SummonVoidwalker))
+                    if (cast.Normal(SummonVoidwalker))
                         return;
                 }
             }
@@ -222,9 +225,9 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
                 if (!ObjectManager.Me.IsMounted)
                 {
-                    if (CastStopMove(FelDomination))
+                    if (cast.Normal(FelDomination))
                         Thread.Sleep(200);
-                    if (CastStopMove(SummonImp))
+                    if (cast.Normal(SummonImp))
                         return;
                 }
             }
@@ -233,7 +236,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             if (Me.HealthPercent > Me.ManaPercentage
                 && settings.UseLifeTap
                 && !Me.IsMounted)
-                if (Cast(LifeTap))
+                if (cast.Normal(LifeTap))
                     return;
 
             // Unending Breath
@@ -242,7 +245,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && UnendingBreath.IsSpellUsable
                 && settings.UseUnendingBreath)
             {
-                if (CastOnSelf(UnendingBreath))
+                if (cast.OnSelf(UnendingBreath))
                     return;
             }
 
@@ -250,27 +253,27 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             if (!Me.HaveBuff("Demon Skin")
                 && !DemonArmor.KnownSpell
                 && DemonSkin.KnownSpell)
-                if (Cast(DemonSkin))
+                if (cast.Normal(DemonSkin))
                     return;
 
             // Demon Armor
             if ((!Me.HaveBuff("Demon Armor") || Me.HaveBuff("Demon Skin"))
                 && DemonArmor.KnownSpell
                 && (!FelArmor.KnownSpell || FelArmor.KnownSpell && !settings.UseFelArmor))
-                if (Cast(DemonArmor))
+                if (cast.Normal(DemonArmor))
                     return;
 
             // Soul Link
             if (SoulLink.KnownSpell
                 && !Me.HaveBuff("Soul Link"))
-                if (Cast(SoulLink))
+                if (cast.Normal(SoulLink))
                     return;
 
             // Fel Armor
             if (!Me.HaveBuff("Fel Armor")
                 && FelArmor.KnownSpell
                 && settings.UseFelArmor)
-                if (Cast(FelArmor))
+                if (cast.Normal(FelArmor))
                     return;
 
             // Health Funnel
@@ -291,7 +294,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
 
                 ToolBox.StopWandWaitGCD(UseWand, ShadowBolt);
-                if (CastStopMove(HealthFunnel))
+                if (cast.Normal(HealthFunnel))
                 {
                     Thread.Sleep(500);
                     Usefuls.WaitIsCasting();
@@ -301,14 +304,14 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             // Health Stone
             if (!WarlockPetAndConsumables.HaveHealthstone())
-                if (CastStopMove(CreateHealthStone))
+                if (cast.Normal(CreateHealthStone))
                     return;
 
             // Create Soul Stone
             if (!WarlockPetAndConsumables.HaveSoulstone()
                 && CreateSoulstone.KnownSpell)
             {
-                if (CastStopMove(CreateSoulstone))
+                if (cast.Normal(CreateSoulstone))
                     return;
             }
 
@@ -333,13 +336,13 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             // Curse of Agony
             if (ObjectManager.Target.GetDistance < _maxRange + 2
                 && !ObjectManager.Target.HaveBuff("Curse of Agony"))
-                if (Cast(CurseOfAgony))
+                if (cast.Normal(CurseOfAgony))
                     return;
 
             // Corruption
             if (ObjectManager.Target.GetDistance < _maxRange + 2
                 && !ObjectManager.Target.HaveBuff("Corruption"))
-                if (Cast(Corruption))
+                if (cast.Normal(Corruption))
                     return;
 
             // Immolate
@@ -348,13 +351,13 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && !ObjectManager.Target.HaveBuff("Fire Ward")
                 && !Corruption.KnownSpell
                 && ToolBox.CanBleed(ObjectManager.Target))
-                if (Cast(Immolate))
+                if (cast.Normal(Immolate))
                     return;
 
             // Shadow Bolt
             if (ObjectManager.Target.GetDistance < _maxRange + 2
                 && !Immolate.KnownSpell)
-                if (Cast(ShadowBolt))
+                if (cast.Normal(ShadowBolt))
                     return;
         }
 
@@ -381,7 +384,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 }
                 else
                 {
-                    if (Cast(DrainSoul))
+                    if (cast.Normal(DrainSoul))
                         return;
                 }
 
@@ -389,7 +392,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             if (HowlOfTerror.KnownSpell
                 && HowlOfTerror.IsSpellUsable
                 && ToolBox.GetNumberEnemiesAround(10f, Me) > 1)
-                if (Cast(HowlOfTerror))
+                if (cast.Normal(HowlOfTerror))
                     return;
 
             // Use Health Stone
@@ -398,7 +401,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             // Shadow Trance
             if (Me.HaveBuff("Shadow Trance") && _overLowManaThreshold)
-                if (Cast(ShadowBolt))
+                if (cast.Normal(ShadowBolt))
                     return;
 
             // Siphon Life
@@ -407,18 +410,18 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && Target.HealthPercent > 20
                 && !Target.HaveBuff("Siphon Life")
                 && settings.UseSiphonLife)
-                if (Cast(SiphonLife))
+                if (cast.Normal(SiphonLife))
                     return;
 
             // Death Coil
             if (Me.HealthPercent < 20)
-                if (Cast(DeathCoil))
+                if (cast.Normal(DeathCoil))
                     return;
 
             // Drain Life low
             if (Me.HealthPercent < 30
                 && Target.HealthPercent > 20)
-                if (Cast(DrainLife))
+                if (cast.Normal(DrainLife))
                     return;
 
             // Curse of Agony
@@ -426,7 +429,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && !Target.HaveBuff("Curse of Agony")
                 && _overLowManaThreshold
                 && Target.HealthPercent > 20)
-                if (Cast(CurseOfAgony))
+                if (cast.Normal(CurseOfAgony))
                     return;
 
             // Unstable Affliction
@@ -434,7 +437,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && !Target.HaveBuff("Unstable Affliction")
                 && _overLowManaThreshold
                 && Target.HealthPercent > 30)
-                if (Cast(UnstableAffliction))
+                if (cast.Normal(UnstableAffliction))
                     return;
 
             // Corruption
@@ -442,7 +445,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && !Target.HaveBuff("Corruption")
                 && _overLowManaThreshold
                 && Target.HealthPercent > 20)
-                if (Cast(Corruption))
+                if (cast.Normal(Corruption))
                     return;
 
             // Immolate
@@ -453,13 +456,13 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && Target.HealthPercent > 30
                 && (settings.UseImmolateHighLevel || !UnstableAffliction.KnownSpell)
                 && ToolBox.CanBleed(ObjectManager.Target))
-                if (Cast(Immolate))
+                if (cast.Normal(Immolate))
                     return;
 
             // Drain Life high
             if (Me.HealthPercent < 70
                 && Target.HealthPercent > 20)
-                if (Cast(DrainLife))
+                if (cast.Normal(DrainLife))
                     return;
 
             // Health Funnel
@@ -467,8 +470,9 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && ObjectManager.Pet.HealthPercent < 30
                 && Me.HealthPercent > 30)
             {
-                RangeManager.SetRange(19f);
-                if (HealthFunnel.IsDistanceGood && Cast(HealthFunnel))
+                if (RangeManager.GetRange() > 19)
+                    RangeManager.SetRange(19f);
+                if (HealthFunnel.IsDistanceGood && cast.Normal(HealthFunnel))
                     return;
             }
 
@@ -477,14 +481,14 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && ObjectManager.Pet.Mana > 0
                 && ObjectManager.Pet.ManaPercentage > 60
                 && settings.UseDarkPact)
-                if (Cast(DarkPact))
+                if (cast.Normal(DarkPact))
                     return;
 
             // Drain Mana
             if (Me.ManaPercentage < 70
                 && Target.Mana > 0
                 && Target.ManaPercentage > 30)
-                if (Cast(DrainMana))
+                if (cast.Normal(DrainMana))
                     return;
 
             // Incinerate
@@ -493,7 +497,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && _overLowManaThreshold
                 && Target.HealthPercent > 30
                 && settings.UseIncinerate)
-                if (Cast(Incinerate))
+                if (cast.Normal(Incinerate))
                     return;
 
             // Shadow Bolt
@@ -501,7 +505,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && (ObjectManager.Target.HealthPercent > 50 || Me.ManaPercentage > 90 && ObjectManager.Target.HealthPercent > 10)
                 && _myManaPC > 40
                 && ObjectManager.Target.GetDistance < _maxRange)
-                if (Cast(ShadowBolt))
+                if (cast.Normal(ShadowBolt))
                     return;
 
             // Life Tap
@@ -509,7 +513,19 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && Me.ManaPercentage < 40
                 && !ObjectManager.Target.IsTargetingMe
                 && settings.UseLifeTap)
-                if (Cast(LifeTap))
+                if (cast.Normal(LifeTap))
+                    return;
+
+            // Stop wand if banned
+            if (ToolBox.UsingWand()
+                && cast.BannedSpells.Contains("Shoot"))
+                if (cast.Normal(UseWand))
+                    return;
+
+            // Spell if wand banned
+            if (cast.BannedSpells.Contains("Shoot")
+                && ObjectManager.Target.GetDistance < _maxRange)
+                if (cast.Normal(ShadowBolt))
                     return;
 
             // Use Wand
@@ -518,7 +534,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && ObjectManager.Target.GetDistance <= _maxRange + 2)
             {
                 RangeManager.SetRange(_maxRange);
-                if (Cast(UseWand, false))
+                if (cast.Normal(UseWand, false))
                     return;
             }
 
@@ -536,18 +552,18 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
         protected Spell DemonSkin = new Spell("Demon Skin");
         protected Spell DemonArmor = new Spell("Demon Armor");
+        protected Spell LifeTap = new Spell("Life Tap");
         protected Spell ShadowBolt = new Spell("Shadow Bolt");
         protected Spell UseWand = new Spell("Shoot");
-        protected Spell Fear = new Spell("Fear");
         protected Spell Immolate = new Spell("Immolate");
         protected Spell Corruption = new Spell("Corruption");
-        protected Spell LifeTap = new Spell("Life Tap");
-        protected Spell SummonImp = new Spell("Summon Imp");
-        protected Spell SummonVoidwalker = new Spell("Summon Voidwalker");
-        protected Spell SummonFelguard = new Spell("Summon Felguard");
         protected Spell CurseOfAgony = new Spell("Curse of Agony");
         protected Spell DrainSoul = new Spell("Drain Soul");
         protected Spell DrainLife = new Spell("Drain Life");
+        protected Spell Fear = new Spell("Fear");
+        protected Spell SummonImp = new Spell("Summon Imp");
+        protected Spell SummonVoidwalker = new Spell("Summon Voidwalker");
+        protected Spell SummonFelguard = new Spell("Summon Felguard");
         protected Spell CreateHealthStone = new Spell("Create HealthStone");
         protected Spell HealthFunnel = new Spell("Health Funnel");
         protected Spell CreateSoulstone = new Spell("Create Soulstone");
@@ -564,94 +580,6 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         protected Spell FelDomination = new Spell("Fel Domination");
         protected Spell SoulLink = new Spell("Soul Link");
         protected Spell HowlOfTerror = new Spell("Howl of Terror");
-
-        protected bool Cast(Spell s, bool castEvenIfWanding = true)
-        {
-            return AdvancedCast(s, castEvenIfWanding);
-        }
-
-        protected bool CastOnSelf(Spell s, bool castEvenIfWanding = true, bool stopMove = false)
-        {
-            return AdvancedCast(s, castEvenIfWanding, stopMove, true);
-        }
-
-        protected bool CastStopMove(Spell s, bool castEvenIfWanding = true)
-        {
-            return AdvancedCast(s, castEvenIfWanding, true);
-        }
-
-        protected bool AdvancedCast(Spell s, bool castEvenIfWanding = true, bool stopmove = false, bool onSelf = false)
-        {
-            if (!s.KnownSpell)
-                return false;
-
-            CombatDebug("*----------- INTO CAST FOR " + s.Name);
-            float _spellCD = ToolBox.GetSpellCooldown(s.Name);
-            CombatDebug("Cooldown is " + _spellCD);
-
-            if (ToolBox.GetSpellCost(s.Name) > Me.Mana)
-            {
-                CombatDebug(s.Name + ": Not enough mana, SKIPPING");
-                return false;
-            }
-
-            if (ToolBox.UsingWand() && !castEvenIfWanding)
-            {
-                CombatDebug("Didn't cast because we were backing up or wanding");
-                return false;
-            }
-
-            if (_spellCD >= 2f)
-            {
-                CombatDebug("Didn't cast because cd is too long");
-                return false;
-            }
-
-            if (ToolBox.UsingWand() && castEvenIfWanding)
-                ToolBox.StopWandWaitGCD(UseWand, ShadowBolt);
-
-            if (_spellCD < 2f && _spellCD > 0f)
-            {
-                if (ToolBox.GetSpellCastTime(s.Name) < 1f)
-                {
-                    CombatDebug(s.Name + " is instant and low CD, recycle");
-                    return true;
-                }
-
-                int t = 0;
-                while (ToolBox.GetSpellCooldown(s.Name) > 0)
-                {
-                    Thread.Sleep(50);
-                    t += 50;
-                    if (t > 2000)
-                    {
-                        CombatDebug(s.Name + ": waited for tool long, give up");
-                        return false;
-                    }
-                }
-                Thread.Sleep(100 + Usefuls.Latency);
-                CombatDebug(s.Name + ": waited " + (t + 100) + " for it to be ready");
-            }
-
-            if (!s.IsSpellUsable)
-            {
-                CombatDebug("Didn't cast because spell somehow not usable");
-                return false;
-            }
-
-            CombatDebug("Launching");
-            if (ObjectManager.Target.IsAlive || !Fight.InFight && ObjectManager.Target.Guid < 1)
-            {
-                s.Launch(stopmove, true, true);
-            }
-            return true;
-        }
-
-        protected void CombatDebug(string s)
-        {
-            if (settings.ActivateCombatDebug)
-                Logger.CombatDebug(s);
-        }
 
         // EVENT HANDLERS
         private void FightEndHandler(ulong guid)

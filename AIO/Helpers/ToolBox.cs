@@ -18,12 +18,10 @@ namespace WholesomeTBCAIO.Helpers
         {
             wandSpell.Launch();
             int c = 0;
-            while (!basicSpell.IsSpellUsable)
+            while (!basicSpell.IsSpellUsable && c <= 1500)
             {
                 c += 50;
                 Thread.Sleep(50);
-                if (c >= 1500)
-                    return;
             }
             Logger.LogDebug("Waited for GCD : " + c);
             if (c >= 1500)
@@ -198,6 +196,13 @@ namespace WholesomeTBCAIO.Helpers
         #endregion
 
         #region Misc
+
+        public static void SetMount(string mountName)
+        {
+            wManager.wManagerSetting.CurrentSetting.GroundMountName = mountName;
+            wManager.wManagerSetting.CurrentSetting.Save();
+            Logger.Log($"Setting mount to {mountName}");
+        }
 
         public static int GetNumberEnemiesAround(float distance, WoWUnit unit)
         {

@@ -1,4 +1,5 @@
-﻿using wManager.Wow.Helpers;
+﻿using WholesomeTBCAIO.Helpers;
+using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Warlock
@@ -20,7 +21,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             if (Me.HealthPercent > Me.ManaPercentage
                 && !Me.IsMounted
                 && settings.UseLifeTap)
-                if (Cast(LifeTap))
+                if (cast.Normal(LifeTap))
                     return;
 
             // Amplify Curse
@@ -33,13 +34,13 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && settings.UseSiphonLife
                 && !ObjectManager.Target.HaveBuff("Siphon Life")
                 && ObjectManager.Target.GetDistance < _maxRange + 2)
-                if (Cast(SiphonLife))
+                if (cast.Normal(SiphonLife))
                     return;
 
             // Unstable Affliction
             if (ObjectManager.Target.GetDistance < _maxRange + 2
                 && !ObjectManager.Target.HaveBuff("Unstable Affliction"))
-                if (Cast(UnstableAffliction))
+                if (cast.Normal(UnstableAffliction))
                     return;
 
             base.Pull();

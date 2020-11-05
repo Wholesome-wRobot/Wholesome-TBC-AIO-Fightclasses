@@ -15,6 +15,8 @@ namespace WholesomeTBCAIO.Rotations.Paladin
     {
         public static PaladinSettings settings;
 
+        protected Cast cast;
+
         protected Stopwatch _purifyTimer = new Stopwatch();
         protected Stopwatch _cleanseTimer = new Stopwatch();
         protected WoWLocalPlayer Me = ObjectManager.Me;
@@ -26,6 +28,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
         public void Initialize(IClassRotation specialization)
         {
             settings = PaladinSettings.Current;
+            cast = new Cast(HolyLight, settings.ActivateCombatDebug, null);
 
             this.specialization = specialization as Paladin;
             Talents.InitTalents(settings);
@@ -54,7 +57,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                         // Crusader Aura
                         if (CrusaderAura.KnownSpell
                             && !Me.HaveBuff("Crusader Aura"))
-                            Cast(CrusaderAura);
+                            cast.Normal(CrusaderAura);
 
                     if (StatusChecker.OutOfCombat())
                         specialization.BuffRotation();
@@ -79,32 +82,32 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // Holy Light
             if (Me.HealthPercent < settings.OOCHolyLightThreshold
                 && HolyLight.IsSpellUsable)
-                if (Cast(HolyLight, true))
+                if (cast.OnSelf(HolyLight))
                     return;
 
             // Flash of Light
             if (FlashOfLight.IsSpellUsable
                 && Me.HealthPercent < settings.OOCFlashHealThreshold)
-                if (Cast(FlashOfLight, true))
+                if (cast.OnSelf(FlashOfLight))
                     return;
 
             // Sanctity Aura
             if (!Me.HaveBuff("Sanctity Aura")
                 && !settings.RetributionAura)
-                if (Cast(SanctityAura))
+                if (cast.Normal(SanctityAura))
                     return;
 
             // Retribution Aura
             if (!Me.HaveBuff("Retribution Aura") 
                 && (!SanctityAura.KnownSpell || settings.RetributionAura))
-                if (Cast(RetributionAura))
+                if (cast.Normal(RetributionAura))
                     return;
 
             // Blessing of Wisdom
             if (settings.UseBlessingOfWisdom 
                 && !Me.HaveBuff("Blessing of Wisdom")
                 && BlessingOfWisdom.IsSpellUsable)
-                if (Cast(BlessingOfWisdom, true))
+                if (cast.OnSelf(BlessingOfWisdom))
                     return;
 
             // Blessing of Might
@@ -112,7 +115,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 && !Me.HaveBuff("Blessing of Might")
                 && !Me.IsMounted 
                 && BlessingOfMight.IsSpellUsable)
-                if (Cast(BlessingOfMight, true))
+                if (cast.OnSelf(BlessingOfMight))
                     return;
         }
 
@@ -126,7 +129,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if ((Me.HaveBuff("Seal of Righteousness") || Me.HaveBuff("Seal of Command"))
                 && Judgement.IsDistanceGood
                 && (Me.ManaPercentage >= _manaSavePercent || Me.HaveBuff("Seal of the Crusader")))
-                if (Cast(Judgement))
+                if (cast.Normal(Judgement))
                     return;
 
             // Seal of the Crusader
@@ -134,7 +137,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 && !Me.HaveBuff("Seal of the Crusader")
                 && Me.ManaPercentage > _manaSavePercent - 20
                 && settings.UseSealOfTheCrusader)
-                if (Cast(SealOfTheCrusader))
+                if (cast.Normal(SealOfTheCrusader))
                     return;
 
             // Seal of Righteousness
@@ -143,7 +146,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 && !settings.UseSealOfTheCrusader
                 && (Target.HaveBuff("Judgement of the Crusader") || Me.ManaPercentage > _manaSavePercent || !settings.UseSealOfTheCrusader)
                 && (!settings.UseSealOfCommand || !SealOfCommand.KnownSpell))
-                if (Cast(SealOfRighteousness))
+                if (cast.Normal(SealOfRighteousness))
                     return;
 
             // Seal of Command
@@ -152,7 +155,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 && (Target.HaveBuff("Judgement of the Crusader") || Me.ManaPercentage > _manaSavePercent || !settings.UseSealOfTheCrusader)
                 && settings.UseSealOfCommand
                 && SealOfCommand.KnownSpell)
-                if (Cast(SealOfCommand))
+                if (cast.Normal(SealOfCommand))
                     return;
 
             // Seal of Command Rank 1
@@ -177,39 +180,39 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if (ObjectManager.GetNumberAttackPlayer() > 1 
                 && settings.DevoAuraOnMulti 
                 && !Me.HaveBuff("Devotion Aura"))
-                if (Cast(DevotionAura))
+                if (cast.Normal(DevotionAura))
                     return;
 
             // Devotion Aura
             if (!Me.HaveBuff("Devotion Aura") 
                 && !SanctityAura.KnownSpell 
                 && !RetributionAura.KnownSpell)
-                if (Cast(DevotionAura))
+                if (cast.Normal(DevotionAura))
                     return;
 
             // Sanctity Aura
             if (!Me.HaveBuff("Sanctity Aura") 
                 && !settings.RetributionAura
                 && ObjectManager.GetNumberAttackPlayer() <= 1)
-                if (Cast(SanctityAura))
+                if (cast.Normal(SanctityAura))
                     return;
 
             // Retribution Aura
             if (!Me.HaveBuff("Retribution Aura") 
                 && (!SanctityAura.KnownSpell || settings.RetributionAura)
                 && ObjectManager.GetNumberAttackPlayer() <= 1)
-                if (Cast(RetributionAura))
+                if (cast.Normal(RetributionAura))
                     return;
 
             // Lay on Hands
             if (Me.HealthPercent < 10)
-                if (Cast(LayOnHands))
+                if (cast.OnSelf(LayOnHands))
                     return;
 
             // Hammer of Justice
             if (Me.HealthPercent < 50
                 && Me.ManaPercentage > _manaSavePercent)
-                if (Cast(HammerOfJustice))
+                if (cast.Normal(HammerOfJustice))
                     return;
 
             // Holy Light / Flash of Light
@@ -220,32 +223,32 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 if (!HolyLight.IsSpellUsable)
                 {
                     if (Me.HealthPercent < 20)
-                        if (Cast(DivineShield))
+                        if (cast.Normal(DivineShield))
                             return;
-                    if (Cast(FlashOfLight))
+                    if (cast.OnSelf(FlashOfLight))
                         return;
                 }
-                if (Cast(HolyLight))
+                if (cast.OnSelf(HolyLight))
                     return;
             }
 
             // Avenging Wrath
             if (Me.ManaPercentage > _manaSavePercent 
                 && ObjectManager.GetNumberAttackPlayer() > 1)
-                if (Cast(AvengingWrath))
+                if (cast.Normal(AvengingWrath))
                     return;
 
             // Exorcism
             if ((Target.CreatureTypeTarget == "Undead" || Target.CreatureTypeTarget == "Demon")
                 && settings.UseExorcism)
-                if (Cast(Exorcism))
+                if (cast.Normal(Exorcism))
                     return;
 
             // Judgement (Crusader)
             if (Me.HaveBuff("Seal of the Crusader") 
                 && Target.GetDistance < 10)
             {
-                if (Cast(Judgement))
+                if (cast.Normal(Judgement))
                 {
                     Thread.Sleep(200);
                     return;
@@ -256,7 +259,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if ((Me.HaveBuff("Seal of Righteousness") || Me.HaveBuff("Seal of Command"))
                 && Target.GetDistance < 10
                 && (Me.ManaPercentage >= _manaSavePercent || Me.HaveBuff("Seal of the Crusader")))
-                if (Cast(Judgement))
+                if (cast.Normal(Judgement))
                     return;
 
             // Seal of the Crusader
@@ -265,7 +268,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 && Me.ManaPercentage > _manaSavePercent - 20 
                 && Target.IsAlive 
                 && settings.UseSealOfTheCrusader)
-                if (Cast(SealOfTheCrusader))
+                if (cast.Normal(SealOfTheCrusader))
                     return;
 
             // Seal of Righteousness
@@ -273,7 +276,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 && !Me.HaveBuff("Seal of the Crusader") 
                 && (Target.HaveBuff("Judgement of the Crusader") || Me.ManaPercentage > _manaSavePercent || !settings.UseSealOfTheCrusader)
                 && (!settings.UseSealOfCommand || !SealOfCommand.KnownSpell))
-                if (Cast(SealOfRighteousness))
+                if (cast.Normal(SealOfRighteousness))
                     return;
 
             // Seal of Command
@@ -282,7 +285,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 && (Target.HaveBuff("Judgement of the Crusader") || Me.ManaPercentage > _manaSavePercent || !settings.UseSealOfTheCrusader)
                 && settings.UseSealOfCommand 
                 && SealOfCommand.KnownSpell)
-                if (Cast(SealOfCommand))
+                if (cast.Normal(SealOfCommand))
                     return;
 
             // Seal of Command Rank 1
@@ -300,12 +303,12 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             // Crusader Strike
             if (Me.ManaPercentage > 10)
-                if (Cast(CrusaderStrike))
+                if (cast.Normal(CrusaderStrike))
                     return;
 
             // Hammer of Wrath
             if (settings.UseHammerOfWrath)
-                if (Cast(HammerOfWrath))
+                if (cast.Normal(HammerOfWrath))
                     return;
 
             // Purify
@@ -314,7 +317,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             {
                 _purifyTimer.Restart();
                 Thread.Sleep(Main.humanReflexTime);
-                Cast(Purify, true);
+                cast.OnSelf(Purify);
                 return;
             }
 
@@ -324,7 +327,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             {
                 _cleanseTimer.Restart();
                 Thread.Sleep(Main.humanReflexTime);
-                Cast(Cleanse, true);
+                cast.OnSelf(Cleanse);
                 return;
             }
         }
@@ -358,22 +361,6 @@ namespace WholesomeTBCAIO.Rotations.Paladin
         {
             _purifyTimer.Reset();
             _cleanseTimer.Reset();
-        }
-
-        protected bool Cast(Spell s, bool onSelf = false)
-        {
-            CombatDebug("In cast for " + s.Name);
-            if (!s.IsSpellUsable || !s.KnownSpell)
-                return false;
-                
-            s.Launch(false, false, true, onSelf);
-            return true;
-        }
-
-        protected void CombatDebug(string s)
-        {
-            if (settings.ActivateCombatDebug)
-                Logger.CombatDebug(s);
         }
     }
 }

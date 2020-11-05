@@ -13,13 +13,13 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Ice Armor
             if (!Me.HaveBuff("Ice Armor"))
-                if (Cast(IceArmor))
+                if (cast.Normal(IceArmor))
                     return;
 
             // Frost Armor
             if (!Me.HaveBuff("Frost Armor")
                 && !IceArmor.KnownSpell)
-                if (Cast(FrostArmor))
+                if (cast.Normal(FrostArmor))
                     return;
         }
 
@@ -31,13 +31,13 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Combustion
             if (!Me.HaveBuff("Combustion"))
-                if (Cast(Combustion))
+                if (cast.Normal(Combustion))
                     return;
 
             // Fireball
             if (_target.GetDistance < 33f
                 && (_target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 30 || !_iCanUseWand))
-                if (CastStopMove(Fireball))
+                if (cast.Normal(Fireball))
                     return;
         }
 
@@ -59,7 +59,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             if (ToolBox.HasCurseDebuff())
             {
                 Thread.Sleep(Main.humanReflexTime);
-                if (Cast(RemoveCurse))
+                if (cast.OnSelf(RemoveCurse))
                     return;
             }
 
@@ -67,7 +67,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             if (!Me.HaveBuff("Mana Shield")
                 && (Me.HealthPercent < 30 && Me.ManaPercentage > 50
                 || Me.HealthPercent < 10))
-                if (Cast(ManaShield))
+                if (cast.Normal(ManaShield))
                     return;
 
             // Use Mana Stone
@@ -80,14 +80,14 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Combustion
             if (!Me.HaveBuff("Combustion"))
-                if (Cast(Combustion))
+                if (cast.Normal(Combustion))
                     return;
 
             // Blast Wave
             if (settings.BlastWaveOnMulti
                 && ToolBox.CheckIfEnemiesClose(10)
                 && ObjectManager.GetNumberAttackPlayer() > 1)
-                if (Cast(BlastWave))
+                if (cast.Normal(BlastWave))
                     return;
 
             // Dragon's Breath
@@ -95,7 +95,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 && settings.UseDragonsBreath
                 && (Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand)
                 && _polymorphedEnemy == null)
-                if (Cast(DragonsBreath))
+                if (cast.Normal(DragonsBreath))
                     return;
 
             // Fire Blast
@@ -103,32 +103,44 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 && Target.HealthPercent <= settings.FireblastThreshold
                 && (Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand)
                 && !Target.HaveBuff("Polymorph"))
-                if (Cast(FireBlast))
+                if (cast.Normal(FireBlast))
                     return;
 
             // Cone of Cold
             if (Target.GetDistance < 10
                 && settings.UseConeOfCold
                 && _polymorphedEnemy == null)
-                if (Cast(ConeOfCold))
+                if (cast.Normal(ConeOfCold))
                     return;
 
             // FireBall
             if (Target.GetDistance < 33f
                 && (Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand)
                 && !Target.HaveBuff("Polymorph"))
-                if (Cast(Fireball, true))
+                if (cast.Normal(Fireball, true))
+                    return;
+
+            // Stop wand if banned
+            if (ToolBox.UsingWand()
+                && cast.BannedSpells.Contains("Shoot"))
+                if (cast.Normal(UseWand))
+                    return;
+
+            // Spell if wand banned
+            if (cast.BannedSpells.Contains("Shoot")
+                && Target.GetDistance < _distanceRange)
+                if (cast.Normal(Fireball) || cast.Normal(Frostbolt) || cast.Normal(ArcaneMissiles))
                     return;
 
             // Use Wand
             if (!ToolBox.UsingWand()
                 && _iCanUseWand
                 && ObjectManager.Target.GetDistance <= _distanceRange
-                && !_isBackingUp
+                && !cast.IsBackingUp
                 && !MovementManager.InMovement)
             {
                 RangeManager.SetRange(_distanceRange);
-                if (Cast(UseWand, false))
+                if (cast.Normal(UseWand, false))
                     return;
             }
 
@@ -136,7 +148,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             if (!ToolBox.UsingWand()
                 && !UseWand.IsSpellUsable
                 && !RangeManager.CurrentRangeIsMelee()
-                && !_isBackingUp
+                && !cast.IsBackingUp
                 && Target.IsAlive)
             {
                 Logger.Log("Going in melee");

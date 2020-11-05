@@ -21,6 +21,8 @@ namespace WholesomeTBCAIO.Rotations.Druid
         protected WoWLocalPlayer Me = ObjectManager.Me;
         protected DruidSettings settings;
 
+        protected Cast cast;
+
         protected bool _fightingACaster = false;
         protected List<string> _casterEnemies = new List<string>();
         protected bool _pullFromAfar = false;
@@ -35,6 +37,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
         {
             RangeManager.SetRange(_pullRange);
             settings = DruidSettings.Current;
+            cast = new Cast(Wrath, settings.ActivateCombatDebug, null);
 
             this.specialization = specialization as Druid;
             Talents.InitTalents(settings);
@@ -89,20 +92,20 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 // Regrowth
                 if (Me.HealthPercent < 70
                     && !Me.HaveBuff("Regrowth"))
-                    if (Cast(Regrowth))
+                    if (cast.Normal(Regrowth))
                         return;
 
                 // Rejuvenation
                 if (Me.HealthPercent < 50
                     && !Me.HaveBuff("Rejuvenation")
                     && !Regrowth.KnownSpell)
-                    if (Cast(Rejuvenation))
+                    if (cast.Normal(Rejuvenation))
                         return;
 
                 // Healing Touch
                 if (Me.HealthPercent < 40
                     && !Regrowth.KnownSpell)
-                    if (Cast(HealingTouch))
+                    if (cast.Normal(HealingTouch))
                         return;
 
                 // Remove Curse
@@ -111,7 +114,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     && RemoveCurse.IsSpellUsable)
                 {
                     Thread.Sleep(200);
-                    if (Cast(RemoveCurse, true))
+                    if (cast.Normal(RemoveCurse, true))
                         return;
                 }
 
@@ -121,7 +124,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     && RemoveCurse.IsSpellUsable)
                 {
                     Thread.Sleep(200);
-                    if (Cast(AbolishPoison, true))
+                    if (cast.Normal(AbolishPoison, true))
                         return;
                 }
 
@@ -131,7 +134,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     && MarkOfTheWild.IsSpellUsable)
                 {
                     Thread.Sleep(200);
-                    if (Cast(MarkOfTheWild, true))
+                    if (cast.OnSelf(MarkOfTheWild))
                         return;
                 }
 
@@ -141,43 +144,34 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     && Thorns.IsSpellUsable)
                 {
                     Thread.Sleep(200);
-                    if (Cast(Thorns, true))
+                    if (cast.OnSelf(Thorns))
                         return;
                 }
 
                 // Omen of Clarity
                 if (!Me.HaveBuff("Omen of Clarity") && OmenOfClarity.IsSpellUsable)
-                    if (Cast(OmenOfClarity))
+                    if (cast.Normal(OmenOfClarity))
                         return;
 
                 // Aquatic form
                 if (Me.IsSwimming
                     && !Me.HaveBuff("Aquatic Form")
                     && Me.ManaPercentage > 50)
-                    if (Cast(AquaticForm))
+                    if (cast.Normal(AquaticForm))
                         return;
 
-                // Travel Form
-                if (!Me.HaveBuff("Travel Form")
-                    && !Me.HaveBuff("Aquatic Form")
-                    && settings.UseTravelForm
-                    && Me.ManaPercentage > 50
-                    && Me.ManaPercentage > wManager.wManagerSetting.CurrentSetting.DrinkPercent
-                    && !ObjectManager.Target.IsFlightMaster)
-                    if (Cast(TravelForm))
-                        return;
+                string currentGroundMount = wManager.wManagerSetting.CurrentSetting.GroundMountName;
 
-                // Cat Form
-                if (!Me.HaveBuff("Cat Form")
-                    && !Me.HaveBuff("Aquatic Form")
-                    && (!settings.UseTravelForm || !TravelForm.KnownSpell || Me.ManaPercentage < 50)
-                    && Me.ManaPercentage > wManager.wManagerSetting.CurrentSetting.DrinkPercent
-                    && !ObjectManager.Target.IsFlightMaster
-                    && settings.CatFormOOC)
-                {
-                    if (Cast(CatForm))
-                        return;
-                }
+                // Travel Form OOC
+                if (TravelForm.KnownSpell
+                    && (currentGroundMount == "" || currentGroundMount == CatForm.Name))
+                    ToolBox.SetMount(TravelForm.Name);
+
+                // Cat Form OOC
+                if (CatForm.KnownSpell
+                    && !TravelForm.KnownSpell
+                    && currentGroundMount == "")
+                    ToolBox.SetMount(CatForm.Name);
             }
         }
 
@@ -224,12 +218,14 @@ namespace WholesomeTBCAIO.Rotations.Druid
             if (!CatForm.KnownSpell
                 && !Me.HaveBuff("Bear Form") 
                 && !_pullFromAfar)
-                if (Cast(BearForm))
+                if (cast.Normal(BearForm))
                     return;
 
             // Cat Form
-            if (!Me.HaveBuff("Cat Form") && !_pullFromAfar)
-                if (Cast(CatForm))
+            if (!Me.HaveBuff("Cat Form") 
+                && !_pullFromAfar
+                && ObjectManager.Target.Guid > 0)
+                if (cast.Normal(CatForm))
                     return;
 
             // Prowl
@@ -238,7 +234,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 && ObjectManager.Target.GetDistance > 15f
                 && ObjectManager.Target.GetDistance < 25f
                 && settings.StealthEngage)
-                if (Cast(Prowl))
+                if (cast.Normal(Prowl))
                     return;
 
             // Pull Bear/Cat
@@ -327,7 +323,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             // Innervate
             if (settings.UseInnervate
                 && Me.ManaPercentage < 20)
-                if (Cast(Innervate))
+                if (cast.Normal(Innervate))
                     return;
 
             // Barkskin + Regrowth + Rejuvenation
@@ -337,7 +333,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 && !Me.HaveBuff("Regrowth")
                 && Me.Mana > _bigHealComboCost + ToolBox.GetSpellCost("Barkskin")
                 && (Target.HealthPercent > 15 || Me.HealthPercent < 25))
-                if (Cast(Barkskin) && Cast(Regrowth) && Cast(Rejuvenation))
+                if (cast.Normal(Barkskin) && cast.Normal(Regrowth) && cast.Normal(Rejuvenation))
                     return;
 
             // Regrowth + Rejuvenation
@@ -345,7 +341,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 && !Me.HaveBuff("Regrowth")
                 && Me.Mana > _bigHealComboCost
                 && (Target.HealthPercent > 15 || Me.HealthPercent < 25))
-                if (Cast(Regrowth) && Cast(Rejuvenation))
+                if (cast.Normal(Regrowth) && cast.Normal(Rejuvenation))
                     return;
 
             // Regrowth
@@ -353,7 +349,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 && !Me.HaveBuff("Regrowth")
                 && Me.Mana > _smallHealComboCost
                 && (Target.HealthPercent > 15 || Me.HealthPercent < 25))
-                if (Cast(Regrowth))
+                if (cast.Normal(Regrowth))
                     return;
 
             // Rejuvenation
@@ -361,20 +357,20 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 && !Me.HaveBuff("Rejuvenation")
                 && !Regrowth.KnownSpell
                 && (Target.HealthPercent > 15 || Me.HealthPercent < 25))
-                if (Cast(Rejuvenation))
+                if (cast.Normal(Rejuvenation))
                     return;
 
             // Healing Touch
             if (Me.HealthPercent < 30
                 && !Regrowth.KnownSpell
                 && (Target.HealthPercent > 15 || Me.HealthPercent < 25))
-                if (Cast(HealingTouch))
+                if (cast.Normal(HealingTouch))
                     return;
 
             // Catorm
             if (!Me.HaveBuff("Cat Form")
                 && (ObjectManager.GetNumberAttackPlayer() < settings.NumberOfAttackersBearForm || !BearForm.KnownSpell && !DireBearForm.KnownSpell))
-                if (Cast(CatForm))
+                if (cast.Normal(CatForm))
                     return;
 
             // Bear Form
@@ -383,7 +379,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             {
                 if (!CatForm.KnownSpell)
                 {
-                    if (Cast(DireBearForm) || Cast(BearForm))
+                    if (cast.Normal(DireBearForm) || cast.Normal(BearForm))
                         return;
                 }
                 else if (ObjectManager.GetNumberAttackPlayer() >= settings.NumberOfAttackersBearForm
@@ -391,7 +387,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                         && settings.NumberOfAttackersBearForm > 1)
                 {
                     {
-                        if (Cast(DireBearForm) || Cast(BearForm))
+                        if (cast.Normal(DireBearForm) || cast.Normal(BearForm))
                             return;
                     }
                 }
@@ -408,7 +404,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
                 // Shred (when behind)
                 if (Target.HaveBuff("Pounce"))
-                    if (Cast(Shred))
+                    if (cast.Normal(Shred))
                         return;
 
                 // Faerie Fire
@@ -428,12 +424,12 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 {
                     if (Me.ComboPoint >= 3
                         && Target.HealthPercent > 60)
-                        if (Cast(Rip))
+                        if (cast.Normal(Rip))
                             return;
 
                     if (Me.ComboPoint >= 1
                         && Target.HealthPercent <= 60)
-                        if (Cast(Rip))
+                        if (cast.Normal(Rip))
                             return;
                 }
 
@@ -443,12 +439,12 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 {
                     if (Me.ComboPoint >= 3
                         && Target.HealthPercent > 60)
-                        if (Cast(FerociousBite))
+                        if (cast.Normal(FerociousBite))
                             return;
 
                     if (Me.ComboPoint >= 1
                         && Target.HealthPercent <= 60)
-                        if (Cast(FerociousBite))
+                        if (cast.Normal(FerociousBite))
                             return;
                 }
 
@@ -456,7 +452,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 if (!Target.HaveBuff("Rake")
                     && !Target.HaveBuff("Pounce")
                     && ToolBox.CanBleed(Me.TargetObject))
-                    if (Cast(Rake))
+                    if (cast.Normal(Rake))
                         return;
 
                 // Tiger's Fury
@@ -466,7 +462,8 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     && !Target.HaveBuff("Pounce")
                     && Me.Energy > 30
                     && TigersFury.IsSpellUsable)
-                    TigersFury.Launch();
+                    if (cast.Normal(TigersFury))
+                        return;
 
                 // Mangle
                 if (Me.ComboPoint < 5
@@ -479,7 +476,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
                 // Claw
                 if (Me.ComboPoint < 5 && !Target.HaveBuff("Pounce"))
-                    if (Cast(Claw))
+                    if (cast.Normal(Claw))
                         return;
             }
 
@@ -495,7 +492,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
                 // Frenzied Regeneration
                 if (Me.HealthPercent < 50)
-                    if (Cast(FrenziedRegeneration))
+                    if (cast.Normal(FrenziedRegeneration))
                         return;
 
                 // Faerie Fire
@@ -508,30 +505,30 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
                 // Swipe
                 if (ObjectManager.GetNumberAttackPlayer() > 1 && ToolBox.CheckIfEnemiesClose(8f))
-                    if (Cast(Swipe))
+                    if (cast.Normal(Swipe))
                         return;
 
                 // Interrupt with Bash
                 if (_shouldBeInterrupted)
                 {
                     Thread.Sleep(Main.humanReflexTime);
-                    if (Cast(Bash))
+                    if (cast.Normal(Bash))
                         return;
                 }
 
                 // Enrage
                 if (settings.UseEnrage)
-                    if (Cast(Enrage))
+                    if (cast.Normal(Enrage))
                         return;
 
                 // Demoralizing Roar
                 if (!Target.HaveBuff("Demoralizing Roar") && Target.GetDistance < 9f)
-                    if (Cast(DemoralizingRoar))
+                    if (cast.Normal(DemoralizingRoar))
                         return;
 
                 // Maul
                 if (!MaulOn() && (!_fightingACaster || Me.Rage > 30))
-                    if (Cast(Maul))
+                    if (cast.Normal(Maul))
                         return;
             }
 
@@ -556,7 +553,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     && Me.ManaPercentage > 15
                     && Target.HealthPercent > 15
                     && Me.Level >= 8)
-                    if (Cast(Moonfire))
+                    if (cast.Normal(Moonfire))
                         return;
 
                 // Wrath
@@ -564,7 +561,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     && Me.ManaPercentage > 45
                     && Target.HealthPercent > 30
                     && Me.Level >= 8)
-                    if (Cast(Wrath))
+                    if (cast.Normal(Wrath))
                         return;
 
                 // Moonfire Low level DPS
@@ -572,7 +569,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     && Me.ManaPercentage > 50
                     && Target.HealthPercent > 30
                     && Me.Level < 8)
-                    if (Cast(Moonfire))
+                    if (cast.Normal(Moonfire))
                         return;
 
                 // Wrath Low level DPS
@@ -580,7 +577,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     && Me.ManaPercentage > 60
                     && Target.HealthPercent > 30
                     && Me.Level < 8)
-                    if (Cast(Wrath))
+                    if (cast.Normal(Wrath))
                         return;
             }
             #endregion
@@ -649,7 +646,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 && FaerieFireFeral.KnownSpell)
             {
                 Logger.Log("Switching to cat form");
-                Cast(CatForm);
+                cast.Normal(CatForm);
                 return true;
             }
             else if (Moonfire.KnownSpell
@@ -661,7 +658,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 Usefuls.WaitIsCasting();
                 return true;
             }
-            else if (Cast(Wrath))
+            else if (cast.Normal(Wrath))
                 return true;
 
             return false;
@@ -672,85 +669,23 @@ namespace WholesomeTBCAIO.Rotations.Druid
             if (Claw.IsDistanceGood)
             {
                 if (Me.Energy > 80)
-                    if (Cast(Pounce))
+                    if (cast.Normal(Pounce))
                         return;
 
                 // Opener
                 if (ToolBox.MeBehindTarget())
                 {
-                    if (Cast(Ravage))
+                    if (cast.Normal(Ravage))
                         return;
-                    if (Cast(Shred))
+                    if (cast.Normal(Shred))
                         return;
                 }
 
-                if (Cast(Rake))
+                if (cast.Normal(Rake))
                     return;
-                if (Cast(Claw))
+                if (cast.Normal(Claw))
                     return;
             }
-        }
-
-        protected bool Cast(Spell s, bool onSelf = false)
-        {
-            if (!s.KnownSpell)
-                return false;
-
-            CombatDebug("*----------- INTO CAST FOR " + s.Name);
-            float _spellCD = ToolBox.GetSpellCooldown(s.Name);
-            CombatDebug("Cooldown is " + _spellCD);
-
-            if (ToolBox.GetSpellCost(s.Name) > Me.Mana)
-            {
-                CombatDebug(s.Name + ": Not enough mana, SKIPPING");
-                return false;
-            }
-
-            if (_spellCD >= 2f)
-            {
-                CombatDebug("Didn't cast because cd is too long");
-                return false;
-            }
-
-            if (_spellCD < 2f && _spellCD > 0f)
-            {
-                if (ToolBox.GetSpellCastTime(s.Name) < 1f)
-                {
-                    CombatDebug(s.Name + " is instant and low CD, recycle");
-                    return true;
-                }
-
-                int t = 0;
-                while (ToolBox.GetSpellCooldown(s.Name) > 0)
-                {
-                    Thread.Sleep(50);
-                    t += 50;
-                    if (t > 2000)
-                    {
-                        CombatDebug(s.Name + ": waited for tool long, give up");
-                        return false;
-                    }
-                }
-                Thread.Sleep(100 + Usefuls.Latency);
-                CombatDebug(s.Name + ": waited " + (t + 100) + " for it to be ready");
-            }
-
-            if (!s.IsSpellUsable)
-            {
-                CombatDebug("Didn't cast because spell somehow not usable");
-                return false;
-            }
-
-            CombatDebug("Launching");
-            if (ObjectManager.Target.IsAlive || !Fight.InFight && ObjectManager.Target.Guid < 1)
-                s.Launch(false, true, true, onSelf);
-            return true;
-        }
-
-        protected void CombatDebug(string s)
-        {
-            if (settings.ActivateCombatDebug)
-                Logger.CombatDebug(s);
         }
 
         // EVENT HANDLERS

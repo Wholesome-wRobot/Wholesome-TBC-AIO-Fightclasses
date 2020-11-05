@@ -20,7 +20,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             if (Me.HealthPercent > Me.ManaPercentage
                 && !Me.IsMounted
                 && settings.UseLifeTap)
-                if (Cast(LifeTap))
+                if (cast.Normal(LifeTap))
                     return;
 
             base.Pull();

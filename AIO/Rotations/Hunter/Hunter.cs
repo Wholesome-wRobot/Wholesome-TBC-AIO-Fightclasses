@@ -21,10 +21,11 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         protected HunterFoodManager _foodManager = new HunterFoodManager();
         protected BackgroundWorker _petPulseThread = new BackgroundWorker();
 
+        protected Cast cast;
+
         protected float _distanceRange = 28f;
         protected bool _autoshotRepeating;
         protected bool RangeCheck;
-        protected bool _isBackingUp = false;
         protected int _backupAttempts = 0;
         protected int _steadyShotSleep = 0;
         protected bool _canOnlyMelee = false;
@@ -36,6 +37,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         public void Initialize(IClassRotation specialization)
         {
             settings = HunterSettings.Current;
+            cast = new Cast(RaptorStrike, settings.ActivateCombatDebug, null);
 
             this.specialization = specialization as Hunter;
             Talents.InitTalents(settings);
@@ -162,7 +164,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && MovementManager.InMoveTo
                 && Me.ManaPercentage > 60
                 && settings.UseAspectOfTheCheetah)
-                if (Cast(AspectCheetah))
+                if (cast.Normal(AspectCheetah))
                     return;
         }
 
@@ -173,7 +175,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && !HuntersMark.TargetHaveBuff
                 && ObjectManager.Target.GetDistance > 13f
                 && ObjectManager.Target.IsAlive)
-                if (Cast(HuntersMark))
+                if (cast.Normal(HuntersMark))
                     return;
         }
 
@@ -184,11 +186,11 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             WoWUnit Target = ObjectManager.Target;
 
             if (Target.GetDistance < 10f 
-                && !_isBackingUp)
+                && !cast.IsBackingUp)
                 ToolBox.CheckAutoAttack(Attack);
 
             if (Target.GetDistance > 10f 
-                && !_isBackingUp)
+                && !cast.IsBackingUp)
                 ReenableAutoshot();
 
             if (Target.GetDistance < 13f 
@@ -198,7 +200,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             // Aspect of the viper
             if (!Me.HaveBuff("Aspect of the Viper") 
                 && Me.ManaPercentage < 30)
-                if (Cast(AspectViper))
+                if (cast.Normal(AspectViper))
                     return;
 
             // Aspect of the Hawk
@@ -207,13 +209,13 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 || !Me.HaveBuff("Aspect of the Hawk") 
                 && !Me.HaveBuff("Aspect of the Cheetah") 
                 && !Me.HaveBuff("Aspect of the Viper"))
-                if (Cast(AspectHawk))
+                if (cast.Normal(AspectHawk))
                     return;
 
             // Aspect of the Monkey
             if (!Me.HaveBuff("Aspect of the Monkey") 
                 && !AspectHawk.KnownSpell)
-                if (Cast(AspectMonkey))
+                if (cast.Normal(AspectMonkey))
                     return;
 
             // Disengage
@@ -221,8 +223,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && ObjectManager.Pet.Target == Me.Target 
                 && Target.Target == Me.Guid 
                 && Target.GetDistance < 10 
-                && !_isBackingUp)
-                if (Cast(Disengage))
+                && !cast.IsBackingUp)
+                if (cast.Normal(Disengage))
                     return;
 
             // Bestial Wrath
@@ -231,37 +233,40 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && Me.ManaPercentage > 10 
                 && BestialWrath.IsSpellUsable
                 && (settings.BestialWrathOnMulti && ObjectManager.GetUnitAttackPlayer().Count > 1 || !settings.BestialWrathOnMulti))
-                if (Cast(BestialWrath))
+                if (cast.Normal(BestialWrath))
                     return;
 
             // Rapid Fire
             if (Target.GetDistance < 34f 
                 && Target.HealthPercent >= 80.0
                 && (settings.RapidFireOnMulti && ObjectManager.GetUnitAttackPlayer().Count > 1 || !settings.RapidFireOnMulti))
-                if (Cast(RapidFire))
+                if (cast.Normal(RapidFire))
                     return;
 
             // Kill Command
-            if (Cast(KillCommand))
+            if (cast.Normal(KillCommand))
                 return;
 
             // Raptor Strike
             if (Target.GetDistance < 6f 
                 && !RaptorStrikeOn())
-                if (Cast(RaptorStrike))
+                if (cast.Normal(RaptorStrike))
                     return;
 
             // Mongoose Bite
             if (Target.GetDistance < 6f)
-                if (Cast(MongooseBite))
+                if (cast.Normal(MongooseBite))
                     return;
 
             // Feign Death
             if (Me.HealthPercent < 20
                 || (ObjectManager.GetNumberAttackPlayer() > 0 && ObjectManager.GetUnitAttackPlayer().Count > 1))
-                if (Cast(FeignDeath))
+                if (cast.Normal(FeignDeath))
                 {
                     Fight.StopFight();
+                    Thread.Sleep(500);
+                    if (ObjectManager.Pet.Target > 0)
+                        Fight.StartFight(ObjectManager.Pet.Target);
                     return;
                 }
 
@@ -269,7 +274,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             if (ObjectManager.Pet.HaveBuff("Mend Pet") 
                 && ObjectManager.GetUnitAttackPlayer().Count > 1 
                 && settings.UseFreezingTrap)
-                if (Cast(FreezingTrap))
+                if (cast.Normal(FreezingTrap))
                     return;
 
             // Mend Pet
@@ -277,7 +282,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && ObjectManager.Pet.IsAlive
                 && ObjectManager.Pet.HealthPercent <= 30.0
                 && !ObjectManager.Pet.HaveBuff("Mend Pet"))
-                if (Cast(MendPet))
+                if (cast.Normal(MendPet))
                     return;
 
             // Concussive Shot
@@ -286,7 +291,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && ConcussiveShot.IsDistanceGood
                 && Target.HealthPercent < 20
                 && !Target.HaveBuff("Concussive Shot"))
-                if (Cast(ConcussiveShot))
+                if (cast.Normal(ConcussiveShot))
                     return;
 
             // Wing Clip
@@ -295,7 +300,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && WingClip.IsDistanceGood
                 && Target.HealthPercent < 20
                 && !Target.HaveBuff("Wing Clip"))
-                if (Cast(WingClip))
+                if (cast.Normal(WingClip))
                     return;
 
             // Hunter's Mark
@@ -303,7 +308,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && !HuntersMark.TargetHaveBuff 
                 && Target.GetDistance > 13f 
                 && Target.IsAlive)
-                if (Cast(HuntersMark))
+                if (cast.Normal(HuntersMark))
                     return;
 
             // Steady Shot
@@ -313,11 +318,9 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && SteadyShot.IsSpellUsable 
                 && Me.ManaPercentage > 30 
                 && SteadyShot.IsDistanceGood 
-                && !_isBackingUp)
-            {
-                SteadyShot.Launch();
-                //Logger.Log(lastAutoInMilliseconds.ToString());
-            }
+                && !cast.IsBackingUp)
+                if (cast.Normal(SteadyShot))
+                    return;
 
             // Serpent Sting
             if (!Target.HaveBuff("Serpent Sting")
@@ -327,7 +330,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && Me.ManaPercentage > 50u
                 && !SteadyShot.KnownSpell
                 && Target.GetDistance > 13f)
-                if (Cast(SerpentSting))
+                if (cast.Normal(SerpentSting))
                     return;
 
             // Intimidation
@@ -336,14 +339,14 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && Target.HealthPercent >= 20
                 && Me.ManaPercentage > 10
                 && !settings.IntimidationInterrupt)
-                if (Cast(Intimidation))
+                if (cast.Normal(Intimidation))
                     return;
 
             // Intimidation interrupt
             if (Target.GetDistance < 34f
                 && ToolBox.EnemyCasting()
                 && settings.IntimidationInterrupt)
-                if (Cast(Intimidation))
+                if (cast.Normal(Intimidation))
                     return;
 
             // Arcane Shot
@@ -352,7 +355,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && Me.ManaPercentage > 80
                 && ArcaneShot.IsDistanceGood
                 && !SteadyShot.KnownSpell)
-                if (Cast(ArcaneShot))
+                if (cast.Normal(ArcaneShot))
                     return;
         }
 
@@ -409,25 +412,6 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             }
         }
 
-        protected bool Cast(Spell s)
-        {
-            if (!s.KnownSpell)
-                return false;
-
-            CombatDebug("In cast for " + s.Name);
-            if (!s.IsSpellUsable || Me.IsCast)
-                return false;
-
-            s.Launch();
-            return true;
-        }
-
-        private void CombatDebug(string s)
-        {
-            if (settings.ActivateCombatDebug)
-                Logger.CombatDebug(s);
-        }
-
         private bool RaptorStrikeOn()
         {
             return Lua.LuaDoString<bool>("isAutoRepeat = false; if IsCurrentSpell('Raptor Strike') then isAutoRepeat = true end", "isAutoRepeat");
@@ -473,22 +457,14 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         private void AutoShotEventHandler(LuaEventsId id, List<string> args)
         {
             if (id == LuaEventsId.COMBAT_LOG_EVENT && args[9] == "Auto Shot")
-            {
-                //Logger.Log("********** EVENT *************");
-                //Logger.Log($"AUTO {args[11]}");
-                /*
-                for (int i = 0; i < args.Count; i++)
-                {
-                    Logger.Log($"{i} : {args[i]}");
-                }
-                */
                 lastAuto = DateTime.Now;
-            }
         }
 
         private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)
         {
-            if (ObjectManager.Target.GetDistance >= 13f && !AutoShot.IsSpellUsable && !_isBackingUp)
+            if (ObjectManager.Target.GetDistance >= 13f 
+                && !AutoShot.IsSpellUsable 
+                && !cast.IsBackingUp)
                 _canOnlyMelee = true;
             else
                 _canOnlyMelee = false;
@@ -497,14 +473,15 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         private void FightLoopHandler(WoWUnit unit, CancelEventArgs cancelable)
         {
             // Do we need to backup?
-            if (ObjectManager.Target.GetDistance < 10f && ObjectManager.Target.IsTargetingMyPet
+            if (ObjectManager.Target.GetDistance < 8f + RangeManager.GetMeleeRangeWithTarget() 
+                && ObjectManager.Target.IsTargetingMyPet
                 && !MovementManager.InMovement
                 && Me.IsAlive
                 && ObjectManager.Target.IsAlive
                 && !ObjectManager.Pet.HaveBuff("Pacifying Dust")
                 && !_canOnlyMelee
                 && !ObjectManager.Pet.IsStunned
-                && !_isBackingUp
+                && !cast.IsBackingUp
                 && !Me.IsCast
                 && !Me.IsSwimming
                 && settings.BackupFromMelee
@@ -519,7 +496,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     return;
                 }
 
-                _isBackingUp = true;
+                cast.IsBackingUp = true;
 
                 // Using CTM
                 if (settings.BackupUsingCTM)
@@ -533,7 +510,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     while (MovementManager.InMoveTo
                     && Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
                     && ObjectManager.Me.IsAlive
-                    && ObjectManager.Target.GetDistance < 10f
+                    && ObjectManager.Target.GetDistance < 8f + RangeManager.GetMeleeRangeWithTarget()
                     && limiter < 10)
                     {
                         // Wait follow path
@@ -547,7 +524,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     int limiter = 0;
                     while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
                     && ObjectManager.Me.IsAlive
-                    && ObjectManager.Target.GetDistance < 10f
+                    && ObjectManager.Target.GetDistance < 8f + RangeManager.GetMeleeRangeWithTarget()
                     && limiter <= 6)
                     {
                         Move.Backward(Move.MoveAction.PressKey, 500);
@@ -557,17 +534,17 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
                 _backupAttempts++;
                 Logger.Log($"Backup attempt : {_backupAttempts}");
-                _isBackingUp = false;
+                cast.IsBackingUp = false;
 
                 if (RaptorStrikeOn())
-                    Cast(RaptorStrike);
+                    cast.Normal(RaptorStrike);
                 ReenableAutoshot();
             }
         }
 
         private void FightEndHandler(ulong guid)
         {
-            _isBackingUp = false;
+            cast.IsBackingUp = false;
             _backupAttempts = 0;
             _autoshotRepeating = false;
             _canOnlyMelee = false;

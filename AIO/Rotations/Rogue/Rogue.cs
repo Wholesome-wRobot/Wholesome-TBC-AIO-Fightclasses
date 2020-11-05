@@ -20,6 +20,8 @@ namespace WholesomeTBCAIO.Rotations.Rogue
     {
         public static RogueSettings settings;
 
+        protected Cast cast;
+
         protected Stopwatch _pullMeleeTimer = new Stopwatch();
         protected Stopwatch _meleeTimer = new Stopwatch();
         protected Stopwatch _stealthApproachTimer = new Stopwatch();
@@ -41,6 +43,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
         public void Initialize(IClassRotation specialization)
         {
             settings = RogueSettings.Current;
+            cast = new Cast(SinisterStrike, settings.ActivateCombatDebug, null);
 
             this.specialization = specialization as Rogue;
             Talents.InitTalents(settings);
@@ -133,7 +136,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                         MountTask.DismountMount();
 
                     RangeManager.SetRange(_pullRange);
-                    if (Cast(pullMethod))
+                    if (cast.Normal(pullMethod))
                         Thread.Sleep(2000);
                 }
             }
@@ -157,12 +160,12 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             if (!Me.HaveBuff("Stealth") && !_pullFromAfar && ObjectManager.Target.GetDistance > 15f
                 && ObjectManager.Target.GetDistance < 25f && settings.StealthApproach && Backstab.KnownSpell
                 && (!ToolBox.HasPoisonDebuff() || settings.StealthWhenPoisoned))
-                if (Cast(Stealth))
+                if (cast.Normal(Stealth))
                     return;
 
             // Un-Stealth
             if (Me.HaveBuff("Stealth") && _pullFromAfar && ObjectManager.Target.GetDistance > 15f)
-                if (Cast(Stealth))
+                if (cast.Normal(Stealth))
                     return;
 
             // Stealth approach
@@ -179,6 +182,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 {
                     while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
                     && ObjectManager.Target.GetDistance > 2.5f
+                    && ObjectManager.Target.GetDistance <= RangeManager.GetMeleeRangeWithTarget()
                     && !ToolBox.CheckIfEnemiesAround(ObjectManager.Target, _pullRange)
                     && Fight.InFight
                     && _stealthApproachTimer.ElapsedMilliseconds <= 15000
@@ -196,7 +200,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                         && Me.HaveBuff("Stealth"))
                     {
                         _pullFromAfar = true;
-                        if (Cast(Stealth))
+                        if (cast.Normal(Stealth))
                             return;
                     }
 
@@ -252,23 +256,23 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             if (_shouldBeInterrupted)
             {
                 Thread.Sleep(Main.humanReflexTime);
-                if (Cast(Kick) || Cast(Gouge) || Cast(KidneyShot))
+                if (cast.Normal(Kick) || cast.Normal(Gouge) || cast.Normal(KidneyShot))
                     return;
             }
 
             // Adrenaline Rush
             if ((ObjectManager.GetNumberAttackPlayer() > 1 || Target.IsElite) && !Me.HaveBuff("Adrenaline Rush"))
-                if (Cast(AdrenalineRush))
+                if (cast.Normal(AdrenalineRush))
                     return;
 
             // Blade Flurry
             if (ObjectManager.GetNumberAttackPlayer() > 1 && !Me.HaveBuff("Blade Flurry"))
-                if (Cast(BladeFlurry))
+                if (cast.Normal(BladeFlurry))
                     return;
 
             // Riposte
             if (Riposte.IsSpellUsable && (Target.CreatureTypeTarget.Equals("Humanoid") || settings.RiposteAll))
-                if (Cast(Riposte))
+                if (cast.Normal(Riposte))
                     return;
 
             // Bandage
@@ -284,27 +288,27 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             // Blind
             if (Me.HealthPercent < 40 && !ToolBox.HasDebuff("Recently Bandaged") && _myBestBandage != null
                 && settings.UseBlindBandage)
-                if (Cast(Blind))
+                if (cast.Normal(Blind))
                     return;
 
             // Evasion
             if (ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 30 && !Me.HaveBuff("Evasion") && Target.HealthPercent > 50)
-                if (Cast(Evasion))
+                if (cast.Normal(Evasion))
                     return;
 
             // Cloak of Shadows
             if (Me.HealthPercent < 30 && !Me.HaveBuff("Cloak of Shadows") && Target.HealthPercent > 50)
-                if (Cast(CloakOfShadows))
+                if (cast.Normal(CloakOfShadows))
                     return;
 
             // Backstab in combat
             if (IsTargetStunned() && ToolBox.GetMHWeaponType().Equals("Daggers"))
-                if (Cast(Backstab))
+                if (cast.Normal(Backstab))
                     return;
 
             // Slice and Dice
             if (!Me.HaveBuff("Slice and Dice") && Me.ComboPoint > 1 && Target.HealthPercent > 40)
-                if (Cast(SliceAndDice))
+                if (cast.Normal(SliceAndDice))
                     return;
 
             // Eviscerate logic
@@ -312,28 +316,28 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 || Me.ComboPoint > 1 && Target.HealthPercent < 45
                 || Me.ComboPoint > 2 && Target.HealthPercent < 60
                 || Me.ComboPoint > 3 && Target.HealthPercent < 70)
-                if (Cast(Eviscerate))
+                if (cast.Normal(Eviscerate))
                     return;
 
             // GhostlyStrike
             if (Me.ComboPoint < 5 && !IsTargetStunned() &&
                 (!_fightingACaster || !Kick.KnownSpell ||
                 Me.Energy > ToolBox.GetSpellCost("Ghostly Strike") + ToolBox.GetSpellCost("Kick")))
-                if (Cast(GhostlyStrike))
+                if (cast.Normal(GhostlyStrike))
                     return;
 
             // Hemohrrage
             if (Me.ComboPoint < 5 && !IsTargetStunned() &&
                 (!_fightingACaster || !Kick.KnownSpell ||
                 Me.Energy > ToolBox.GetSpellCost("Hemorrhage") + ToolBox.GetSpellCost("Kick")))
-                if (Cast(Hemorrhage))
+                if (cast.Normal(Hemorrhage))
                     return;
 
             // Sinister Strike
             if (Me.ComboPoint < 5 && !IsTargetStunned() &&
                 (!_fightingACaster || !Kick.KnownSpell ||
                 Me.Energy > ToolBox.GetSpellCost("Sinister Strike") + ToolBox.GetSpellCost("Kick")))
-                if (Cast(SinisterStrike))
+                if (cast.Normal(SinisterStrike))
                     return;
         }
 
@@ -367,46 +371,27 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             if (ToolBox.MeBehindTarget())
             {
                 if (settings.UseGarrote)
-                    if (Cast(Garrote))
+                    if (cast.Normal(Garrote))
                         return;
-                if (Cast(Backstab))
+                if (cast.Normal(Backstab))
                     return;
-                if (Cast(CheapShot))
+                if (cast.Normal(CheapShot))
                     return;
-                if (Cast(Hemorrhage) || Cast(SinisterStrike))
+                if (cast.Normal(Hemorrhage) || cast.Normal(SinisterStrike))
                     return;
             }
             else
             {
                 if (CheapShot.KnownSpell)
-                    if (Cast(CheapShot))
+                    if (cast.Normal(CheapShot))
                         return;
                 else if (HaveDaggerInMH() && Gouge.KnownSpell)
-                    if (Cast(Gouge))
+                    if (cast.Normal(Gouge))
                         return;
                 else
-                    if (Cast(Hemorrhage) || Cast(SinisterStrike))
+                    if (cast.Normal(Hemorrhage) || cast.Normal(SinisterStrike))
                         return;
             }
-        }
-
-        protected bool Cast(Spell s)
-        {
-            if (!s.KnownSpell || !s.IsDistanceGood && s.Name != "Stealth")
-                return false;
-
-            if (!s.IsSpellUsable || Me.IsCast)
-                return false;
-
-            CombatDebug("In cast for " + s.Name);
-            s.Launch();
-            return true;
-        }
-
-        protected void CombatDebug(string s)
-        {
-            if (settings.ActivateCombatDebug)
-                Logger.CombatDebug(s);
         }
 
         protected List<string> Bandages()

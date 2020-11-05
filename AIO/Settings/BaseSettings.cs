@@ -4,7 +4,6 @@ using MarsSettingsGUI;
 using System.ComponentModel;
 using System.Configuration;
 using wManager.Wow.ObjectManager;
-using WholesomeTBCAIO.Helpers;
 
 namespace WholesomeTBCAIO.Settings
 {

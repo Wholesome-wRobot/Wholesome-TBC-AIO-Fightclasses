@@ -11,9 +11,7 @@ namespace WholesomeTBCAIO.Settings
         {
             AlwaysPull = false;
             UseBarkskin = true;
-            UseTravelForm = true;
             UseInnervate = true;
-            CatFormOOC = true;
             UseAquaticForm = true;
 
             UseEnrage = true;
@@ -29,21 +27,9 @@ namespace WholesomeTBCAIO.Settings
         // COMMON
         [Category("Common")]
         [DefaultValue(true)]
-        [DisplayName("Use Travel Form")]
-        [Description("Use Travel Form (Triggers more shapeshifts)")]
-        public bool UseTravelForm { get; set; }
-
-        [Category("Common")]
-        [DefaultValue(true)]
         [DisplayName("Use Aquatic Form")]
         [Description("Use Aquatic Form")]
         public bool UseAquaticForm { get; set; }
-
-        [Category("Common")]
-        [DefaultValue(true)]
-        [DisplayName("Force Cat Form")]
-        [Description("Forces Cat Form when out of combat. Can cause problems with mining and Flights")]
-        public bool CatFormOOC { get; set; }
 
         [Category("Common")]
         [DefaultValue(true)]

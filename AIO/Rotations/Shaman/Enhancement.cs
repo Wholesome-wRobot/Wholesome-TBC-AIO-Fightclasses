@@ -119,13 +119,13 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             // Shamanistic Rage
             if (Me.ManaPercentage < _mediumManaThreshold
                 && (Target.HealthPercent > 80 && !settings.ENShamanisticRageOnMultiOnly || ObjectManager.GetNumberAttackPlayer() > 1))
-                if (Cast(ShamanisticRage))
+                if (cast.Normal(ShamanisticRage))
                     return;
 
             // Earth Shock Focused
             if (Me.HaveBuff("Focused")
                 && Target.GetDistance < 19f)
-                if (Cast(EarthShock))
+                if (cast.Normal(EarthShock))
                     return;
 
             // Frost Shock
@@ -133,7 +133,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 && settings.ENFrostShockHumanoids
                 && Target.HealthPercent < 40
                 && !Target.HaveBuff("Frost Shock"))
-                if (Cast(FrostShock))
+                if (cast.Normal(FrostShock))
                     return;
 
             // Earth Shock Interupt Rank 1
@@ -158,7 +158,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     _casterEnemies.Add(Target.Name);
                 _fightingACaster = true;
                 Thread.Sleep(Main.humanReflexTime);
-                if (Cast(EarthShock))
+                if (cast.Normal(EarthShock))
                     return;
             }
 
@@ -174,13 +174,13 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 && !Target.HaveBuff("Flame Shock")
                 && Target.HealthPercent > 20
                 && settings.UseFlameShock)
-                if (Cast(FlameShock))
+                if (cast.Normal(FlameShock))
                     return;
 
             // Stormstrike
             if (Me.ManaPercentage > _lowManaThreshold
                 && Stormstrike.IsDistanceGood)
-                if (Cast(Stormstrike))
+                if (cast.Normal(Stormstrike))
                     return;
 
             // Earth Shock DPS
@@ -189,7 +189,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 && !FlameShock.KnownSpell
                 && Target.HealthPercent > 25
                 && Me.ManaPercentage > 30)
-                if (Cast(EarthShock))
+                if (cast.Normal(EarthShock))
                     return;
 
             // Low level lightning bolt
@@ -198,7 +198,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 && Me.ManaPercentage > _lowManaThreshold
                 && Target.GetDistance < 29f
                 && Target.HealthPercent > 40)
-                if (Cast(LightningBolt))
+                if (cast.Normal(LightningBolt))
                     return;
         }
     }
