@@ -2,6 +2,8 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading;
+using robotManager.Events;
+using robotManager.FiniteStateMachine;
 using robotManager.Helpful;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
@@ -50,6 +52,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightStart += FightStartHandler;
+            FiniteStateMachineEvents.OnRunState += OnRunStateHandler;
 
             Rotation();
         }
@@ -61,6 +64,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             Lua.LuaDoString("PetPassiveMode();");
             FightEvents.OnFightEnd -= FightEndHandler;
             FightEvents.OnFightStart -= FightStartHandler;
+            FiniteStateMachineEvents.OnRunState -= OnRunStateHandler;
             wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
             Logger.Log("Disposed");
         }
@@ -202,10 +206,10 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 }
             }
 
-            // Summon Void Walker for mana
+            // Summon Void Walker because he's too low
             if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker")
                 && SummonVoidwalker.KnownSpell
-                && ObjectManager.Pet.ManaPercentage < 20
+                && (ObjectManager.Pet.ManaPercentage < 20 || !settings.HealthFunnelOOC && ObjectManager.Pet.HealthPercent < 35)
                 && !SummonFelguard.KnownSpell)
             {
                 Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
@@ -219,7 +223,8 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             }
 
             // Summon Imp
-            if (!ObjectManager.Pet.IsValid && SummonImp.KnownSpell
+            if (!ObjectManager.Pet.IsValid 
+                && SummonImp.KnownSpell
                 && (!SummonVoidwalker.KnownSpell || ToolBox.CountItemStacks("Soul Shard") < 1))
             {
                 Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
@@ -276,12 +281,13 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 if (cast.Normal(FelArmor))
                     return;
 
-            // Health Funnel
+            // Health Funnel OOC
             if (ObjectManager.Pet.HealthPercent < 50
                 && Me.HealthPercent > 40
                 && ObjectManager.Pet.GetDistance < 19
                 && !ObjectManager.Pet.InCombatFlagOnly
-                && HealthFunnel.KnownSpell)
+                && HealthFunnel.KnownSpell
+                && settings.HealthFunnelOOC)
             {
                 Fight.StopFight();
                 if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker")
@@ -582,6 +588,16 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         protected Spell HowlOfTerror = new Spell("Howl of Terror");
 
         // EVENT HANDLERS
+        private void OnRunStateHandler(Engine engine, State state, CancelEventArgs cancelable)
+        {
+            if (state is wManager.Wow.Bot.States.Resurrect || state is wManager.Wow.Bot.States.ResurrectBG)
+            {
+                Thread.Sleep(1000);
+                Lua.LuaDoString("UseSoulstone();");
+                Thread.Sleep(1000);
+            }
+        }
+
         private void FightEndHandler(ulong guid)
         {
             _iCanUseWand = false;

@@ -26,6 +26,7 @@ namespace WholesomeTBCAIO.Settings
             DrainSoulLevel1 = false;
             DrainSoulHP = 40;
             AlwaysDrainSoul = false;
+            HealthFunnelOOC = true;
 
             AutoAnguish = true;
             FelguardCleave = true;
@@ -39,6 +40,12 @@ namespace WholesomeTBCAIO.Settings
         [DisplayName("Life Tap")]
         [Description("Use Life Tap")]
         public bool UseLifeTap { get; set; }
+
+        [Category("Common")]
+        [DefaultValue(true)]
+        [DisplayName("Health Funnel OOC")]
+        [Description("Use Health Funnel when out of combat. If OFF, will resummon your pet when it's low HP instead.")]
+        public bool HealthFunnelOOC { get; set; }
 
         [Category("Common")]
         [DefaultValue(true)]
