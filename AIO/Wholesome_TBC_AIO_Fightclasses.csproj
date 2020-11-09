@@ -113,7 +113,7 @@
     <Compile Include="AIOTBCSettings.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Helpers\Talents.cs" />
+    <Compile Include="Helpers\TalentsManager.cs" />
     <Compile Include="Helpers\ToolBox.cs" />
     <Compile Include="Rotations\Hunter\HunterFoodManager.cs" />
     <Compile Include="Rotations\Hunter\Hunter.cs" />

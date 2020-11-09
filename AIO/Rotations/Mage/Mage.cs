@@ -36,7 +36,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             cast = new Cast(Fireball, settings.ActivateCombatDebug, UseWand);
 
             this.specialization = specialization as Mage;
-            Talents.InitTalents(settings);
+            TalentsManager.InitTalents(settings);
 
             _distanceRange = specialization is Fire ? 33f : _distanceRange;
 
@@ -245,6 +245,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                     && ObjectManager.Me.IsAlive
                     && ObjectManager.Target.IsAlive
                     && ObjectManager.Target.GetDistance < 15f
+                    && (ObjectManager.Target.HaveBuff("Frostbite") || ObjectManager.Target.HaveBuff("Frost Nova"))
                     && limiter <= 6)
                     {
                         Move.Backward(Move.MoveAction.PressKey, 700);

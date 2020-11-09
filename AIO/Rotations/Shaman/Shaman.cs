@@ -39,7 +39,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             cast = new Cast(LightningBolt, settings.ActivateCombatDebug, null);
 
             this.specialization = specialization as Shaman;
-            Talents.InitTalents(settings);
+            TalentsManager.InitTalents(settings);
 
             RangeManager.SetRange(_pullRange);
 

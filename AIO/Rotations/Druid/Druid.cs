@@ -40,7 +40,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             cast = new Cast(Wrath, settings.ActivateCombatDebug, null);
 
             this.specialization = specialization as Druid;
-            Talents.InitTalents(settings);
+            TalentsManager.InitTalents(settings);
 
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightStart += FightStartHandler;

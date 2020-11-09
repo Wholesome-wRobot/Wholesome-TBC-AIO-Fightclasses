@@ -46,7 +46,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             cast = new Cast(SinisterStrike, settings.ActivateCombatDebug, null);
 
             this.specialization = specialization as Rogue;
-            Talents.InitTalents(settings);
+            TalentsManager.InitTalents(settings);
 
             RangeManager.SetRangeToMelee();
             AddPoisonsToNoSellList();

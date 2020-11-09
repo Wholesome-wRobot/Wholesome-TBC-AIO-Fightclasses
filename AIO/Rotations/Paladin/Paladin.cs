@@ -31,7 +31,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             cast = new Cast(HolyLight, settings.ActivateCombatDebug, null);
 
             this.specialization = specialization as Paladin;
-            Talents.InitTalents(settings);
+            TalentsManager.InitTalents(settings);
 
             _manaSavePercent = System.Math.Max(20, settings.ManaSaveLimitPercent);
 

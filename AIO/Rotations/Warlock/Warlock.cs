@@ -37,7 +37,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             cast = new Cast(ShadowBolt, settings.ActivateCombatDebug, UseWand);
 
             this.specialization = specialization as Warlock;
-            Talents.InitTalents(settings);
+            TalentsManager.InitTalents(settings);
 
             _petPulseThread.DoWork += PetThread;
             _petPulseThread.RunWorkerAsync();
@@ -382,6 +382,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             bool _shouldDrainSoul = ToolBox.CountItemStacks("Soul Shard") < settings.NumberOfSoulShards || settings.AlwaysDrainSoul;
             if (_shouldDrainSoul
                 && Target.HealthPercent < settings.DrainSoulHP
+                && Target.Level >= Me.Level - 8
                 && DrainSoul.KnownSpell)
                 if (settings.DrainSoulLevel1)
                 {

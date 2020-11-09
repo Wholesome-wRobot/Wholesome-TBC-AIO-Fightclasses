@@ -35,7 +35,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             cast = new Cast(Smite, settings.ActivateCombatDebug, UseWand);
 
             this.specialization = specialization as Priest;
-            Talents.InitTalents(settings);
+            TalentsManager.InitTalents(settings);
 
             _wandThreshold = settings.WandThreshold > 100 ? 50 : settings.WandThreshold;
             RangeManager.SetRange(_distanceRange);

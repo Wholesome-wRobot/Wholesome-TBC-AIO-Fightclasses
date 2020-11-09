@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
+using wManager.Wow.Bot.States;
 using wManager.Wow.Class;
 using wManager.Wow.Enums;
 using wManager.Wow.Helpers;
@@ -41,6 +42,7 @@ namespace WholesomeTBCAIO.Helpers
 
         public bool AdvancedCast(Spell s, bool stopWandAndCast = true, bool onSelf = false)
         {
+            // Change and clear guid + banned list
             if (ObjectManager.Target.Guid != EnemyGuid)
             {
                 BannedSpells.Clear();

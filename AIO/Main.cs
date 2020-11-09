@@ -18,6 +18,8 @@ using WholesomeTBCAIO.Rotations.Warlock;
 using WholesomeTBCAIO.Rotations.Warrior;
 using wManager.Wow.Enums;
 using System.Linq;
+using robotManager.FiniteStateMachine;
+using robotManager.Events;
 
 public class Main : ICustomClass
 {
@@ -28,8 +30,9 @@ public class Main : ICustomClass
     public static string wowClass = ObjectManager.Me.WowClass.ToString();
     public static int humanReflexTime = 500;
     public static bool isLaunched; 
-    public static string version = "2.1.53"; // Must match version in Version.txt
+    public static string version = "2.1.54"; // Must match version in Version.txt
     public static bool HMPrunningAway = false;
+    public static State currentState;
 
     private IClassRotation selectedRotation;
 
@@ -53,11 +56,12 @@ public class Main : ICustomClass
             FightEvents.OnFightLoop += FightLoopHandler;
             FightEvents.OnFightStart += FightStartHandler;
             FightEvents.OnFightEnd += FightEndHandler;
-            robotManager.Events.LoggingEvents.OnAddLog += AddLogHandler;
+            LoggingEvents.OnAddLog += AddLogHandler;
+            FiniteStateMachineEvents.OnRunState += OnRunStateEvent;
 
-            if (!Talents._isRunning)
+            if (!TalentsManager._isRunning)
             {
-                _talentThread.DoWork += Talents.DoTalentPulse;
+                _talentThread.DoWork += TalentsManager.DoTalentPulse;
                 _talentThread.RunWorkerAsync();
             }
 
@@ -80,9 +84,9 @@ public class Main : ICustomClass
         selectedRotation?.Dispose();
         isLaunched = false;
 
-        _talentThread.DoWork -= Talents.DoTalentPulse;
+        _talentThread.DoWork -= TalentsManager.DoTalentPulse;
         _talentThread.Dispose();
-        Talents._isRunning = false;
+        TalentsManager._isRunning = false;
         _racialsThread.DoWork -= _racials.DoRacialsPulse;
         _racialsThread.Dispose();
         _racials._isRunning = false;
@@ -90,7 +94,8 @@ public class Main : ICustomClass
         FightEvents.OnFightLoop -= FightLoopHandler;
         FightEvents.OnFightStart -= FightStartHandler;
         FightEvents.OnFightEnd -= FightEndHandler;
-        robotManager.Events.LoggingEvents.OnAddLog -= AddLogHandler;
+        FiniteStateMachineEvents.OnRunState -= OnRunStateEvent;
+        LoggingEvents.OnAddLog -= AddLogHandler;
     }
 
     public void ShowConfiguration() => CombatSettings?.ShowConfiguration();
@@ -138,6 +143,12 @@ public class Main : ICustomClass
     }
 
     // EVENT HANDLERS
+    private void OnRunStateEvent(Engine engine, State state, CancelEventArgs cancelable)
+    {
+        if (engine.States.Count > 5)
+            currentState = state;
+    }
+
     private void AddLogHandler(Logging.Log log)
     {
         if (log.Text == "[HumanMasterPlugin] Starting to run away")

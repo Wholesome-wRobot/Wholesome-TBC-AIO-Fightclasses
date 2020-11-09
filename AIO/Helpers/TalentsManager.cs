@@ -11,7 +11,7 @@ using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Helpers
 {
-    public class Talents
+    public class TalentsManager
     {
         private static bool _isAssigning = false;
         private static bool _isInitialized = false;

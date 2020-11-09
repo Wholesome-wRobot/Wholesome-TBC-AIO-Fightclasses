@@ -40,7 +40,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             cast = new Cast(RaptorStrike, settings.ActivateCombatDebug, null);
 
             this.specialization = specialization as Hunter;
-            Talents.InitTalents(settings);
+            TalentsManager.InitTalents(settings);
 
             _petPulseThread.DoWork += PetThread;
             _petPulseThread.RunWorkerAsync();

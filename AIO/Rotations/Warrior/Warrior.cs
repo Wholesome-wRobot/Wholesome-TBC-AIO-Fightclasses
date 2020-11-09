@@ -35,7 +35,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             cast = new Cast(BattleShout, settings.ActivateCombatDebug, null);
 
             this.specialization = specialization as Warrior;
-            Talents.InitTalents(settings);
+            TalentsManager.InitTalents(settings);
 
             FightEvents.OnFightEnd += FightEndHandler;
 
