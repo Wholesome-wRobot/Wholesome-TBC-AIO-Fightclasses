@@ -139,8 +139,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // Cone of Cold
             if (Target.GetDistance < 10
                 && settings.UseConeOfCold
-                && !cast.IsBackingUp
-                && !MovementManager.InMovement
+                && Me.IsFacing(Target.Position, 0.5f)
                 && _polymorphedEnemy == null)
                 if (cast.Normal(ConeOfCold))
                     return;

@@ -64,7 +64,6 @@ namespace WholesomeTBCAIO.Rotations.Mage
             {
                 try
                 {
-
                     if (StatusChecker.BasicConditions())
                     {
                         if (_polymorphedEnemy != null && !ObjectManager.Me.InCombatFlagOnly)
