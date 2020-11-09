@@ -33,12 +33,17 @@ namespace WholesomeTBCAIO.Helpers
         public static void LogDebug(string message)
         {
             if (_debug)
-                Logging.WriteDebug($"[{FCName} - {wowClass}]: { message}");
+                Logging.WriteDebug($"[{FCName} - {wowClass}]: {message}");
         }
 
         public static void CombatDebug(string message)
         {
-            Logging.Write($"[{FCName} - {wowClass}]: { message}", Logging.LogType.Normal, Color.Plum);
+            Logging.Write($"[{FCName} - {wowClass}]: {message}", Logging.LogType.Normal, Color.Plum);
+        }
+
+        public static void Combat(string message)
+        {
+            Logging.Write($"[Spell] {message}", Logging.LogType.Fight, Color.Green);
         }
     }
 }

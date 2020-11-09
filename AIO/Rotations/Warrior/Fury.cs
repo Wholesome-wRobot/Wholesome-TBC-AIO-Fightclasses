@@ -272,7 +272,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
 
             // Rend
             if (!Target.HaveBuff("Rend")
-                && ToolBox.CanBleed(Target)
+                /*&& ToolBox.CanBleed(Target)*/
                 && _inMeleeRange
                 && settings.UseRend
                 && Target.HealthPercent > 25)

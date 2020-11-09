@@ -85,9 +85,11 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                             && Me.InCombatFlagOnly)
                         {
                             if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
-                                ToolBox.PetSpellCast("Torment");
+                                if (cast.PetSpell("Torment"))
+                                    continue;
                             if (WarlockPetAndConsumables.MyWarlockPet().Equals("Felguard"))
-                                ToolBox.PetSpellCast("Anguish");
+                                if (cast.PetSpell("Anguish"))
+                                    continue;
                         }
 
                         // Switch Auto Torment & Suffering off
@@ -293,7 +295,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker")
                     && ToolBox.GetPetSpellIndex("Consume Shadows") != 0)
                 {
-                    ToolBox.PetSpellCast("Consume Shadows");
+                    cast.PetSpell("Consume Shadows");
                     Usefuls.WaitIsCasting();
                     Thread.Sleep(500);
                 }
@@ -356,7 +358,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && !ObjectManager.Target.HaveBuff("Immolate")
                 && !ObjectManager.Target.HaveBuff("Fire Ward")
                 && !Corruption.KnownSpell
-                && ToolBox.CanBleed(ObjectManager.Target))
+                /*&& ToolBox.CanBleed(ObjectManager.Target)*/)
                 if (cast.Normal(Immolate))
                     return;
 
@@ -462,7 +464,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && _overLowManaThreshold
                 && Target.HealthPercent > 30
                 && (settings.UseImmolateHighLevel || !UnstableAffliction.KnownSpell)
-                && ToolBox.CanBleed(ObjectManager.Target))
+                /*&& ToolBox.CanBleed(ObjectManager.Target)*/)
                 if (cast.Normal(Immolate))
                     return;
 

@@ -411,7 +411,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 if (!Target.HaveBuff("Faerie Fire (Feral)")
                     && FaerieFireFeral.KnownSpell
                     && !Target.HaveBuff("Pounce")
-                    && ToolBox.CanBleed(Me.TargetObject))
+                    /*&& ToolBox.CanBleed(Me.TargetObject)*/)
                 {
                     Lua.RunMacroText("/cast Faerie Fire (Feral)()");
                     return;
@@ -420,7 +420,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 // Rip
                 if (!Target.HaveBuff("Rip")
                     && !Target.HaveBuff("Pounce")
-                    && ToolBox.CanBleed(Me.TargetObject))
+                    /*&& ToolBox.CanBleed(Me.TargetObject)*/)
                 {
                     if (Me.ComboPoint >= 3
                         && Target.HealthPercent > 60)
@@ -451,7 +451,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 // Rake
                 if (!Target.HaveBuff("Rake")
                     && !Target.HaveBuff("Pounce")
-                    && ToolBox.CanBleed(Me.TargetObject))
+                    /*&& ToolBox.CanBleed(Me.TargetObject)*/)
                     if (cast.Normal(Rake))
                         return;
 
@@ -498,7 +498,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 // Faerie Fire
                 if (!Target.HaveBuff("Faerie Fire (Feral)")
                     && FaerieFireFeral.KnownSpell
-                    && ToolBox.CanBleed(Me.TargetObject))
+                    /*&& ToolBox.CanBleed(Me.TargetObject)*/)
                 {
                     Lua.RunMacroText("/cast Faerie Fire (Feral)()");
                 }

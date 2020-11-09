@@ -63,13 +63,13 @@ namespace WholesomeTBCAIO.Helpers
                 attack.Launch();
             }
         }
-
+        /*
         // Returns whether the unit can bleed or be poisoned
         public static bool CanBleed(WoWUnit unit)
         {
             return unit.CreatureTypeTarget != "Elemental" && unit.CreatureTypeTarget != "Mechanical";
         }
-
+        */
         // Returns whether the player is poisoned
         public static bool HasPoisonDebuff()
         {
@@ -474,7 +474,7 @@ namespace WholesomeTBCAIO.Helpers
 
             return knowsSpell;
         }
-
+        /*
         // Casts pet dmg spell if he has over X focus
         public static void CastPetSpellIfEnoughForGrowl(string spellName, uint spellCost)
         {
@@ -484,7 +484,7 @@ namespace WholesomeTBCAIO.Helpers
                 && PetKnowsSpell(spellName))
                 PetSpellCast(spellName);
         }
-
+        */
         // Returns the index of the pet spell passed as argument
         public static int GetPetSpellIndex(string spellName)
         {
@@ -511,7 +511,7 @@ namespace WholesomeTBCAIO.Helpers
         {
             return GetPetSpellCooldown(spellName) < 0;
         }
-
+        /*
         // Casts the pet spell passed as argument
         public static void PetSpellCast(string spellName)
         {
@@ -523,7 +523,7 @@ namespace WholesomeTBCAIO.Helpers
                 Lua.LuaDoString("CastPetAction(" + spellIndex + ");");
             }
         }
-
+        */
         // Toggles Pet spell autocast (pass true as second argument to toggle on, or false to toggle off)
         public static void TogglePetSpellAuto(string spellName, bool toggle)
         {

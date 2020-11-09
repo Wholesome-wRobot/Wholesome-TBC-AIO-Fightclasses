@@ -65,41 +65,54 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                         && ObjectManager.Pet.IsValid
                         && !Me.IsMounted)
                     {
-                        // Pet Growl
-                        if (ObjectManager.Target.Target == Me.Guid
-                            && Me.InCombatFlagOnly 
-                            && !settings.AutoGrowl
-                            && !ObjectManager.Pet.HaveBuff("Feed Pet Effect"))
-                            ToolBox.PetSpellCast("Growl");
+                        // OOC
+                        if (!Fight.InFight
+                            && !Me.InCombatFlagOnly)
+                        {
+                            // Feed
+                            if (Lua.LuaDoString<int>("happiness, damagePercentage, loyaltyRate = GetPetHappiness() return happiness", "") < 3
+                                && settings.FeedPet)
+                                Feed();
 
-                        // Switch Auto Growl
-                        if (ObjectManager.Pet.IsValid
-                            && ToolBox.PetSpellIsAutocast("Growl") != settings.AutoGrowl)
-                            ToolBox.TogglePetSpellAuto("Growl", settings.AutoGrowl);
+                            // Switch Auto Growl
+                            if (ObjectManager.Pet.IsValid
+                                && ToolBox.PetSpellIsAutocast("Growl") != settings.AutoGrowl)
+                                ToolBox.TogglePetSpellAuto("Growl", settings.AutoGrowl);
 
-                        ToolBox.TogglePetSpellAuto("Charge", true);
+                            ToolBox.TogglePetSpellAuto("Charge", true);
+                        }
 
-                        // Pet damage spells
-                        ToolBox.CastPetSpellIfEnoughForGrowl("Bite", 35);
-                        ToolBox.CastPetSpellIfEnoughForGrowl("Gore", 25);
-                        ToolBox.CastPetSpellIfEnoughForGrowl("Scorpid Poison", 30);
-                        ToolBox.CastPetSpellIfEnoughForGrowl("Claw", 25);
-                        ToolBox.CastPetSpellIfEnoughForGrowl("Screech", 20);
-                        ToolBox.CastPetSpellIfEnoughForGrowl("Lightning Breath", 50);
-
-                        // Feed
-                        if (Lua.LuaDoString<int>("happiness, damagePercentage, loyaltyRate = GetPetHappiness() return happiness", "") < 3
-                            && !Fight.InFight
-                            && settings.FeedPet)
-                            Feed();
-
-                        // Pet attack
-                        if (Fight.InFight 
-                            && Me.Target > 0UL
-                            && ObjectManager.Target.IsAttackable
+                        // In fight
+                        if ((Fight.InFight || Me.InCombatFlagOnly)
                             && !ObjectManager.Pet.HaveBuff("Feed Pet Effect")
-                            && ObjectManager.Pet.Target != Me.Target)
-                            Lua.LuaDoString("PetAttack();", false);
+                            && Me.Target > 0UL)
+                        {
+                            // Pet attack
+                            if (ObjectManager.Target.IsAttackable
+                                && ObjectManager.Pet.Target != Me.Target)
+                                Lua.LuaDoString("PetAttack();", false);
+
+                            // Pet Growl
+                            if (ObjectManager.Target.Target == Me.Guid
+                                && !settings.AutoGrowl)
+                                if (cast.PetSpell("Growl"))
+                                    continue;
+
+                            // Pet damage spells
+                            if (cast.PetSpellIfEnoughForGrowl("Bite", 35))
+                                continue;
+                            if (cast.PetSpellIfEnoughForGrowl("Gore", 25))
+                                continue;
+                            if (cast.PetSpellIfEnoughForGrowl("Scorpid Poison", 30))
+                                continue;
+                            if (cast.PetSpellIfEnoughForGrowl("Claw", 25))
+                                continue;
+                            if (cast.PetSpellIfEnoughForGrowl("Screech", 20))
+                                continue;
+                            if (cast.PetSpellIfEnoughForGrowl("Lightning Breath", 50))
+                                continue;
+                        }
+
                     }
                 }
                 catch (Exception arg)
@@ -325,7 +338,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             // Serpent Sting
             if (!Target.HaveBuff("Serpent Sting")
                 && Target.GetDistance < 34f
-                && ToolBox.CanBleed(Me.TargetObject)
+                /*&& ToolBox.CanBleed(Me.TargetObject)*/
                 && Target.HealthPercent >= 60
                 && Me.ManaPercentage > 50u
                 && !SteadyShot.KnownSpell

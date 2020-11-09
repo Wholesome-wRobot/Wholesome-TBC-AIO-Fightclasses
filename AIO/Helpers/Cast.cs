@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
-using wManager.Wow.Bot.States;
 using wManager.Wow.Class;
 using wManager.Wow.Enums;
 using wManager.Wow.Helpers;
@@ -28,6 +27,32 @@ namespace WholesomeTBCAIO.Helpers
             PlayingManaClass = ObjectManager.Me.WowClass != WoWClass.Rogue && ObjectManager.Me.WowClass != WoWClass.Warrior;
             BannedSpells = new List<string>();
             EventsLuaWithArgs.OnEventsLuaWithArgs += SpellsHandler;
+        }
+
+        public bool PetSpell(string spellName)
+        {
+            int spellIndex = ToolBox.GetPetSpellIndex(spellName);
+            if (ToolBox.PetKnowsSpell(spellName)
+                && ToolBox.GetPetSpellReady(spellName)
+                && !BannedSpells.Contains(spellName)
+                && ObjectManager.Pet.HasTarget)
+            {
+                Thread.Sleep(ToolBox.GetLatency() + 100);
+                Logger.Combat($"Cast (Pet) {spellName}");
+                Lua.LuaDoString("CastPetAction(" + spellIndex + ");");
+                return true;
+            }
+            return false;
+        }
+
+        public bool PetSpellIfEnoughForGrowl(string spellName, uint spellCost)
+        {
+            if (ObjectManager.Pet.Focus >= spellCost + 15
+                && ObjectManager.Me.InCombatFlagOnly
+                && ToolBox.PetKnowsSpell(spellName))
+                if (PetSpell(spellName))
+                    return true;
+            return false;
         }
 
         public bool Normal(Spell s, bool stopWandAndCast = true)
