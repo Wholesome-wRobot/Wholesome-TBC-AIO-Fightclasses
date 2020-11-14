@@ -523,6 +523,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     while (MovementManager.InMoveTo
                     && Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
                     && ObjectManager.Me.IsAlive
+                    && !ObjectManager.Target.IsTargetingMe
                     && ObjectManager.Target.GetDistance < 8f + RangeManager.GetMeleeRangeWithTarget()
                     && limiter < 10)
                     {
@@ -537,6 +538,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     int limiter = 0;
                     while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
                     && ObjectManager.Me.IsAlive
+                    && !ObjectManager.Target.IsTargetingMe
                     && ObjectManager.Target.GetDistance < 8f + RangeManager.GetMeleeRangeWithTarget()
                     && limiter <= 6)
                     {

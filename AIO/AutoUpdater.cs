@@ -28,7 +28,7 @@ using wManager.Wow.Helpers;
             double timeSinceLastUpdate = elapsedTicks - AIOTBCSettings.CurrentSetting.LastUpdateDate;
 
             // If last update try was < 10 seconds ago, we exit to avoid looping
-            if (timeSinceLastUpdate < 10)
+            if (timeSinceLastUpdate < 30)
             {
                 Logger.Log($"Update failed {timeSinceLastUpdate} seconds ago. Exiting updater.");
                 return;
