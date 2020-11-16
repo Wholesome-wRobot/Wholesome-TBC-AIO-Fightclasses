@@ -165,8 +165,9 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 && !SealOfCommand.IsSpellUsable
                 && !SealOfRighteousness.IsSpellUsable
                 && SealOfCommand.KnownSpell
-                && Me.Mana < _manaSavePercent)
-                Lua.RunMacroText("/cast Seal of Command(Rank 1)");
+                && Me.Mana < _manaSavePercent
+                && !cast.BannedSpells.Contains("Seal of Command(Rank 1)"))
+                    Lua.RunMacroText("/cast Seal of Command(Rank 1)");
         }
 
 
@@ -295,7 +296,8 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 && !SealOfCommand.IsSpellUsable 
                 && !SealOfRighteousness.IsSpellUsable
                 && SealOfCommand.KnownSpell 
-                && Me.Mana < _manaSavePercent)
+                && Me.Mana < _manaSavePercent
+                && !cast.BannedSpells.Contains("Seal of Command(Rank 1)"))
             {
                 Lua.RunMacroText("/cast Seal of Command(Rank 1)");
                 return;

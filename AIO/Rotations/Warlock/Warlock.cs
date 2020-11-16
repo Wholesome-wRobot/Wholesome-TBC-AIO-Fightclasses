@@ -385,7 +385,8 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             if (_shouldDrainSoul
                 && Target.HealthPercent < settings.DrainSoulHP
                 && Target.Level >= Me.Level - 8
-                && DrainSoul.KnownSpell)
+                && DrainSoul.KnownSpell
+                && !cast.BannedSpells.Contains("Drain Soul(Rank 1)"))
                 if (settings.DrainSoulLevel1)
                 {
                     Lua.RunMacroText("/cast Drain Soul(Rank 1)");

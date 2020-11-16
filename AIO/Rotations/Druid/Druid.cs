@@ -495,7 +495,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 // Faerie Fire
                 if (!Target.HaveBuff("Faerie Fire (Feral)")
                     && FaerieFireFeral.KnownSpell
-                    /*&& ToolBox.CanBleed(Me.TargetObject)*/)
+                    && !cast.BannedSpells.Contains("Faerie Fire (Feral)"))
                 {
                     Lua.RunMacroText("/cast Faerie Fire (Feral)()");
                 }
@@ -627,7 +627,6 @@ namespace WholesomeTBCAIO.Rotations.Druid
         protected bool PullSpell()
         {
             RangeManager.SetRange(_pullRange);
-            //MovementManager.StopMoveTo(false, 500);
             if ((Me.HaveBuff("Cat Form")
                 || Me.HaveBuff("Bear Form")
                 || Me.HaveBuff("Dire Bear Form"))

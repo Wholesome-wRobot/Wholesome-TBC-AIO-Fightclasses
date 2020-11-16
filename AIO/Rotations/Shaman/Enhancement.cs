@@ -145,8 +145,11 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 if (!_casterEnemies.Contains(Target.Name))
                     _casterEnemies.Add(Target.Name);
                 Thread.Sleep(Main.humanReflexTime);
-                Lua.RunMacroText("/cast Earth Shock(Rank 1)");
-                return;
+                if (!cast.BannedSpells.Contains("Earth Shock(Rank 1)"))
+                {
+                    Lua.RunMacroText("/cast Earth Shock(Rank 1)");
+                    return;
+                }
             }
 
             // Earth Shock Interupt
