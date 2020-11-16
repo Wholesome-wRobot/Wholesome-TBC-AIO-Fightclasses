@@ -94,7 +94,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 // Ghost Wolf
                 if (wManager.wManagerSetting.CurrentSetting.GroundMountName == ""
                     && GhostWolf.KnownSpell)
-                    ToolBox.SetMount(GhostWolf.Name);
+                    ToolBox.SetGroundMount(GhostWolf.Name);
 
                 // Lesser Healing Wave OOC
                 if (Me.HealthPercent < settings.OOCHealThreshold)

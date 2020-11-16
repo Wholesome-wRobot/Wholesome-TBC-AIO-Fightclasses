@@ -87,6 +87,8 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
         protected virtual void BuffRotation()
         {
+            string currentGroundMount = wManager.wManagerSetting.CurrentSetting.GroundMountName;
+
             if (!Me.IsMounted && !Me.IsCast)
             {
                 // Regrowth
@@ -160,19 +162,15 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     if (cast.Normal(AquaticForm))
                         return;
 
-                string currentGroundMount = wManager.wManagerSetting.CurrentSetting.GroundMountName;
-
                 // Travel Form OOC
                 if (TravelForm.KnownSpell
                     && (currentGroundMount == "" || currentGroundMount == CatForm.Name))
-                    ToolBox.SetMount(TravelForm.Name);
-
-                // Cat Form OOC
-                if (CatForm.KnownSpell
-                    && !TravelForm.KnownSpell
-                    && currentGroundMount == "")
-                    ToolBox.SetMount(CatForm.Name);
+                    ToolBox.SetGroundMount(TravelForm.Name);
             }
+
+            // Disable Cat Form OOC
+            if (currentGroundMount == CatForm.Name)
+                ToolBox.SetGroundMount("");
         }
 
         protected virtual void Pull()

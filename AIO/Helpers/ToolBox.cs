@@ -197,10 +197,10 @@ namespace WholesomeTBCAIO.Helpers
 
         #region Misc
 
-        public static void SetMount(string mountName)
+        public static void SetGroundMount(string mountName)
         {
-            wManager.wManagerSetting.CurrentSetting.GroundMountName = mountName;
-            wManager.wManagerSetting.CurrentSetting.Save();
+            wManagerSetting.CurrentSetting.GroundMountName = mountName;
+            wManagerSetting.CurrentSetting.Save();
             Logger.Log($"Setting mount to {mountName}");
         }
 
