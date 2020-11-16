@@ -409,7 +409,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 if (!Target.HaveBuff("Faerie Fire (Feral)")
                     && FaerieFireFeral.KnownSpell
                     && !Target.HaveBuff("Pounce")
-                    /*&& ToolBox.CanBleed(Me.TargetObject)*/)
+                    && !cast.BannedSpells.Contains("Faerie Fire (Feral)"))
                 {
                     Lua.RunMacroText("/cast Faerie Fire (Feral)()");
                     return;
@@ -417,8 +417,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
                 // Rip
                 if (!Target.HaveBuff("Rip")
-                    && !Target.HaveBuff("Pounce")
-                    /*&& ToolBox.CanBleed(Me.TargetObject)*/)
+                    && !Target.HaveBuff("Pounce"))
                 {
                     if (Me.ComboPoint >= 3
                         && Target.HealthPercent > 60)
@@ -448,8 +447,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
                 // Rake
                 if (!Target.HaveBuff("Rake")
-                    && !Target.HaveBuff("Pounce")
-                    /*&& ToolBox.CanBleed(Me.TargetObject)*/)
+                    && !Target.HaveBuff("Pounce"))
                     if (cast.Normal(Rake))
                         return;
 
@@ -458,15 +456,16 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     && settings.UseTigersFury
                     && Me.ComboPoint < 1
                     && !Target.HaveBuff("Pounce")
-                    && Me.Energy > 30
-                    && TigersFury.IsSpellUsable)
+                    && Me.Energy > 30)
                     if (cast.Normal(TigersFury))
                         return;
 
                 // Mangle
                 if (Me.ComboPoint < 5
                     && !Target.HaveBuff("Pounce")
-                    && MangleCat.KnownSpell)
+                    && MangleCat.KnownSpell
+                    && MangleCat.IsSpellUsable
+                    && !cast.BannedSpells.Contains("Mangle (Cat)"))
                 {
                     Lua.RunMacroText("/cast Mangle (Cat)()");
                     return;
