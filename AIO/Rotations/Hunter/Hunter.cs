@@ -64,6 +64,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     if (StatusChecker.BasicConditions()
                         && !Me.IsOnTaxi 
                         && ObjectManager.Pet.IsValid
+                        && ObjectManager.Pet.IsAlive
                         && !Me.IsMounted)
                     {
                         // OOC

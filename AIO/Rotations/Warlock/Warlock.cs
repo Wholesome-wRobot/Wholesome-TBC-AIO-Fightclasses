@@ -79,7 +79,8 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 try
                 {
                     if (StatusChecker.BasicConditions()
-                        && ObjectManager.Pet.IsValid)
+                        && ObjectManager.Pet.IsValid
+                        && ObjectManager.Pet.IsAlive)
                     {
                         bool multiAggroImTargeted = false;
                         // Pet Switch target on multi aggro
