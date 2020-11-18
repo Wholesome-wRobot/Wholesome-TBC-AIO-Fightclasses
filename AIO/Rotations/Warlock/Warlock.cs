@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using robotManager.Events;
 using robotManager.FiniteStateMachine;
@@ -77,8 +79,43 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 try
                 {
                     if (StatusChecker.BasicConditions()
-                        && ObjectManager.Pet.IsValid )
+                        && ObjectManager.Pet.IsValid)
                     {
+                        bool multiAggroImTargeted = false;
+                        // Pet Switch target on multi aggro
+                        if (Me.InCombatFlagOnly
+                            && ObjectManager.GetNumberAttackPlayer() > 1)
+                        {
+                            Lua.LuaDoString("PetDefensiveMode();");
+                            // Get list of units targeting me in a multiaggro situation
+                            List<WoWUnit> unitsAttackingMe = ObjectManager.GetUnitAttackPlayer()
+                                .OrderBy(u => u.Guid)
+                                .Where(u => u.TargetObject.Guid == Me.Guid)
+                                .ToList();
+
+                            foreach (WoWUnit unit in unitsAttackingMe)
+                            {
+                                multiAggroImTargeted = true;
+                                if (unit.Guid != ObjectManager.Pet.TargetObject.Guid)
+                                { 
+                                    Logger.Log($"Forcing pet aggro on {unit.Name}");
+                                    Me.FocusGuid = unit.Guid;
+                                    cast.PetSpell("PET_ACTION_ATTACK", true);
+                                    if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
+                                        cast.PetSpell("Torment", true);
+                                    if (WarlockPetAndConsumables.MyWarlockPet().Equals("Felguard"))
+                                        cast.PetSpell("Anguish", true);
+                                    Lua.LuaDoString("ClearFocus();");
+                                }
+                            }
+                        }
+
+                        // Pet attack on single aggro
+                        if ((Me.InCombatFlagOnly || Fight.InFight)
+                            && Me.Target > 0
+                            && !multiAggroImTargeted)
+                            Lua.LuaDoString("PetAttack();", false);
+
                         // Voidwalker Torment + Felguard Anguish
                         if ((!settings.AutoTorment || !settings.AutoAnguish)
                             && ObjectManager.Target.Target == Me.Guid
@@ -166,7 +203,8 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             // Summon Felguard
             if ((!ObjectManager.Pet.IsValid
                 || WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker") || WarlockPetAndConsumables.MyWarlockPet().Equals("Imp"))
-                && SummonFelguard.KnownSpell)
+                && SummonFelguard.KnownSpell
+                && SummonFelguard.IsSpellUsable)
             {
                 Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
                 if (!ObjectManager.Me.IsMounted)
@@ -181,7 +219,8 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             // Summon Felguard for mana or health
             if (SummonFelguard.KnownSpell
                 && (ObjectManager.Pet.ManaPercentage < 20 || ObjectManager.Pet.HealthPercent < 20)
-                && ObjectManager.Pet.IsValid)
+                && ObjectManager.Pet.IsValid
+                && SummonFelguard.IsSpellUsable)
             {
                 Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
                 if (!ObjectManager.Me.IsMounted)
@@ -196,6 +235,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             // Summon Void Walker
             if ((!ObjectManager.Pet.IsValid || !WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
                 && SummonVoidwalker.KnownSpell
+                && SummonVoidwalker.IsSpellUsable
                 && !SummonFelguard.KnownSpell)
             {
                 Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
@@ -212,6 +252,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker")
                 && SummonVoidwalker.KnownSpell
                 && (ObjectManager.Pet.ManaPercentage < 20 || !settings.HealthFunnelOOC && ObjectManager.Pet.HealthPercent < 35)
+                && SummonVoidwalker.IsSpellUsable
                 && !SummonFelguard.KnownSpell)
             {
                 Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
@@ -227,6 +268,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             // Summon Imp
             if (!ObjectManager.Pet.IsValid 
                 && SummonImp.KnownSpell
+                && SummonImp.IsSpellUsable
                 && (!SummonVoidwalker.KnownSpell || ToolBox.CountItemStacks("Soul Shard") < 1))
             {
                 Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
@@ -375,10 +417,6 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             WoWUnit Target = ObjectManager.Target;
             double _myManaPC = Me.ManaPercentage;
             bool _overLowManaThreshold = _myManaPC > _innerManaSaveThreshold;
-
-            // Pet attack
-            if (ObjectManager.Pet.Target != ObjectManager.Me.Target)
-                Lua.LuaDoString("PetAttack();", false);
 
             // Drain Soul
             bool _shouldDrainSoul = ToolBox.CountItemStacks("Soul Shard") < settings.NumberOfSoulShards || settings.AlwaysDrainSoul;

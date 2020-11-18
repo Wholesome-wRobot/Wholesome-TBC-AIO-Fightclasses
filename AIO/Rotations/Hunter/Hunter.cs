@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using robotManager.Helpful;
 using WholesomeTBCAIO.Helpers;
@@ -87,14 +88,43 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                             && !ObjectManager.Pet.HaveBuff("Feed Pet Effect")
                             && Me.Target > 0UL)
                         {
-                            // Pet attack
-                            if (ObjectManager.Target.IsAttackable
-                                && ObjectManager.Pet.Target != Me.Target)
+                            bool multiAggroImTargeted = false;
+
+                            // Pet Switch target on multi aggro
+                            if (Me.InCombatFlagOnly
+                                && ObjectManager.GetNumberAttackPlayer() > 1)
+                            {
+                                Lua.LuaDoString("PetDefensiveMode();");
+                                // Get list of units targeting me in a multiaggro situation
+                                List<WoWUnit> unitsAttackingMe = ObjectManager.GetUnitAttackPlayer()
+                                    .OrderBy(u => u.Guid)
+                                    .Where(u => u.TargetObject.Guid == Me.Guid)
+                                    .ToList();
+
+                                foreach (WoWUnit unit in unitsAttackingMe)
+                                {
+                                    multiAggroImTargeted = true;
+                                    if (unit.Guid != ObjectManager.Pet.TargetObject.Guid)
+                                    {
+                                        Logger.Log($"Forcing pet aggro on {unit.Name}");
+                                        Me.FocusGuid = unit.Guid;
+                                        cast.PetSpell("PET_ACTION_ATTACK", true);
+                                        cast.PetSpell("Growl", true);
+                                        Lua.LuaDoString("ClearFocus();");
+                                    }
+                                }
+                            }
+
+                            // Pet attack on single aggro
+                            if ((Me.InCombatFlagOnly || Fight.InFight)
+                                && Me.Target > 0
+                                && !multiAggroImTargeted)
                                 Lua.LuaDoString("PetAttack();", false);
 
                             // Pet Growl
                             if (ObjectManager.Target.Target == Me.Guid
-                                && !settings.AutoGrowl)
+                                && !settings.AutoGrowl
+                                && !multiAggroImTargeted)
                                 if (cast.PetSpell("Growl"))
                                     continue;
 

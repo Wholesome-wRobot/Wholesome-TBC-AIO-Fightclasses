@@ -29,7 +29,7 @@ namespace WholesomeTBCAIO.Helpers
             EventsLuaWithArgs.OnEventsLuaWithArgs += LuaEventsHandler;
         }
 
-        public bool PetSpell(string spellName)
+        public bool PetSpell(string spellName, bool onFocus = false)
         {
             int spellIndex = ToolBox.GetPetSpellIndex(spellName);
             if (ToolBox.PetKnowsSpell(spellName)
@@ -39,7 +39,11 @@ namespace WholesomeTBCAIO.Helpers
             {
                 Thread.Sleep(ToolBox.GetLatency() + 100);
                 Logger.Combat($"Cast (Pet) {spellName}");
-                Lua.LuaDoString("CastPetAction(" + spellIndex + ");");
+                if (!onFocus)
+                    Lua.LuaDoString($"CastPetAction({spellIndex});");
+                else
+                    Lua.LuaDoString($"CastPetAction({spellIndex}, \'focus\');");
+
                 return true;
             }
             return false;
