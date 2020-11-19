@@ -335,23 +335,24 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && ObjectManager.Pet.GetDistance < 19
                 && !ObjectManager.Pet.InCombatFlagOnly
                 && HealthFunnel.KnownSpell
-                && settings.HealthFunnelOOC)
+                && settings.HealthFunnelOOC
+                && HealthFunnel.IsSpellUsable)
             {
-
-                ToolBox.StopWandWaitGCD(UseWand, ShadowBolt);
+                Lua.LuaDoString("PetWait();");
+                MovementManager.StopMove();
                 Fight.StopFight();
+
                 if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
                     cast.PetSpell("Consume Shadows", false, true);
-
-                MovementManager.StopMove();
-                ToolBox.StopWandWaitGCD(UseWand, ShadowBolt);
 
                 if (cast.Normal(HealthFunnel))
                 {
                     Thread.Sleep(500);
                     Usefuls.WaitIsCasting();
+                    Lua.LuaDoString("PetFollow();");
                     return;
                 }
+                Lua.LuaDoString("PetFollow();");
             }
 
             // Health Stone
