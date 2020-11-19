@@ -30,7 +30,7 @@ public class Main : ICustomClass
     public static string wowClass = ObjectManager.Me.WowClass.ToString();
     public static int humanReflexTime = 500;
     public static bool isLaunched; 
-    public static string version = "2.1.71"; // Must match version in Version.txt
+    public static string version = "2.1.72"; // Must match version in Version.txt
     public static bool HMPrunningAway = false;
     public static State currentState;
 

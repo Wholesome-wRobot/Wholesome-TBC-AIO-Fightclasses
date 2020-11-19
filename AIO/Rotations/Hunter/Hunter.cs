@@ -30,6 +30,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         protected int _backupAttempts = 0;
         protected int _steadyShotSleep = 0;
         protected bool _canOnlyMelee = false;
+        protected int _saveDrinkPercent = wManager.wManagerSetting.CurrentSetting.DrinkPercent;
+        public static bool haveTamedAPet = true;
 
         DateTime lastAuto;
 
@@ -156,6 +158,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         public void Dispose()
         {
+            wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
             _petPulseThread.DoWork -= PetThread;
             _petPulseThread.Dispose();
             EventsLuaWithArgs.OnEventsLuaWithArgs -= AutoShotEventHandler;
@@ -179,7 +182,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                         else
                             RangeManager.SetRange(_distanceRange);
 
-                        PetManager();
+                        if (Me.Level > 10)
+                            PetManager();
                     }
 
                     if (StatusChecker.OutOfCombat())
@@ -416,43 +420,53 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         protected void PetManager()
         {
-            if (!Me.IsDeadMe 
-                && !Me.IsMounted)
+            // Call Pet
+            if (!ObjectManager.Pet.IsValid
+                && haveTamedAPet
+                && CallPet.KnownSpell
+                && CallPet.IsSpellUsable)
             {
-                // Call Pet
-                if (!ObjectManager.Pet.IsValid 
-                    && CallPet.KnownSpell 
-                    && !Me.IsMounted 
-                    && CallPet.IsSpellUsable)
-                {
-                    CallPet.Launch();
-                    Thread.Sleep(Usefuls.Latency + 1000);
-                }
+                CallPet.Launch();
+                Thread.Sleep(Usefuls.Latency + 2000);
+            }
 
-                // Revive Pet
-                if (ObjectManager.Pet.IsDead 
-                    && RevivePet.KnownSpell 
-                    && !Me.IsMounted 
-                    && RevivePet.IsSpellUsable)
-                {
-                    RevivePet.Launch();
-                    Thread.Sleep(Usefuls.Latency + 1000);
-                    Usefuls.WaitIsCasting();
-                }
+            // Make sure we have mana to revive
+            if (!ObjectManager.Pet.IsAlive
+                && haveTamedAPet
+                && RevivePet.KnownSpell
+                && !Me.HaveBuff("Drink")
+                && ToolBox.GetSpellCost("Revive Pet") > Me.Mana)
+            {
+                Logger.Log("Not enough mana to summon, forcing regen");
+                wManager.wManagerSetting.CurrentSetting.DrinkPercent = 95;
+                Thread.Sleep(1000);
+                return;
+            }
+            else
+                wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
 
-                // Mend Pet
-                if (ObjectManager.Pet.IsAlive 
-                    && ObjectManager.Pet.IsValid 
-                    && !ObjectManager.Pet.HaveBuff("Mend Pet")
-                    && Me.IsAlive 
-                    && MendPet.KnownSpell 
-                    && MendPet.IsDistanceGood 
-                    && ObjectManager.Pet.HealthPercent <= 60
-                    && MendPet.IsSpellUsable)
-                {
-                    MendPet.Launch();
-                    Thread.Sleep(Usefuls.Latency + 1000);
-                }
+            // Revive Pet
+            if (!ObjectManager.Pet.IsAlive
+                && haveTamedAPet
+                && RevivePet.KnownSpell
+                && RevivePet.IsSpellUsable)
+            {
+                RevivePet.Launch(true);
+                Usefuls.WaitIsCasting();
+            }
+
+            // Mend Pet
+            if (ObjectManager.Pet.IsAlive 
+                && ObjectManager.Pet.IsValid 
+                && !ObjectManager.Pet.HaveBuff("Mend Pet")
+                && Me.IsAlive 
+                && MendPet.KnownSpell 
+                && MendPet.IsDistanceGood 
+                && ObjectManager.Pet.HealthPercent <= 60
+                && MendPet.IsSpellUsable)
+            {
+                MendPet.Launch();
+                Thread.Sleep(Usefuls.Latency + 1000);
             }
         }
 
@@ -502,6 +516,16 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         {
             if (id == LuaEventsId.COMBAT_LOG_EVENT && args[9] == "Auto Shot")
                 lastAuto = DateTime.Now;
+
+            // call pet when you don't have a pet => You do not have a pet
+            // call pet when just dead => Not yet recovered
+            // call pet when just died => You already control a summoned creature
+            if (id == LuaEventsId.COMBAT_LOG_EVENT_UNFILTERED && args[11].Equals("You do not have a pet"))
+                haveTamedAPet = false;
+            else if (id == LuaEventsId.COMBAT_LOG_EVENT_UNFILTERED && args[11].Equals("Not yet recovered"))
+                haveTamedAPet = true;
+            else if (id == LuaEventsId.COMBAT_LOG_EVENT_UNFILTERED && args[11].Equals("You already control a summoned creature"))
+                haveTamedAPet = true;
         }
 
         private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)
