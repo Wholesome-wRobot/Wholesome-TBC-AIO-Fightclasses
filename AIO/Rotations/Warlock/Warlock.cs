@@ -103,7 +103,10 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                                     Me.FocusGuid = unit.Guid;
                                     cast.PetSpell("PET_ACTION_ATTACK", true);
                                     if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
+                                    {
                                         cast.PetSpell("Torment", true);
+                                        cast.PetSpell("Suffering", true);
+                                    }
                                     if (WarlockPetAndConsumables.MyWarlockPet().Equals("Felguard"))
                                         cast.PetSpell("Anguish", true);
                                     Lua.LuaDoString("ClearFocus();");
@@ -123,7 +126,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                             && Me.InCombatFlagOnly)
                         {
                             if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
-                                if (cast.PetSpell("Torment"))
+                                if (cast.PetSpell("Torment") || cast.PetSpell("Suffering"))
                                     continue;
                             if (WarlockPetAndConsumables.MyWarlockPet().Equals("Felguard"))
                                 if (cast.PetSpell("Anguish"))
@@ -334,17 +337,15 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && HealthFunnel.KnownSpell
                 && settings.HealthFunnelOOC)
             {
-                Fight.StopFight();
-                if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker")
-                    && ToolBox.GetPetSpellIndex("Consume Shadows") != 0)
-                {
-                    cast.PetSpell("Consume Shadows");
-                    Usefuls.WaitIsCasting();
-                    Thread.Sleep(500);
-                }
-
 
                 ToolBox.StopWandWaitGCD(UseWand, ShadowBolt);
+                Fight.StopFight();
+                if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
+                    cast.PetSpell("Consume Shadows", false, true);
+
+                MovementManager.StopMove();
+                ToolBox.StopWandWaitGCD(UseWand, ShadowBolt);
+
                 if (cast.Normal(HealthFunnel))
                 {
                     Thread.Sleep(500);

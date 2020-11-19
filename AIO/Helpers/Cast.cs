@@ -29,13 +29,13 @@ namespace WholesomeTBCAIO.Helpers
             EventsLuaWithArgs.OnEventsLuaWithArgs += LuaEventsHandler;
         }
 
-        public bool PetSpell(string spellName, bool onFocus = false)
+        public bool PetSpell(string spellName, bool onFocus = false, bool noTargetNeeded = false)
         {
             int spellIndex = ToolBox.GetPetSpellIndex(spellName);
             if (ToolBox.PetKnowsSpell(spellName)
                 && ToolBox.GetPetSpellReady(spellName)
                 && !BannedSpells.Contains(spellName)
-                && ObjectManager.Pet.HasTarget)
+                && (ObjectManager.Pet.HasTarget || noTargetNeeded))
             {
                 Thread.Sleep(ToolBox.GetLatency() + 100);
                 Logger.Combat($"Cast (Pet) {spellName}");
