@@ -97,7 +97,8 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                             foreach (WoWUnit unit in unitsAttackingMe)
                             {
                                 multiAggroImTargeted = true;
-                                if (unit.Guid != ObjectManager.Pet.TargetObject.Guid)
+                                if (unit.Guid != ObjectManager.Pet.TargetObject.Guid
+                                    && ObjectManager.Pet.TargetObject.Target == ObjectManager.Pet.Guid)
                                 { 
                                     Logger.Log($"Forcing pet aggro on {unit.Name}");
                                     Me.FocusGuid = unit.Guid;
