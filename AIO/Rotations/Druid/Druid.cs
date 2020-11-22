@@ -381,7 +381,6 @@ namespace WholesomeTBCAIO.Rotations.Druid
                         return;
                 }
                 else if (ObjectManager.GetNumberAttackPlayer() >= settings.NumberOfAttackersBearForm
-                        && settings.BearFormOnMultiAggro
                         && settings.NumberOfAttackersBearForm > 1)
                 {
                     {

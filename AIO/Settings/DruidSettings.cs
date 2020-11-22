@@ -18,7 +18,6 @@ namespace WholesomeTBCAIO.Settings
             UseSwipe = true;
             UseTigersFury = true;
             StealthEngage = true;
-            BearFormOnMultiAggro = true;
             NumberOfAttackersBearForm = 2;
 
             Specialization = "Feral";
@@ -49,12 +48,6 @@ namespace WholesomeTBCAIO.Settings
         [DisplayName("Always range pull")]
         [Description("Always pull with a range spell")]
         public bool AlwaysPull { get; set; }
-
-        [Category("Feral")]
-        [DefaultValue(true)]
-        [DisplayName("Bear form on multi aggro")]
-        [Description("Enable/Disable Bear form on multi aggro")]
-        public bool BearFormOnMultiAggro { get; set; }
 
         [Category("Feral")]
         [DefaultValue(2)]

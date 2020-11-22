@@ -69,7 +69,12 @@ namespace WholesomeTBCAIO.Helpers
             return AdvancedCast(s, stopWandAndCast, true);
         }
 
-        public bool AdvancedCast(Spell s, bool stopWandAndCast = true, bool onSelf = false)
+        public bool OnFocus(Spell s, bool stopWandAndCast)
+        {
+            return AdvancedCast(s, stopWandAndCast, false, true);
+        }
+
+        public bool AdvancedCast(Spell s, bool stopWandAndCast = true, bool onSelf = false, bool onFocus = false)
         {
             // Change and clear guid + banned list
             if (ObjectManager.Target.Guid != EnemyGuid)
@@ -152,6 +157,14 @@ namespace WholesomeTBCAIO.Helpers
                 Lua.RunMacroText("/cleartarget");
 
             bool stopMove = s.CastTime > 0;
+
+            if (onFocus)
+            {
+                Logger.Log($"Casting {s.Name} on focus");
+                MovementManager.StopMove();
+                Lua.RunMacroText($"/cast [target=focus] Polymorph");
+                return true;
+            }
 
             s.Launch(stopMove, true, true);
 
