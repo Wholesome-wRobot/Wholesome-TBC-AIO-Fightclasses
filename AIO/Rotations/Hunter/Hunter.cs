@@ -374,7 +374,6 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             // Serpent Sting
             if (!Target.HaveBuff("Serpent Sting")
                 && Target.GetDistance < 34f
-                /*&& ToolBox.CanBleed(Me.TargetObject)*/
                 && Target.HealthPercent >= 60
                 && Me.ManaPercentage > 50u
                 && !SteadyShot.KnownSpell
@@ -460,6 +459,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             if (ObjectManager.Pet.IsAlive 
                 && ObjectManager.Pet.IsValid 
                 && !ObjectManager.Pet.HaveBuff("Mend Pet")
+                && !Me.InCombatFlagOnly
                 && Me.IsAlive 
                 && MendPet.KnownSpell 
                 && MendPet.IsDistanceGood 

@@ -60,7 +60,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             return new List<string>
         {
             "Shiny Red Apple",
-            "Tel'Abim Banana",
+            "Tel\'Abim Banana",
             "Snapvine Watermelon",
             "Goldenbark Apple",
             "Heaven Peach",
@@ -83,7 +83,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             "Mulgore Spice Bread",
             "Soft Banana Bread",
             "Homemade Cherry Pie",
-            "Mag'har Grainbread",
+            "Mag\'har Grainbread",
             "Crusty Flatbread",
             "Bladespire Bagel"
         };
@@ -96,7 +96,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 if (ItemsManager.GetItemCountByNameLUA(text) > 0)
                 {
                     Lua.LuaDoString("CastSpellByName('Feed Pet')", false);
-                    Lua.LuaDoString("UseItemByName('" + text + "')", false);
+                    Lua.LuaDoString("UseItemByName(\"" + text + "\")", false);
                     Thread.Sleep(5000);
                 }
             }
