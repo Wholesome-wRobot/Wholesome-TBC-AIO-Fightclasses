@@ -230,6 +230,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         protected virtual void CombatRotation()
         {
+            Logger.Log("Combat rotation");
             double lastAutoInMilliseconds = (DateTime.Now - lastAuto).TotalMilliseconds;
 
             WoWUnit Target = ObjectManager.Target;
@@ -315,13 +316,11 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
             // Feign Death
             if (Me.HealthPercent < 20
-                || (ObjectManager.GetNumberAttackPlayer() > 0 && ObjectManager.GetUnitAttackPlayer().Count > 1))
+                || (ObjectManager.GetNumberAttackPlayer() > 1 && ObjectManager.GetUnitAttackPlayer().Where(u => u.Target == Me.Guid).Count() > 0))
                 if (cast.Normal(FeignDeath))
                 {
-                    Fight.StopFight();
                     Thread.Sleep(500);
-                    if (ObjectManager.Pet.Target > 0)
-                        Fight.StartFight(ObjectManager.Pet.Target);
+                    Move.Backward(Move.MoveAction.PressKey, 100);
                     return;
                 }
 
@@ -550,9 +549,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && !ObjectManager.Pet.HaveBuff("Pacifying Dust")
                 && !_canOnlyMelee
                 && !ObjectManager.Pet.IsStunned
-                && !cast.IsBackingUp
                 && !Me.IsCast
-                && !Me.IsSwimming
                 && settings.BackupFromMelee
                 && (!RaptorStrikeOn() || ObjectManager.Target.GetDistance > RangeManager.GetMeleeRangeWithTarget()))
             {
