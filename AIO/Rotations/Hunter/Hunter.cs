@@ -31,7 +31,6 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         protected int _steadyShotSleep = 0;
         protected bool _canOnlyMelee = false;
         protected int _saveDrinkPercent = wManager.wManagerSetting.CurrentSetting.DrinkPercent;
-        public static bool haveTamedAPet = true;
 
         DateTime lastAuto;
 
@@ -417,7 +416,6 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         {
             // Call Pet
             if (!ObjectManager.Pet.IsValid
-                && haveTamedAPet
                 && CallPet.KnownSpell
                 && CallPet.IsSpellUsable)
             {
@@ -427,7 +425,6 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
             // Make sure we have mana to revive
             if ((!ObjectManager.Pet.IsAlive || !ObjectManager.Pet.IsValid)
-                && haveTamedAPet
                 && !Me.InCombatFlagOnly
                 && RevivePet.KnownSpell
                 && !Me.HaveBuff("Drink")
@@ -443,7 +440,6 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
             // Revive Pet
             if ((!ObjectManager.Pet.IsAlive || !ObjectManager.Pet.IsValid)
-                && haveTamedAPet
                 && RevivePet.KnownSpell
                 && RevivePet.IsSpellUsable)
             {
@@ -517,12 +513,14 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             // call pet when you don't have a pet => You do not have a pet
             // call pet when just dead => Not yet recovered
             // call pet when just died => You already control a summoned creature
+            /*
             if (id == LuaEventsId.COMBAT_LOG_EVENT_UNFILTERED && args[11].Equals("You do not have a pet"))
                 haveTamedAPet = false;
             else if (id == LuaEventsId.COMBAT_LOG_EVENT_UNFILTERED && args[11].Equals("Not yet recovered"))
                 haveTamedAPet = true;
             else if (id == LuaEventsId.COMBAT_LOG_EVENT_UNFILTERED && args[11].Equals("You already control a summoned creature"))
                 haveTamedAPet = true;
+            */
         }
 
         private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)
