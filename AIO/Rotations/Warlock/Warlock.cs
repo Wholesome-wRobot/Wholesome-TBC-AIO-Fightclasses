@@ -637,7 +637,9 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         // EVENT HANDLERS
         private void OnRunStateHandler(Engine engine, State state, CancelEventArgs cancelable)
         {
-            if (state is wManager.Wow.Bot.States.Resurrect || state is wManager.Wow.Bot.States.ResurrectBG)
+            if (state is wManager.Wow.Bot.States.Resurrect 
+                || state is wManager.Wow.Bot.States.ResurrectBG
+                || state.DisplayName.Contains("Resurrect"))
             {
                 Thread.Sleep(1000);
                 Lua.LuaDoString("UseSoulstone();");
