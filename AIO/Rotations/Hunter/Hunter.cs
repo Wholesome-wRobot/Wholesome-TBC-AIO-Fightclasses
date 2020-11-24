@@ -322,14 +322,14 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     Move.Backward(Move.MoveAction.PressKey, 100);
                     return;
                 }
-
+            /*
             // Freezing Trap
             if (ObjectManager.Pet.HaveBuff("Mend Pet") 
                 && ObjectManager.GetUnitAttackPlayer().Count > 1 
                 && settings.UseFreezingTrap)
                 if (cast.Normal(FreezingTrap))
                     return;
-
+            */
             // Concussive Shot
             if ((Target.CreatureTypeTarget == "Humanoid" || Target.Name.Contains("Plainstrider"))
                 && settings.UseConcussiveShot

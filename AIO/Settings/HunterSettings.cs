@@ -12,7 +12,7 @@ namespace WholesomeTBCAIO.Settings
             BackupFromMelee = true;
             MaxBackupAttempts = 3;
             BackupUsingCTM = false;
-            UseFreezingTrap = true;
+            //UseFreezingTrap = true;
             FeedPet = true;
             RapidFireOnMulti = false;
             AutoGrowl = false;
@@ -38,13 +38,13 @@ namespace WholesomeTBCAIO.Settings
         [DisplayName("Backup using CTM")]
         [Description("If set to True, will backup using Click To Move. If false, will use the keyboard")]
         public bool BackupUsingCTM { get; set; }
-
+        /*
         [Category("Common")]
         [DefaultValue(true)]
         [DisplayName("Use freezing trap")]
         [Description("Set to True is you want to use freezing trap on multiple aggro (will trigger if Mend Pet is active on primary target)")]
         public bool UseFreezingTrap { get; set; }
-
+        */
         [Category("Common")]
         [DefaultValue(5)]
         [DisplayName("Max backup attempts")]
