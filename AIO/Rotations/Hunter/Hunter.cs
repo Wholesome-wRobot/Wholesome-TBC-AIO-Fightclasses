@@ -230,7 +230,6 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         protected virtual void CombatRotation()
         {
-            Logger.Log("Combat rotation");
             double lastAutoInMilliseconds = (DateTime.Now - lastAuto).TotalMilliseconds;
 
             WoWUnit Target = ObjectManager.Target;
