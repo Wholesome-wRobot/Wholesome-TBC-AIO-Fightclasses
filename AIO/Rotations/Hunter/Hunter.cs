@@ -426,7 +426,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             }
 
             // Make sure we have mana to revive
-            if (!ObjectManager.Pet.IsAlive
+            if ((!ObjectManager.Pet.IsAlive || !ObjectManager.Pet.IsValid)
                 && haveTamedAPet
                 && !Me.InCombatFlagOnly
                 && RevivePet.KnownSpell
@@ -442,7 +442,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
 
             // Revive Pet
-            if (!ObjectManager.Pet.IsAlive
+            if ((!ObjectManager.Pet.IsAlive || !ObjectManager.Pet.IsValid)
                 && haveTamedAPet
                 && RevivePet.KnownSpell
                 && RevivePet.IsSpellUsable)
