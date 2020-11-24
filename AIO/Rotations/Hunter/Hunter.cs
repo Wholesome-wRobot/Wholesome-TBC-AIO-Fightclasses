@@ -125,9 +125,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                                 Lua.LuaDoString("PetAttack();", false);
 
                             // Pet Growl
-                            if (ObjectManager.Target.Target == Me.Guid
-                                && !settings.AutoGrowl
-                                && !multiAggroImTargeted)
+                            if ((ObjectManager.Target.Target == Me.Guid || ObjectManager.Pet.Target != Me.Target) 
+                                && !settings.AutoGrowl)
                                 if (cast.PetSpell("Growl"))
                                     continue;
 
@@ -298,8 +297,9 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     return;
 
             // Kill Command
-            if (cast.Normal(KillCommand))
-                return;
+            if (ObjectManager.Pet.IsAlive)
+                if (cast.Normal(KillCommand))
+                    return;
 
             // Raptor Strike
             if (Target.GetDistance < 6f 
