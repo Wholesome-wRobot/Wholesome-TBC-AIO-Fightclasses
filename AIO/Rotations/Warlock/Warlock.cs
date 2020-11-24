@@ -194,6 +194,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             if (!ObjectManager.Pet.IsValid
                 && ObjectManager.Me.ManaPercentage < 95
                 && !ObjectManager.Me.HaveBuff("Drink")
+                && !Me.InCombatFlagOnly
                 && (SummonVoidwalker.KnownSpell && !SummonVoidwalker.IsSpellUsable && ToolBox.CountItemStacks("Soul Shard") > 0 ||
                 SummonImp.KnownSpell && !SummonImp.IsSpellUsable && !SummonVoidwalker.KnownSpell))
             {

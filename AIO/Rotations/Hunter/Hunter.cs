@@ -278,8 +278,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             if (settings.UseDisengage
                 && ObjectManager.Pet.Target == Me.Target 
                 && Target.Target == Me.Guid 
-                && Target.GetDistance < 10 
-                && !cast.IsBackingUp)
+                && Target.GetDistance < 10)
                 if (cast.Normal(Disengage))
                     return;
 
@@ -365,8 +364,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && SteadyShot.KnownSpell 
                 && SteadyShot.IsSpellUsable 
                 && Me.ManaPercentage > 30 
-                && SteadyShot.IsDistanceGood 
-                && !cast.IsBackingUp)
+                && SteadyShot.IsDistanceGood)
                 if (cast.Normal(SteadyShot))
                     return;
 
@@ -432,6 +430,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             // Make sure we have mana to revive
             if (!ObjectManager.Pet.IsAlive
                 && haveTamedAPet
+                && !Me.InCombatFlagOnly
                 && RevivePet.KnownSpell
                 && !Me.HaveBuff("Drink")
                 && ToolBox.GetSpellCost("Revive Pet") > Me.Mana)
@@ -540,6 +539,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         private void FightLoopHandler(WoWUnit unit, CancelEventArgs cancelable)
         {
+            cast.IsBackingUp = false;
+
             // Do we need to backup?
             if (ObjectManager.Target.GetDistance < 8f + RangeManager.GetMeleeRangeWithTarget() 
                 && ObjectManager.Target.IsTargetingMyPet
@@ -610,8 +611,6 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     cast.Normal(RaptorStrike);
                 ReenableAutoshot();
             }
-            else
-                cast.IsBackingUp = false;
         }
 
         private void FightEndHandler(ulong guid)
