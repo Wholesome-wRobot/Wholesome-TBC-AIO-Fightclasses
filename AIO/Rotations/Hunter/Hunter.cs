@@ -246,6 +246,13 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && !settings.BackupFromMelee)
                 _canOnlyMelee = true;
 
+            // Mend Pet
+            if (ObjectManager.Pet.IsAlive
+                && ObjectManager.Pet.HealthPercent <= 50
+                && !ObjectManager.Pet.HaveBuff("Mend Pet"))
+                if (cast.Normal(MendPet))
+                    return;
+
             // Aspect of the viper
             if (!Me.HaveBuff("Aspect of the Viper") 
                 && Me.ManaPercentage < 30)
@@ -324,14 +331,6 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && ObjectManager.GetUnitAttackPlayer().Count > 1 
                 && settings.UseFreezingTrap)
                 if (cast.Normal(FreezingTrap))
-                    return;
-
-            // Mend Pet
-            if (ObjectManager.Pet.IsValid 
-                && ObjectManager.Pet.IsAlive
-                && ObjectManager.Pet.HealthPercent <= 30.0
-                && !ObjectManager.Pet.HaveBuff("Mend Pet"))
-                if (cast.Normal(MendPet))
                     return;
 
             // Concussive Shot
@@ -611,6 +610,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     cast.Normal(RaptorStrike);
                 ReenableAutoshot();
             }
+            else
+                cast.IsBackingUp = false;
         }
 
         private void FightEndHandler(ulong guid)
