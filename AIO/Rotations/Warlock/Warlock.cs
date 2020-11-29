@@ -190,99 +190,48 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 ToolBox.LuaDeleteOneItem("Soul Shard");
             }
 
-            // Make sure we have mana to summon
-            if (!ObjectManager.Pet.IsValid
-                && ObjectManager.Me.ManaPercentage < 95
-                && !ObjectManager.Me.HaveBuff("Drink")
-                && !Me.InCombatFlagOnly
-                && (SummonVoidwalker.KnownSpell && !SummonVoidwalker.IsSpellUsable && ToolBox.CountItemStacks("Soul Shard") > 0 ||
-                SummonImp.KnownSpell && !SummonImp.IsSpellUsable && !SummonVoidwalker.KnownSpell))
+            // Define the demon to summon
+            Spell SummonSpell = null;
+            bool shouldSummon = false;
+            if (SummonImp.KnownSpell)
             {
-                Logger.Log("Not enough mana to summon, forcing regen");
-                wManager.wManagerSetting.CurrentSetting.DrinkPercent = 95;
-                Thread.Sleep(1000);
-                return;
-            }
-            else
-                wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
+                if (ToolBox.CountItemStacks("Soul Shard") < 1 || !SummonVoidwalker.KnownSpell && !SummonFelguard.KnownSpell)
+                    SummonSpell = SummonImp;
 
-            // Summon Felguard
-            if ((!ObjectManager.Pet.IsValid
-                || WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker") || WarlockPetAndConsumables.MyWarlockPet().Equals("Imp"))
-                && SummonFelguard.KnownSpell
-                && SummonFelguard.IsSpellUsable)
+                if (SummonVoidwalker.KnownSpell && !SummonFelguard.KnownSpell)
+                    SummonSpell = SummonVoidwalker;
+
+                if (SummonFelguard.KnownSpell)
+                    SummonSpell = SummonFelguard;
+
+                if (!ObjectManager.Pet.IsValid 
+                    || ObjectManager.Pet.ManaPercentage < settings.ManaThresholdResummon && SummonSpell != SummonImp
+                    || ObjectManager.Pet.HealthPercent < settings.HealthThresholdResummon
+                    || !SummonSpell.Name.Contains(WarlockPetAndConsumables.MyWarlockPet()))
+                    shouldSummon = true;
+            }
+
+            if (shouldSummon)
             {
-                Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
-                if (!ObjectManager.Me.IsMounted)
+                // Make sure we have mana to summon
+                if (ObjectManager.Me.Mana < ToolBox.GetSpellCost(SummonSpell.Name)
+                    && !ObjectManager.Me.HaveBuff("Drink")
+                    && !Me.InCombatFlagOnly)
                 {
-                    if (cast.Normal(FelDomination))
-                        Thread.Sleep(200);
-                    if (cast.Normal(SummonFelguard))
-                        return;
+                    Logger.Log($"Not enough mana to summon {SummonSpell.Name}, forcing regen");
+                    wManager.wManagerSetting.CurrentSetting.DrinkPercent = 95;
+                    Thread.Sleep(1000);
+                    return;
                 }
-            }
+                else
+                    wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
 
-            // Summon Felguard for mana or health
-            if (SummonFelguard.KnownSpell
-                && (ObjectManager.Pet.ManaPercentage < 20 || ObjectManager.Pet.HealthPercent < 20)
-                && ObjectManager.Pet.IsValid
-                && SummonFelguard.IsSpellUsable)
-            {
                 Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
-                if (!ObjectManager.Me.IsMounted)
+                if (!ObjectManager.Me.IsMounted && !ObjectManager.Me.IsOnTaxi)
                 {
                     if (cast.Normal(FelDomination))
                         Thread.Sleep(200);
-                    if (cast.Normal(SummonFelguard))
-                        return;
-                }
-            }
-
-            // Summon Void Walker
-            if ((!ObjectManager.Pet.IsValid || !WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
-                && SummonVoidwalker.KnownSpell
-                && SummonVoidwalker.IsSpellUsable
-                && !SummonFelguard.KnownSpell)
-            {
-                Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
-                if (!ObjectManager.Me.IsMounted)
-                {
-                    if (cast.Normal(FelDomination))
-                        Thread.Sleep(200);
-                    if (cast.Normal(SummonVoidwalker))
-                        return;
-                }
-            }
-
-            // Summon Void Walker because he's too low
-            if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker")
-                && SummonVoidwalker.KnownSpell
-                && (ObjectManager.Pet.ManaPercentage < 20 || !settings.HealthFunnelOOC && ObjectManager.Pet.HealthPercent < 35)
-                && SummonVoidwalker.IsSpellUsable
-                && !SummonFelguard.KnownSpell)
-            {
-                Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
-                if (!ObjectManager.Me.IsMounted)
-                {
-                    if (cast.Normal(FelDomination))
-                        Thread.Sleep(200);
-                    if (cast.Normal(SummonVoidwalker))
-                        return;
-                }
-            }
-
-            // Summon Imp
-            if (!ObjectManager.Pet.IsValid 
-                && SummonImp.KnownSpell
-                && SummonImp.IsSpellUsable
-                && (!SummonVoidwalker.KnownSpell || ToolBox.CountItemStacks("Soul Shard") < 1))
-            {
-                Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
-                if (!ObjectManager.Me.IsMounted)
-                {
-                    if (cast.Normal(FelDomination))
-                        Thread.Sleep(200);
-                    if (cast.Normal(SummonImp))
+                    if (cast.Normal(SummonSpell))
                         return;
                 }
             }
@@ -372,7 +321,6 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             // Use Soul Stone
             if (!Me.HaveBuff("Soulstone Resurrection")
-                && settings.UseSoulStone
                 && CreateSoulstone.KnownSpell
                 && ToolBox.HaveOneInList(WarlockPetAndConsumables.SoulStones())
                 && ToolBox.GetItemCooldown(WarlockPetAndConsumables.SoulStones()) <= 0)

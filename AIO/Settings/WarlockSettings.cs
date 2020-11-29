@@ -10,14 +10,11 @@ namespace WholesomeTBCAIO.Settings
         public WarlockSettings()
         {
             UseLifeTap = true;
-            PetInPassiveWhenOOC = true;
             PrioritizeWandingOverSB = true;
             UseSiphonLife = false;
             UseImmolateHighLevel = true;
             UseUnendingBreath = true;
             UseDarkPact = true;
-            UseSoulStone = true;
-            AutoTorment = false;
             UseFelArmor = true;
             UseIncinerate = true;
             UseSoulShatter = true;
@@ -30,6 +27,10 @@ namespace WholesomeTBCAIO.Settings
 
             AutoAnguish = true;
             FelguardCleave = true;
+            AutoTorment = false;
+            PetInPassiveWhenOOC = true;
+            HealthThresholdResummon = 30;
+            ManaThresholdResummon = 20;
 
             Specialization = "Affliction";
         }
@@ -60,18 +61,6 @@ namespace WholesomeTBCAIO.Settings
         public bool PrioritizeWandingOverSB { get; set; }
 
         [Category("Common")]
-        [DefaultValue(false)]
-        [DisplayName("Auto torment")]
-        [Description("If true, will let Torment on autocast. If false, will let the AIO manage Torment in order to save Voidwalker mana.")]
-        public bool AutoTorment { get; set; }
-
-        [Category("Common")]
-        [DefaultValue(true)]
-        [DisplayName("Passive Pet OOC")]
-        [Description("Puts pet in passive when out of combat (can be useful if you want to ignore fights when traveling)")]
-        public bool PetInPassiveWhenOOC { get; set; }
-
-        [Category("Common")]
         [DefaultValue(4)]
         [DisplayName("Soul Shards")]
         [Description("Sets the minimum number of Soul Shards to have in your bags")]
@@ -94,12 +83,6 @@ namespace WholesomeTBCAIO.Settings
         [DisplayName("Fel Armor")]
         [Description("Use Fel Armor instead of Demon Armor")]
         public bool UseFelArmor { get; set; }
-
-        [Category("Common")]
-        [DefaultValue(true)]
-        [DisplayName("Soul Stone")]
-        [Description("Use Soul Stone (needs a third party plugin to resurrect using the Soulstone)")]
-        public bool UseSoulStone { get; set; }
 
         [Category("Common")]
         [DefaultValue(false)]
@@ -140,17 +123,43 @@ namespace WholesomeTBCAIO.Settings
         public bool UseSiphonLife { get; set; }
 
         // DEMONOLOGY
-        [Category("Demonology")]
+        [Category("Pet")]
+        [DefaultValue(true)]
+        [DisplayName("Passive Pet OOC")]
+        [Description("Puts pet in passive when out of combat (can be useful if you want to ignore fights when traveling)")]
+        public bool PetInPassiveWhenOOC { get; set; }
+
+        [Category("Pet")]
+        [DefaultValue(false)]
+        [DisplayName("Auto torment")]
+        [Description("If true, will let Torment on autocast. If false, will let the AIO manage Torment in order to save Voidwalker mana.")]
+        public bool AutoTorment { get; set; }
+
+        [Category("Pet")]
         [DefaultValue(true)]
         [DisplayName("Auto Anguish")]
         [Description("If true, will let Anguish on autocast. If false, will let the AIO manage Anguish in order to save Felguard mana.")]
         public bool AutoAnguish { get; set; }
 
-        [Category("Demonology")]
+        [Category("Pet")]
         [DefaultValue(true)]
         [DisplayName("Felguard Cleave")]
         [Description("Use Felguard's Cleave")]
         public bool FelguardCleave { get; set; }
+
+        [Category("Pet")]
+        [Percentage(true)]
+        [DefaultValue(30)]
+        [DisplayName("Health Resummon")]
+        [Description("Resummon your pet if its health falls below this threshold")]
+        public int HealthThresholdResummon { get; set; }
+
+        [Category("Pet")]
+        [Percentage(true)]
+        [DefaultValue(20)]
+        [DisplayName("Mana Resummon")]
+        [Description("Resummon your pet if its mana falls below this threshold")]
+        public int ManaThresholdResummon { get; set; }
 
         // TALENT
         [DropdownList(new string[] { "Affliction", "Demonology" })]
