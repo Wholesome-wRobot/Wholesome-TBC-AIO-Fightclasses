@@ -163,6 +163,9 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             {
                 try
                 {
+                    if (Me.IsOnTaxi || Me.IsOnTaxi)
+                        Thread.Sleep(1000);
+
                     if (StatusChecker.OutOfCombat())
                         specialization.BuffRotation();
 
@@ -223,8 +226,6 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                     Thread.Sleep(1000);
                     return;
                 }
-                else
-                    wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
 
                 Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
                 if (!ObjectManager.Me.IsMounted && !ObjectManager.Me.IsOnTaxi)
@@ -235,6 +236,8 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                         return;
                 }
             }
+            else
+                wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
 
             // Life Tap
             if (Me.HealthPercent > Me.ManaPercentage
