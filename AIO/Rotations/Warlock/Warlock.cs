@@ -163,9 +163,6 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             {
                 try
                 {
-                    if (Me.IsOnTaxi || Me.IsOnTaxi)
-                        Thread.Sleep(1000);
-
                     if (StatusChecker.OutOfCombat())
                         specialization.BuffRotation();
 

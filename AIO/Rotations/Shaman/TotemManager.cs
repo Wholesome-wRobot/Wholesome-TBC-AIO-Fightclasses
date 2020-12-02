@@ -137,7 +137,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 if ((!currentFireTotem.Contains("Searing Totem") || _fireTotemPosition == null || Me.Position.DistanceTo(_fireTotemPosition) > 15f)
                     && ObjectManager.Target.GetDistance < 15
                     && !currentFireTotem.Contains("Magma Totem")
-                    && !Shaman.settings.UseTotemOfWrath)
+                    && (!Shaman.settings.UseTotemOfWrath || !TotemOfWrath.KnownSpell))
                 {
                     if (Cast(SearingTotem))
                     {
