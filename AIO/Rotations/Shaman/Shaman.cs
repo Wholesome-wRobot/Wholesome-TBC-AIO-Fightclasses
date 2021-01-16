@@ -92,7 +92,8 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             if (!Me.HaveBuff("Ghost Wolf") && !Me.IsCast)
             {
                 // Ghost Wolf
-                if (wManager.wManagerSetting.CurrentSetting.GroundMountName == ""
+                if (settings.GhostWolfMount
+                    && wManager.wManagerSetting.CurrentSetting.GroundMountName == ""
                     && GhostWolf.KnownSpell)
                     ToolBox.SetGroundMount(GhostWolf.Name);
 

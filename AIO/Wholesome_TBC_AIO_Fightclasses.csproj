@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\packages\Costura.Fody.4.0.0\build\Costura.Fody.props" Condition="Exists('..\packages\Costura.Fody.4.0.0\build\Costura.Fody.props')" />
   <Import Project="..\packages\Costura.Fody.4.1.0\build\Costura.Fody.props" Condition="Exists('..\packages\Costura.Fody.4.1.0\build\Costura.Fody.props')" />
   <PropertyGroup>
@@ -31,29 +31,28 @@
     <PlatformTarget>x86</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>D:\WoW\WoW TBC\WRobot\WRobot\FightClass\</OutputPath>
+    <OutputPath>F:\WoW\WoW TBC\WRobot\WRobot\FightClass\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <LangVersion>8.0</LangVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ControlzEx, Version=3.0.2.4, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\ControlzEx.3.0.2.4\lib\net45\ControlzEx.dll</HintPath>
+    <Reference Include="ControlzEx, Version=4.0.0.0, Culture=neutral, PublicKeyToken=69f1c32f803d307e, processorArchitecture=MSIL">
+      <HintPath>..\packages\ControlzEx.4.0.0\lib\net45\ControlzEx.dll</HintPath>
     </Reference>
     <Reference Include="Costura, Version=4.1.0.0, Culture=neutral, PublicKeyToken=9919ef960d84173d, processorArchitecture=MSIL">
       <HintPath>..\packages\Costura.Fody.4.1.0\lib\net40\Costura.dll</HintPath>
     </Reference>
     <Reference Include="MahApps.Metro, Version=1.6.1.4, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\MahApps.Metro.1.6.1\lib\net45\MahApps.Metro.dll</HintPath>
-      <Private>False</Private>
     </Reference>
     <Reference Include="MarsSettingsGUI">
       <HintPath>..\packages\MarsSettingsGUI.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="MemoryRobot">
-      <HintPath>D:\WoW\WoW TBC\WRobot\WRobot\Bin\MemoryRobot.dll</HintPath>
+      <HintPath>F:\WoW\WoW TBC\WRobot\WRobot\Bin\MemoryRobot.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Microsoft.Xaml.Behaviors, Version=1.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
@@ -63,7 +62,7 @@
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="robotManager">
-      <HintPath>D:\WoW\WoW TBC\WRobot\WRobot\Bin\robotManager.dll</HintPath>
+      <HintPath>F:\WoW\WoW TBC\WRobot\WRobot\Bin\robotManager.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
@@ -73,14 +72,11 @@
     <Reference Include="System.Web" />
     <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Windows.Interactivity, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\ControlzEx.3.0.2.4\lib\net45\System.Windows.Interactivity.dll</HintPath>
-    </Reference>
     <Reference Include="System.Xaml" />
     <Reference Include="System.XML" />
     <Reference Include="WindowsBase" />
     <Reference Include="wManager">
-      <HintPath>D:\WoW\WoW TBC\WRobot\WRobot\Bin\wManager.dll</HintPath>
+      <HintPath>F:\WoW\WoW TBC\WRobot\WRobot\Bin\wManager.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
@@ -151,7 +147,7 @@
   <PropertyGroup>
     <PostBuildEvent>copy /Y "$(TargetDir)\$(ProjectName).dll" "$(SolutionDir)\AIO\Compiled\$(ProjectName).dll"
 copy /Y "$(TargetDir)\$(ProjectName).dll" "C:\Users\Nico\Desktop\$(ProjectName).dll"
-copy /Y "$(TargetDir)\$(ProjectName).dll" "D:\WoW\WoW Vanilla\WRobot\FightClass\$(ProjectName).dll"</PostBuildEvent>
+copy /Y "$(TargetDir)\$(ProjectName).dll" "F:\WoW\WoW Vanilla\WRobot\FightClass\$(ProjectName).dll"</PostBuildEvent>
   </PropertyGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

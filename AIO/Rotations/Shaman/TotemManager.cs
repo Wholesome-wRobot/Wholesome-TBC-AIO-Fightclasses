@@ -67,10 +67,8 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 && !currentEarthTotem.Contains("Stoneclaw Totem")
                 && !currentEarthTotem.Contains("Earth Elemental Totem"))
             {
-                {
-                    if (Cast(EarthElementalTotem))
-                        return true;
-                }
+                if (Cast(EarthElementalTotem))
+                    return true;
             }
 
             // Stoneclaw on multiaggro
@@ -79,10 +77,8 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 && !currentEarthTotem.Contains("Stoneclaw Totem")
                 && !currentEarthTotem.Contains("Earth Elemental Totem"))
             {
-                {
-                    if (Cast(StoneclawTotem))
-                        return true;
-                }
+                if (Cast(StoneclawTotem))
+                    return true;
             }
 
             if (Shaman.settings.UseEarthTotems)
@@ -92,12 +88,11 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     && (!Shaman.settings.UseStoneSkinTotem || !StoneskinTotem.KnownSpell)
                     && !Me.HaveBuff("Strength of Earth")
                     && !currentEarthTotem.Contains("Stoneclaw Totem")
-                    && !currentEarthTotem.Contains("Earth Elemental Totem"))
+                    && !currentEarthTotem.Contains("Earth Elemental Totem")
+                    && ObjectManager.GetNumberAttackPlayer() < 2)
                 {
-                    {
-                        if (Cast(StrengthOfEarthTotem))
-                            return true;
-                    }
+                    if (Cast(StrengthOfEarthTotem))
+                        return true;
                 }
 
                 // Stoneskin Totem
@@ -106,10 +101,8 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     && !currentEarthTotem.Contains("Stoneclaw Totem")
                     && !currentEarthTotem.Contains("Earth Elemental Totem"))
                 {
-                    {
-                        if (Cast(StoneskinTotem))
-                            return true;
-                    }
+                    if (Cast(StoneskinTotem))
+                        return true;
                 }
             }
             return false;

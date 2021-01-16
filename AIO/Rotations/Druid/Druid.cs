@@ -462,16 +462,19 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 // Mangle
                 if (Me.ComboPoint < 5
                     && !Target.HaveBuff("Pounce")
+                    && Me.Energy > 40
                     && MangleCat.KnownSpell
-                    && MangleCat.IsSpellUsable
+                    && Claw.IsSpellUsable
                     && !cast.BannedSpells.Contains("Mangle (Cat)"))
                 {
+                    Logging.WriteFight("[Spell] Cast Mangle (Mangle)");
                     Lua.RunMacroText("/cast Mangle (Cat)()");
                     return;
                 }
 
                 // Claw
-                if (Me.ComboPoint < 5 && !Target.HaveBuff("Pounce"))
+                if (Me.ComboPoint < 5 && !Target.HaveBuff("Pounce")
+                    && !MangleCat.KnownSpell)
                     if (cast.Normal(Claw))
                         return;
             }

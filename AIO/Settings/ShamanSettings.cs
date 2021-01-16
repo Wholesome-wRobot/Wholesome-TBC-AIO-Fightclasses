@@ -17,6 +17,7 @@ namespace WholesomeTBCAIO.Settings
             HealThreshold = 50;
             CurePoison = true;
             CureDisease = true;
+            GhostWolfMount = false;
 
             ENPullRankOneLightningBolt = true;
             ENPullWithLightningBolt = true;
@@ -54,6 +55,12 @@ namespace WholesomeTBCAIO.Settings
         [Description("Heal when in combat and under this HP percentage")]
         [Percentage(true)]
         public int HealThreshold { get; set; }
+
+        [Category("Common")]
+        [DefaultValue(false)]
+        [DisplayName("Ghost Wolf Mount")]
+        [Description("Use Ghost Wolf as mount if you don't have a mount yet")]
+        public bool GhostWolfMount { get; set; }
 
         [Category("Common")]
         [DefaultValue(true)]
