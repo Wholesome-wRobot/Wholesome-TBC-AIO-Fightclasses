@@ -71,6 +71,17 @@ namespace WholesomeTBCAIO.Helpers
         }
         */
         // Returns whether the player is poisoned
+        public static bool PetHasPoisonDebuff()
+        {
+            return Lua.LuaDoString<bool>
+                (@"for i=1,25 do 
+	            local _, _, _, _, d  = UnitDebuff('pet',i);
+	            if d == 'Poison' then
+                return true
+                end
+            end");
+        }
+
         public static bool HasPoisonDebuff()
         {
             return Lua.LuaDoString<bool>

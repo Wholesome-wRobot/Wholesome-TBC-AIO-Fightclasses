@@ -26,8 +26,8 @@ namespace WholesomeTBCAIO.Rotations.Druid
         protected bool _fightingACaster = false;
         protected List<string> _casterEnemies = new List<string>();
         protected bool _pullFromAfar = false;
-        protected int _bigHealComboCost;
-        protected int _smallHealComboCost;
+        protected int bigHealComboCost;
+        protected int smallHealComboCost;
         protected float _pullRange = 27f;
         protected bool _isStealthApproching;
 
@@ -329,7 +329,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 && Barkskin.KnownSpell
                 && Me.HealthPercent < 50
                 && !Me.HaveBuff("Regrowth")
-                && Me.Mana > _bigHealComboCost + ToolBox.GetSpellCost("Barkskin")
+                && Me.Mana > bigHealComboCost + ToolBox.GetSpellCost("Barkskin")
                 && (Target.HealthPercent > 15 || Me.HealthPercent < 25))
                 if (cast.Normal(Barkskin) && cast.Normal(Regrowth) && cast.Normal(Rejuvenation))
                     return;
@@ -337,7 +337,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             // Regrowth + Rejuvenation
             if (Me.HealthPercent < 50
                 && !Me.HaveBuff("Regrowth")
-                && Me.Mana > _bigHealComboCost
+                && Me.Mana > bigHealComboCost
                 && (Target.HealthPercent > 15 || Me.HealthPercent < 25))
                 if (cast.Normal(Regrowth) && cast.Normal(Rejuvenation))
                     return;
@@ -345,7 +345,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             // Regrowth
             if (Me.HealthPercent < 50
                 && !Me.HaveBuff("Regrowth")
-                && Me.Mana > _smallHealComboCost
+                && Me.Mana > smallHealComboCost
                 && (Target.HealthPercent > 15 || Me.HealthPercent < 25))
                 if (cast.Normal(Regrowth))
                     return;
@@ -710,9 +710,8 @@ namespace WholesomeTBCAIO.Rotations.Druid
             if (Regrowth.KnownSpell)
             {
                 string bearFormSpell = DireBearForm.KnownSpell ? "Dire Bear Form" : "Bear Form";
-                _bigHealComboCost = ToolBox.GetSpellCost("Regrowth") + ToolBox.GetSpellCost("Rejuvenation") +
-                ToolBox.GetSpellCost(bearFormSpell);
-                _smallHealComboCost = ToolBox.GetSpellCost("Regrowth") + ToolBox.GetSpellCost(bearFormSpell);
+                bigHealComboCost = ToolBox.GetSpellCost("Regrowth") + ToolBox.GetSpellCost("Rejuvenation") + ToolBox.GetSpellCost(bearFormSpell);
+                smallHealComboCost = ToolBox.GetSpellCost("Regrowth") + ToolBox.GetSpellCost(bearFormSpell);
             }
         }
 

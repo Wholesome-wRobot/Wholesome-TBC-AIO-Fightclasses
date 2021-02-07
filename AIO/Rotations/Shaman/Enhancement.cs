@@ -28,6 +28,12 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
             base.Pull();
 
+            if (!settings.ENPullWithLightningBolt)
+            {
+                RangeManager.SetRangeToMelee();
+                return;
+            }
+
             // Pull with Lightning Bolt
             if (ObjectManager.Target.GetDistance <= _pullRange
                 && !RangeManager.CurrentRangeIsMelee())
@@ -41,8 +47,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 }
 
                 // pull with max rank
-                if (settings.ENPullWithLightningBolt
-                    && !settings.ENPullRankOneLightningBolt
+                if (!settings.ENPullRankOneLightningBolt
                     && LightningBolt.IsSpellUsable)
                 {
                     MovementManager.StopMove();

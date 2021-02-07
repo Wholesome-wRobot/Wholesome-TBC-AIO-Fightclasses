@@ -19,6 +19,7 @@ namespace WholesomeTBCAIO.Settings
             UseAspectOfTheCheetah = true;
             UseConcussiveShot = true;
             UseDisengage = false;
+            UseRaptorStrike = true;
 
             BestialWrathOnMulti = false;
             IntimidationInterrupt = true;
@@ -62,6 +63,12 @@ namespace WholesomeTBCAIO.Settings
         [DisplayName("Aspect of the Cheetah")]
         [Description("Use Aspect of the Cheetah")]
         public bool UseAspectOfTheCheetah { get; set; }
+
+        [Category("Common")]
+        [DefaultValue(true)]
+        [DisplayName("Raptor Strike")]
+        [Description("Use Raptor Strike")]
+        public bool UseRaptorStrike { get; set; }
 
         [Category("Common")]
         [DefaultValue(false)]

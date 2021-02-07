@@ -51,6 +51,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             FightEvents.OnFightStart += FightStartHandler;
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightLoop += FightLoopHandler;
+            MovementEvents.OnMovementPulse += MovementEventsOnMovementPulse;
 
             Rotation();
         }
@@ -224,6 +225,13 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && ObjectManager.Target.IsAlive)
                 if (cast.Normal(HuntersMark))
                     return;
+
+            // Serpent Sting
+            if (!ObjectManager.Target.HaveBuff("Serpent Sting")
+                && ObjectManager.Target.GetDistance < 34f
+                && ObjectManager.Target.GetDistance > 13f)
+                if (cast.Normal(SerpentSting))
+                    return;
         }
 
         protected virtual void CombatRotation()
@@ -302,7 +310,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     return;
 
             // Raptor Strike
-            if (Target.GetDistance < 6f 
+            if (settings.UseRaptorStrike
+                && Target.GetDistance < 6f 
                 && !RaptorStrikeOn())
                 if (cast.Normal(RaptorStrike))
                     return;
@@ -407,8 +416,16 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && !Me.IsCast 
                 && !ObjectManager.Pet.HaveBuff("Feed Pet Effect"))
             {
-                _foodManager.FeedPet();
-                Thread.Sleep(400);
+                if (!ToolBox.PetHasPoisonDebuff())
+                {
+                    _foodManager.FeedPet();
+                    Thread.Sleep(400);
+                }
+                else
+                {
+                    Logger.Log("You pet is poisoned, delaying feed");
+                    Thread.Sleep(1000);
+                }
             }
         }
 
@@ -509,22 +526,18 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         {
             if (id == LuaEventsId.COMBAT_LOG_EVENT && args[9] == "Auto Shot")
                 lastAuto = DateTime.Now;
-
-            // call pet when you don't have a pet => You do not have a pet
-            // call pet when just dead => Not yet recovered
-            // call pet when just died => You already control a summoned creature
-            /*
-            if (id == LuaEventsId.COMBAT_LOG_EVENT_UNFILTERED && args[11].Equals("You do not have a pet"))
-                haveTamedAPet = false;
-            else if (id == LuaEventsId.COMBAT_LOG_EVENT_UNFILTERED && args[11].Equals("Not yet recovered"))
-                haveTamedAPet = true;
-            else if (id == LuaEventsId.COMBAT_LOG_EVENT_UNFILTERED && args[11].Equals("You already control a summoned creature"))
-                haveTamedAPet = true;
-            */
         }
 
         private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)
         {
+            // Wait for feed pet
+            if (ObjectManager.Pet.HaveBuff("Feed Pet Effect"))
+                Logger.Log("Waiting for pet to be fed");
+
+            while (ObjectManager.Pet.HaveBuff("Feed Pet Effect")
+                && !ObjectManager.Me.InCombatFlagOnly)
+                Thread.Sleep(500);
+
             if (ObjectManager.Target.GetDistance >= 13f 
                 && !AutoShot.IsSpellUsable 
                 && !cast.IsBackingUp)
@@ -607,7 +620,18 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             }
         }
 
-        private void FightEndHandler(ulong guid)
+        private static void MovementEventsOnMovementPulse(List<Vector3> points, CancelEventArgs cancelable)
+        {
+            // Wait for feed pet
+            if (ObjectManager.Pet.HaveBuff("Feed Pet Effect"))
+                Logger.Log("Waiting for pet to be fed");
+
+            while (ObjectManager.Pet.HaveBuff("Feed Pet Effect")
+                && !ObjectManager.Me.InCombatFlagOnly)
+                Thread.Sleep(500);
+        }
+
+            private void FightEndHandler(ulong guid)
         {
             cast.IsBackingUp = false;
             _backupAttempts = 0;
