@@ -40,10 +40,10 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             this.specialization = specialization as Warlock;
             TalentsManager.InitTalents(settings);
-
+            
             _petPulseThread.DoWork += PetThread;
             _petPulseThread.RunWorkerAsync();
-
+            
             RangeManager.SetRange(_maxRange);
 
             // Set pet mode
@@ -183,13 +183,14 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
         protected virtual void BuffRotation()
         {
+            
             // Delete additional Soul Shards
             if (ToolBox.CountItemStacks("Soul Shard") > settings.NumberOfSoulShards)
             {
                 Logger.Log("Deleting excess Soul Shard");
                 ToolBox.LuaDeleteOneItem("Soul Shard");
             }
-
+            
             // Define the demon to summon
             Spell SummonSpell = null;
             bool shouldSummon = false;
@@ -235,14 +236,14 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             }
             else
                 wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
-
+            
             // Life Tap
             if (Me.HealthPercent > Me.ManaPercentage
                 && settings.UseLifeTap
                 && !Me.IsMounted)
                 if (cast.Normal(LifeTap))
                     return;
-
+            
             // Unending Breath
             if (!Me.HaveBuff("Unending Breath")
                 && UnendingBreath.KnownSpell
@@ -252,34 +253,35 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 if (cast.OnSelf(UnendingBreath))
                     return;
             }
-
+            
             // Demon Skin
             if (!Me.HaveBuff("Demon Skin")
                 && !DemonArmor.KnownSpell
                 && DemonSkin.KnownSpell)
                 if (cast.Normal(DemonSkin))
                     return;
-
+            
             // Demon Armor
             if ((!Me.HaveBuff("Demon Armor") || Me.HaveBuff("Demon Skin"))
                 && DemonArmor.KnownSpell
                 && (!FelArmor.KnownSpell || FelArmor.KnownSpell && !settings.UseFelArmor))
                 if (cast.Normal(DemonArmor))
                     return;
-
+            
             // Soul Link
             if (SoulLink.KnownSpell
-                && !Me.HaveBuff("Soul Link"))
+                && !Me.HaveBuff("Soul Link")
+                && ObjectManager.Pet.IsAlive)
                 if (cast.Normal(SoulLink))
                     return;
-
+            
             // Fel Armor
             if (!Me.HaveBuff("Fel Armor")
                 && FelArmor.KnownSpell
                 && settings.UseFelArmor)
                 if (cast.Normal(FelArmor))
                     return;
-
+            
             // Health Funnel OOC
             if (ObjectManager.Pet.HealthPercent < 50
                 && Me.HealthPercent > 40
@@ -305,12 +307,12 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 }
                 Lua.LuaDoString("PetFollow();");
             }
-
+            
             // Health Stone
             if (!WarlockPetAndConsumables.HaveHealthstone())
                 if (cast.Normal(CreateHealthStone))
                     return;
-
+            
             // Create Soul Stone
             if (!WarlockPetAndConsumables.HaveSoulstone()
                 && CreateSoulstone.KnownSpell)

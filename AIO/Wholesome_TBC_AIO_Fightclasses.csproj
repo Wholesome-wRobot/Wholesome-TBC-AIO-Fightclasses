@@ -147,7 +147,8 @@
   <PropertyGroup>
     <PostBuildEvent>copy /Y "$(TargetDir)\$(ProjectName).dll" "$(SolutionDir)\AIO\Compiled\$(ProjectName).dll"
 copy /Y "$(TargetDir)\$(ProjectName).dll" "C:\Users\Nico\Desktop\$(ProjectName).dll"
-copy /Y "$(TargetDir)\$(ProjectName).dll" "F:\WoW\WoW Vanilla\WRobot\FightClass\$(ProjectName).dll"</PostBuildEvent>
+copy /Y "$(TargetDir)\$(ProjectName).dll" "F:\WoW\WoW Vanilla\WRobot\FightClass\$(ProjectName).dll"
+copy /Y "$(TargetDir)\$(ProjectName).dll" "F:\WoW\WoW Wotlk\WRobot WOTLK\FightClass\$(ProjectName).dll"</PostBuildEvent>
   </PropertyGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

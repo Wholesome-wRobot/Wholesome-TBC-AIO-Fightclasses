@@ -58,7 +58,7 @@ public class Main : ICustomClass
             FightEvents.OnFightEnd += FightEndHandler;
             LoggingEvents.OnAddLog += AddLogHandler;
             FiniteStateMachineEvents.OnRunState += OnRunStateEvent;
-
+            
             if (!TalentsManager._isRunning)
             {
                 _talentThread.DoWork += TalentsManager.DoTalentPulse;

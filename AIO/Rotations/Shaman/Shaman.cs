@@ -122,6 +122,11 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             if (_casterEnemies.Contains(ObjectManager.Target.Name))
                 _fightingACaster = true;
 
+            // Remove Ghost Wolf
+            if (Me.HaveBuff("Ghost Wolf"))
+                if (cast.Normal(GhostWolf))
+                    return;
+
             // Water Shield
             if (!Me.HaveBuff("Water Shield")
                 && !Me.HaveBuff("Lightning Shield")
@@ -144,6 +149,11 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             WoWUnit Target = ObjectManager.Target;
             bool _isPoisoned = ToolBox.HasPoisonDebuff();
             bool _hasDisease = ToolBox.HasDiseaseDebuff();
+
+            // Remove Ghost Wolf
+            if (Me.HaveBuff("Ghost Wolf"))
+                if (cast.Normal(GhostWolf))
+                    return;
 
             // Healing Wave + Lesser Healing Wave
             if (Me.HealthPercent < settings.HealThreshold
