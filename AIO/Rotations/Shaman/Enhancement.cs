@@ -28,7 +28,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
             base.Pull();
 
-            if (!settings.ENPullWithLightningBolt)
+            if (!settings.ENPullWithLightningBolt && !ToolBox.CheckIfEnemiesAround(ObjectManager.Target, 20f))
             {
                 RangeManager.SetRangeToMelee();
                 return;
