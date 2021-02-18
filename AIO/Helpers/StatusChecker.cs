@@ -9,7 +9,7 @@ namespace WholesomeTBCAIO.Helpers
         public static bool InCombat()
         {
             return BasicConditions()
-                && !ObjectManager.Me.IsMounted
+                && (!ObjectManager.Me.IsMounted || ObjectManager.Me.HaveBuff("Ghost Wolf"))
                 && ObjectManager.Me.Target > 0UL
                 && ObjectManager.Target.IsAttackable
                 && ObjectManager.Target.IsAlive
