@@ -67,6 +67,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             MovementEvents.OnMoveToPulse -= MoveToPulseHandler;
             FightEvents.OnFightLoop -= FightLoopHandler;
             OthersEvents.OnAddBlackListGuid -= BlackListHandler;
+            cast.Dispose();
             Logger.Log("Disposed");
         }
 

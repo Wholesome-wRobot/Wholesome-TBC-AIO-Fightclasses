@@ -68,6 +68,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             FightEvents.OnFightStart -= FightStartHandler;
             FiniteStateMachineEvents.OnRunState -= OnRunStateHandler;
             wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
+            cast.Dispose();
             Logger.Log("Disposed");
         }
 

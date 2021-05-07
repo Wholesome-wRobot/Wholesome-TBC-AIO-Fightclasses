@@ -18,6 +18,12 @@ namespace WholesomeTBCAIO.Rotations.Mage
         private Spell ConjureManaEmerald = new Spell("Conjure Mana Emerald");
         public string ManaStone = "";
 
+        public MageFoodManager()
+        {
+            Drink().ForEach(d => ToolBox.AddToDoNotSellList(d));
+            Food().ForEach(f => ToolBox.AddToDoNotSellList(f));
+        }
+
         private List<string> Drink()
         {
             return new List<string>

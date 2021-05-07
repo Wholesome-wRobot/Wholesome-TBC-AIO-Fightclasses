@@ -53,12 +53,13 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
         public void Dispose()
         {
-            Logger.Log("Disposed");
             FightEvents.OnFightEnd -= FightEndHandler;
             FightEvents.OnFightStart -= FightStartHandler;
             FightEvents.OnFightLoop -= FightLoopHandler;
             MovementEvents.OnMoveToPulse -= MoveToPulseHandler;
             OthersEvents.OnAddBlackListGuid -= BlackListHandler;
+            cast.Dispose();
+            Logger.Log("Disposed");
         }
 
         private void Rotation()

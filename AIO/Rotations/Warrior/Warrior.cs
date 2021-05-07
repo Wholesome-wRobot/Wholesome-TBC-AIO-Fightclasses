@@ -45,6 +45,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         public void Dispose()
         {
             FightEvents.OnFightEnd -= FightEndHandler;
+            cast.Dispose();
             Logger.Log("Disposed");
         }
 

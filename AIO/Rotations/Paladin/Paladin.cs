@@ -44,6 +44,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
         public void Dispose()
         {
             FightEvents.OnFightEnd -= FightEndHandler;
+            cast.Dispose();
             Logger.Log("Disposed");
         }
 

@@ -8,7 +8,6 @@ using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
 using wManager.Events;
 using wManager.Wow.Class;
-using wManager.Wow.Enums;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 
@@ -47,7 +46,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             _petPulseThread.DoWork += PetThread;
             _petPulseThread.RunWorkerAsync();
 
-            EventsLuaWithArgs.OnEventsLuaWithArgs += AutoShotEventHandler;
+            EventsLuaWithArgs.OnEventsLuaStringWithArgs += AutoShotEventHandler;
             FightEvents.OnFightStart += FightStartHandler;
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightLoop += FightLoopHandler;
@@ -161,10 +160,11 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
             _petPulseThread.DoWork -= PetThread;
             _petPulseThread.Dispose();
-            EventsLuaWithArgs.OnEventsLuaWithArgs -= AutoShotEventHandler;
+            EventsLuaWithArgs.OnEventsLuaStringWithArgs -= AutoShotEventHandler;
             FightEvents.OnFightStart -= FightStartHandler;
             FightEvents.OnFightEnd -= FightEndHandler;
             FightEvents.OnFightLoop -= FightLoopHandler;
+            cast.Dispose();
             Logger.Log("Disposed");
         }
 
@@ -522,9 +522,9 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         protected Spell Attack = new Spell("Attack");
 
         // EVENT HANDLERS
-        private void AutoShotEventHandler(LuaEventsId id, List<string> args)
+        private void AutoShotEventHandler(string id, List<string> args)
         {
-            if (id == LuaEventsId.COMBAT_LOG_EVENT && args[9] == "Auto Shot")
+            if (id == "COMBAT_LOG_EVENT" && args[9] == "Auto Shot")
                 lastAuto = DateTime.Now;
         }
 

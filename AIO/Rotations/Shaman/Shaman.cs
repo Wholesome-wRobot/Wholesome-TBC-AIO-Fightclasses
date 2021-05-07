@@ -54,6 +54,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         {
             FightEvents.OnFightEnd -= FightEndHandler;
             FightEvents.OnFightStart -= FightStartHandler;
+            cast.Dispose();
             Logger.Log("Disposed");
         }
 

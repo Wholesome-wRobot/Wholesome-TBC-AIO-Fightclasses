@@ -26,7 +26,7 @@ namespace WholesomeTBCAIO.Helpers
             WandSpell = wandSpell;
             PlayingManaClass = ObjectManager.Me.WowClass != WoWClass.Rogue && ObjectManager.Me.WowClass != WoWClass.Warrior;
             BannedSpells = new List<string>();
-            EventsLuaWithArgs.OnEventsLuaWithArgs += LuaEventsHandler;
+            EventsLuaWithArgs.OnEventsLuaStringWithArgs += LuaEventsHandler;
         }
 
         public bool PetSpell(string spellName, bool onFocus = false, bool noTargetNeeded = false)
@@ -47,6 +47,11 @@ namespace WholesomeTBCAIO.Helpers
                 return true;
             }
             return false;
+        }
+
+        public void Dispose()
+        {
+            EventsLuaWithArgs.OnEventsLuaStringWithArgs -= LuaEventsHandler;
         }
 
         public bool PetSpellIfEnoughForGrowl(string spellName, uint spellCost)
@@ -177,7 +182,7 @@ namespace WholesomeTBCAIO.Helpers
                 Logger.CombatDebug(s);
         }
 
-        private void LuaEventsHandler(LuaEventsId id, List<string> args)
+        private void LuaEventsHandler(string id, List<string> args)
         {
             if (args[11] == "IMMUNE" && !BannedSpells.Contains(args[9]))
             {

@@ -51,6 +51,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
         {
             FightEvents.OnFightEnd -= FightEndHandler;
             FightEvents.OnFightStart -= FightStartHandler;
+            cast.Dispose();
             Logger.Log("Disposed");
         }
 

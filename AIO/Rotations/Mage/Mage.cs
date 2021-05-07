@@ -55,6 +55,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             FightEvents.OnFightEnd -= FightEndHandler;
             FightEvents.OnFightStart -= FightStartHandler;
             FightEvents.OnFightLoop -= FightLoopHandler;
+            cast.Dispose();
             Logger.Log("Disposed");
         }
 
