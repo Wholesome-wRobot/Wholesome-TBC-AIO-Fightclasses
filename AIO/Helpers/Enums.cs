@@ -32,6 +32,7 @@ namespace WholesomeTBCAIO.Helpers
             { "Holy Party", Specs.PriestHolyParty },
             // Rogue
             { "Combat", Specs.RogueCombat },
+            { "Combat Party", Specs.RogueCombatParty },
             // Warlock
             { "Affliction", Specs.WarlockAffliction },
             { "Demonology", Specs.WarlockDemonology },
@@ -69,6 +70,7 @@ namespace WholesomeTBCAIO.Helpers
             PriestHolyParty,
             // Rogue
             RogueCombat,
+            RogueCombatParty,
             // Warlock
             WarlockAffliction,
             WarlockDemonology,

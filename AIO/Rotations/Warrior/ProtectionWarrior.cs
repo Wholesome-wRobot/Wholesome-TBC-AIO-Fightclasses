@@ -37,7 +37,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 && _pullMeleeTimer.ElapsedMilliseconds < 5000 || settings.AlwaysPull
                 && ObjectManager.Target.GetDistance < 24f)
             {
-                Spell pullMethod = null;
+                AIOSpell pullMethod = null;
 
                 if (Shoot.IsSpellUsable
                     && Shoot.KnownSpell)
@@ -57,7 +57,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                     if (Me.IsMounted)
                         MountTask.DismountMount();
 
-                    RangeManager.SetRange(_pullRange /*+ 10*/);
+                    RangeManager.SetRange(_pullRange + 10);
                     Thread.Sleep(200);
                     if (cast.Normal(pullMethod))
                         Thread.Sleep(2000);

@@ -37,26 +37,8 @@ namespace WholesomeTBCAIO.Helpers
                 "if IsAutoRepeatSpell(name) then isAutoRepeat = true end", "isAutoRepeat");
         }
 
-        // Returns the cooldown of the spell passed as argument
-        public static float GetSpellCooldown(string spellName)
-        {
-            return Lua.LuaDoString<float>("local startTime, duration, enable = GetSpellCooldown('" + spellName + "'); return duration - (GetTime() - startTime)");
-        }
-
-        // Returns the cost of the spell passed as argument
-        public static int GetSpellCost(string spellName)
-        {
-            return Lua.LuaDoString<int>("local name, rank, icon, cost, isFunnel, powerType, castTime, minRange, maxRange = GetSpellInfo('" + spellName + "'); return cost");
-        }
-
-        // Returns the cast time in milliseconds of the spell passed as argument
-        public static float GetSpellCastTime(string spellName)
-        {
-            return Lua.LuaDoString<float>("local name, rank, icon, cost, isFunnel, powerType, castTime, minRange, maxRange = GetSpellInfo('" + spellName + "'); return castTime");
-        }
-
         // Reactivates auto attack if it's off. Must pass the Attack spell as argument
-        public static void CheckAutoAttack(Spell attack)
+        public static void CheckAutoAttack(AIOSpell attack)
         {
             bool _autoAttacking = Lua.LuaDoString<bool>("isAutoRepeat = false; if IsCurrentSpell('Attack') then isAutoRepeat = true end", "isAutoRepeat");
             if (!_autoAttacking && ObjectManager.Target.IsAlive)
@@ -138,18 +120,6 @@ namespace WholesomeTBCAIO.Helpers
                 end");
         }
 
-        // Returns the amount of stacks of a specific debuff passed as a string (ex: Arcane Blast)
-        public static int CountDebuff(string debuffName, string unit = "player")
-        {
-            return Lua.LuaDoString<int>
-                (@$"for i=1,25 do
-                    local n, _, _, c, _  = UnitDebuff('{unit}',i);
-                    if n == '{debuffName}' then
-                    return c
-                    end
-                end");
-        }
-
         // Returns the amount of stacks of a specific buff passed as a string (ex: Arcane Blast)
         public static int CountBuff(string buffName, string unit = "player")
         {
@@ -179,9 +149,21 @@ namespace WholesomeTBCAIO.Helpers
         {
             return Lua.LuaDoString<int>
                 (@$"for i=1,25 do
-                    local n, _, _, _, _, duration, expirationTime  = UnitDebuff('{unit}',i);
+                    local n, _, _, _, _, _, expirationTime  = UnitDebuff('{unit}',i);
                     if n == '{debuffName}' then
                     return expirationTime
+                    end
+                end");
+        }
+
+        // Returns the amount of stacks of a specific debuff passed as a string (ex: Arcane Blast)
+        public static int CountDebuff(string debuffName, string unit = "player")
+        {
+            return Lua.LuaDoString<int>
+                (@$"for i=1,25 do
+                    local n, _, _, c, _  = UnitDebuff('{unit}',i);
+                    if n == '{debuffName}' then
+                    return c
                     end
                 end");
         }
@@ -242,6 +224,7 @@ namespace WholesomeTBCAIO.Helpers
             if (rotation is HolyPriestParty) return (RotationType.Party, RotationRole.Healer);
             // ROGUE
             if (rotation is Combat) return (RotationType.Solo, RotationRole.DPS);
+            if (rotation is RogueCombatParty) return (RotationType.Party, RotationRole.DPS);
             // SHAMAN
             if (rotation is Elemental) return (RotationType.Solo, RotationRole.DPS);
             if (rotation is Enhancement) return (RotationType.Solo, RotationRole.DPS);

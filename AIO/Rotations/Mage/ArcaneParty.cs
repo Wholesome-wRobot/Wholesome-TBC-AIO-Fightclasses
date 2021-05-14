@@ -133,7 +133,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 }
 
             // Cold Snap
-            if (ToolBox.GetSpellCooldown(IcyVeins.Name) > 0
+            if (IcyVeins.GetCurrentCooldown > 0
                 && Me.ManaPercentage > 10
                 && !Me.HaveBuff(IcyVeins.Name)
                 && cast.Normal(ColdSnap))

@@ -106,8 +106,6 @@ namespace WholesomeTBCAIO.Rotations.Priest
         {
             WoWUnit Target = ObjectManager.Target;
 
-            Logger.Log(Target.IsBoss.ToString());
-
             // Inner Focus  + sopell
             if (Me.HaveBuff("Inner Focus") && Target.HealthPercent > 80)
             {

@@ -124,7 +124,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 }
 
             // Cold Snap
-            if (ToolBox.GetSpellCooldown(SummonWaterElemental.Name) > 0
+            if (SummonWaterElemental.GetCurrentCooldown > 0
                 && !ObjectManager.Pet.IsValid
                 && Me.ManaPercentage > 10
                 && !Me.HaveBuff(IcyVeins.Name)

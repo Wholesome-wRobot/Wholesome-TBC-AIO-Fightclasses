@@ -249,7 +249,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 && Barkskin.KnownSpell
                 && Me.HealthPercent < 50
                 && !Me.HaveBuff("Regrowth")
-                && Me.Mana > bigHealComboCost + ToolBox.GetSpellCost("Barkskin")
+                && Me.Mana > bigHealComboCost + Barkskin.Cost
                 && (Target.HealthPercent > 15 || Me.HealthPercent < 25))
                 if (cast.Normal(Barkskin) && cast.Normal(Regrowth) && cast.Normal(Rejuvenation))
                     return;
@@ -458,9 +458,9 @@ namespace WholesomeTBCAIO.Rotations.Druid
             // **************** HUMAN FORM ROTATION ****************
 
             // Avoid accidental Human Form stay
-            if (CatForm.KnownSpell && ToolBox.GetSpellCost("Cat Form") < Me.Mana)
+            if (CatForm.KnownSpell && CatForm.Cost < Me.Mana)
                 return;
-            if (BearForm.KnownSpell && ToolBox.GetSpellCost("Bear Form") < Me.Mana)
+            if (BearForm.KnownSpell && BearForm.Cost < Me.Mana)
                 return;
 
             if (!Me.HaveBuff("Bear Form")

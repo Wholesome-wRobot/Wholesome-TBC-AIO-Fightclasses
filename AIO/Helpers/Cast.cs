@@ -10,9 +10,9 @@ namespace WholesomeTBCAIO.Helpers
 {
     public class Cast
     {
-        private Spell DefaultBaseSpell { get; }
+        private AIOSpell DefaultBaseSpell { get; }
         private bool CombatDebugON { get; }
-        private Spell WandSpell { get; }
+        private AIOSpell WandSpell { get; }
         private bool AutoDetectImmunities { get; }
         private ulong CurrentEnemyGuid { get; set; }
 
@@ -20,7 +20,7 @@ namespace WholesomeTBCAIO.Helpers
         public bool PlayingManaClass { get; set; }
         public List<string> BannedSpells { get; set; }
 
-        public Cast(Spell defaultBaseSpell, bool combatDebugON, Spell wandSpell, bool autoDetectImmunities)
+        public Cast(AIOSpell defaultBaseSpell, bool combatDebugON, AIOSpell wandSpell, bool autoDetectImmunities)
         {
             AutoDetectImmunities = autoDetectImmunities;
             DefaultBaseSpell = defaultBaseSpell;
@@ -66,28 +66,31 @@ namespace WholesomeTBCAIO.Helpers
             return false;
         }
 
-        public bool Normal(Spell s, bool stopWandAndCast = true)
+        public bool Normal(AIOSpell s, bool stopWandAndCast = true)
         {
             return AdvancedCast(s, stopWandAndCast);
         }
 
-        public bool OnSelf(Spell s, bool stopWandAndCast = true)
+        public bool OnSelf(AIOSpell s, bool stopWandAndCast = true)
         {
             return AdvancedCast(s, stopWandAndCast, true);
         }
 
-        public bool OnFocusPlayer(Spell s, WoWPlayer onPlayerFocus, bool stopWandAndCast = true, bool onDeadTarget = false)
+        public bool OnFocusPlayer(AIOSpell s, WoWPlayer onPlayerFocus, bool stopWandAndCast = true, bool onDeadTarget = false)
         {
             return AdvancedCast(s, stopWandAndCast, onPlayerFocus: onPlayerFocus, onDeadTarget: onDeadTarget);
         }
 
-        public bool OnFocusUnit(Spell s, WoWUnit onUnitFocus, bool stopWandAndCast = true, bool onDeadTarget = false)
+        public bool OnFocusUnit(AIOSpell s, WoWUnit onUnitFocus, bool stopWandAndCast = true, bool onDeadTarget = false)
         {
             return AdvancedCast(s, stopWandAndCast, onUnitFocus: onUnitFocus, onDeadTarget: onDeadTarget);
         }
 
-        public bool AdvancedCast(Spell s, bool stopWandAndCast = true, bool onSelf = false, WoWPlayer onPlayerFocus = null, WoWUnit onUnitFocus = null, bool onDeadTarget = false)
+        public bool AdvancedCast(AIOSpell s, bool stopWandAndCast = true, bool onSelf = false, WoWPlayer onPlayerFocus = null, WoWUnit onUnitFocus = null, bool onDeadTarget = false)
         {
+            WoWPlayer Me = ObjectManager.Me;
+            WoWUnit Target = ObjectManager.Target;
+
             // Change and clear guid + banned list
             if (ObjectManager.Target.Guid != CurrentEnemyGuid)
             {
@@ -103,16 +106,16 @@ namespace WholesomeTBCAIO.Helpers
 
             if (onPlayerFocus == null 
                 && onUnitFocus == null 
-                && ObjectManager.Target.Guid > 0 
-                && ObjectManager.Target.IsDead 
+                && Target.Guid > 0 
+                && Target.IsDead 
                 && !onDeadTarget)
                 return false;
 
             if (!s.KnownSpell 
                 || IsBackingUp 
-                || ObjectManager.Me.IsCast 
-                || ObjectManager.Me.CastingTimeLeft > Usefuls.Latency
-                || ObjectManager.Me.IsStunned)
+                || Me.IsCast 
+                || Me.CastingTimeLeft > Usefuls.Latency
+                || Me.IsStunned)
                 return false;
 
             if (BannedSpells.Count > 0 && BannedSpells.Contains(s.Name))
@@ -120,13 +123,34 @@ namespace WholesomeTBCAIO.Helpers
 
             CombatDebug("*----------- INTO CAST FOR " + s.Name);
 
-            if (PlayingManaClass 
-                && ToolBox.GetSpellCost(s.Name) > ObjectManager.Me.Mana)
+            // CHECK COST
+            if (s.PowerType == -2 && Me.Health < s.Cost)
             {
-                CombatDebug(s.Name + ": Not enough mana, SKIPPING");
+                CombatDebug($"{s.Name}: Not enough health {s.Cost}/{Me.Health}, SKIPPING");
+                return false;
+            }
+            else if (s.PowerType == 0 && Me.Mana < s.Cost)
+            {
+                CombatDebug($"{s.Name}: Not enough mana {s.Cost}/{Me.Mana}, SKIPPING");
+                return false;
+            }
+            else if (s.PowerType == 1 && Me.Rage < s.Cost)
+            {
+                CombatDebug($"{s.Name}: Not enough rage {s.Cost}/{Me.Rage}, SKIPPING");
+                return false;
+            }
+            else if (s.PowerType == 2 && ObjectManager.Pet.Focus < s.Cost)
+            {
+                CombatDebug($"{s.Name}: Not enough pet focus {s.Cost}/{ObjectManager.Pet.Focus}, SKIPPING");
+                return false;
+            }
+            else if (s.PowerType == 3 && Me.Energy < s.Cost)
+            {
+                CombatDebug($"{s.Name}: Not enough energy {s.Cost}/{Me.Energy}, SKIPPING");
                 return false;
             }
 
+            // DON'T CAST BECAUSE WANDING
             if (WandSpell != null 
                 && ToolBox.UsingWand() 
                 && !stopWandAndCast)
@@ -135,8 +159,9 @@ namespace WholesomeTBCAIO.Helpers
                 return false;
             }
 
-            float _spellCD = ToolBox.GetSpellCooldown(s.Name);
-            CombatDebug("Cooldown is " + _spellCD);
+            // COOLDOWN CHECKS
+            float _spellCD = s.GetCurrentCooldown;
+            CombatDebug($"Cooldown is {_spellCD}");
 
             if (_spellCD >= 2f)
             {
@@ -144,6 +169,7 @@ namespace WholesomeTBCAIO.Helpers
                 return false;
             }
             
+            // STOP WAND FOR CAST
             if (WandSpell != null
                 && ToolBox.UsingWand()
                 && stopWandAndCast)
@@ -151,25 +177,25 @@ namespace WholesomeTBCAIO.Helpers
 
             if (_spellCD < 2f && _spellCD > 0f)
             {
-                if (ToolBox.GetSpellCastTime(s.Name) < 1f)
+                if (s.CastTime < 1f)
                 {
-                    CombatDebug(s.Name + " is instant and low CD, recycle");
+                    CombatDebug($"{s.Name} is instant and low CD, recycle");
                     return true;
                 }
 
                 int t = 0;
-                while (ToolBox.GetSpellCooldown(s.Name) > 0)
+                while (s.GetCurrentCooldown > 0)
                 {
-                    Thread.Sleep(50);
-                    t += 50;
+                    Thread.Sleep(100);
+                    t += 100;
                     if (t > 2000)
                     {
-                        CombatDebug(s.Name + ": waited for tool long, give up");
+                        CombatDebug($"{s.Name}: waited for tool long, give up");
                         return false;
                     }
                 }
                 Thread.Sleep(100 + Usefuls.Latency);
-                CombatDebug(s.Name + ": waited " + (t + 100) + " for it to be ready");
+                CombatDebug($"{s.Name}: waited {t + 100} for it to be ready");
             }
 
             if (!s.IsSpellUsable)
@@ -178,7 +204,7 @@ namespace WholesomeTBCAIO.Helpers
                 return false;
             }
 
-            if (onSelf && !ObjectManager.Target.IsAttackable)
+            if (onSelf && !Target.IsAttackable)
                 Lua.RunMacroText("/cleartarget");
 
             bool stopMove = s.CastTime > 0;
@@ -197,7 +223,7 @@ namespace WholesomeTBCAIO.Helpers
 
                 if (focusDistance > s.MaxRange || TraceLine.TraceLineGo(focusPosition))
                 {
-                    if (ObjectManager.Me.HaveBuff("Spirit of Redemption"))
+                    if (Me.HaveBuff("Spirit of Redemption"))
                         return false;
 
                     Logger.Log($"Approaching {focusName}");
@@ -212,7 +238,7 @@ namespace WholesomeTBCAIO.Helpers
                     int limit = 3000;
                     while (MovementManager.InMoveTo
                     && Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                    && ObjectManager.Me.IsAlive
+                    && Me.IsAlive
                     && focusDistance > 20 || TraceLine.TraceLineGo(focusPosition)
                     && limit >= 0)
                     {
@@ -238,12 +264,12 @@ namespace WholesomeTBCAIO.Helpers
         }
 
         // Stops using wand and waits for its CD to be over
-        private void StopWandWaitGCD(Spell wandSpell, Spell basicSpell)
+        private void StopWandWaitGCD(AIOSpell wandSpell, AIOSpell spellToWaitFor)
         {
             CombatDebug("Stopping Wand and waiting for GCD");
             wandSpell.Launch();
             int c = 0;
-            while (!basicSpell.IsSpellUsable && c <= 1500)
+            while (!spellToWaitFor.IsSpellUsable && c <= 1500)
             {
                 c += 50;
                 Thread.Sleep(50);

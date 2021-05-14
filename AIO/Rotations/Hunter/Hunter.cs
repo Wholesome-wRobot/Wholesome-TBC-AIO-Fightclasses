@@ -261,7 +261,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && !Me.InCombatFlagOnly
                 && RevivePet.KnownSpell
                 && !Me.HaveBuff("Drink")
-                && ToolBox.GetSpellCost("Revive Pet") > Me.Mana)
+                && RevivePet.Cost > Me.Mana)
             {
                 Logger.Log("Not enough mana to summon, forcing regen");
                 wManager.wManagerSetting.CurrentSetting.DrinkPercent = 95;
@@ -311,30 +311,30 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             }
         }
 
-        protected Spell RevivePet = new Spell("Revive Pet");
-        protected Spell CallPet = new Spell("Call Pet");
-        protected Spell MendPet = new Spell("Mend Pet");
-        protected Spell AspectHawk = new Spell("Aspect of the Hawk");
-        protected Spell AspectCheetah = new Spell("Aspect of the Cheetah");
-        protected Spell AspectMonkey = new Spell("Aspect of the Monkey");
-        protected Spell AspectViper = new Spell("Aspect of the Viper");
-        protected Spell HuntersMark = new Spell("Hunter's Mark");
-        protected Spell ConcussiveShot = new Spell("Concussive Shot");
-        protected Spell RaptorStrike = new Spell("Raptor Strike");
-        protected Spell MongooseBite = new Spell("Mongoose Bite");
-        protected Spell WingClip = new Spell("Wing Clip");
-        protected Spell SerpentSting = new Spell("Serpent Sting");
-        protected Spell ArcaneShot = new Spell("Arcane Shot");
-        protected Spell AutoShot = new Spell("Auto Shot");
-        protected Spell RapidFire = new Spell("Rapid Fire");
-        protected Spell Intimidation = new Spell("Intimidation");
-        protected Spell BestialWrath = new Spell("Bestial Wrath");
-        protected Spell FeignDeath = new Spell("Feign Death");
-        protected Spell FreezingTrap = new Spell("Freezing Trap");
-        protected Spell SteadyShot = new Spell("Steady Shot");
-        protected Spell KillCommand = new Spell("Kill Command");
-        protected Spell Disengage = new Spell("Disengage");
-        protected Spell Attack = new Spell("Attack");
+        protected AIOSpell RevivePet = new AIOSpell("Revive Pet");
+        protected AIOSpell CallPet = new AIOSpell("Call Pet");
+        protected AIOSpell MendPet = new AIOSpell("Mend Pet");
+        protected AIOSpell AspectHawk = new AIOSpell("Aspect of the Hawk");
+        protected AIOSpell AspectCheetah = new AIOSpell("Aspect of the Cheetah");
+        protected AIOSpell AspectMonkey = new AIOSpell("Aspect of the Monkey");
+        protected AIOSpell AspectViper = new AIOSpell("Aspect of the Viper");
+        protected AIOSpell HuntersMark = new AIOSpell("Hunter's Mark");
+        protected AIOSpell ConcussiveShot = new AIOSpell("Concussive Shot");
+        protected AIOSpell RaptorStrike = new AIOSpell("Raptor Strike");
+        protected AIOSpell MongooseBite = new AIOSpell("Mongoose Bite");
+        protected AIOSpell WingClip = new AIOSpell("Wing Clip");
+        protected AIOSpell SerpentSting = new AIOSpell("Serpent Sting");
+        protected AIOSpell ArcaneShot = new AIOSpell("Arcane Shot");
+        protected AIOSpell AutoShot = new AIOSpell("Auto Shot");
+        protected AIOSpell RapidFire = new AIOSpell("Rapid Fire");
+        protected AIOSpell Intimidation = new AIOSpell("Intimidation");
+        protected AIOSpell BestialWrath = new AIOSpell("Bestial Wrath");
+        protected AIOSpell FeignDeath = new AIOSpell("Feign Death");
+        protected AIOSpell FreezingTrap = new AIOSpell("Freezing Trap");
+        protected AIOSpell SteadyShot = new AIOSpell("Steady Shot");
+        protected AIOSpell KillCommand = new AIOSpell("Kill Command");
+        protected AIOSpell Disengage = new AIOSpell("Disengage");
+        protected AIOSpell Attack = new AIOSpell("Attack");
 
         // EVENT HANDLERS
         private void AutoShotEventHandler(string id, List<string> args)

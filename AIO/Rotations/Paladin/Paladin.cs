@@ -351,29 +351,29 @@ namespace WholesomeTBCAIO.Rotations.Paladin
         {
         }
 
-        protected Spell SealOfRighteousness = new Spell("Seal of Righteousness");
-        protected Spell SealOfTheCrusader = new Spell("Seal of the Crusader");
-        protected Spell SealOfCommand = new Spell("Seal of Command");
-        protected Spell HolyLight = new Spell("Holy Light");
-        protected Spell DevotionAura = new Spell("Devotion Aura");
-        protected Spell BlessingOfMight = new Spell("Blessing of Might");
-        protected Spell Judgement = new Spell("Judgement");
-        protected Spell LayOnHands = new Spell("Lay on Hands");
-        protected Spell HammerOfJustice = new Spell("Hammer of Justice");
-        protected Spell RetributionAura = new Spell("Retribution Aura");
-        protected Spell Exorcism = new Spell("Exorcism");
-        protected Spell ConcentrationAura = new Spell("Concentration Aura");
-        protected Spell SanctityAura = new Spell("Sanctity Aura");
-        protected Spell FlashOfLight = new Spell("Flash of Light");
-        protected Spell BlessingOfWisdom = new Spell("Blessing of Wisdom");
-        protected Spell DivineShield = new Spell("Divine Shield");
-        protected Spell Cleanse = new Spell("Cleanse");
-        protected Spell Purify = new Spell("Purify");
-        protected Spell CrusaderStrike = new Spell("Crusader Strike");
-        protected Spell HammerOfWrath = new Spell("Hammer of Wrath");
-        protected Spell Attack = new Spell("Attack");
-        protected Spell CrusaderAura = new Spell("Crusader Aura");
-        protected Spell AvengingWrath = new Spell("Avenging Wrath");
+        protected AIOSpell SealOfRighteousness = new AIOSpell("Seal of Righteousness");
+        protected AIOSpell SealOfTheCrusader = new AIOSpell("Seal of the Crusader");
+        protected AIOSpell SealOfCommand = new AIOSpell("Seal of Command");
+        protected AIOSpell HolyLight = new AIOSpell("Holy Light");
+        protected AIOSpell DevotionAura = new AIOSpell("Devotion Aura");
+        protected AIOSpell BlessingOfMight = new AIOSpell("Blessing of Might");
+        protected AIOSpell Judgement = new AIOSpell("Judgement");
+        protected AIOSpell LayOnHands = new AIOSpell("Lay on Hands");
+        protected AIOSpell HammerOfJustice = new AIOSpell("Hammer of Justice");
+        protected AIOSpell RetributionAura = new AIOSpell("Retribution Aura");
+        protected AIOSpell Exorcism = new AIOSpell("Exorcism");
+        protected AIOSpell ConcentrationAura = new AIOSpell("Concentration Aura");
+        protected AIOSpell SanctityAura = new AIOSpell("Sanctity Aura");
+        protected AIOSpell FlashOfLight = new AIOSpell("Flash of Light");
+        protected AIOSpell BlessingOfWisdom = new AIOSpell("Blessing of Wisdom");
+        protected AIOSpell DivineShield = new AIOSpell("Divine Shield");
+        protected AIOSpell Cleanse = new AIOSpell("Cleanse");
+        protected AIOSpell Purify = new AIOSpell("Purify");
+        protected AIOSpell CrusaderStrike = new AIOSpell("Crusader Strike");
+        protected AIOSpell HammerOfWrath = new AIOSpell("Hammer of Wrath");
+        protected AIOSpell Attack = new AIOSpell("Attack");
+        protected AIOSpell CrusaderAura = new AIOSpell("Crusader Aura");
+        protected AIOSpell AvengingWrath = new AIOSpell("Avenging Wrath");
 
         // EVENT HANDLERS
         private void FightEndHandler(ulong guid)

@@ -213,25 +213,25 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     return;
         }
 
-        protected Spell LightningBolt = new Spell("Lightning Bolt");
-        protected Spell HealingWave = new Spell("Healing Wave");
-        protected Spell LesserHealingWave = new Spell("Lesser Healing Wave");
-        protected Spell RockbiterWeapon = new Spell("Rockbiter Weapon");
-        protected Spell EarthShock = new Spell("Earth Shock");
-        protected Spell FlameShock = new Spell("Flame Shock");
-        protected Spell FrostShock = new Spell("Frost Shock");
-        protected Spell LightningShield = new Spell("Lightning Shield");
-        protected Spell WaterShield = new Spell("Water Shield");
-        protected Spell GhostWolf = new Spell("Ghost Wolf");
-        protected Spell CurePoison = new Spell("Cure Poison");
-        protected Spell CureDisease = new Spell("Cure Disease");
-        protected Spell WindfuryWeapon = new Spell("Windfury Weapon");
-        protected Spell Stormstrike = new Spell("Stormstrike");
-        protected Spell ShamanisticRage = new Spell("Shamanistic Rage");
-        protected Spell Attack = new Spell("Attack");
-        protected Spell ElementalMastery = new Spell("Elemental Mastery");
-        protected Spell ChainLightning = new Spell("Chain Lightning");
-        protected Spell Bloodlust = new Spell("Bloodlust");
+        protected AIOSpell LightningBolt = new AIOSpell("Lightning Bolt");
+        protected AIOSpell HealingWave = new AIOSpell("Healing Wave");
+        protected AIOSpell LesserHealingWave = new AIOSpell("Lesser Healing Wave");
+        protected AIOSpell RockbiterWeapon = new AIOSpell("Rockbiter Weapon");
+        protected AIOSpell EarthShock = new AIOSpell("Earth Shock");
+        protected AIOSpell FlameShock = new AIOSpell("Flame Shock");
+        protected AIOSpell FrostShock = new AIOSpell("Frost Shock");
+        protected AIOSpell LightningShield = new AIOSpell("Lightning Shield");
+        protected AIOSpell WaterShield = new AIOSpell("Water Shield");
+        protected AIOSpell GhostWolf = new AIOSpell("Ghost Wolf");
+        protected AIOSpell CurePoison = new AIOSpell("Cure Poison");
+        protected AIOSpell CureDisease = new AIOSpell("Cure Disease");
+        protected AIOSpell WindfuryWeapon = new AIOSpell("Windfury Weapon");
+        protected AIOSpell Stormstrike = new AIOSpell("Stormstrike");
+        protected AIOSpell ShamanisticRage = new AIOSpell("Shamanistic Rage");
+        protected AIOSpell Attack = new AIOSpell("Attack");
+        protected AIOSpell ElementalMastery = new AIOSpell("Elemental Mastery");
+        protected AIOSpell ChainLightning = new AIOSpell("Chain Lightning");
+        protected AIOSpell Bloodlust = new AIOSpell("Bloodlust");
 
         protected virtual void ApplyEnchantWeapon()
         {

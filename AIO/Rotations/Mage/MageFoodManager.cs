@@ -9,13 +9,13 @@ namespace WholesomeTBCAIO.Rotations.Mage
     public class MageFoodManager
     {
         private List<WoWItem> _bagItems;
-        private Spell ConjureWater = new Spell("Conjure Water");
-        private Spell ConjureFood = new Spell("Conjure Food");
-        private Spell ConjureManaAgate = new Spell("Conjure Mana Agate");
-        private Spell ConjureManaJade = new Spell("Conjure Mana Jade");
-        private Spell ConjureManaCitrine = new Spell("Conjure Mana Citrine");
-        private Spell ConjureManaRuby = new Spell("Conjure Mana Ruby");
-        private Spell ConjureManaEmerald = new Spell("Conjure Mana Emerald");
+        private AIOSpell ConjureWater = new AIOSpell("Conjure Water");
+        private AIOSpell ConjureFood = new AIOSpell("Conjure Food");
+        private AIOSpell ConjureManaAgate = new AIOSpell("Conjure Mana Agate");
+        private AIOSpell ConjureManaJade = new AIOSpell("Conjure Mana Jade");
+        private AIOSpell ConjureManaCitrine = new AIOSpell("Conjure Mana Citrine");
+        private AIOSpell ConjureManaRuby = new AIOSpell("Conjure Mana Ruby");
+        private AIOSpell ConjureManaEmerald = new AIOSpell("Conjure Mana Emerald");
         public string ManaStone = "";
 
         public MageFoodManager()

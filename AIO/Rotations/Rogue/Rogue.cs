@@ -2,17 +2,15 @@
 using System.Diagnostics;
 using System.Threading;
 using robotManager.Helpful;
-using robotManager.Products;
 using wManager.Events;
-using wManager.Wow.Class;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 using System.Collections.Generic;
-using wManager.Wow.Bot.Tasks;
 using System.ComponentModel;
 using System.Linq;
 using WholesomeTBCAIO.Settings;
 using WholesomeTBCAIO.Helpers;
+using Timer = robotManager.Helpful.Timer;
 
 namespace WholesomeTBCAIO.Rotations.Rogue
 {
@@ -41,6 +39,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
         public static uint OHPoison;
         protected string _myBestBandage = null;
         protected List<WoWUnit> _partyEnemiesAround = new List<WoWUnit>();
+        private Timer _moveBehindTimer = new Timer(500);
 
         protected Rogue specialization;
 
@@ -115,269 +114,46 @@ namespace WholesomeTBCAIO.Rotations.Rogue
 
         protected virtual void Pull()
         {
-            // Check if surrounding enemies
-            if (ObjectManager.Target.GetDistance < _pullRange && !_pullFromAfar)
-                _pullFromAfar = ToolBox.CheckIfEnemiesAround(ObjectManager.Target, _pullRange);
-
-            // Pull from afar
-            if (_pullFromAfar && _pullMeleeTimer.ElapsedMilliseconds < 5000 || settings.AlwaysPull
-                && ObjectManager.Target.GetDistance <= _pullRange)
-            {
-                Spell pullMethod = null;
-
-                if (Shoot.IsSpellUsable && Shoot.KnownSpell)
-                    pullMethod = Shoot;
-
-                if (Throw.IsSpellUsable && Throw.KnownSpell)
-                    pullMethod = Throw;
-
-                if (pullMethod == null)
-                {
-                    Logger.Log("Can't pull from distance. Please equip a ranged weapon in order to Throw or Shoot.");
-                    _pullFromAfar = false;
-                }
-                else
-                {
-                    if (Me.IsMounted)
-                        MountTask.DismountMount();
-
-                    RangeManager.SetRange(_pullRange);
-                    if (cast.Normal(pullMethod))
-                        Thread.Sleep(2000);
-                }
-            }
-
-            // Melee ?
-            if (_pullMeleeTimer.ElapsedMilliseconds <= 0 && ObjectManager.Target.GetDistance <= _pullRange + 3)
-                _pullMeleeTimer.Start();
-
-            if (_pullMeleeTimer.ElapsedMilliseconds > 5000)
-            {
-                Logger.LogDebug("Going in Melee range");
-                RangeManager.SetRangeToMelee();
-                _pullMeleeTimer.Reset();
-            }
-
-            // Check if caster in list
-            if (_casterEnemies.Contains(ObjectManager.Target.Name))
-                _fightingACaster = true;
-
-            // Stealth
-            if (!Me.HaveBuff("Stealth") && !_pullFromAfar && ObjectManager.Target.GetDistance > 15f
-                && ObjectManager.Target.GetDistance < 25f && settings.StealthApproach && Backstab.KnownSpell
-                && (!ToolBox.HasPoisonDebuff() || settings.StealthWhenPoisoned))
-                if (cast.Normal(Stealth))
-                    return;
-
-            // Un-Stealth
-            if (Me.HaveBuff("Stealth") && _pullFromAfar && ObjectManager.Target.GetDistance > 15f)
-                if (cast.Normal(Stealth))
-                    return;
-
-            // Stealth approach
-            if (Me.HaveBuff("Stealth") 
-                && ObjectManager.Target.GetDistance > 3f 
-                && !_isStealthApproching 
-                && !_pullFromAfar)
-            {
-                float desiredDistance = RangeManager.GetMeleeRangeWithTarget() - 4f;
-                RangeManager.SetRangeToMelee();
-                _stealthApproachTimer.Start();
-                _isStealthApproching = true;
-                if (ObjectManager.Me.IsAlive && ObjectManager.Target.IsAlive)
-                {
-                    while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                    && ObjectManager.Target.GetDistance > 2.5f
-                    && ObjectManager.Target.GetDistance <= RangeManager.GetMeleeRangeWithTarget()
-                    && !ToolBox.CheckIfEnemiesAround(ObjectManager.Target, _pullRange)
-                    && Fight.InFight
-                    && _stealthApproachTimer.ElapsedMilliseconds <= 15000
-                    && Me.HaveBuff("Stealth"))
-                    {
-                        ToggleAutoAttack(false);
-
-                        Vector3 position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f);
-                        MovementManager.MoveTo(position);
-                        Thread.Sleep(50);
-                        CastOpener();
-                    }
-
-                    if (ToolBox.CheckIfEnemiesAround(ObjectManager.Target, _pullRange) 
-                        && Me.HaveBuff("Stealth"))
-                    {
-                        _pullFromAfar = true;
-                        if (cast.Normal(Stealth))
-                            return;
-                    }
-
-                    if (_stealthApproachTimer.ElapsedMilliseconds > 15000)
-                    {
-                        Logger.Log("_stealthApproachTimer time out");
-                        _pullFromAfar = true;
-                    }
-                    
-                    //ToggleAutoAttack(true);
-                    _isStealthApproching = false;
-                }
-            }
-
-            // Auto
-            if (ObjectManager.Target.GetDistance < 6f && !Me.HaveBuff("Stealth"))
-                ToggleAutoAttack(true);
         }
 
         protected virtual void CombatRotation()
         {
-            bool _shouldBeInterrupted = ToolBox.TargetIsCasting();
-            bool _inMeleeRange = ObjectManager.Target.GetDistance < 6f;
-            WoWUnit Target = ObjectManager.Target;
-
-            // Check Auto-Attacking
-            ToggleAutoAttack(true);
-
-            // Check if interruptable enemy is in list
-            if (_shouldBeInterrupted)
-            {
-                _fightingACaster = true;
-                if (!_casterEnemies.Contains(ObjectManager.Target.Name))
-                    _casterEnemies.Add(ObjectManager.Target.Name);
-            }
-
-            // Melee ?
-            if (_pullMeleeTimer.ElapsedMilliseconds > 0)
-                _pullMeleeTimer.Reset();
-
-            if (_meleeTimer.ElapsedMilliseconds <= 0 && _pullFromAfar)
-                _meleeTimer.Start();
-
-            if ((_shouldBeInterrupted || _meleeTimer.ElapsedMilliseconds > 5000)
-                && !RangeManager.CurrentRangeIsMelee())
-            {
-                Logger.LogDebug("Going in Melee range 2");
-                RangeManager.SetRangeToMelee();
-                _meleeTimer.Stop();
-            }
-
-            // Kick interrupt
-            if (_shouldBeInterrupted)
-            {
-                Thread.Sleep(Main.humanReflexTime);
-                if (cast.Normal(Kick) || cast.Normal(Gouge) || cast.Normal(KidneyShot))
-                    return;
-            }
-
-            // Adrenaline Rush
-            if ((ObjectManager.GetNumberAttackPlayer() > 1 || Target.IsElite) && !Me.HaveBuff("Adrenaline Rush"))
-                if (cast.Normal(AdrenalineRush))
-                    return;
-
-            // Blade Flurry
-            if (ObjectManager.GetNumberAttackPlayer() > 1 && !Me.HaveBuff("Blade Flurry"))
-                if (cast.Normal(BladeFlurry))
-                    return;
-
-            // Riposte
-            if (Riposte.IsSpellUsable && (Target.CreatureTypeTarget.Equals("Humanoid") || settings.RiposteAll))
-                if (cast.Normal(Riposte))
-                    return;
-
-            // Bandage
-            if (Target.HaveBuff("Blind"))
-            {
-                MovementManager.StopMoveTo(true, 500);
-                ItemsManager.UseItemByNameOrId(_myBestBandage);
-                Logger.Log("Using " + _myBestBandage);
-                Usefuls.WaitIsCasting();
-                return;
-            }
-
-            // Blind
-            if (Me.HealthPercent < 40 && !ToolBox.HasDebuff("Recently Bandaged") && _myBestBandage != null
-                && settings.UseBlindBandage)
-                if (cast.Normal(Blind))
-                    return;
-
-            // Evasion
-            if (ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 30 && !Me.HaveBuff("Evasion") && Target.HealthPercent > 50)
-                if (cast.Normal(Evasion))
-                    return;
-
-            // Cloak of Shadows
-            if (Me.HealthPercent < 30 && !Me.HaveBuff("Cloak of Shadows") && Target.HealthPercent > 50)
-                if (cast.Normal(CloakOfShadows))
-                    return;
-
-            // Backstab in combat
-            if (IsTargetStunned() && ToolBox.GetMHWeaponType().Equals("Daggers"))
-                if (cast.Normal(Backstab))
-                    return;
-
-            // Slice and Dice
-            if (!Me.HaveBuff("Slice and Dice") && Me.ComboPoint > 1 && Target.HealthPercent > 40)
-                if (cast.Normal(SliceAndDice))
-                    return;
-
-            // Eviscerate logic
-            if (Me.ComboPoint > 0 && Target.HealthPercent < 30
-                || Me.ComboPoint > 1 && Target.HealthPercent < 45
-                || Me.ComboPoint > 2 && Target.HealthPercent < 60
-                || Me.ComboPoint > 3 && Target.HealthPercent < 70)
-                if (cast.Normal(Eviscerate))
-                    return;
-
-            // GhostlyStrike
-            if (Me.ComboPoint < 5 && !IsTargetStunned() &&
-                (!_fightingACaster || !Kick.KnownSpell ||
-                Me.Energy > ToolBox.GetSpellCost("Ghostly Strike") + ToolBox.GetSpellCost("Kick")))
-                if (cast.Normal(GhostlyStrike))
-                    return;
-
-            // Hemohrrage
-            if (Me.ComboPoint < 5 && !IsTargetStunned() &&
-                (!_fightingACaster || !Kick.KnownSpell ||
-                Me.Energy > ToolBox.GetSpellCost("Hemorrhage") + ToolBox.GetSpellCost("Kick")))
-                if (cast.Normal(Hemorrhage))
-                    return;
-
-            // Sinister Strike
-            if (Me.ComboPoint < 5 && !IsTargetStunned() &&
-                (!_fightingACaster || !Kick.KnownSpell ||
-                Me.Energy > ToolBox.GetSpellCost("Sinister Strike") + ToolBox.GetSpellCost("Kick")))
-                if (cast.Normal(SinisterStrike))
-                    return;
         }
 
-        protected Spell Attack = new Spell("Attack");
-        protected Spell Shoot = new Spell("Shoot");
-        protected Spell Throw = new Spell("Throw");
-        protected Spell Eviscerate = new Spell("Eviscerate");
-        protected Spell SinisterStrike = new Spell("Sinister Strike");
-        protected Spell Stealth = new Spell("Stealth");
-        protected Spell Backstab = new Spell("Backstab");
-        protected Spell Gouge = new Spell("Gouge");
-        protected Spell Evasion = new Spell("Evasion");
-        protected Spell Kick = new Spell("Kick");
-        protected Spell Garrote = new Spell("Garrote");
-        protected Spell SliceAndDice = new Spell("Slice and Dice");
-        protected Spell Vanish = new Spell("Vanish");
-        protected Spell CheapShot = new Spell("Cheap Shot");
-        protected Spell Riposte = new Spell("Riposte");
-        protected Spell BladeFlurry = new Spell("Blade Flurry");
-        protected Spell AdrenalineRush = new Spell("Adrenaline Rush");
-        protected Spell Sprint = new Spell("Sprint");
-        protected Spell CloakOfShadows = new Spell("Cloak of Shadows");
-        protected Spell Blind = new Spell("Blind");
-        protected Spell KidneyShot = new Spell("Kidney Shot");
-        protected Spell Hemorrhage = new Spell("Hemorrhage");
-        protected Spell GhostlyStrike = new Spell("Ghostly Strike");
+        protected AIOSpell Attack = new AIOSpell("Attack");
+        protected AIOSpell Shoot = new AIOSpell("Shoot");
+        protected AIOSpell Throw = new AIOSpell("Throw");
+        protected AIOSpell Eviscerate = new AIOSpell("Eviscerate");
+        protected AIOSpell SinisterStrike = new AIOSpell("Sinister Strike");
+        protected AIOSpell Stealth = new AIOSpell("Stealth");
+        protected AIOSpell Backstab = new AIOSpell("Backstab");
+        protected AIOSpell Gouge = new AIOSpell("Gouge");
+        protected AIOSpell Evasion = new AIOSpell("Evasion");
+        protected AIOSpell Kick = new AIOSpell("Kick");
+        protected AIOSpell Garrote = new AIOSpell("Garrote");
+        protected AIOSpell SliceAndDice = new AIOSpell("Slice and Dice");
+        protected AIOSpell Vanish = new AIOSpell("Vanish");
+        protected AIOSpell CheapShot = new AIOSpell("Cheap Shot");
+        protected AIOSpell Riposte = new AIOSpell("Riposte");
+        protected AIOSpell BladeFlurry = new AIOSpell("Blade Flurry");
+        protected AIOSpell AdrenalineRush = new AIOSpell("Adrenaline Rush");
+        protected AIOSpell Sprint = new AIOSpell("Sprint");
+        protected AIOSpell CloakOfShadows = new AIOSpell("Cloak of Shadows");
+        protected AIOSpell Blind = new AIOSpell("Blind");
+        protected AIOSpell KidneyShot = new AIOSpell("Kidney Shot");
+        protected AIOSpell Hemorrhage = new AIOSpell("Hemorrhage");
+        protected AIOSpell GhostlyStrike = new AIOSpell("Ghostly Strike");
+        protected AIOSpell Rupture = new AIOSpell("Rupture");
+        protected AIOSpell Shiv = new AIOSpell("Shiv");
 
-        private void CastOpener()
+        protected void CastOpener()
         {
+            Logger.Log("OPENER");
             // Opener
             if (ToolBox.MeBehindTarget())
             {
-                if (settings.UseGarrote)
-                    if (cast.Normal(Garrote))
+                if (settings.UseGarrote
+                    && cast.Normal(Garrote))
                         return;
                 if (cast.Normal(Backstab))
                     return;
@@ -593,21 +369,47 @@ namespace WholesomeTBCAIO.Rotations.Rogue
 
         private void FightLoopHandler(WoWUnit unit, CancelEventArgs cancel)
         {
-            if (IsTargetStunned()
-            && !MovementManager.InMovement
-            && Me.IsAlive
-            && !Me.IsCast
-            && ObjectManager.Target.IsAlive)
+            if (specialization.RotationType == Enums.RotationType.Party
+                && Me.IsAlive
+                && _moveBehindTimer.IsReady
+                && !Me.IsCast
+                && ObjectManager.Target.IsAlive
+                && ObjectManager.Target.HasTarget
+                && !ObjectManager.Target.IsTargetingMe
+                && !MovementManager.InMovement)
             {
-                Vector3 position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f);
-                MovementManager.Go(PathFinder.FindPath(position), false);
-
-                while (MovementManager.InMovement
-                && StatusChecker.BasicConditions()
-                && IsTargetStunned())
+                int limit = 5;
+                Vector3 position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2f);
+                while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
+                    && Me.Position.DistanceTo(position) > 1
+                    && limit >= 0)
                 {
+                    position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2f);
+                    MovementManager.Go(PathFinder.FindPath(position), false);
                     // Wait follow path
-                    Thread.Sleep(200);
+                    Thread.Sleep(500);
+                    limit--;
+                }
+                _moveBehindTimer = new Timer(4000);
+            }
+            else
+            {
+                if (IsTargetStunned()
+                && !MovementManager.InMovement
+                && Me.IsAlive
+                && !Me.IsCast
+                && ObjectManager.Target.IsAlive)
+                {
+                    Vector3 position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f);
+                    MovementManager.Go(PathFinder.FindPath(position), false);
+
+                    while (MovementManager.InMovement
+                    && StatusChecker.BasicConditions()
+                    && IsTargetStunned())
+                    {
+                        // Wait follow path
+                        Thread.Sleep(200);
+                    }
                 }
             }
         }

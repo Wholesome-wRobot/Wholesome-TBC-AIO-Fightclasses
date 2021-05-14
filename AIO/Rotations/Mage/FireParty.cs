@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
 using wManager.Wow.Helpers;
@@ -133,7 +134,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 }
 
             // Cold Snap
-            if (ToolBox.GetSpellCooldown(IcyVeins.Name) > 0
+            if (IcyVeins.GetCurrentCooldown > 0
                 && Me.ManaPercentage > 10
                 && !Me.HaveBuff(IcyVeins.Name)
                 && cast.Normal(ColdSnap))
@@ -142,12 +143,14 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // Scorch
             int scorchCount = Target.IsBoss ? 5 : 2;
             if (_knowImprovedScorch
+                && Scorch.Cost < Me.Mana
                 && (ToolBox.CountDebuff("Fire Vulnerability", "target") < scorchCount || ToolBox.DeBuffTimeLeft("Fire Vulnerability", "target") < 10)
                 && cast.Normal(Scorch))
                 return;
 
             // Combustion
             if (!Me.HaveBuff("Combustion")
+                && Combustion.GetCurrentCooldown <= 0
                 && ToolBox.DeBuffTimeLeft("Fire Vulnerability", "target") > 20
                 && ToolBox.CountDebuff("Fire Vulnerability", "target") >= scorchCount
                 && cast.Normal(Combustion))
@@ -156,6 +159,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // Fireball
             if (cast.Normal(Fireball))
                 return;
+
 
             // Stop wand if banned
             if (ToolBox.UsingWand()

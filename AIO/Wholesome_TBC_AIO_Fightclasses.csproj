@@ -114,6 +114,7 @@
     <Compile Include="Rotations\Priest\ShadowParty.cs" />
     <Compile Include="Rotations\Priest\Shadow.cs" />
     <Compile Include="Rotations\Rogue\Combat.cs" />
+    <Compile Include="Rotations\Rogue\RogueCombatParty.cs" />
     <Compile Include="Rotations\Shaman\Elemental.cs" />
     <Compile Include="Rotations\Shaman\Enhancement.cs" />
     <Compile Include="Rotations\Warlock\Affliction.cs" />

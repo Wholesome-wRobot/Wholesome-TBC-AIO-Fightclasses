@@ -33,7 +33,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 && _pullMeleeTimer.ElapsedMilliseconds < 5000 || settings.AlwaysPull
                 && ObjectManager.Target.GetDistance < 24f)
             {
-                Spell pullMethod = null;
+                AIOSpell pullMethod = null;
 
                 if (Shoot.IsSpellUsable
                     && Shoot.KnownSpell)

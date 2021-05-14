@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
@@ -10,6 +11,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
     {
         protected override void BuffRotation()
         {
+            DateTime dateBegin = DateTime.Now;
             // PARTY Resurrection
             List<WoWPlayer> needRes = AIOParty.Group
                 .FindAll(m => m.IsDead)
@@ -77,6 +79,11 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 && settings.UseShadowProtection
                 && cast.OnSelf(ShadowProtection))
                 return;
+
+            // TEST HEAL
+            cast.Normal(Heal);
+
+            Logger.Log($"Total Process time : {(DateTime.Now.Ticks - dateBegin.Ticks) / 10000} ms");
 
             // PARTY Drink
             ToolBox.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold);

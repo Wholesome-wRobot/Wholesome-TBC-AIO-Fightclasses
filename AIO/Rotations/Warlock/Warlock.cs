@@ -199,9 +199,9 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 Logger.Log("Deleting excess Soul Shard");
                 ToolBox.LuaDeleteOneItem("Soul Shard");
             }
-            
+
             // Define the demon to summon
-            Spell SummonSpell = null;
+            AIOSpell SummonSpell = null;
             bool shouldSummon = false;
             if (SummonImp.KnownSpell)
             {
@@ -224,7 +224,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             if (shouldSummon)
             {
                 // Make sure we have mana to summon
-                if (ObjectManager.Me.Mana < ToolBox.GetSpellCost(SummonSpell.Name)
+                if (ObjectManager.Me.Mana < SummonSpell.Cost
                     && !ObjectManager.Me.HaveBuff("Drink")
                     && !Me.InCombatFlagOnly)
                 {
@@ -562,36 +562,36 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             }
         }
 
-        protected Spell DemonSkin = new Spell("Demon Skin");
-        protected Spell DemonArmor = new Spell("Demon Armor");
-        protected Spell LifeTap = new Spell("Life Tap");
-        protected Spell ShadowBolt = new Spell("Shadow Bolt");
-        protected Spell UseWand = new Spell("Shoot");
-        protected Spell Immolate = new Spell("Immolate");
-        protected Spell Corruption = new Spell("Corruption");
-        protected Spell CurseOfAgony = new Spell("Curse of Agony");
-        protected Spell DrainSoul = new Spell("Drain Soul");
-        protected Spell DrainLife = new Spell("Drain Life");
-        protected Spell Fear = new Spell("Fear");
-        protected Spell SummonImp = new Spell("Summon Imp");
-        protected Spell SummonVoidwalker = new Spell("Summon Voidwalker");
-        protected Spell SummonFelguard = new Spell("Summon Felguard");
-        protected Spell CreateHealthStone = new Spell("Create HealthStone");
-        protected Spell HealthFunnel = new Spell("Health Funnel");
-        protected Spell CreateSoulstone = new Spell("Create Soulstone");
-        protected Spell AmplifyCurse = new Spell("Amplify Curse");
-        protected Spell UnendingBreath = new Spell("Unending Breath");
-        protected Spell SiphonLife = new Spell("Siphon Life");
-        protected Spell DrainMana = new Spell("Drain Mana");
-        protected Spell DarkPact = new Spell("Dark Pact");
-        protected Spell UnstableAffliction = new Spell("Unstable Affliction");
-        protected Spell DeathCoil = new Spell("Death Coil");
-        protected Spell FelArmor = new Spell("Fel Armor");
-        protected Spell Incinerate = new Spell("Incinerate");
-        protected Spell SoulShatter = new Spell("Soulshatter");
-        protected Spell FelDomination = new Spell("Fel Domination");
-        protected Spell SoulLink = new Spell("Soul Link");
-        protected Spell HowlOfTerror = new Spell("Howl of Terror");
+        protected AIOSpell DemonSkin = new AIOSpell("Demon Skin");
+        protected AIOSpell DemonArmor = new AIOSpell("Demon Armor");
+        protected AIOSpell LifeTap = new AIOSpell("Life Tap");
+        protected AIOSpell ShadowBolt = new AIOSpell("Shadow Bolt");
+        protected AIOSpell UseWand = new AIOSpell("Shoot");
+        protected AIOSpell Immolate = new AIOSpell("Immolate");
+        protected AIOSpell Corruption = new AIOSpell("Corruption");
+        protected AIOSpell CurseOfAgony = new AIOSpell("Curse of Agony");
+        protected AIOSpell DrainSoul = new AIOSpell("Drain Soul");
+        protected AIOSpell DrainLife = new AIOSpell("Drain Life");
+        protected AIOSpell Fear = new AIOSpell("Fear");
+        protected AIOSpell SummonImp = new AIOSpell("Summon Imp");
+        protected AIOSpell SummonVoidwalker = new AIOSpell("Summon Voidwalker");
+        protected AIOSpell SummonFelguard = new AIOSpell("Summon Felguard");
+        protected AIOSpell CreateHealthStone = new AIOSpell("Create HealthStone");
+        protected AIOSpell HealthFunnel = new AIOSpell("Health Funnel");
+        protected AIOSpell CreateSoulstone = new AIOSpell("Create Soulstone");
+        protected AIOSpell AmplifyCurse = new AIOSpell("Amplify Curse");
+        protected AIOSpell UnendingBreath = new AIOSpell("Unending Breath");
+        protected AIOSpell SiphonLife = new AIOSpell("Siphon Life");
+        protected AIOSpell DrainMana = new AIOSpell("Drain Mana");
+        protected AIOSpell DarkPact = new AIOSpell("Dark Pact");
+        protected AIOSpell UnstableAffliction = new AIOSpell("Unstable Affliction");
+        protected AIOSpell DeathCoil = new AIOSpell("Death Coil");
+        protected AIOSpell FelArmor = new AIOSpell("Fel Armor");
+        protected AIOSpell Incinerate = new AIOSpell("Incinerate");
+        protected AIOSpell SoulShatter = new AIOSpell("Soulshatter");
+        protected AIOSpell FelDomination = new AIOSpell("Fel Domination");
+        protected AIOSpell SoulLink = new AIOSpell("Soul Link");
+        protected AIOSpell HowlOfTerror = new AIOSpell("Howl of Terror");
 
         // EVENT HANDLERS
         private void OnRunStateHandler(Engine engine, State state, CancelEventArgs cancelable)

@@ -12,16 +12,16 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         private Vector3 _lastTotemPosition = null;
         private Vector3 _fireTotemPosition = null;
 
-        private Spell StoneclawTotem = new Spell("Stoneclaw Totem");
-        private Spell StrengthOfEarthTotem = new Spell("Strength of Earth Totem");
-        private Spell StoneskinTotem = new Spell("Stoneskin Totem");
-        private Spell SearingTotem = new Spell("Searing Totem");
-        private Spell TotemicCall = new Spell("Totemic Call");
-        private Spell ManaSpringTotem = new Spell("Mana Spring Totem");
-        private Spell MagmaTotem = new Spell("Magma Totem");
-        private Spell GraceOfAirTotem = new Spell("Grace of Air Totem");
-        private Spell EarthElementalTotem = new Spell("Earth Elemental Totem");
-        private Spell TotemOfWrath = new Spell("Totem of Wrath");
+        private AIOSpell StoneclawTotem = new AIOSpell("Stoneclaw Totem");
+        private AIOSpell StrengthOfEarthTotem = new AIOSpell("Strength of Earth Totem");
+        private AIOSpell StoneskinTotem = new AIOSpell("Stoneskin Totem");
+        private AIOSpell SearingTotem = new AIOSpell("Searing Totem");
+        private AIOSpell TotemicCall = new AIOSpell("Totemic Call");
+        private AIOSpell ManaSpringTotem = new AIOSpell("Mana Spring Totem");
+        private AIOSpell MagmaTotem = new AIOSpell("Magma Totem");
+        private AIOSpell GraceOfAirTotem = new AIOSpell("Grace of Air Totem");
+        private AIOSpell EarthElementalTotem = new AIOSpell("Earth Elemental Totem");
+        private AIOSpell TotemOfWrath = new AIOSpell("Totem of Wrath");
 
         public bool CastTotems(IClassRotation spec)
         {
@@ -186,7 +186,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             return false;
         }
 
-        private bool Cast(Spell s)
+        private bool Cast(AIOSpell s)
         {
             Logger.LogDebug("Into Totem Cast() for " + s.Name);
 

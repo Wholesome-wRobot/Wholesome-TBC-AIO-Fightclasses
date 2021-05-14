@@ -13,16 +13,16 @@ namespace WholesomeTBCAIO.Helpers
         public bool _isRunning;
         private WoWLocalPlayer Me = ObjectManager.Me;
 
-        private Spell Cannibalize = new Spell("Cannibalize");
-        private Spell WillOfTheForsaken = new Spell("Will of the Forsaken");
-        private Spell Berserking = new Spell("Berserking");
-        private Spell EscapeArtist = new Spell("Escape Artist");
-        private Spell ManaTap = new Spell("Mana Tap");
-        private Spell ArcaneTorrent = new Spell("Arcane Torrent");
-        private Spell Stoneform = new Spell("Stoneform");
-        private Spell GiftOfTheNaaru = new Spell("Gift of the Naaru");
-        private Spell WarStomp = new Spell("War Stomp");
-        private Spell BloodFury = new Spell("Blood Fury");
+        private AIOSpell Cannibalize = new AIOSpell("Cannibalize");
+        private AIOSpell WillOfTheForsaken = new AIOSpell("Will of the Forsaken");
+        private AIOSpell Berserking = new AIOSpell("Berserking");
+        private AIOSpell EscapeArtist = new AIOSpell("Escape Artist");
+        private AIOSpell ManaTap = new AIOSpell("Mana Tap");
+        private AIOSpell ArcaneTorrent = new AIOSpell("Arcane Torrent");
+        private AIOSpell Stoneform = new AIOSpell("Stoneform");
+        private AIOSpell GiftOfTheNaaru = new AIOSpell("Gift of the Naaru");
+        private AIOSpell WarStomp = new AIOSpell("War Stomp");
+        private AIOSpell BloodFury = new AIOSpell("Blood Fury");
 
         public void DoRacialsPulse(object sender, DoWorkEventArgs args)
         {

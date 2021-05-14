@@ -150,6 +150,7 @@ public class Main : ICustomClass
             case Enums.Specs.PriestHolyParty: return new HolyPriestParty();
             // Rogue
             case Enums.Specs.RogueCombat: return new Combat();
+            case Enums.Specs.RogueCombatParty: return new RogueCombatParty();
             // Warlock
             case Enums.Specs.WarlockAffliction: return new Affliction();
             case Enums.Specs.WarlockDemonology: return new Demonology();

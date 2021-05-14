@@ -337,9 +337,9 @@ namespace WholesomeTBCAIO.Rotations.Druid
             // **************** HUMAN FORM ROTATION ****************
 
             // Avoid accidental Human Form stay
-            if (CatForm.KnownSpell && ToolBox.GetSpellCost(CatForm.Name) < Me.Mana)
+            if (CatForm.KnownSpell && CatForm.Cost < Me.Mana)
                 return;
-            if (BearForm.KnownSpell && ToolBox.GetSpellCost(BearForm.Name) < Me.Mana)
+            if (BearForm.KnownSpell && BearForm.Cost < Me.Mana)
                 return;
 
             if (!Me.HaveBuff(BearForm.Name)

@@ -8,7 +8,6 @@ using robotManager.Helpful;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
 using wManager.Events;
-using wManager.Wow.Class;
 using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Priest

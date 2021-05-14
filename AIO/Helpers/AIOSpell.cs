@@ -14,14 +14,21 @@ namespace WholesomeTBCAIO.Helpers
         public int MinRange { get; set; }
         public int MaxRange { get; set; }
 
+        public bool IsSpellUsable => Spell.IsSpellUsable;
+        public bool KnownSpell => Spell.KnownSpell;
+        public bool TargetHaveBuff => Spell.TargetHaveBuff;
+        public bool IsDistanceGood => Spell.IsDistanceGood;
+        public bool HaveBuff => Spell.HaveBuff;
+
         public AIOSpell(string spellName)
         {
             Spell = new Spell(spellName);
+            Name = Spell.Name;
             RecordSpellInfos();
-            LogSpellInfos();
+            //LogSpellInfos();
         }
 
-        public float CurrentCooldown() => ToolBox.GetSpellCooldown(Spell.Name);
+        public float GetCurrentCooldown => Lua.LuaDoString<float>($"local startTime, duration, enable = GetSpellCooldown('{Name}'); return duration - (GetTime() - startTime);");
 
         public int SpellCost() => Lua.LuaDoString<int>($"local name, rank, icon, cost, isFunnel, powerType, castTime, minRange, maxRange = GetSpellInfo('{Spell.Name}'); return cost");
 
@@ -29,22 +36,35 @@ namespace WholesomeTBCAIO.Helpers
         {
             string infos = Lua.LuaDoString<string>($@"
                 local name, rank, icon, cost, isFunnel, powerType, castTime, minRange, maxRange = GetSpellInfo('{Spell.Name}');
-                if (rank == '') then
+                if (rank == '' or rank == 'Racial' or rank == 'Shapeshift') then
                     rank = 'Rank 0'
                 end
                 return name..'$'..rank..'$'..cost..'$'..powerType..'$'..castTime..'$'..minRange..'$'..maxRange;");
-            string[] infosArray = infos.Split('$');            
-            Name = infosArray[0];
-            Rank = int.Parse(infosArray[1].Replace("Rank ", ""));
-            Cost = int.Parse(infosArray[2]);
-            PowerType = int.Parse(infosArray[3]);
-            CastTime = int.Parse(infosArray[4]);
-            MinRange = int.Parse(infosArray[5]);
-            MaxRange = int.Parse(infosArray[6]);
+            string[] infosArray = infos.Split('$');
+
+            if (infosArray.Length > 1)
+            {
+                Rank = ParseInt(infosArray[1].Replace("Rank ", ""));
+                Cost = ParseInt(infosArray[2]);
+                PowerType = ParseInt(infosArray[3]);
+                CastTime = ParseInt(infosArray[4]);
+                MinRange = ParseInt(infosArray[5]);
+                MaxRange = ParseInt(infosArray[6]);
+            }
+        }
+
+        private int ParseInt(string stringToParse)
+        {
+            int result = 0;
+            if (!int.TryParse(stringToParse, out result))
+                Logger.LogError($"Couldn't parse spell info {stringToParse}");
+            return result;
+
         }
 
         public void LogSpellInfos()
         {
+            Logger.Log($"**************************");
             Logger.Log($"Name : {Name}");
             Logger.Log($"Rank : {Rank}");
             Logger.Log($"Cost : {Cost}");
@@ -52,6 +72,16 @@ namespace WholesomeTBCAIO.Helpers
             Logger.Log($"CastTime : {CastTime}");
             Logger.Log($"MinRange : {MinRange}");
             Logger.Log($"MaxRange : {MaxRange}");
+        }
+
+        public void Launch(bool stopMove, bool waitIsCast = true, bool ignoreIfCast = false)
+        {
+            Spell.Launch(stopMove, waitIsCast, ignoreIfCast);
+        }
+
+        public void Launch()
+        {
+            Spell.Launch();
         }
     }
 }
