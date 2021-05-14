@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using robotManager.Helpful;
@@ -13,6 +14,9 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 {
     public class Paladin : IClassRotation
     {
+        public Enums.RotationType RotationType { get; set; }
+        public Enums.RotationRole RotationRole { get; set; }
+
         public static PaladinSettings settings;
 
         protected Cast cast;
@@ -20,6 +24,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
         protected Stopwatch _purifyTimer = new Stopwatch();
         protected Stopwatch _cleanseTimer = new Stopwatch();
         protected WoWLocalPlayer Me = ObjectManager.Me;
+        protected List<WoWUnit> _partyEnemiesAround = new List<WoWUnit>();
 
         private static int _manaSavePercent;
 
@@ -28,9 +33,10 @@ namespace WholesomeTBCAIO.Rotations.Paladin
         public void Initialize(IClassRotation specialization)
         {
             settings = PaladinSettings.Current;
-            cast = new Cast(HolyLight, settings.ActivateCombatDebug, null);
+            cast = new Cast(HolyLight, settings.ActivateCombatDebug, null, settings.AutoDetectImmunities);
 
             this.specialization = specialization as Paladin;
+            (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);
             TalentsManager.InitTalents(settings);
 
             _manaSavePercent = System.Math.Max(20, settings.ManaSaveLimitPercent);
@@ -60,6 +66,9 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                             && !Me.HaveBuff("Crusader Aura"))
                             cast.Normal(CrusaderAura);
 
+                    if (RotationType == Enums.RotationType.Party)
+                        _partyEnemiesAround = ToolBox.GetSuroundingEnemies();
+
                     if (StatusChecker.OutOfCombat())
                         specialization.BuffRotation();
 
@@ -68,6 +77,9 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
                     if (StatusChecker.InCombat())
                         specialization.CombatRotation();
+
+                    if (StatusChecker.InCombatNoTarget())
+                        specialization.CombatNoTarget();
                 }
                 catch (Exception arg)
                 {
@@ -333,6 +345,10 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 cast.OnSelf(Cleanse);
                 return;
             }
+        }
+
+        protected virtual void CombatNoTarget()
+        {
         }
 
         protected Spell SealOfRighteousness = new Spell("Seal of Righteousness");

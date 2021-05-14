@@ -9,11 +9,16 @@ using wManager.Wow.ObjectManager;
 using System.Collections.Generic;
 using WholesomeTBCAIO.Settings;
 using WholesomeTBCAIO.Helpers;
+using System.ComponentModel;
+using Timer = robotManager.Helpful.Timer;
 
 namespace WholesomeTBCAIO.Rotations.Warrior
 {
     public class Warrior : IClassRotation
     {
+        public Enums.RotationType RotationType { get; set; }
+        public Enums.RotationRole RotationRole { get; set; }
+
         public static WarriorSettings settings;
 
         protected Cast cast;
@@ -26,18 +31,24 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         protected bool _fightingACaster = false;
         protected List<string> _casterEnemies = new List<string>();
         protected bool _pullFromAfar = false;
+        protected List<WoWUnit> _partyEnemiesAround = new List<WoWUnit>();
+        private Timer _moveBehindTimer = new Timer(500);
 
         protected Warrior specialization;
 
         public void Initialize(IClassRotation specialization)
         {
             settings = WarriorSettings.Current;
-            cast = new Cast(BattleShout, settings.ActivateCombatDebug, null);
+            cast = new Cast(BattleShout, settings.ActivateCombatDebug, null, settings.AutoDetectImmunities);
 
             this.specialization = specialization as Warrior;
+            (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);
             TalentsManager.InitTalents(settings);
 
             FightEvents.OnFightEnd += FightEndHandler;
+            FightEvents.OnFightLoop += FightLoopHandler;
+
+            cast.Normal(BattleStance);
 
             Rotation();
         }
@@ -45,6 +56,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         public void Dispose()
         {
             FightEvents.OnFightEnd -= FightEndHandler;
+            FightEvents.OnFightLoop -= FightLoopHandler;
             cast.Dispose();
             Logger.Log("Disposed");
         }
@@ -55,6 +67,9 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             {
                 try
                 {
+                    if (RotationType == Enums.RotationType.Party)
+                        _partyEnemiesAround = ToolBox.GetSuroundingEnemies();
+
                     if (StatusChecker.OutOfCombat())
                         specialization.BuffRotation();
 
@@ -63,6 +78,9 @@ namespace WholesomeTBCAIO.Rotations.Warrior
 
                     if (StatusChecker.InCombat())
                         specialization.CombatRotation();
+
+                    if (StatusChecker.InCombatNoTarget())
+                        specialization.CombatNoTarget();
                 }
                 catch (Exception arg)
                 {
@@ -102,6 +120,61 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         {
         }
 
+        protected virtual void CombatNoTarget()
+        {
+            RegainAggro();
+        }
+
+        protected void RegainAggro()
+        {
+            // Regain aggro
+            if (settings.PartyTankSwitchTarget
+                && specialization is ProtectionWarrior
+                && (ObjectManager.Target.Target == ObjectManager.Me.Guid || !ObjectManager.Target.IsAlive || ObjectManager.Target.Target <= 0)
+                && !ToolBox.HasDebuff("Taunt", "target"))
+            {
+                foreach (WoWUnit enemy in _partyEnemiesAround)
+                {
+                    WoWPlayer partyMemberToSave = AIOParty.Group.Find(m => enemy.Target == m.Guid && m.Guid != ObjectManager.Me.Guid);
+                    if (partyMemberToSave != null)
+                    {
+                        Logger.Log($"Regaining aggro [{enemy.Name} attacking {partyMemberToSave.Name}]");
+                        ObjectManager.Me.Target = enemy.Guid;
+                        if (settings.PartyUseIntervene && enemy.Position.DistanceTo(partyMemberToSave.Position) < 10)
+                            cast.Normal(Intervene);
+                        break;
+                    }
+                }
+            }
+        }
+        private void FightLoopHandler(WoWUnit unit, CancelEventArgs cancel)
+        {
+            if (specialization is FuryParty
+                && settings.PartyStandBehind
+                && Me.IsAlive
+                && _moveBehindTimer.IsReady
+                && !Me.IsCast
+                && ObjectManager.Target.IsAlive
+                && ObjectManager.Target.HasTarget
+                && !ObjectManager.Target.IsTargetingMe
+                && !MovementManager.InMovement)
+            {
+                int limit = 5;
+                Vector3 position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2f);
+                while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
+                    && Me.Position.DistanceTo(position) > 1
+                    && limit >= 0)
+                {
+                    position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2f);
+                    MovementManager.Go(PathFinder.FindPath(position), false);
+                    // Wait follow path
+                    Thread.Sleep(500);
+                    limit--;
+                }
+                _moveBehindTimer = new Timer(4000);
+            }
+        }
+
         protected Spell Attack = new Spell("Attack");
         protected Spell HeroicStrike = new Spell("Heroic Strike");
         protected Spell BattleShout = new Spell("Battle Shout");
@@ -121,12 +194,24 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         protected Spell Bloodthirst = new Spell("Bloodthirst");
         protected Spell BerserkerStance = new Spell("Berserker Stance");
         protected Spell BattleStance = new Spell("Battle Stance");
+        protected Spell DefensiveStance = new Spell("Defensive Stance");
         protected Spell Intercept = new Spell("Intercept");
         protected Spell Pummel = new Spell("Pummel");
         protected Spell BerserkerRage = new Spell("Berserker Rage");
         protected Spell Rampage = new Spell("Rampage");
         protected Spell VictoryRush = new Spell("Victory Rush");
         protected Spell Whirlwind = new Spell("Whirlwind");
+        protected Spell ThunderClap = new Spell("Thunder Clap");
+        protected Spell ShieldSlam = new Spell("Shield Slam");
+        protected Spell Revenge = new Spell("Revenge");
+        protected Spell Devastate = new Spell("Devastate");
+        protected Spell ShieldBlock = new Spell("Shield Block");
+        protected Spell Taunt = new Spell("Taunt");
+        protected Spell SpellReflection = new Spell("Spell Reflection");
+        protected Spell ShieldBash = new Spell("Shield Bash");
+        protected Spell LastStand = new Spell("Last Stand");
+        protected Spell Intervene = new Spell("Intervene");
+        protected Spell SunderArmor = new Spell("Sunder Armor");
 
         protected bool HeroicStrikeOn()
         {

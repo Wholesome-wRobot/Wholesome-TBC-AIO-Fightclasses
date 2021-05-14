@@ -18,6 +18,9 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 {
     public class Warlock : IClassRotation
     {
+        public Enums.RotationType RotationType { get; set; }
+        public Enums.RotationRole RotationRole { get; set; }
+
         public static WarlockSettings settings;
 
         protected Cast cast;
@@ -30,15 +33,17 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         protected int _innerManaSaveThreshold = 20;
         protected bool _iCanUseWand = ToolBox.HaveRangedWeaponEquipped();
         protected int _saveDrinkPercent = wManager.wManagerSetting.CurrentSetting.DrinkPercent;
+        protected List<WoWUnit> _partyEnemiesAround = new List<WoWUnit>();
 
         protected Warlock specialization;
 
         public void Initialize(IClassRotation specialization)
         {
             settings = WarlockSettings.Current;
-            cast = new Cast(ShadowBolt, settings.ActivateCombatDebug, UseWand);
+            cast = new Cast(ShadowBolt, settings.ActivateCombatDebug, UseWand, settings.AutoDetectImmunities);
 
             this.specialization = specialization as Warlock;
+            (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);
             TalentsManager.InitTalents(settings);
             
             _petPulseThread.DoWork += PetThread;
@@ -164,6 +169,9 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             {
                 try
                 {
+                    if (RotationType == Enums.RotationType.Party)
+                        _partyEnemiesAround = ToolBox.GetSuroundingEnemies();
+
                     if (StatusChecker.OutOfCombat())
                         specialization.BuffRotation();
 

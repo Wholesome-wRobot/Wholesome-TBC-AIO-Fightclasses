@@ -22,6 +22,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
         {
             Drink().ForEach(d => ToolBox.AddToDoNotSellList(d));
             Food().ForEach(f => ToolBox.AddToDoNotSellList(f));
+            ManaStones().ForEach(m => ToolBox.AddToDoNotSellList(m));
         }
 
         private List<string> Drink()
@@ -172,6 +173,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
         public void UseManaStone()
         {
+            Logger.LogFight($"Using {ManaStone}");
             ItemsManager.UseItemByNameOrId(ManaStone);
         }
     }

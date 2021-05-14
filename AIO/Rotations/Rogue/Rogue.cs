@@ -18,6 +18,9 @@ namespace WholesomeTBCAIO.Rotations.Rogue
 {
     public class Rogue : IClassRotation
     {
+        public Enums.RotationType RotationType { get; set; }
+        public Enums.RotationRole RotationRole { get; set; }
+
         public static RogueSettings settings;
 
         protected Cast cast;
@@ -37,15 +40,17 @@ namespace WholesomeTBCAIO.Rotations.Rogue
         public static uint MHPoison;
         public static uint OHPoison;
         protected string _myBestBandage = null;
+        protected List<WoWUnit> _partyEnemiesAround = new List<WoWUnit>();
 
         protected Rogue specialization;
 
         public void Initialize(IClassRotation specialization)
         {
             settings = RogueSettings.Current;
-            cast = new Cast(SinisterStrike, settings.ActivateCombatDebug, null);
+            cast = new Cast(SinisterStrike, settings.ActivateCombatDebug, null, settings.AutoDetectImmunities);
 
             this.specialization = specialization as Rogue;
+            (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);
             TalentsManager.InitTalents(settings);
 
             RangeManager.SetRangeToMelee();
@@ -77,6 +82,9 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             {
                 try
                 {
+                    if (RotationType == Enums.RotationType.Party)
+                        _partyEnemiesAround = ToolBox.GetSuroundingEnemies();
+
                     if (StatusChecker.OutOfCombat())
                         specialization.BuffRotation();
 
@@ -97,15 +105,12 @@ namespace WholesomeTBCAIO.Rotations.Rogue
 
         protected virtual void BuffRotation()
         {
-            if (!Me.IsMounted && !Me.IsCast)
-            {
-                PoisonWeapon();
+            PoisonWeapon();
 
-                // Sprint
-                if (settings.SprintWhenAvail && Me.HealthPercent > 80 && MovementManager.InMovement && Sprint.IsSpellUsable
-                    && Sprint.KnownSpell)
-                    Sprint.Launch();
-            }
+            // Sprint
+            if (settings.SprintWhenAvail && Me.HealthPercent > 80 && MovementManager.InMovement && Sprint.IsSpellUsable
+                && Sprint.KnownSpell)
+                Sprint.Launch();
         }
 
         protected virtual void Pull()
@@ -223,7 +228,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
 
         protected virtual void CombatRotation()
         {
-            bool _shouldBeInterrupted = ToolBox.EnemyCasting();
+            bool _shouldBeInterrupted = ToolBox.TargetIsCasting();
             bool _inMeleeRange = ObjectManager.Target.GetDistance < 6f;
             WoWUnit Target = ObjectManager.Target;
 

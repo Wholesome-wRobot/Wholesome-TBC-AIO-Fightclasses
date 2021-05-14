@@ -38,7 +38,7 @@ namespace WholesomeTBCAIO.Helpers
 
         public static void CombatDebug(string message)
         {
-            Logging.Write($"[{FCName} - {wowClass}]: {message}", Logging.LogType.Normal, Color.Plum);
+            Logging.Write($"[{FCName} - {wowClass}]: {message}", Logging.LogType.Debug, Color.DarkSalmon);
         }
 
         public static void Combat(string message)

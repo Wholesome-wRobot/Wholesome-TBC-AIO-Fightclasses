@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using robotManager.Helpful;
+using System.Collections.Generic;
 using System.Threading;
 using wManager.Wow.Class;
 using wManager.Wow.Enums;
@@ -12,15 +13,16 @@ namespace WholesomeTBCAIO.Helpers
         private Spell DefaultBaseSpell { get; }
         private bool CombatDebugON { get; }
         private Spell WandSpell { get; }
-        private ulong EnemyGuid { get; set; }
+        private bool AutoDetectImmunities { get; }
+        private ulong CurrentEnemyGuid { get; set; }
 
-        public bool IsWanding { get; set; }
         public bool IsBackingUp { get; set; }
         public bool PlayingManaClass { get; set; }
         public List<string> BannedSpells { get; set; }
 
-        public Cast(Spell defaultBaseSpell, bool combatDebugON, Spell wandSpell)
+        public Cast(Spell defaultBaseSpell, bool combatDebugON, Spell wandSpell, bool autoDetectImmunities)
         {
+            AutoDetectImmunities = autoDetectImmunities;
             DefaultBaseSpell = defaultBaseSpell;
             CombatDebugON = combatDebugON;
             WandSpell = wandSpell;
@@ -74,19 +76,37 @@ namespace WholesomeTBCAIO.Helpers
             return AdvancedCast(s, stopWandAndCast, true);
         }
 
-        public bool OnFocus(Spell s, bool stopWandAndCast)
+        public bool OnFocusPlayer(Spell s, WoWPlayer onPlayerFocus, bool stopWandAndCast = true, bool onDeadTarget = false)
         {
-            return AdvancedCast(s, stopWandAndCast, false, true);
+            return AdvancedCast(s, stopWandAndCast, onPlayerFocus: onPlayerFocus, onDeadTarget: onDeadTarget);
         }
 
-        public bool AdvancedCast(Spell s, bool stopWandAndCast = true, bool onSelf = false, bool onFocus = false)
+        public bool OnFocusUnit(Spell s, WoWUnit onUnitFocus, bool stopWandAndCast = true, bool onDeadTarget = false)
+        {
+            return AdvancedCast(s, stopWandAndCast, onUnitFocus: onUnitFocus, onDeadTarget: onDeadTarget);
+        }
+
+        public bool AdvancedCast(Spell s, bool stopWandAndCast = true, bool onSelf = false, WoWPlayer onPlayerFocus = null, WoWUnit onUnitFocus = null, bool onDeadTarget = false)
         {
             // Change and clear guid + banned list
-            if (ObjectManager.Target.Guid != EnemyGuid)
+            if (ObjectManager.Target.Guid != CurrentEnemyGuid)
             {
                 BannedSpells.Clear();
-                EnemyGuid = ObjectManager.Target.Guid;
+                CurrentEnemyGuid = ObjectManager.Target.Guid;
             }
+
+            if (onUnitFocus != null && onUnitFocus.IsDead && !onDeadTarget)
+                return false;
+
+            if (onPlayerFocus != null && onPlayerFocus.IsDead && !onDeadTarget)
+                return false;
+
+            if (onPlayerFocus == null 
+                && onUnitFocus == null 
+                && ObjectManager.Target.Guid > 0 
+                && ObjectManager.Target.IsDead 
+                && !onDeadTarget)
+                return false;
 
             if (!s.KnownSpell 
                 || IsBackingUp 
@@ -123,11 +143,11 @@ namespace WholesomeTBCAIO.Helpers
                 CombatDebug("Didn't cast because cd is too long");
                 return false;
             }
-
-            if (WandSpell != null 
-                && ToolBox.UsingWand() 
+            
+            if (WandSpell != null
+                && ToolBox.UsingWand()
                 && stopWandAndCast)
-                ToolBox.StopWandWaitGCD(WandSpell, DefaultBaseSpell);
+                StopWandWaitGCD(WandSpell, s);
 
             if (_spellCD < 2f && _spellCD > 0f)
             {
@@ -163,17 +183,74 @@ namespace WholesomeTBCAIO.Helpers
 
             bool stopMove = s.CastTime > 0;
 
-            if (onFocus)
+            if (onPlayerFocus != null || onUnitFocus != null)
             {
-                Logger.Log($"Casting {s.Name} on focus");
+                if (onPlayerFocus != null && (!onPlayerFocus.IsValid || onPlayerFocus.GetDistance > 50))
+                    return false;
+                if (onUnitFocus != null && (!onUnitFocus.IsValid || onUnitFocus.GetDistance > 50))
+                    return false;
+
+                string focusName = onPlayerFocus != null ? onPlayerFocus.Name : onUnitFocus.Name;
+                float focusDistance = onPlayerFocus != null ? onPlayerFocus.GetDistance : onUnitFocus.GetDistance;
+                Vector3 focusPosition = onPlayerFocus != null ? onPlayerFocus.Position : onUnitFocus.Position;
+                ulong focusGuid = onPlayerFocus != null ? onPlayerFocus.Guid : onUnitFocus.Guid;
+
+                if (focusDistance > s.MaxRange || TraceLine.TraceLineGo(focusPosition))
+                {
+                    if (ObjectManager.Me.HaveBuff("Spirit of Redemption"))
+                        return false;
+
+                    Logger.Log($"Approaching {focusName}");
+                    List<Vector3> path = PathFinder.FindPath(focusPosition);
+                    if (path.Count <= 0)
+                    {
+                        Logger.Log($"Couldn't make a path toward {focusName}, skipping");
+                        return false;
+                    }
+                    MovementManager.Go(path, false);
+
+                    int limit = 3000;
+                    while (MovementManager.InMoveTo
+                    && Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
+                    && ObjectManager.Me.IsAlive
+                    && focusDistance > 20 || TraceLine.TraceLineGo(focusPosition)
+                    && limit >= 0)
+                    {
+                        focusDistance = onPlayerFocus != null ? onPlayerFocus.GetDistance : onUnitFocus.GetDistance;
+                        focusPosition = onPlayerFocus != null ? onPlayerFocus.Position : onUnitFocus.Position;
+                        Thread.Sleep(1000);
+                        limit -= 1000;
+                    }
+                }
+
+                Logger.LogFight($"Casting {s.Name} on {focusName}");
                 MovementManager.StopMove();
-                Lua.RunMacroText($"/cast [target=focus] Polymorph");
+                //Lua.LuaDoString($"FocusUnit(\"{focusName}\")");
+                ObjectManager.Me.FocusGuid = focusGuid;
+                Lua.RunMacroText($"/cast [target=focus] {s.Name}");
+                Usefuls.WaitIsCasting();
                 return true;
             }
 
             s.Launch(stopMove, true, true);
 
             return true;
+        }
+
+        // Stops using wand and waits for its CD to be over
+        private void StopWandWaitGCD(Spell wandSpell, Spell basicSpell)
+        {
+            CombatDebug("Stopping Wand and waiting for GCD");
+            wandSpell.Launch();
+            int c = 0;
+            while (!basicSpell.IsSpellUsable && c <= 1500)
+            {
+                c += 50;
+                Thread.Sleep(50);
+            }
+            CombatDebug("Waited for GCD : " + c);
+            if (c > 1500)
+                wandSpell.Launch();
         }
 
         private void CombatDebug(string s)
@@ -184,7 +261,7 @@ namespace WholesomeTBCAIO.Helpers
 
         private void LuaEventsHandler(string id, List<string> args)
         {
-            if (args[11] == "IMMUNE" && !BannedSpells.Contains(args[9]))
+            if (AutoDetectImmunities && args[11] == "IMMUNE" && !BannedSpells.Contains(args[9]))
             {
                 Logger.Log($"{ObjectManager.Target.Name} is immune to {args[9]}, banning spell for this fight");
                 BannedSpells.Add(args[9]);

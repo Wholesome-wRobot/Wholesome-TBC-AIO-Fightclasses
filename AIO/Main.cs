@@ -20,16 +20,18 @@ using wManager.Wow.Enums;
 using System.Linq;
 using robotManager.FiniteStateMachine;
 using robotManager.Events;
+using System.Threading;
 
 public class Main : ICustomClass
 {
     private static readonly BackgroundWorker _talentThread = new BackgroundWorker();
     private static readonly BackgroundWorker _racialsThread = new BackgroundWorker();
+    private static readonly BackgroundWorker _partyThread = new BackgroundWorker();
     private Racials _racials = new Racials();
 
     public static string wowClass = ObjectManager.Me.WowClass.ToString();
     public static int humanReflexTime = 500;
-    public static bool isLaunched; 
+    public static bool isLaunched;
     public static string version = "2.1.95"; // Must match version in Version.txt
     public static bool HMPrunningAway = false;
     public static State currentState;
@@ -58,17 +60,24 @@ public class Main : ICustomClass
             FightEvents.OnFightEnd += FightEndHandler;
             LoggingEvents.OnAddLog += AddLogHandler;
             FiniteStateMachineEvents.OnRunState += OnRunStateEvent;
-            
+            EventsLua.AttachEventLua("RESURRECT_REQUEST", e => OnEventWithArgsHandler(e));
+
             if (!TalentsManager._isRunning)
             {
                 _talentThread.DoWork += TalentsManager.DoTalentPulse;
                 _talentThread.RunWorkerAsync();
             }
 
-            if(!_racials._isRunning)
+            if (!_racials._isRunning)
             {
                 _racialsThread.DoWork += _racials.DoRacialsPulse;
                 _racialsThread.RunWorkerAsync();
+            }
+
+            if (!AIOParty._isRunning)
+            {
+                _partyThread.DoWork += AIOParty.DoPartyUpdatePulse;
+                _partyThread.RunWorkerAsync();
             }
 
             selectedRotation.Initialize(selectedRotation);
@@ -90,6 +99,9 @@ public class Main : ICustomClass
         _racialsThread.DoWork -= _racials.DoRacialsPulse;
         _racialsThread.Dispose();
         _racials._isRunning = false;
+        _partyThread.DoWork -= AIOParty.DoPartyUpdatePulse;
+        _partyThread.Dispose();
+        AIOParty._isRunning = false;
 
         FightEvents.OnFightLoop -= FightLoopHandler;
         FightEvents.OnFightStart -= FightStartHandler;
@@ -103,21 +115,49 @@ public class Main : ICustomClass
     private IClassRotation ChooseRotation()
     {
         string spec = CombatSettings.Specialization;
-        switch (spec)
+
+        if (!Enums.SpecNames.ContainsKey(CombatSettings.Specialization))
         {
-            case "Enhancement": return new Enhancement();
-            case "Elemental": return new Elemental();
-            case "Feral": return new Feral();
-            case "BeastMaster": return new BeastMastery();
-            case "Frost": return new Frost();
-            case "Arcane": return new Arcane();
-            case "Fire": return new Fire();
-            case "Retribution": return new Retribution();
-            case "Shadow": return new Shadow();
-            case "Combat": return new Combat();
-            case "Affliction": return new Affliction();
-            case "Demonology": return new Demonology();
-            case "Fury": return new Fury();
+            Logger.LogError($"Couldn't find spec {CombatSettings.Specialization} in the dictionary");
+            return null;
+        }
+
+        switch (Enums.SpecNames[CombatSettings.Specialization])
+        {
+            // Shaman
+            case Enums.Specs.ShamanEnhancement: return new Enhancement();
+            case Enums.Specs.ShamanElemental: return new Elemental();
+            // Druid
+            case Enums.Specs.DruidFeral: return new Feral();
+            case Enums.Specs.DruidFeralDPSParty: return new FeralDPSParty();
+            case Enums.Specs.DruidFeralTankParty: return new FeralTankParty();
+            case Enums.Specs.DruidRestorationParty: return new RestorationParty();
+            // Hunter
+            case Enums.Specs.HunterBeastMaster: return new BeastMastery();
+            case Enums.Specs.HunterBeastMasterParty: return new BeastMasteryParty();
+            // Mage
+            case Enums.Specs.MageFrost: return new Frost();
+            case Enums.Specs.MageFrostParty: return new FrostParty();
+            case Enums.Specs.MageArcane: return new Arcane();
+            case Enums.Specs.MageArcaneParty: return new ArcaneParty();
+            case Enums.Specs.MageFire: return new Fire();
+            case Enums.Specs.MageFireParty: return new FireParty();
+            // Paladin
+            case Enums.Specs.PaladinRetribution: return new Retribution();
+            // Priest
+            case Enums.Specs.PriestShadow: return new Shadow();
+            case Enums.Specs.PriestShadowParty: return new ShadowParty();
+            case Enums.Specs.PriestHolyParty: return new HolyPriestParty();
+            // Rogue
+            case Enums.Specs.RogueCombat: return new Combat();
+            // Warlock
+            case Enums.Specs.WarlockAffliction: return new Affliction();
+            case Enums.Specs.WarlockDemonology: return new Demonology();
+            // Warrior
+            case Enums.Specs.WarriorFury: return new Fury();
+            case Enums.Specs.WarriorFuryParty: return new FuryParty();
+            case Enums.Specs.WarriorProtectionParty: return new ProtectionWarrior();
+
             default: return null;
         }
     }
@@ -185,5 +225,12 @@ public class Main : ICustomClass
             cancelable.Cancel = true;
             Fight.StartFight(player.Guid, robotManager.Products.Products.ProductName != "WRotation", false);
         }
+    }
+
+    private void OnEventWithArgsHandler(object context)
+    {
+        Logger.Log("Accepting resurrection request in 2000 ms");
+        Thread.Sleep(2000);
+        ToolBox.AcceptResurrect();
     }
 }

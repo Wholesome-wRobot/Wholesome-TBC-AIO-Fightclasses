@@ -28,6 +28,8 @@ namespace WholesomeTBCAIO.Settings
             UseDragonsBreath = true;
             BlastWaveOnMulti = true;
 
+            PartyRemoveCurse = false;
+
             Specialization = "Frost";
         }
 
@@ -127,8 +129,15 @@ namespace WholesomeTBCAIO.Settings
         [Description("Use Blast Wave on multipull")]
         public bool BlastWaveOnMulti { get; set; }
 
+        //PARTY
+        [Category("Party")]
+        [DefaultValue(false)]
+        [DisplayName("Remove Curse")]
+        [Description("Use Remove Curse in combat")]
+        public bool PartyRemoveCurse { get; set; }
+
         // TALENT
-        [DropdownList(new string[] { "Frost", "Arcane", "Fire" })]
+        [DropdownList(new string[] { "Frost", "Frost Party", "Arcane", "Arcane Party", "Fire", "Fire Party" })]
         public override string Specialization { get; set; }
     }
 }

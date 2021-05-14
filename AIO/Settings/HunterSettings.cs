@@ -108,7 +108,7 @@ namespace WholesomeTBCAIO.Settings
         public bool IntimidationInterrupt { get; set; }
 
         // TALENT
-        [DropdownList(new string[] { "BeastMaster" })]
+        [DropdownList(new string[] { "BeastMaster", "BeastMaster Party" })]
         public override string Specialization { get; set; }
     }
 }

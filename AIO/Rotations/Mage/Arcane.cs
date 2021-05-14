@@ -11,6 +11,18 @@ namespace WholesomeTBCAIO.Rotations.Mage
         {
             base.BuffRotation();
 
+            // Evocation
+            if (Me.ManaPercentage < 30
+                && cast.Normal(Evocation))
+                return;
+
+            // Arcane Intellect
+            if (!Me.HaveBuff("Arcane Intellect")
+                && ArcaneIntellect.KnownSpell
+                && ArcaneIntellect.IsSpellUsable
+                && cast.OnSelf(ArcaneIntellect))
+                return;
+
             // Mage Armor
             if (!Me.HaveBuff("Mage Armor")
                 && settings.ACMageArmor)

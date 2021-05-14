@@ -11,6 +11,18 @@ namespace WholesomeTBCAIO.Rotations.Mage
         {
             base.BuffRotation();
 
+            // Evocation
+            if (Me.ManaPercentage < 30
+                && cast.Normal(Evocation))
+                return;
+
+            // Arcane Intellect
+            if (!Me.HaveBuff("Arcane Intellect")
+                && ArcaneIntellect.KnownSpell
+                && ArcaneIntellect.IsSpellUsable
+                && cast.OnSelf(ArcaneIntellect))
+                return;
+
             // Ice Armor
             if (!Me.HaveBuff("Ice Armor"))
                 if (cast.Normal(IceArmor))
@@ -48,7 +60,6 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 ToolBox.CheckAutoAttack(Attack);
 
             base.CombatRotation();
-            Lua.LuaDoString("PetAttack();", false);
             WoWUnit Target = ObjectManager.Target;
 
             // Stop wand use on multipull
@@ -85,7 +96,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Blast Wave
             if (settings.BlastWaveOnMulti
-                && ToolBox.CheckIfEnemiesClose(10)
+                && ToolBox.GetNbEnemiesClose(10) > 1
                 && ObjectManager.GetNumberAttackPlayer() > 1)
                 if (cast.Normal(BlastWave))
                     return;

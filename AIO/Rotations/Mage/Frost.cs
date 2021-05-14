@@ -11,6 +11,18 @@ namespace WholesomeTBCAIO.Rotations.Mage
         {
             base.BuffRotation();
 
+            // Evocation
+            if (Me.ManaPercentage < 30
+                && cast.Normal(Evocation))
+                return;
+
+            // Arcane Intellect
+            if (!Me.HaveBuff("Arcane Intellect")
+                && ArcaneIntellect.KnownSpell
+                && ArcaneIntellect.IsSpellUsable
+                && cast.OnSelf(ArcaneIntellect))
+                return;
+
             // Ice Armor
             if (!Me.HaveBuff("Ice Armor"))
                 if (cast.Normal(IceArmor))
@@ -59,7 +71,6 @@ namespace WholesomeTBCAIO.Rotations.Mage
         protected override void CombatRotation()
         {
             base.CombatRotation();
-            Lua.LuaDoString("PetAttack();", false);
             WoWUnit Target = ObjectManager.Target;
 
             // Stop wand use on multipull

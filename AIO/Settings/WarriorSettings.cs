@@ -25,6 +25,10 @@ namespace WholesomeTBCAIO.Settings
 
             PrioritizeBerserkStance = false;
 
+            PartyTankSwitchTarget = true;
+            PartyUseIntervene = true;
+            PartyStandBehind = true;
+
             Specialization = "Fury";
         }
 
@@ -78,8 +82,27 @@ namespace WholesomeTBCAIO.Settings
         [Description("Prioritize Berserker Stance over Battle Stance")]
         public bool PrioritizeBerserkStance { get; set; }
 
+        // PARTY
+        [Category("Party")]
+        [DefaultValue(true)]
+        [DisplayName("[Tank] Switch target")]
+        [Description("Switch targets to regain aggro when tanking")]
+        public bool PartyTankSwitchTarget { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(true)]
+        [DisplayName("[Tank] Intervene")]
+        [Description("Use Intervene")]
+        public bool PartyUseIntervene { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(true)]
+        [DisplayName("[DPS] Stand behind")]
+        [Description("Try to stand behind the target in Fury DPS")]
+        public bool PartyStandBehind { get; set; }
+
         // TALENT
-        [DropdownList(new string[] { "Fury" })]
+        [DropdownList(new string[] { "Fury", "Fury Party", "Protection Party" })]
         public override string Specialization { get; set; }
     }
 }

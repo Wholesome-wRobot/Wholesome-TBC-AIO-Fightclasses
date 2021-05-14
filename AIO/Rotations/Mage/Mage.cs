@@ -9,11 +9,15 @@ using wManager.Wow.ObjectManager;
 using WholesomeTBCAIO.Settings;
 using WholesomeTBCAIO.Helpers;
 using System.ComponentModel;
+using System.Collections.Generic;
 
 namespace WholesomeTBCAIO.Rotations.Mage
 {
     public class Mage : IClassRotation
     {
+        public Enums.RotationType RotationType { get; set; }
+        public Enums.RotationRole RotationRole { get; set; }
+
         public static MageSettings settings;
 
         protected Cast cast;
@@ -27,15 +31,18 @@ namespace WholesomeTBCAIO.Rotations.Mage
         protected bool _iCanUseWand = ToolBox.HaveRangedWeaponEquipped();
         protected bool _isPolymorphing;
         protected bool _polymorphableEnemyInThisFight = true;
+        protected bool _knowImprovedScorch = ToolBox.GetTalentRank(2, 9) > 0;
+        protected List<WoWUnit> _partyEnemiesAround = new List<WoWUnit>();
 
         protected Mage specialization;
 
         public void Initialize(IClassRotation specialization)
         {
             settings = MageSettings.Current;
-            cast = new Cast(Fireball, settings.ActivateCombatDebug, UseWand);
+            cast = new Cast(Fireball, settings.ActivateCombatDebug, UseWand, settings.AutoDetectImmunities);
 
             this.specialization = specialization as Mage;
+            (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);
             TalentsManager.InitTalents(settings);
 
             _distanceRange = specialization is Fire ? 33f : _distanceRange;
@@ -65,11 +72,13 @@ namespace WholesomeTBCAIO.Rotations.Mage
             {
                 try
                 {
-                    if (StatusChecker.BasicConditions())
-                    {
-                        if (_polymorphedEnemy != null && !ObjectManager.Me.InCombatFlagOnly)
+                    if (StatusChecker.BasicConditions()
+                        && _polymorphedEnemy != null 
+                        && !ObjectManager.Me.InCombatFlagOnly)
                             _polymorphedEnemy = null;
-                    }
+
+                    if (RotationType == Enums.RotationType.Party)
+                        _partyEnemiesAround = ToolBox.GetSuroundingEnemies();
 
                     if (StatusChecker.OutOfCombat())
                         specialization.BuffRotation();
@@ -98,29 +107,13 @@ namespace WholesomeTBCAIO.Rotations.Mage
             _foodManager.CheckIfThrowFoodAndDrinks();
             _foodManager.CheckIfHaveManaStone();
 
-            // Arcane Intellect
-            if (!Me.HaveBuff("Arcane Intellect") 
-                && ArcaneIntellect.KnownSpell 
-                && ArcaneIntellect.IsSpellUsable)
-            {
-                if (cast.OnSelf(ArcaneIntellect))
-                    return;
-            }
-
             // Dampen Magic
             if (!Me.HaveBuff("Dampen Magic")
                 && settings.UseDampenMagic
                 && DampenMagic.KnownSpell
-                && DampenMagic.IsSpellUsable)
-            {
-                if (cast.OnSelf(DampenMagic))
-                    return;
-            }
-
-            // Evocation
-            if (Me.ManaPercentage < 30)
-                if (cast.Normal(Evocation))
-                    return;
+                && DampenMagic.IsSpellUsable
+                && cast.OnSelf(DampenMagic))
+                return;
         }
 
         protected virtual void Pull()
@@ -129,11 +122,14 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
         protected virtual void CombatRotation()
         {
+            if (ObjectManager.Pet.IsValid && !ObjectManager.Pet.HasTarget)
+                Lua.LuaDoString("PetAttack();", false);
+
             // CounterSpell
             if (settings.UseCounterspell
-                && ToolBox.EnemyCasting())
-                if (cast.Normal(CounterSpell))
-                    return;
+                && ToolBox.TargetIsCasting()
+                && cast.Normal(CounterSpell))
+                return;
         }
 
         protected Spell FrostArmor = new Spell("Frost Armor");
@@ -167,6 +163,9 @@ namespace WholesomeTBCAIO.Rotations.Mage
         protected Spell BlastWave = new Spell("Blast Wave");
         protected Spell Attack = new Spell("Attack");
         protected Spell DampenMagic = new Spell("Dampen Magic");
+        protected Spell ArcaneExplosion = new Spell("Arcane Explosion");
+        protected Spell MoltenArmor = new Spell("Molten Armor");
+        protected Spell Scorch = new Spell("Scorch");
 
         // EVENT HANDLERS
         private void FightEndHandler(ulong guid)
@@ -260,6 +259,9 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 && ObjectManager.GetNumberAttackPlayer() > 1
                 && Polymorph.KnownSpell
                 && !cast.IsBackingUp
+                && !(specialization is ArcaneParty)
+                && !(specialization is FireParty)
+                && !(specialization is FrostParty)
                 && _polymorphableEnemyInThisFight)
             {
                 WoWUnit myNearbyPolymorphed = null;

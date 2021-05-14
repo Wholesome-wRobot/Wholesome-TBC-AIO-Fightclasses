@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using MarsSettingsGUI;
+using WholesomeTBCAIO.Helpers;
 
 namespace WholesomeTBCAIO.Settings
 {
@@ -19,6 +20,14 @@ namespace WholesomeTBCAIO.Settings
             UseTigersFury = true;
             StealthEngage = true;
             NumberOfAttackersBearForm = 2;
+
+            PartyTankSwitchTarget = true;
+            PartyUseInnervate = true;
+            PartyUseRebirth = true;
+            PartyAbolishPoison = true;
+            PartyRemoveCurse = true;
+            PartyTranquility = true;
+            PartyStandBehind = true;
 
             Specialization = "Feral";
         }
@@ -79,8 +88,52 @@ namespace WholesomeTBCAIO.Settings
         [Description("Try to engage fights using Prowl and going behind the target")]
         public bool StealthEngage { get; set; }
 
+        // PARTY
+        [Category("Party")]
+        [DefaultValue(true)]
+        [DisplayName("[Tank] Switch target")]
+        [Description("Switch targets to regain aggro when tanking")]
+        public bool PartyTankSwitchTarget { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(true)]
+        [DisplayName("[DPS] Stand behind")]
+        [Description("Try to stand behind the target in Feral DPS")]
+        public bool PartyStandBehind { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(true)]
+        [DisplayName("Rebirth")]
+        [Description("Use Rebirth on dead team members")]
+        public bool PartyUseRebirth { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(true)]
+        [DisplayName("Party Innervate")]
+        [Description("Use Innervate on low mana team members")]
+        public bool PartyUseInnervate { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(true)]
+        [DisplayName("Party Remove Curse")]
+        [Description("Use Remove Curse in combat")]
+        public bool PartyRemoveCurse { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(true)]
+        [DisplayName("Party Abolish Poison")]
+        [Description("Use Abolish Poison in combat")]
+        public bool PartyAbolishPoison { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(true)]
+        [DisplayName("Party Tranquility")]
+        [Description("Use Tranquility in combat")]
+        public bool PartyTranquility { get; set; }
+
+
         // TALENT
-        [DropdownList(new string[] { "Feral" })]
+        [DropdownList(new string[] { "Feral", "Feral DPS Party", "Feral Tank Party", "Restoration Party" })]
         public override string Specialization { get; set; }
     }
 }

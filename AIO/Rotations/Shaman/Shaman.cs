@@ -15,6 +15,9 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 {
     public class Shaman : IClassRotation
     {
+        public Enums.RotationType RotationType { get; set; }
+        public Enums.RotationRole RotationRole { get; set; }
+
         public static ShamanSettings settings;
         protected Cast cast;
 
@@ -30,15 +33,17 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         protected int _mediumManaThreshold = 50;
         protected List<string> _casterEnemies = new List<string>();
         protected int _pullAttempt;
+        protected List<WoWUnit> _partyEnemiesAround = new List<WoWUnit>();
 
         protected Shaman specialization;
 
         public void Initialize(IClassRotation specialization)
         {
             settings = ShamanSettings.Current;
-            cast = new Cast(LightningBolt, settings.ActivateCombatDebug, null);
+            cast = new Cast(LightningBolt, settings.ActivateCombatDebug, null, settings.AutoDetectImmunities);
 
             this.specialization = specialization as Shaman;
+            (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);
             TalentsManager.InitTalents(settings);
 
             RangeManager.SetRange(_pullRange);
@@ -70,6 +75,9 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                         totemManager.CheckForTotemicCall();
                     }
 
+                    if (RotationType == Enums.RotationType.Party)
+                        _partyEnemiesAround = ToolBox.GetSuroundingEnemies();
+
                     if (StatusChecker.OutOfCombat())
                         specialization.BuffRotation();
 
@@ -90,7 +98,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
         protected virtual void BuffRotation()
         {
-            if (!Me.HaveBuff("Ghost Wolf") && !Me.IsCast)
+            if (!Me.HaveBuff("Ghost Wolf"))
             {
                 // Ghost Wolf
                 if (settings.GhostWolfMount

@@ -6,6 +6,17 @@ using wManager.Wow.Class;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 using wManager;
+using WholesomeTBCAIO.Rotations;
+using WholesomeTBCAIO.Rotations.Druid;
+using WholesomeTBCAIO.Rotations.Hunter;
+using static WholesomeTBCAIO.Helpers.Enums;
+using WholesomeTBCAIO.Rotations.Mage;
+using WholesomeTBCAIO.Rotations.Paladin;
+using WholesomeTBCAIO.Rotations.Priest;
+using WholesomeTBCAIO.Rotations.Rogue;
+using WholesomeTBCAIO.Rotations.Shaman;
+using WholesomeTBCAIO.Rotations.Warlock;
+using WholesomeTBCAIO.Rotations.Warrior;
 
 namespace WholesomeTBCAIO.Helpers
 {
@@ -13,19 +24,10 @@ namespace WholesomeTBCAIO.Helpers
     {
         #region Combat
 
-        // Stops using wand and waits for its CD to be over
-        public static void StopWandWaitGCD(Spell wandSpell, Spell basicSpell)
+        // Accepts resurrect
+        public static void AcceptResurrect()
         {
-            wandSpell.Launch();
-            int c = 0;
-            while (!basicSpell.IsSpellUsable && c <= 1500)
-            {
-                c += 50;
-                Thread.Sleep(50);
-            }
-            Logger.LogDebug("Waited for GCD : " + c);
-            if (c >= 1500)
-                wandSpell.Launch();
+            Lua.RunMacroText("/script AcceptResurrect(); StaticPopup1Button1: Click(\"left\", true);");
         }
 
         // Check if we're currently wanding
@@ -63,122 +65,129 @@ namespace WholesomeTBCAIO.Helpers
                 attack.Launch();
             }
         }
-        /*
-        // Returns whether the unit can bleed or be poisoned
-        public static bool CanBleed(WoWUnit unit)
-        {
-            return unit.CreatureTypeTarget != "Elemental" && unit.CreatureTypeTarget != "Mechanical";
-        }
-        */
-        // Returns whether the player is poisoned
-        public static bool PetHasPoisonDebuff()
+
+        // Returns whether the unit is poisoned
+        public static bool HasPoisonDebuff(string unit = "player")
         {
             return Lua.LuaDoString<bool>
-                (@"for i=1,25 do 
-	            local _, _, _, _, d  = UnitDebuff('pet',i);
-	            if d == 'Poison' then
-                return true
-                end
-            end");
+                (@$"for i=1,25 do 
+	                local _, _, _, _, d  = UnitDebuff('{unit}',i);
+	                if d == 'Poison' then
+                    return true
+                    end
+                end");
         }
 
-        public static bool HasPoisonDebuff()
+        // Returns whether the unit has a disease
+        public static bool HasDiseaseDebuff(string unit = "player")
         {
             return Lua.LuaDoString<bool>
-                (@"for i=1,25 do 
-	            local _, _, _, _, d  = UnitDebuff('player',i);
-	            if d == 'Poison' then
-                return true
-                end
-            end");
+                (@$"for i=1,25 do 
+	                local _, _, _, _, d  = UnitDebuff('{unit}',i);
+	                if d == 'Disease' then
+                    return true
+                    end
+                end");
         }
 
-        // Returns whether the player has a disease
-        public static bool HasDiseaseDebuff()
+        // Returns whether the unit has a curse
+        public static bool HasCurseDebuff(string unit = "player")
         {
             return Lua.LuaDoString<bool>
-                (@"for i=1,25 do 
-	            local _, _, _, _, d  = UnitDebuff('player',i);
-	            if d == 'Disease' then
-                return true
-                end
-            end");
+                (@$"for i=1,25 do 
+	                local _, _, _, _, d  = UnitDebuff('{unit}',i);
+	                if d == 'Curse' then
+                    return true
+                    end
+                end");
         }
 
-        // Returns whether the player has a curse
-        public static bool HasCurseDebuff()
+        // Returns whether the unit has a magic debuff
+        public static bool HasMagicDebuff(string unit = "player")
         {
             return Lua.LuaDoString<bool>
-                (@"for i=1,25 do 
-	            local _, _, _, _, d  = UnitDebuff('player',i);
-	            if d == 'Curse' then
-                return true
-                end
-            end");
-        }
-
-        // Returns whether the player has a magic debuff
-        public static bool HasMagicDebuff()
-        {
-            return Lua.LuaDoString<bool>
-                (@"for i=1,25 do 
-	            local _, _, _, _, d  = UnitDebuff('player',i);
+                (@$"for i=1,25 do 
+	            local _, _, _, _, d  = UnitDebuff('{unit}',i);
 	            if d == 'Magic' then
                 return true
                 end
             end");
         }
 
-        // Returns the type of debuff the player has as a string
-        public static string GetDebuffType()
+        // Returns the type of debuff the unit has as a string
+        public static string GetDebuffType(string unit = "player")
         {
             return Lua.LuaDoString<string>
-                (@"for i=1,25 do 
-	            local _, _, _, _, d  = UnitDebuff('player',i);
-	            if (d == 'Poison' or d == 'Magic' or d == 'Curse' or d == 'Disease') then
-                return d
-                end
-            end");
+                (@$"for i=1,25 do 
+	                local _, _, _, _, d  = UnitDebuff('{unit}',i);
+	                if (d == 'Poison' or d == 'Magic' or d == 'Curse' or d == 'Disease') then
+                    return d
+                    end
+                end");
         }
 
         // Returns whether the player has the debuff passed as a string (ex: Weakened Soul)
-        public static bool HasDebuff(string debuffName)
+        public static bool HasDebuff(string debuffName, string unitName = "player")
         {
             return Lua.LuaDoString<bool>
-                ($"for i=1,25 do " +
-                    "local n, _, _, _, _  = UnitDebuff('player',i); " +
-                    "if n == '" + debuffName + "' then " +
-                    "return true " +
-                    "end " +
-                "end");
+                (@$"for i=1,25 do
+                    local n, _, _, _, _  = UnitDebuff('{unitName}',i);
+                    if n == '{debuffName}' then
+                    return true
+                    end
+                end");
         }
 
         // Returns the amount of stacks of a specific debuff passed as a string (ex: Arcane Blast)
-        public static int CountDebuff(string debuffName)
+        public static int CountDebuff(string debuffName, string unit = "player")
         {
             return Lua.LuaDoString<int>
-                ($"for i=1,25 do " +
-                    "local n, _, _, c, _  = UnitDebuff('player',i); " +
-                    "if n == '" + debuffName + "' then " +
-                    "return c " +
-                    "end " +
-                "end");
+                (@$"for i=1,25 do
+                    local n, _, _, c, _  = UnitDebuff('{unit}',i);
+                    if n == '{debuffName}' then
+                    return c
+                    end
+                end");
+        }
+
+        // Returns the amount of stacks of a specific buff passed as a string (ex: Arcane Blast)
+        public static int CountBuff(string buffName, string unit = "player")
+        {
+            return Lua.LuaDoString<int>
+                (@$"for i=1,25 do
+                    local n, _, _, c, _  = UnitBuff('{unit}',i);
+                    if n == '{buffName}' then
+                    return c
+                    end
+                end");
         }
 
         // Returns the time left on a buff in seconds, buff name is passed as string
-        public static int BuffTimeLeft(string buffName)
+        public static int BuffTimeLeft(string buffName, string unit = "player")
         {
             return Lua.LuaDoString<int>
-                ($"for i=1,25 do " +
-                    "local n, _, _, _, _, duration, _  = UnitBuff('player',i); " +
-                    "if n == '" + buffName + "' then " +
-                    "return duration " +
-                    "end " +
-                "end");
+                (@$"for i=1,25 do
+                    local n, _, _, _, _, duration, _  = UnitBuff('{unit}',i);
+                    if n == '{buffName}' then
+                    return duration
+                    end
+                end");
+        }
+
+        // Returns the time left on a debuff in seconds, debuff name is passed as string
+        public static int DeBuffTimeLeft(string debuffName, string unit = "player")
+        {
+            return Lua.LuaDoString<int>
+                (@$"for i=1,25 do
+                    local n, _, _, _, _, duration, expirationTime  = UnitDebuff('{unit}',i);
+                    if n == '{debuffName}' then
+                    return expirationTime
+                    end
+                end");
         }
 
         // Returns true if the enemy is either casting or channeling (good for interrupts)
-        public static bool EnemyCasting()
+        public static bool TargetIsCasting()
         {
             int channelTimeLeft = Lua.LuaDoString<int>(@"local spell, _, _, _, endTimeMS = UnitChannelInfo('target')
                                     if spell then
@@ -208,11 +217,59 @@ namespace WholesomeTBCAIO.Helpers
 
         #region Misc
 
+        public static (RotationType, RotationRole) GetRotationType(IClassRotation rotation)
+        {
+            // DRUID
+            if (rotation is Feral) return (RotationType.Solo, RotationRole.DPS);
+            if (rotation is FeralDPSParty) return (RotationType.Party, RotationRole.DPS);
+            if (rotation is FeralTankParty) return (RotationType.Party, RotationRole.Tank);
+            if (rotation is RestorationParty) return (RotationType.Party, RotationRole.Healer);
+            // HUNTER
+            if (rotation is BeastMastery) return (RotationType.Solo, RotationRole.DPS);
+            if (rotation is BeastMasteryParty) return (RotationType.Party, RotationRole.DPS);
+            // MAGE
+            if (rotation is Arcane) return (RotationType.Solo, RotationRole.DPS);
+            if (rotation is Fire) return (RotationType.Solo, RotationRole.DPS);
+            if (rotation is Frost) return (RotationType.Solo, RotationRole.DPS);
+            if (rotation is ArcaneParty) return (RotationType.Party, RotationRole.DPS);
+            if (rotation is FireParty) return (RotationType.Party, RotationRole.DPS);
+            if (rotation is FrostParty) return (RotationType.Party, RotationRole.DPS);
+            // PALADIN
+            if (rotation is Retribution) return (RotationType.Solo, RotationRole.DPS);
+            // PRIEST
+            if (rotation is Shadow) return (RotationType.Solo, RotationRole.DPS);
+            if (rotation is ShadowParty) return (RotationType.Party, RotationRole.DPS);
+            if (rotation is HolyPriestParty) return (RotationType.Party, RotationRole.Healer);
+            // ROGUE
+            if (rotation is Combat) return (RotationType.Solo, RotationRole.DPS);
+            // SHAMAN
+            if (rotation is Elemental) return (RotationType.Solo, RotationRole.DPS);
+            if (rotation is Enhancement) return (RotationType.Solo, RotationRole.DPS);
+            // WARLOCK
+            if (rotation is Affliction) return (RotationType.Solo, RotationRole.DPS);
+            if (rotation is Demonology) return (RotationType.Solo, RotationRole.DPS);
+            // WARRIOR
+            if (rotation is Fury) return (RotationType.Solo, RotationRole.DPS);
+            if (rotation is FuryParty) return (RotationType.Party, RotationRole.DPS);
+            if (rotation is ProtectionWarrior) return (RotationType.Party, RotationRole.Tank);
+
+            Logger.LogError($"Couldn't find Rotation Type");
+            return (RotationType.Solo, RotationRole.DPS);
+        }
+
         public static void SetGroundMount(string mountName)
         {
             wManagerSetting.CurrentSetting.GroundMountName = mountName;
             wManagerSetting.CurrentSetting.Save();
             Logger.Log($"Setting mount to {mountName}");
+        }
+
+        public static List<WoWUnit> GetSuroundingEnemies()
+        {
+            return ObjectManager.GetObjectWoWUnit()
+                .Where(e => e.IsAlive && e.IsValid && !e.PlayerControlled && e.IsAttackable)
+                .OrderBy(e => e.GetDistance)
+                .ToList();
         }
 
         public static int GetNumberEnemiesAround(float distance, WoWUnit unit)
@@ -238,30 +295,22 @@ namespace WholesomeTBCAIO.Helpers
         }
 
         // Returns whether units, hostile or not, are close to the player. Distance must be passed as argument
-        public static bool CheckIfEnemiesClose(float distance)
+        public static int GetNbEnemiesClose(float distance)
         {
             List<WoWUnit> surroundingEnemies = ObjectManager.GetObjectWoWUnit();
-            WoWUnit closestUnit = null;
-            float closestUnitDistance = 100;
-
+            int result = 0;
             foreach (WoWUnit unit in surroundingEnemies)
             {
-                float distanceFromTarget = unit.Position.DistanceTo(ObjectManager.Me.Position);
-
-                if (unit.IsAlive && !unit.IsTapDenied && unit.IsValid && !unit.IsTaggedByOther && !unit.PlayerControlled
-                    && unit.IsAttackable && distanceFromTarget < closestUnitDistance && unit.Guid != ObjectManager.Target.Guid)
-                {
-                    closestUnit = unit;
-                    closestUnitDistance = distanceFromTarget;
-                }
+                if (unit.IsAlive 
+                    && !unit.IsTapDenied 
+                    && unit.IsValid 
+                    && !unit.IsTaggedByOther 
+                    && !unit.PlayerControlled
+                    && unit.IsAttackable 
+                    && unit.GetDistance < distance)
+                    result++;
             }
-
-            if (closestUnit != null && closestUnitDistance < distance)
-            {
-                Logger.LogDebug("Enemy close: " + closestUnit.Name);
-                return true;
-            }
-            return false;
+            return result;
         }
 
         // Returns whether hostile units are close to the target. Target and distance must be passed as argument
@@ -298,6 +347,13 @@ namespace WholesomeTBCAIO.Helpers
             return false;
         }
 
+        // Get Talent Rank
+        public static int GetTalentRank(int tabIndex, int talentIndex)
+        {
+            int rank = Lua.LuaDoString<int>($"local _, _, _, _, currentRank, _, _, _ = GetTalentInfo({tabIndex}, {talentIndex}); return currentRank;");
+            return rank;
+        }
+
         // Gets Character's specialization (talents)
         public static string GetSpec()
         {
@@ -325,6 +381,24 @@ namespace WholesomeTBCAIO.Helpers
 
         #region Items
 
+        // Party Drink
+        public static void PartyDrink(string drinkName, int threshold)
+        {
+            if (ObjectManager.Me.ManaPercentage < threshold
+                && drinkName.Trim().Length > 0)
+            {
+                if (CountItemStacks(drinkName) > 0)
+                {
+                    ItemsManager.UseItemByNameOrId(drinkName);
+                }
+                else
+                {
+                    Logger.Log($"Couldn't find any {drinkName} in bags");
+                }
+                Thread.Sleep(3000);
+            }
+        }
+        
         // Add to not sell  list
         public static void AddToDoNotSellList(string itemName)
         {

@@ -98,11 +98,11 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         {
             base.CombatRotation();
             WoWUnit Target = ObjectManager.Target;
-            bool _shouldBeInterrupted = ToolBox.EnemyCasting();
+            bool _shouldBeInterrupted = ToolBox.TargetIsCasting();
             bool _inMeleeRange = Target.GetDistance < 6f;
             bool _saveRage = Cleave.KnownSpell
                 && ObjectManager.GetNumberAttackPlayer() > 1
-                && ToolBox.CheckIfEnemiesClose(15f)
+                && ToolBox.GetNbEnemiesClose(15f) > 1
                 && settings.UseCleave
                 || Execute.KnownSpell && Target.HealthPercent < 40
                 || Bloodthirst.KnownSpell && ObjectManager.Me.Rage < 40 && Target.HealthPercent > 50;
@@ -223,20 +223,20 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             // Sweeping Strikes
             if (_inMeleeRange
                 && ObjectManager.GetNumberAttackPlayer() > 1
-                && ToolBox.CheckIfEnemiesClose(15f))
+                && ToolBox.GetNbEnemiesClose(15f) > 1)
                 if (cast.Normal(SweepingStrikes))
                     return;
 
             // Retaliation
             if (_inMeleeRange && ObjectManager.GetNumberAttackPlayer() > 1
-                && ToolBox.CheckIfEnemiesClose(15f))
+                && ToolBox.GetNbEnemiesClose(15f) > 1)
                 if (cast.Normal(Retaliation) && (!SweepingStrikes.IsSpellUsable || !SweepingStrikes.KnownSpell))
                     return;
 
             // Cleave
             if (_inMeleeRange
                 && ObjectManager.GetNumberAttackPlayer() > 1
-                && ToolBox.CheckIfEnemiesClose(15f) &&
+                && ToolBox.GetNbEnemiesClose(15f) > 1 &&
                 (!SweepingStrikes.IsSpellUsable || !SweepingStrikes.KnownSpell) && ObjectManager.Me.Rage > 40
                 && settings.UseCleave)
                 if (cast.Normal(Cleave))
@@ -282,7 +282,8 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             // Demoralizing Shout
             if (settings.UseDemoralizingShout
                 && !Target.HaveBuff("Demoralizing Shout")
-                && (ObjectManager.GetNumberAttackPlayer() > 1 || !ToolBox.CheckIfEnemiesClose(15f)) && _inMeleeRange)
+                && (ObjectManager.GetNumberAttackPlayer() > 1 || ToolBox.GetNbEnemiesClose(15f) <= 0) 
+                && _inMeleeRange)
                 if (cast.Normal(DemoralizingShout))
                     return;
 
