@@ -36,7 +36,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             settings = WarriorSettings.Current;
             if (settings.PartyDrinkName != "")
                 ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
-            cast = new Cast(BattleShout, settings.ActivateCombatDebug, null, settings.AutoDetectImmunities);
+            cast = new Cast(BattleShout, null, settings);
 
             this.specialization = specialization as Warrior;
             (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);

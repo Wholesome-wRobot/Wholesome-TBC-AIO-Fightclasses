@@ -41,7 +41,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             settings = HunterSettings.Current;
             if (settings.PartyDrinkName != "")
                 ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
-            cast = new Cast(RaptorStrike, settings.ActivateCombatDebug, null, settings.AutoDetectImmunities);
+            cast = new Cast(RaptorStrike, null, settings);
 
             this.specialization = specialization as Hunter;
             (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);

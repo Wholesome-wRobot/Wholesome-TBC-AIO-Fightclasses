@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
+using WholesomeTBCAIO.Settings;
 using wManager.Events;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
@@ -19,11 +20,11 @@ namespace WholesomeTBCAIO.Helpers
         private AIOSpell CurrentSpell { get; set; }
         public bool IsApproachingTarget { get; set; }
 
-        public Cast(AIOSpell defaultBaseSpell, bool combatDebugON, AIOSpell wandSpell, bool autoDetectImmunities)
+        public Cast(AIOSpell defaultBaseSpell, AIOSpell wandSpell, BaseSettings settings)
         {
-            AutoDetectImmunities = autoDetectImmunities;
+            AutoDetectImmunities = settings.AutoDetectImmunities;
             DefaultBaseSpell = defaultBaseSpell;
-            CombatDebugON = combatDebugON;
+            CombatDebugON = settings.ActivateCombatDebug;
             WandSpell = wandSpell;
             IsApproachingTarget = false;
             EventsLuaWithArgs.OnEventsLuaStringWithArgs += LuaEventsHandler;
@@ -179,7 +180,7 @@ namespace WholesomeTBCAIO.Helpers
             if (WandSpell != null
                 && ToolBox.UsingWand()
                 && stopWandAndCast)
-                StopWandWaitGCD(WandSpell, CurrentSpell);
+                StopWandWaitGCD(WandSpell);
             
             
             // Wait for remaining Cooldown
@@ -284,32 +285,27 @@ namespace WholesomeTBCAIO.Helpers
             MovementManager.Go(PathFinder.FindPath(CurrentSpellTarget.Position), false);
             Timer limit = new Timer(5000);
             Thread.Sleep(1000);
+
             while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                && ObjectManager.Me.IsAlive
+                && !limit.IsReady
                 && (CurrentSpellTarget.IsAlive || CurrentSpell.OnDeadTarget)
                 && (CurrentSpellTarget.GetDistance > CurrentSpell.MaxRange - 2 || TraceLine.TraceLineGo(CurrentSpellTarget.Position)))
-            {
-                if (limit.IsReady)
-                    break;
                 Thread.Sleep(100);
-            }
+
             MovementManager.StopMoveNewThread();
         }
 
         // Stops using wand and waits for its CD to be over
-        private void StopWandWaitGCD(AIOSpell wandSpell, AIOSpell spellToWaitFor)
+        private void StopWandWaitGCD(AIOSpell wandSpell)
         {
             CombatDebug("Stopping Wand and waiting for GCD");
             wandSpell.Launch();
-            int c = 0;
-            while (!spellToWaitFor.IsSpellUsable && c <= 1500)
-            {
-                c += 50;
+            Timer limit = new Timer(1500);
+
+            while (!CurrentSpell.IsSpellUsable && !limit.IsReady)
                 Thread.Sleep(50);
-            }
-            CombatDebug("Waited for GCD : " + c);
-            if (c > 1500)
-                wandSpell.Launch();
+
+            CombatDebug($"Waited for GCD after wand stop : {1500 - limit.TimeLeft()}");
         }
 
         private void CombatDebug(string s)

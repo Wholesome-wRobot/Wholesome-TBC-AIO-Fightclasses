@@ -35,7 +35,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             settings = PriestSettings.Current;
             if (settings.PartyDrinkName != "")
                 ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
-            cast = new Cast(Smite, settings.ActivateCombatDebug, UseWand, settings.AutoDetectImmunities);
+            cast = new Cast(Smite, UseWand, settings);
 
             this.specialization = specialization as Priest;
             (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);

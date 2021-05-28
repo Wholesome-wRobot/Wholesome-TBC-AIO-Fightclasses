@@ -40,7 +40,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             settings = PaladinSettings.Current;
             if (settings.PartyDrinkName != "")
                 ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
-            cast = new Cast(HolyLight, settings.ActivateCombatDebug, null, settings.AutoDetectImmunities);
+            cast = new Cast(HolyLight, null, settings);
             
             this.specialization = specialization as Paladin;
             (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);

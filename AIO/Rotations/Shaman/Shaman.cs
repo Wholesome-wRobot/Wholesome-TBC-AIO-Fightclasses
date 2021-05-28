@@ -41,7 +41,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             settings = ShamanSettings.Current;
             if (settings.PartyDrinkName != "")
                 ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
-            cast = new Cast(LightningBolt, settings.ActivateCombatDebug, null, settings.AutoDetectImmunities);
+            cast = new Cast(LightningBolt, null, settings);
 
             this.specialization = specialization as Shaman;
             (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);

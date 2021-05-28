@@ -175,18 +175,16 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Spell if wand banned
             if (UnitImmunities.Contains(ObjectManager.Target, "Shoot"))
-                if (cast.OnTarget(ArcaneBlast) || cast.OnTarget(ArcaneMissiles) || cast.OnTarget(Frostbolt) || cast.OnTarget(Fireball))
+                if (cast.OnTarget(Frostbolt) || cast.OnTarget(Fireball) || cast.OnTarget(ArcaneBlast) || cast.OnTarget(ArcaneMissiles))
                     return;
 
             // Use Wand
             if (!ToolBox.UsingWand()
                 && _iCanUseWand
                 && !cast.IsBackingUp
-                && !MovementManager.InMovement)
-            {
-                if (cast.OnTarget(UseWand, false))
-                    return;
-            }
+                && !MovementManager.InMovement
+                && cast.OnTarget(UseWand, false))
+                return;
         }
     }
 }

@@ -40,7 +40,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             settings = DruidSettings.Current;
             if (settings.PartyDrinkName != "")
                 ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
-            cast = new Cast(Wrath, settings.ActivateCombatDebug, null, settings.AutoDetectImmunities);
+            cast = new Cast(Wrath, null, settings);
 
             this.specialization = specialization as Druid;
             (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);

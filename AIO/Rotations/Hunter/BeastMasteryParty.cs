@@ -51,16 +51,17 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         protected override void CombatRotation()
         {
             WoWUnit Target = ObjectManager.Target;
+            float minRange = RangeManager.GetMeleeRangeWithTarget() + settings.BackupDistance;
 
-            if (Target.GetDistance < 10f
+            if (Target.GetDistance < minRange
                 && !cast.IsBackingUp)
                 ToolBox.CheckAutoAttack(Attack);
 
-            if (Target.GetDistance > 10f
+            if (Target.GetDistance >= minRange
                 && !cast.IsBackingUp)
                 ReenableAutoshot();
 
-            if (Target.GetDistance < 13f
+            if (Target.GetDistance < minRange
                 && !settings.BackupFromMelee)
                 _canOnlyMelee = true;
 
@@ -95,12 +96,12 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             // Disengage
             if (settings.UseDisengage
                 && Target.Target == Me.Guid
-                && Target.GetDistance < 10
+                && Target.GetDistance < minRange
                 && cast.OnTarget(Disengage))
                 return;
 
             // Bestial Wrath
-            if (Target.GetDistance < 34f
+            if (Target.GetDistance < AutoShot.MaxRange
                 && Target.HealthPercent < 100
                 && ObjectManager.Pet.IsAlive
                 && Me.ManaPercentage > 10
@@ -108,7 +109,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 return;
 
             // Rapid Fire
-            if (Target.GetDistance < 34f
+            if (Target.GetDistance < AutoShot.MaxRange
                 && Target.HealthPercent < 100
                 && cast.OnSelf(RapidFire))
                 return;
@@ -119,13 +120,13 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
             // Raptor Strike
             if (settings.UseRaptorStrike
-                && Target.GetDistance < 6f
+                && Target.GetDistance < minRange
                 && !RaptorStrikeOn()
                 && cast.OnTarget(RaptorStrike))
                 return;
 
             // Mongoose Bite
-            if (Target.GetDistance < 6f
+            if (Target.GetDistance < minRange
                 && cast.OnTarget(MongooseBite))
                 return;
 
@@ -145,7 +146,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             // Hunter's Mark
             if (ObjectManager.Pet.IsValid
                 && !HuntersMark.TargetHaveBuff
-                && Target.GetDistance > 13f
+                && Target.GetDistance > minRange
                 && Target.IsAlive
                 && cast.OnTarget(HuntersMark))
                 return;
@@ -159,22 +160,22 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
             // Serpent Sting
             if (!Target.HaveBuff("Serpent Sting")
-                && Target.GetDistance < 34f
+                && Target.GetDistance < AutoShot.MaxRange
                 && Target.HealthPercent >= 10
                 && !SteadyShot.KnownSpell
-                && Target.GetDistance > 13f
+                && Target.GetDistance > minRange
                 && cast.OnTarget(SerpentSting))
                 return;
 
             // Intimidation interrupt
-            if (Target.GetDistance < 34f
+            if (Target.GetDistance < AutoShot.MaxRange
                 && ToolBox.TargetIsCasting()
                 && settings.IntimidationInterrupt
                 && cast.OnSelf(Intimidation))
                 return;
 
             // Arcane Shot
-            if (Target.GetDistance < 34f
+            if (Target.GetDistance < AutoShot.MaxRange
                 && !SteadyShot.KnownSpell
                 && cast.OnTarget(ArcaneShot))
                 return;

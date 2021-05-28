@@ -37,7 +37,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             settings = MageSettings.Current;
             if (settings.PartyDrinkName != "")
                 ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
-            cast = new Cast(Fireball, settings.ActivateCombatDebug, UseWand, settings.AutoDetectImmunities);
+            cast = new Cast(Fireball, UseWand, settings);
 
             this.specialization = specialization as Mage;
             (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);

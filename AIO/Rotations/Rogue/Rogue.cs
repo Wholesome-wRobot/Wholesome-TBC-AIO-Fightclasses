@@ -42,7 +42,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             settings = RogueSettings.Current;
             if (settings.PartyDrinkName != "")
                 ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
-            cast = new Cast(SinisterStrike, settings.ActivateCombatDebug, null, settings.AutoDetectImmunities);
+            cast = new Cast(SinisterStrike, null, settings);
 
             this.specialization = specialization as Rogue;
             (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);

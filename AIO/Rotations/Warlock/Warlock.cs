@@ -39,7 +39,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             settings = WarlockSettings.Current;
             if (settings.PartyDrinkName != "")
                 ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
-            cast = new Cast(ShadowBolt, settings.ActivateCombatDebug, UseWand, settings.AutoDetectImmunities);
+            cast = new Cast(ShadowBolt, UseWand, settings);
 
             this.specialization = specialization as Warlock;
             (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);
