@@ -18,7 +18,6 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             base.Pull();
 
             RangeManager.SetRangeToMelee();
-            //_pullMeleeTimer.Reset();
 
             // Check if caster in list
             if (_casterEnemies.Contains(ObjectManager.Target.Name))
@@ -29,7 +28,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 && ObjectManager.Target.GetDistance > 9f
                 && ObjectManager.Target.GetDistance < 24f
                 && ObjectManager.Target.HealthPercent < 90
-                && cast.Normal(Intercept))
+                && cast.OnTarget(Intercept))
                 return;
         }
 
@@ -61,60 +60,52 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             if (ObjectManager.Target.GetDistance > 12f
                 && ObjectManager.Target.HealthPercent < 90
                 && ObjectManager.Target.GetDistance < 24f
-                && cast.Normal(Intercept))
+                && cast.OnTarget(Intercept))
                 return;
 
             // Berserker stance
             if (!InBerserkStance()
-                && cast.Normal(BerserkerStance))
+                && cast.OnSelf(BerserkerStance))
                 return;
 
             // Interrupt
             if (_shouldBeInterrupted
-                && cast.Normal(Pummel))
+                && cast.OnTarget(Pummel))
                 return;
 
             // Victory Rush
-            if (cast.Normal(VictoryRush))
+            if (cast.OnTarget(VictoryRush))
                 return;
 
             // Rampage
             if (!Me.HaveBuff("Rampage") || Me.HaveBuff("Rampage") && ToolBox.BuffTimeLeft("Rampage") < 10)
-                if (cast.Normal(Rampage))
+                if (cast.OnTarget(Rampage))
                     return;
 
             // Execute
-            if (cast.Normal(Execute))
+            if (cast.OnTarget(Execute))
                 return;
 
             // Overpower
-            if (cast.Normal(Overpower))
+            if (cast.OnTarget(Overpower))
                 return;
 
             // Bloodthirst
             if (_inMeleeRange
-                && cast.Normal(Bloodthirst))
+                && cast.OnTarget(Bloodthirst))
                 return;
 
             // Whirlwind
             if (_inMeleeRange
                 && Me.Rage > 30
-                && cast.Normal(Whirlwind))
+                && cast.OnTarget(Whirlwind))
                 return;
 
             // Sweeping Strikes
             if (_inMeleeRange
                 && ToolBox.GetNbEnemiesClose(15f) > 1
-                && cast.Normal(SweepingStrikes))
+                && cast.OnTarget(SweepingStrikes))
                 return;
-
-            /*
-            // Retaliation
-            if (_inMeleeRange && ObjectManager.GetNumberAttackPlayer() > 1
-                && ToolBox.GetNbEnemiesClose(15f) > 1)
-                if (cast.Normal(Retaliation) && (!SweepingStrikes.IsSpellUsable || !SweepingStrikes.KnownSpell))
-                    return;
-            */
 
             // Cleave
             if (_inMeleeRange
@@ -122,13 +113,13 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 && (!SweepingStrikes.IsSpellUsable || !SweepingStrikes.KnownSpell) 
                 && ObjectManager.Me.Rage > 40
                 && settings.UseCleave
-                && cast.Normal(Cleave))
+                && cast.OnTarget(Cleave))
                 return;
 
             // Blood Rage
             if (settings.UseBloodRage
                 && Me.HealthPercent > 90
-                && cast.Normal(BloodRage))
+                && cast.OnSelf(BloodRage))
                 return;
 
             // Hamstring
@@ -137,26 +128,26 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 && settings.UseHamstring
                 && Target.HealthPercent < 40
                 && !Target.HaveBuff("Hamstring")
-                && cast.Normal(Hamstring))
+                && cast.OnTarget(Hamstring))
                 return;
 
             // Commanding Shout
             if (!Me.HaveBuff("Commanding Shout")
                 && settings.UseCommandingShout
-                && cast.Normal(CommandingShout))
+                && cast.OnSelf(CommandingShout))
                 return;
 
             // Battle Shout
             if (!Me.HaveBuff("Battle Shout")
                 && (!settings.UseCommandingShout || !CommandingShout.KnownSpell)
-                && cast.Normal(BattleShout))
+                && cast.OnSelf(BattleShout))
                 return;
 
             // Heroic Strike (after whirlwind)
             if (_inMeleeRange
                 && !HeroicStrikeOn()
                 &&  Me.Rage > 60
-                && cast.Normal(HeroicStrike))
+                && cast.OnTarget(HeroicStrike))
                 return;
 
             // Heroic Strike (before whirlwind)
@@ -164,7 +155,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 && !Whirlwind.KnownSpell
                 && !HeroicStrikeOn()
                 && (!_saveRage || Me.Rage > 60)
-                && cast.Normal(HeroicStrike))
+                && cast.OnTarget(HeroicStrike))
                 return;
         }
     }

@@ -19,9 +19,9 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             // Life Tap
             if (Me.HealthPercent > Me.ManaPercentage
                 && !Me.IsMounted
-                && settings.UseLifeTap)
-                if (cast.Normal(LifeTap))
-                    return;
+                && settings.UseLifeTap
+                && cast.OnTarget(LifeTap))
+                return;
 
             base.Pull();
         }

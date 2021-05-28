@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
@@ -11,20 +10,19 @@ namespace WholesomeTBCAIO.Rotations.Priest
     {
         protected override void BuffRotation()
         {
-            DateTime dateBegin = DateTime.Now;
             // PARTY Resurrection
-            List<WoWPlayer> needRes = AIOParty.Group
+            List<AIOPartyMember> needRes = AIOParty.Group
                 .FindAll(m => m.IsDead)
                 .OrderBy(m => m.GetDistance)
                 .ToList();
-            if (needRes.Count > 0 && cast.OnFocusPlayer(Resurrection, needRes[0], onDeadTarget: true))
+            if (needRes.Count > 0 && cast.OnFocusPlayer(Resurrection, needRes[0]))
             {
                 Thread.Sleep(3000);
                 return;
             } 
 
             // PARTY Greater heal
-            List<WoWPlayer> needGreaterHeal = AIOParty.Group
+            List<AIOPartyMember> needGreaterHeal = AIOParty.Group
                 .FindAll(m => m.IsAlive && m.HealthPercent < 50)
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
@@ -32,15 +30,26 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return;
 
             // PARTY Heal
-            List<WoWPlayer> needHeal = AIOParty.Group
+            List<AIOPartyMember> needHeal = AIOParty.Group
                 .FindAll(m => m.HealthPercent < 80)
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
             if (needHeal.Count > 0 && cast.OnFocusPlayer(FlashHeal, needHeal[0]))
                 return;
 
+            if (!FlashHeal.KnownSpell)
+            {
+                // PARTY Lesser Heal
+                List<AIOPartyMember> needLesserHeal = AIOParty.Group
+                    .FindAll(m => m.HealthPercent < 80)
+                    .OrderBy(m => m.HealthPercent)
+                    .ToList();
+                if (needLesserHeal.Count > 0 && cast.OnFocusPlayer(LesserHeal, needLesserHeal[0]))
+                    return;
+            }
+
             // PARTY Renew
-            List<WoWPlayer> needRenew = AIOParty.Group
+            List<AIOPartyMember> needRenew = AIOParty.Group
                 .FindAll(m => m.HealthPercent < 90 && !m.HaveBuff(Renew.Name))
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
@@ -55,15 +64,15 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
             // PARTY Divine Spirit
             WoWPlayer noDS = AIOParty.Group
-                .Find(m => !m.HaveBuff(DivineSpirit.Name));
+                .Find(m => m.Mana > 0 && !m.HaveBuff(DivineSpirit.Name));
             if (noDS != null && cast.OnFocusPlayer(DivineSpirit, noDS))
                 return;
 
             // OOC Inner Fire
             if (!Me.HaveBuff("Inner Fire")
-                && settings.UseInnerFire)
-                if (cast.Normal(InnerFire))
-                    return;
+                && settings.UseInnerFire
+                && cast.OnSelf(InnerFire))
+                return;
 
             // PARTY Shadow Protection
             if (settings.PartyShadowProtection)
@@ -80,13 +89,9 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 && cast.OnSelf(ShadowProtection))
                 return;
 
-            // TEST HEAL
-            cast.Normal(Heal);
-
-            Logger.Log($"Total Process time : {(DateTime.Now.Ticks - dateBegin.Ticks) / 10000} ms");
-
             // PARTY Drink
-            ToolBox.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold);
+            if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
+                return;
         }
 
         protected override void HealerCombat()
@@ -101,6 +106,16 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     return;
             }
 
+            // Fade
+            if (AIOParty.EnemiesClose.Exists(m => m.IsTargetingMe)
+                && cast.OnSelf(Fade))
+                return;
+
+            // ShadowFiend
+            if (Me.ManaPercentage < 10
+                && cast.OnTarget(Shadowfiend))
+                return;
+
             // Party Dispel Magic
             if (settings.PartyDispelMagic)
             {
@@ -110,18 +125,10 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     return;
             }
 
-            // PARTY Flash heal
-            List<WoWPlayer> needFlashHeal = AIOParty.Group
-                .FindAll(m => m.HealthPercent < 40)
-                .OrderBy(m => m.HealthPercent)
-                .ToList();
-            if (needFlashHeal.Count > 0 && cast.OnFocusPlayer(FlashHeal, needFlashHeal[0]))
-                return;
-
             // PARTY Heal
-            if (!FlashHeal.KnownSpell)
+            if (!FlashHeal.KnownSpell && !GreaterHealRank7.KnownSpell)
             {
-                List<WoWPlayer> needHeal = AIOParty.Group
+                List<AIOPartyMember> needHeal = AIOParty.Group
                     .FindAll(m => m.HealthPercent < 60)
                     .OrderBy(m => m.HealthPercent)
                     .ToList();
@@ -129,40 +136,81 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     return;
             }
 
+            // PARTY Lesser Heal
+            if (!FlashHeal.KnownSpell)
+            {
+                List<AIOPartyMember> needLesserHeal = AIOParty.Group
+                    .FindAll(m => m.HealthPercent < 80)
+                    .OrderBy(m => m.HealthPercent)
+                    .ToList();
+                if (needLesserHeal.Count > 0 && cast.OnFocusPlayer(LesserHeal, needLesserHeal[0]))
+                    return;
+            }
+
+            // PARTY Flash heal
+            List<AIOPartyMember> needFlashHeal = AIOParty.Group
+                .FindAll(m => m.HealthPercent < 40)
+                .OrderBy(m => m.HealthPercent)
+                .ToList();
+            if (needFlashHeal.Count > 0 && cast.OnFocusPlayer(FlashHeal, needFlashHeal[0]))
+                return;
+
             // PARTY Greater heal
-            List<WoWPlayer> needGreaterHeal = AIOParty.Group
+            List<AIOPartyMember> needGreaterHeal = AIOParty.Group
                 .FindAll(m => m.HealthPercent < 60)
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
             if (needGreaterHeal.Count > 0 && cast.OnFocusPlayer(GreaterHeal, needGreaterHeal[0]))
                 return;
 
+            // PARTY Shield
+            List<AIOPartyMember> neeedShield = AIOParty.Group
+                .FindAll(m => m.HealthPercent < 60 && !m.HaveBuff("Power Word: Shield") && !ToolBox.HasDebuff("Weakened Soul", m.Name))
+                .OrderBy(m => m.HealthPercent)
+                .ToList();
+            if (neeedShield.Count > 0 && cast.OnFocusPlayer(PowerWordShield, neeedShield[0]))
+                return;
+
             // PARTY Prayer Healing
-            List<WoWPlayer> needPrayerOfHealing = AIOParty.Group
+            List<AIOPartyMember> needPrayerOfHealing = AIOParty.Group
                 .FindAll(m => m.IsAlive && m.HealthPercent < 70)
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
-            if (needPrayerOfHealing.Count > 2 && cast.Normal(PrayerOfHealing))
+            if (needPrayerOfHealing.Count > 2 && cast.OnTarget(PrayerOfHealing))
                 return;
 
             // PARTY Prayer of Mending
-            List<WoWPlayer> needPrayerOfMending = AIOParty.Group
+            List<AIOPartyMember> needPrayerOfMending = AIOParty.Group
                 .FindAll(m => m.IsAlive && m.HealthPercent < 70 && !m.HaveBuff(PrayerOfMending.Name))
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
             if (needPrayerOfMending.Count > 1 && cast.OnFocusPlayer(PrayerOfMending, needPrayerOfMending[0]))
                 return;
 
-            // PARTY Shield
-            List<WoWPlayer> neeedShield = AIOParty.Group
-                .FindAll(m => m.HealthPercent < 90 && !m.HaveBuff("Power Word: Shield") && !ToolBox.HasDebuff("Weakened Soul", m.Name))
-                .OrderBy(m => m.HealthPercent)
-                .ToList();
-            if (neeedShield.Count > 0 && cast.OnFocusPlayer(PowerWordShield, neeedShield[0]))
-                return;
+            // PARTY Greater Heal rank 2
+            if (GreaterHealRank7.KnownSpell)
+            {
+                List<AIOPartyMember> needGHeal2 = AIOParty.Group
+                    .FindAll(m => m.HealthPercent < 75)
+                    .OrderBy(m => m.HealthPercent)
+                    .ToList();
+                if (needGHeal2.Count > 0 && cast.OnFocusPlayer(GreaterHealRank2, needGHeal2[0]))
+                    return;
+            }
+            // PARTY Heal
+            else
+            {
+                List<AIOPartyMember> needHeal70 = AIOParty.Group
+                    .FindAll(m => m.HealthPercent < 80)
+                    .OrderBy(m => m.HealthPercent)
+                    .ToList();
+                if (needHeal70.Count > 0 && cast.OnFocusPlayer(Heal, needHeal70[0]))
+                    return;
+            }
 
+            
             // PARTY Renew
-            List<WoWPlayer> needRenew = AIOParty.Group
+            List<AIOPartyMember> needRenew = AIOParty.Group
                 .FindAll(m => m.HealthPercent < 90 && !m.HaveBuff(Renew.Name))
                 .OrderBy(m => m.HealthPercent)
                 .ToList();

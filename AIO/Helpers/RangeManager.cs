@@ -29,6 +29,11 @@ namespace WholesomeTBCAIO.Helpers
             return DefaultMeleeRange + (ObjectManager.Target.CombatReach / 2.5f);
         }
 
+        public static float GetMeleeRangeWithUnit(WoWUnit unit)
+        {
+            return DefaultMeleeRange + (unit.CombatReach / 2.5f);
+        }
+
         public static bool CurrentRangeIsMelee()
         {
             if (ObjectManager.Target != null)

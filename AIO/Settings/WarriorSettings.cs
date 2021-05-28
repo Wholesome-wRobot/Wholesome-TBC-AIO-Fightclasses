@@ -1,11 +1,5 @@
 ﻿using System;
-using robotManager.Helpful;
-using wManager.Wow.Helpers;
-using wManager.Wow.ObjectManager;
 using System.ComponentModel;
-using System.IO;
-using robotManager;
-using System.Collections.Generic;
 using MarsSettingsGUI;
 
 namespace WholesomeTBCAIO.Settings
@@ -102,7 +96,7 @@ namespace WholesomeTBCAIO.Settings
         public bool PartyStandBehind { get; set; }
 
         // TALENT
-        [DropdownList(new string[] { "Fury", "Fury Party", "Protection Party" })]
+        [DropdownList(new string[] { "Fury", "Party Fury", "Party Protection" })]
         public override string Specialization { get; set; }
     }
 }

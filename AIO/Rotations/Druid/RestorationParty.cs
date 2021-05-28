@@ -39,7 +39,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             // Omen of Clarity
             if (!Me.HaveBuff("Omen of Clarity")
                 && OmenOfClarity.IsSpellUsable
-                && cast.Normal(OmenOfClarity))
+                && cast.OnTarget(OmenOfClarity))
                 return;
 
             // Regrowth
@@ -56,14 +56,14 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 && cast.OnFocusPlayer(Rejuvenation, needRejuvenation))
                 return;
 
-            // Tree form
-            if (!Me.HaveBuff("Tree of Life")
-                && Me.ManaPercentage > 20
-                && cast.Normal(TreeOfLife))
+            // PARTY Drink
+            if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
                 return;
 
-            // PARTY Drink
-            ToolBox.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold);
+            // Tree form
+            if (!Me.HaveBuff("Tree of Life")
+                && cast.OnSelf(TreeOfLife))
+                return;
         }
 
         protected override void HealerCombat()
@@ -71,7 +71,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             base.HealerCombat();
 
             WoWUnit Target = ObjectManager.Target;
-            List<WoWPlayer> lisPartyOrdered = AIOParty.Group
+            List<AIOPartyMember> lisPartyOrdered = AIOParty.Group
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
 
@@ -82,7 +82,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     .FindAll(m => m.HealthPercent < 50)
                     .Count > 2;
                 if (needTranquility
-                    && cast.Normal(Tranquility))
+                    && cast.OnTarget(Tranquility))
                 {
                     Usefuls.WaitIsCasting();
                     return;
@@ -94,7 +94,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             {
                 WoWPlayer needRebirth = lisPartyOrdered
                     .Find(m => m.IsDead);
-                if (needRebirth != null && cast.OnFocusPlayer(Rebirth, needRebirth, onDeadTarget: true))
+                if (needRebirth != null && cast.OnFocusPlayer(Rebirth, needRebirth))
                     return;
             }
 
@@ -130,7 +130,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 .Find(m => m.HealthPercent < 30);
             if (needBurstHeal != null
                 && Me.ManaPercentage > 10
-                && cast.Normal(NaturesSwiftness))
+                && cast.OnTarget(NaturesSwiftness))
                 return;
             if (needBurstHeal != null
                 && Me.HaveBuff("Nature's Swiftness"))
@@ -142,7 +142,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             // Tree form
             if (!Me.HaveBuff("Tree of Life")
                 && Me.ManaPercentage > 20
-                && cast.Normal(TreeOfLife))
+                && cast.OnSelf(TreeOfLife))
                 return;
 
             // Swiftmend
@@ -151,6 +151,14 @@ namespace WholesomeTBCAIO.Rotations.Druid
             if (needBigHeal != null
                 && cast.OnFocusPlayer(Swiftmend, needBigHeal))
                 return;
+
+            // Healing Touch
+            if (!Me.HaveBuff("Tree of Life"))
+            {
+                if (needBigHeal != null
+                    && cast.OnFocusPlayer(HealingTouch, needBigHeal))
+                    return;
+            }
 
             // Regrowth
             WoWPlayer needRegrowth = lisPartyOrdered

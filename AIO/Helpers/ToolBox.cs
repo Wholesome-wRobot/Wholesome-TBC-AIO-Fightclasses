@@ -17,6 +17,8 @@ using WholesomeTBCAIO.Rotations.Rogue;
 using WholesomeTBCAIO.Rotations.Shaman;
 using WholesomeTBCAIO.Rotations.Warlock;
 using WholesomeTBCAIO.Rotations.Warrior;
+using System;
+using wManager.Wow.Bot.Tasks;
 
 namespace WholesomeTBCAIO.Helpers
 {
@@ -24,10 +26,80 @@ namespace WholesomeTBCAIO.Helpers
     {
         #region Combat
 
+        // Pull
+        public static bool Pull(Cast cast, bool alwaysPull, List<AIOSpell> spells)
+        {
+            AIOSpell pullSpell = spells.Find(s => s != null && s.IsSpellUsable && s.KnownSpell);
+            if (pullSpell == null)
+            {
+                RangeManager.SetRangeToMelee();
+                return false;
+            }
+
+            WoWUnit closestHostileFromTarget = GetClosestHostileFrom(ObjectManager.Target, 20);
+            if (closestHostileFromTarget == null && !alwaysPull)
+            {
+                RangeManager.SetRangeToMelee();
+                return false;
+            }
+
+            float pullRange = pullSpell.MaxRange;
+
+            if (ObjectManager.Target.GetDistance > pullRange - 2
+                || ObjectManager.Target.GetDistance < 6
+                || TraceLine.TraceLineGo(ObjectManager.Target.Position))
+            {
+                RangeManager.SetRangeToMelee();
+                return false;
+            }
+
+            if (closestHostileFromTarget != null && RangeManager.GetRange() < pullRange)
+                Logger.Log($"Pulling from distance (hostile unit {closestHostileFromTarget.Name} is too close)");
+
+            if (ObjectManager.Me.IsMounted)
+                MountTask.DismountMount();
+
+            RangeManager.SetRange(pullRange - 1);
+            Thread.Sleep(300);
+
+            if (cast.OnTarget(pullSpell))
+            {
+                Thread.Sleep(500);
+                if (pullSpell.GetCurrentCooldown > 0)
+                {
+                    Usefuls.WaitIsCasting();
+                    if (pullSpell.Name == "Shoot" || pullSpell.Name == "Throw" || pullSpell.Name == "Avenger's Shield")
+                        Thread.Sleep(1500);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         // Accepts resurrect
         public static void AcceptResurrect()
         {
             Lua.RunMacroText("/script AcceptResurrect(); StaticPopup1Button1: Click(\"left\", true);");
+        }
+
+        // Get Corpse Position
+        public static Vector3 GetCorpsePosition(WoWCorpse corpse)
+        {
+            try
+            {
+                uint baseAddress = corpse.GetBaseAddress;
+                const ushort positionOffset = 0xE8;
+                float x = wManager.Wow.Memory.WowMemory.Memory.ReadFloat(baseAddress + positionOffset + 0x00);
+                float y = wManager.Wow.Memory.WowMemory.Memory.ReadFloat(baseAddress + positionOffset + 0x04);
+                float z = wManager.Wow.Memory.WowMemory.Memory.ReadFloat(baseAddress + positionOffset + 0x08);
+                return new Vector3(x, y, z);
+            }
+            catch (Exception e)
+            {
+                Logger.LogError("Failed to read corpse position: " + e.Message);
+            }
+            return new Vector3(0, 0, 0);
         }
 
         // Check if we're currently wanding
@@ -46,6 +118,13 @@ namespace WholesomeTBCAIO.Helpers
                 Logger.LogDebug("Re-activating attack");
                 attack.Launch();
             }
+        }
+
+        // Cancels a player buff (TBC only)
+        public static void CancelPlayerBuff(string buffName)
+        {
+            Logger.Log($"Removing buff {buffName}");
+            Lua.LuaDoString($@"CancelPlayerBuff(""{buffName.Replace("\"", "\\\"")}"")");
         }
 
         // Returns whether the unit is poisoned
@@ -138,7 +217,7 @@ namespace WholesomeTBCAIO.Helpers
             return Lua.LuaDoString<int>
                 (@$"for i=1,25 do
                     local n, _, _, _, _, duration, _  = UnitBuff('{unit}',i);
-                    if n == '{buffName}' then
+                    if n == ""{buffName}"" then
                     return duration
                     end
                 end");
@@ -171,14 +250,21 @@ namespace WholesomeTBCAIO.Helpers
         // Returns true if the enemy is either casting or channeling (good for interrupts)
         public static bool TargetIsCasting()
         {
-            int channelTimeLeft = Lua.LuaDoString<int>(@"local spell, _, _, _, endTimeMS = UnitChannelInfo('target')
+            int channelTimeLeft = Lua.LuaDoString<int>($@"local spell, _, _, _, endTimeMS = UnitChannelInfo('target')
                                     if spell then
-                                     local finish = endTimeMS / 1000 - GetTime()
+                                     local finish = endTimeMS - GetTime() * 1000
                                      return finish
                                     end");
-            if (channelTimeLeft < 0 || ObjectManager.Target.CastingTimeLeft > Usefuls.Latency)
-                return true;
-            return false;
+            return channelTimeLeft < 0 || ObjectManager.Target.CastingTimeLeft > Usefuls.Latency;
+        }
+
+        public static int GetChannelTimeLeft(string unit = "target")
+        {
+            return Lua.LuaDoString<int>($@"local spell, _, _, startTimeMS, endTimeMS = UnitChannelInfo('{unit}')
+                    if spell then
+                        local finish = endTimeMS - GetTime() * 1000
+                        return finish
+                    end");
         }
 
         // Waits for GlobalCooldown to be off, must pass the most basic spell avalailable at lvl1 (ex: Smite for priest)
@@ -199,6 +285,11 @@ namespace WholesomeTBCAIO.Helpers
 
         #region Misc
 
+        public static void ClearCursor()
+        {
+            Lua.LuaDoString("ClearCursor();");
+        }
+
         public static (RotationType, RotationRole) GetRotationType(IClassRotation rotation)
         {
             // DRUID
@@ -218,6 +309,9 @@ namespace WholesomeTBCAIO.Helpers
             if (rotation is FrostParty) return (RotationType.Party, RotationRole.DPS);
             // PALADIN
             if (rotation is Retribution) return (RotationType.Solo, RotationRole.DPS);
+            if (rotation is RetributionParty) return (RotationType.Party, RotationRole.DPS);
+            if (rotation is PaladinHolyParty) return (RotationType.Party, RotationRole.Healer);
+            if (rotation is PaladinProtectionParty) return (RotationType.Party, RotationRole.Tank);
             // PRIEST
             if (rotation is Shadow) return (RotationType.Solo, RotationRole.DPS);
             if (rotation is ShadowParty) return (RotationType.Party, RotationRole.DPS);
@@ -228,9 +322,12 @@ namespace WholesomeTBCAIO.Helpers
             // SHAMAN
             if (rotation is Elemental) return (RotationType.Solo, RotationRole.DPS);
             if (rotation is Enhancement) return (RotationType.Solo, RotationRole.DPS);
+            if (rotation is EnhancementParty) return (RotationType.Party, RotationRole.DPS);
+            if (rotation is ShamanRestoParty) return (RotationType.Party, RotationRole.Healer);
             // WARLOCK
             if (rotation is Affliction) return (RotationType.Solo, RotationRole.DPS);
             if (rotation is Demonology) return (RotationType.Solo, RotationRole.DPS);
+            if (rotation is AfflictionParty) return (RotationType.Party, RotationRole.DPS);
             // WARRIOR
             if (rotation is Fury) return (RotationType.Solo, RotationRole.DPS);
             if (rotation is FuryParty) return (RotationType.Party, RotationRole.DPS);
@@ -297,37 +394,24 @@ namespace WholesomeTBCAIO.Helpers
         }
 
         // Returns whether hostile units are close to the target. Target and distance must be passed as argument
-        public static bool CheckIfEnemiesAround(WoWUnit target, float distance)
+        public static WoWUnit GetClosestHostileFrom(WoWUnit target, float distance)
         {
             List<WoWUnit> surroundingEnemies = ObjectManager.GetObjectWoWUnit();
-            WoWUnit closestUnit = null;
-            float closestUnitDistance = 100;
 
-            foreach (WoWUnit unit in surroundingEnemies)
+            foreach (WoWUnit unit in ObjectManager.GetObjectWoWUnit().Where(e => e.Position.DistanceTo(target.Position) < distance))
             {
-                float distanceFromTarget = unit.Position.DistanceTo(target.Position);
-
                 if (unit.IsAlive
                     && !unit.IsTapDenied
                     && unit.IsValid
                     && !unit.IsTaggedByOther
                     && !unit.PlayerControlled
                     && unit.IsAttackable
-                    && distanceFromTarget < closestUnitDistance
                     && unit.Reaction.ToString().Equals("Hostile")
                     && unit.Guid != target.Guid)
-                {
-                    closestUnit = unit;
-                    closestUnitDistance = distanceFromTarget;
-                }
+                    return unit;
             }
 
-            if (closestUnit != null && closestUnitDistance < distance)
-            {
-                Logger.Log("Enemy too close: " + closestUnit.Name + ", pulling from distance");
-                return true;
-            }
-            return false;
+            return null;
         }
 
         // Get Talent Rank
@@ -338,17 +422,47 @@ namespace WholesomeTBCAIO.Helpers
         }
 
         // Gets Character's specialization (talents)
-        public static string GetSpec()
+        public static string GetSpec(string inspectUnitName = null)
         {
-            var Talents = new Dictionary<string, int>();
+            string inspectString = inspectUnitName == null ? "false" : "true";
+
+            int highestTalents = 0;
+            Dictionary<string, int> Talents = new Dictionary<string, int>();
+
+            if (inspectUnitName != null)
+            {
+                Lua.LuaDoString($"InspectUnit('{inspectUnitName}');");
+                Thread.Sleep(500 + GetLatency());
+                if (!AIOParty.InspectTalentReady)
+                {
+                    Lua.RunMacroText("/Click InspectFrameCloseButton");
+                    return "retry";
+                }
+            }
+
             for (int i = 1; i <= 3; i++)
             {
                 Talents.Add(
-                    Lua.LuaDoString<string>($"local name, iconTexture, pointsSpent = GetTalentTabInfo({i}); return name"),
-                    Lua.LuaDoString<int>($"local name, iconTexture, pointsSpent = GetTalentTabInfo({i}); return pointsSpent")
+                    Lua.LuaDoString<string>($"local name, _, _ = GetTalentTabInfo('{i}', {inspectString}); return name"),
+                    Lua.LuaDoString<int>($"local _, _, pointsSpent = GetTalentTabInfo('{i}', {inspectString}); return pointsSpent")
                 );
             }
-            var highestTalents = Talents.Max(x => x.Value);
+            highestTalents = Talents.Max(x => x.Value);
+            /*
+            foreach (KeyValuePair<string, int> pair in Talents)
+            {
+                Logger.Log($"{pair.Key} -> {pair.Value}");
+            }
+            */
+            if (inspectUnitName != null)
+            {
+                Lua.RunMacroText("/Click InspectFrameCloseButton");
+                AIOParty.InspectTalentReady = false;
+            }
+
+            if (highestTalents == 0)
+                return null;
+
             return Talents.Where(t => t.Value == highestTalents).FirstOrDefault().Key;
         }
 
@@ -363,25 +477,7 @@ namespace WholesomeTBCAIO.Helpers
         #endregion
 
         #region Items
-
-        // Party Drink
-        public static void PartyDrink(string drinkName, int threshold)
-        {
-            if (ObjectManager.Me.ManaPercentage < threshold
-                && drinkName.Trim().Length > 0)
-            {
-                if (CountItemStacks(drinkName) > 0)
-                {
-                    ItemsManager.UseItemByNameOrId(drinkName);
-                }
-                else
-                {
-                    Logger.Log($"Couldn't find any {drinkName} in bags");
-                }
-                Thread.Sleep(3000);
-            }
-        }
-        
+               
         // Add to not sell  list
         public static void AddToDoNotSellList(string itemName)
         {
@@ -441,7 +537,7 @@ namespace WholesomeTBCAIO.Helpers
         }
 
         // Get item ID in bag from a list passed as argument (good to check CD)
-        public static int GetItemID(List<string> list)
+        public static int GetItemEntry(List<string> list)
         {
             List<WoWItem> _bagItems = Bag.GetBagItem();
             foreach (WoWItem item in _bagItems)
@@ -452,11 +548,11 @@ namespace WholesomeTBCAIO.Helpers
         }
 
         // Get item ID in bag from a string passed as argument (good to check CD)
-        public static int GetItemID(string itemName)
+        public static int GetItemEntry(string itemName)
         {
             List<WoWItem> _bagItems = Bag.GetBagItem();
             foreach (WoWItem item in _bagItems)
-                if (itemName.Equals(item))
+                if (itemName.Equals(item.Name))
                     return item.Entry;
 
             return 0;
@@ -465,21 +561,21 @@ namespace WholesomeTBCAIO.Helpers
         // Get item Cooldown (must pass item string as arg)
         public static int GetItemCooldown(string itemName)
         {
-            int entry = GetItemID(itemName);
+            int entry = GetItemEntry(itemName);
             List<WoWItem> _bagItems = Bag.GetBagItem();
             foreach (WoWItem item in _bagItems)
                 if (entry == item.Entry)
                     return Lua.LuaDoString<int>("local startTime, duration, enable = GetItemCooldown(" + entry + "); " +
                         "return duration - (GetTime() - startTime)");
 
-            Logger.Log("Couldn't find item" + itemName);
+            Logger.Log("Couldn't find item " + itemName);
             return 0;
         }
 
         // Get item Cooldown from list (must pass item list as arg)
         public static int GetItemCooldown(List<string> itemList)
         {
-            int entry = GetItemID(itemList);
+            int entry = GetItemEntry(itemList);
             List<WoWItem> _bagItems = Bag.GetBagItem();
             foreach (WoWItem item in _bagItems)
                 if (entry == item.Entry)
@@ -634,7 +730,7 @@ namespace WholesomeTBCAIO.Helpers
         {
             if (from != null && from != Vector3.Empty)
             {
-                float rotation = -Math.DegreeToRadian(Math.RadianToDegree(targetObject.Rotation) + 90);
+                float rotation = -robotManager.Helpful.Math.DegreeToRadian(robotManager.Helpful.Math.RadianToDegree(targetObject.Rotation) + 90);
                 return new Vector3((System.Math.Sin(rotation) * radius) + from.X, (System.Math.Cos(rotation) * radius) + from.Y, from.Z);
             }
             return new Vector3(0, 0, 0);
@@ -660,6 +756,33 @@ namespace WholesomeTBCAIO.Helpers
             if (r > 1.5 * Pi) backLeft = true;
             if (r < 0.5 * Pi) backRight = true;
             if (backLeft || backRight) return true; else return false;
+        }
+
+        // Move behind Target
+        public static bool StandBehindTargetCombat()
+        {
+            if (ObjectManager.Me.IsAlive
+                && !ObjectManager.Me.IsCast
+                && ObjectManager.Target.IsAlive
+                && ObjectManager.Target.HasTarget
+                && !ObjectManager.Target.IsTargetingMe
+                && !MovementManager.InMovement)
+            {
+                int limit = 5;
+                Vector3 position = BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2f);
+                while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
+                    && ObjectManager.Me.Position.DistanceTo(position) > 1
+                    && limit >= 0)
+                {
+                    position = BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2f);
+                    MovementManager.Go(PathFinder.FindPath(position), false);
+                    // Wait follow path
+                    Thread.Sleep(500);
+                    limit--;
+                }
+                return true;
+            }
+            return false;
         }
 
         #endregion

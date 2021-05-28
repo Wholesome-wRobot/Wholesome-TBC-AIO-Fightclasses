@@ -21,6 +21,9 @@ using System.Linq;
 using robotManager.FiniteStateMachine;
 using robotManager.Events;
 using System.Threading;
+using static WholesomeTBCAIO.Helpers.Enums;
+using System.Collections.Generic;
+using System;
 
 public class Main : ICustomClass
 {
@@ -32,16 +35,13 @@ public class Main : ICustomClass
     public static string wowClass = ObjectManager.Me.WowClass.ToString();
     public static int humanReflexTime = 500;
     public static bool isLaunched;
-    public static string version = "2.1.95"; // Must match version in Version.txt
+    public static string version = "3.0.00"; // Must match version in Version.txt
     public static bool HMPrunningAway = false;
     public static State currentState;
 
     private IClassRotation selectedRotation;
 
-    public float Range
-    {
-        get { return RangeManager.GetRange(); }
-    }
+    public float Range => RangeManager.GetRange();
 
     public void Initialize()
     {
@@ -54,13 +54,15 @@ public class Main : ICustomClass
         if (selectedRotation != null)
         {
             isLaunched = true;
-
+            
             FightEvents.OnFightLoop += FightLoopHandler;
             FightEvents.OnFightStart += FightStartHandler;
             FightEvents.OnFightEnd += FightEndHandler;
             LoggingEvents.OnAddLog += AddLogHandler;
             FiniteStateMachineEvents.OnRunState += OnRunStateEvent;
-            EventsLua.AttachEventLua("RESURRECT_REQUEST", e => OnEventWithArgsHandler(e));
+            EventsLua.AttachEventLua("RESURRECT_REQUEST", e => ResurrectionEventHandler(e));
+            EventsLua.AttachEventLua("INSPECT_TALENT_READY", e => AIOParty.InspectTalentReadyHeandler());
+            EventsLuaWithArgs.OnEventsLuaStringWithArgs += EventsWithArgsHandler;
 
             if (!TalentsManager._isRunning)
             {
@@ -68,7 +70,7 @@ public class Main : ICustomClass
                 _talentThread.RunWorkerAsync();
             }
 
-            if (!_racials._isRunning)
+            if (!_racials._isRunning && CombatSettings.UseRacialSkills)
             {
                 _racialsThread.DoWork += _racials.DoRacialsPulse;
                 _racialsThread.RunWorkerAsync();
@@ -96,9 +98,12 @@ public class Main : ICustomClass
         _talentThread.DoWork -= TalentsManager.DoTalentPulse;
         _talentThread.Dispose();
         TalentsManager._isRunning = false;
-        _racialsThread.DoWork -= _racials.DoRacialsPulse;
-        _racialsThread.Dispose();
-        _racials._isRunning = false;
+        if (CombatSettings.UseRacialSkills)
+        {
+            _racialsThread.DoWork -= _racials.DoRacialsPulse;
+            _racialsThread.Dispose();
+            _racials._isRunning = false;
+        }
         _partyThread.DoWork -= AIOParty.DoPartyUpdatePulse;
         _partyThread.Dispose();
         AIOParty._isRunning = false;
@@ -108,6 +113,7 @@ public class Main : ICustomClass
         FightEvents.OnFightEnd -= FightEndHandler;
         FiniteStateMachineEvents.OnRunState -= OnRunStateEvent;
         LoggingEvents.OnAddLog -= AddLogHandler;
+        EventsLuaWithArgs.OnEventsLuaStringWithArgs -= EventsWithArgsHandler;
     }
 
     public void ShowConfiguration() => CombatSettings?.ShowConfiguration();
@@ -115,49 +121,56 @@ public class Main : ICustomClass
     private IClassRotation ChooseRotation()
     {
         string spec = CombatSettings.Specialization;
+        Dictionary<string, Specs> mySpecDictionary = GetSpecDictionary();
 
-        if (!Enums.SpecNames.ContainsKey(CombatSettings.Specialization))
+        if (!mySpecDictionary.ContainsKey(CombatSettings.Specialization))
         {
-            Logger.LogError($"Couldn't find spec {CombatSettings.Specialization} in the dictionary");
+            Logger.LogError($"Couldn't find spec {CombatSettings.Specialization} in the class dictionary");
             return null;
         }
 
-        switch (Enums.SpecNames[CombatSettings.Specialization])
+        switch (mySpecDictionary[CombatSettings.Specialization])
         {
             // Shaman
-            case Enums.Specs.ShamanEnhancement: return new Enhancement();
-            case Enums.Specs.ShamanElemental: return new Elemental();
+            case Specs.ShamanEnhancement: return new Enhancement();
+            case Specs.ShamanEnhancementParty: return new EnhancementParty();
+            case Specs.ShamanElemental: return new Elemental();
+            case Specs.ShamanRestoParty: return new ShamanRestoParty();
             // Druid
-            case Enums.Specs.DruidFeral: return new Feral();
-            case Enums.Specs.DruidFeralDPSParty: return new FeralDPSParty();
-            case Enums.Specs.DruidFeralTankParty: return new FeralTankParty();
-            case Enums.Specs.DruidRestorationParty: return new RestorationParty();
+            case Specs.DruidFeral: return new Feral();
+            case Specs.DruidFeralDPSParty: return new FeralDPSParty();
+            case Specs.DruidFeralTankParty: return new FeralTankParty();
+            case Specs.DruidRestorationParty: return new RestorationParty();
             // Hunter
-            case Enums.Specs.HunterBeastMaster: return new BeastMastery();
-            case Enums.Specs.HunterBeastMasterParty: return new BeastMasteryParty();
+            case Specs.HunterBeastMaster: return new BeastMastery();
+            case Specs.HunterBeastMasterParty: return new BeastMasteryParty();
             // Mage
-            case Enums.Specs.MageFrost: return new Frost();
-            case Enums.Specs.MageFrostParty: return new FrostParty();
-            case Enums.Specs.MageArcane: return new Arcane();
-            case Enums.Specs.MageArcaneParty: return new ArcaneParty();
-            case Enums.Specs.MageFire: return new Fire();
-            case Enums.Specs.MageFireParty: return new FireParty();
+            case Specs.MageFrost: return new Frost();
+            case Specs.MageFrostParty: return new FrostParty();
+            case Specs.MageArcane: return new Arcane();
+            case Specs.MageArcaneParty: return new ArcaneParty();
+            case Specs.MageFire: return new Fire();
+            case Specs.MageFireParty: return new FireParty();
             // Paladin
-            case Enums.Specs.PaladinRetribution: return new Retribution();
+            case Specs.PaladinRetribution: return new Retribution();
+            case Specs.PaladinHolyParty: return new PaladinHolyParty();
+            case Specs.PaladinRetributionParty: return new RetributionParty();
+            case Specs.PaladinProtectionParty: return new PaladinProtectionParty();
             // Priest
-            case Enums.Specs.PriestShadow: return new Shadow();
-            case Enums.Specs.PriestShadowParty: return new ShadowParty();
-            case Enums.Specs.PriestHolyParty: return new HolyPriestParty();
+            case Specs.PriestShadow: return new Shadow();
+            case Specs.PriestShadowParty: return new ShadowParty();
+            case Specs.PriestHolyParty: return new HolyPriestParty();
             // Rogue
-            case Enums.Specs.RogueCombat: return new Combat();
-            case Enums.Specs.RogueCombatParty: return new RogueCombatParty();
+            case Specs.RogueCombat: return new Combat();
+            case Specs.RogueCombatParty: return new RogueCombatParty();
             // Warlock
-            case Enums.Specs.WarlockAffliction: return new Affliction();
-            case Enums.Specs.WarlockDemonology: return new Demonology();
+            case Specs.WarlockAffliction: return new Affliction();
+            case Specs.WarlockDemonology: return new Demonology();
+            case Specs.WarlockAfflictionParty: return new AfflictionParty();
             // Warrior
-            case Enums.Specs.WarriorFury: return new Fury();
-            case Enums.Specs.WarriorFuryParty: return new FuryParty();
-            case Enums.Specs.WarriorProtectionParty: return new ProtectionWarrior();
+            case Specs.WarriorFury: return new Fury();
+            case Specs.WarriorFuryParty: return new FuryParty();
+            case Specs.WarriorProtectionParty: return new ProtectionWarrior();
 
             default: return null;
         }
@@ -228,10 +241,25 @@ public class Main : ICustomClass
         }
     }
 
-    private void OnEventWithArgsHandler(object context)
+    private void ResurrectionEventHandler(object context)
     {
         Logger.Log("Accepting resurrection request in 2000 ms");
         Thread.Sleep(2000);
         ToolBox.AcceptResurrect();
+    }
+
+    private void EventsWithArgsHandler(string id, List<string> args)
+    {
+        if (selectedRotation is Hunter 
+            && id == "UNIT_SPELLCAST_SUCCEEDED" 
+            && args[0] == "player" 
+            && args[1] == "Auto Shot")
+            Hunter.LastAuto = DateTime.Now;
+
+        if (selectedRotation is Paladin
+            && args[1] == "SPELL_CAST_SUCCESS"
+            && id == "COMBAT_LOG_EVENT_UNFILTERED"
+            && (args[9] == "Blessing of Might" || args[9] == "Blessing of Kings" || args[9] == "Blessing of Wisdom"))
+            Paladin.RecordBlessingCast(args[3], args[9], args[6]);
     }
 }

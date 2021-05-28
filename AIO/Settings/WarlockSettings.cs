@@ -32,6 +32,10 @@ namespace WholesomeTBCAIO.Settings
             HealthThresholdResummon = 30;
             ManaThresholdResummon = 20;
 
+            PartyLifeTapManaThreshold = 20;
+            PartyLifeTapHealthThreshold = 50;
+            PartySeedOfCorruptionAmount = 3;
+
             Specialization = "Affliction";
         }
 
@@ -161,8 +165,29 @@ namespace WholesomeTBCAIO.Settings
         [Description("Resummon your pet if its mana falls below this threshold")]
         public int ManaThresholdResummon { get; set; }
 
+        // PARTY
+        [Category("Party")]
+        [DefaultValue(20)]
+        [DisplayName("Life Tap Mana")]
+        [Description("Use Life Tap when your mana goes under this threshold")]
+        [Percentage(true)]
+        public int PartyLifeTapManaThreshold { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(50)]
+        [DisplayName("Life Tap Health")]
+        [Description("Allow Life Tap only if your Health is over this threshold")]
+        [Percentage(true)]
+        public int PartyLifeTapHealthThreshold { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(3)]
+        [DisplayName("Seed of Corruption")]
+        [Description("Use Seed of Corruption when there is at least this amount of enemies")]
+        public int PartySeedOfCorruptionAmount { get; set; }
+
         // TALENT
-        [DropdownList(new string[] { "Affliction", "Demonology" })]
+        [DropdownList(new string[] { "Affliction", "Demonology", "Party Affliction" })]
         public override string Specialization { get; set; }
     }
 }

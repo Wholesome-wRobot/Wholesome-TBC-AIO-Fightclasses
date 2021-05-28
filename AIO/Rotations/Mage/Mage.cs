@@ -1,15 +1,13 @@
 ﻿using System;
 using System.Threading;
 using robotManager.Helpful;
-using robotManager.Products;
 using wManager.Events;
-using wManager.Wow.Class;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 using WholesomeTBCAIO.Settings;
 using WholesomeTBCAIO.Helpers;
 using System.ComponentModel;
-using System.Collections.Generic;
+using Timer = robotManager.Helpful.Timer;
 
 namespace WholesomeTBCAIO.Rotations.Mage
 {
@@ -27,27 +25,25 @@ namespace WholesomeTBCAIO.Rotations.Mage
         protected WoWLocalPlayer Me = ObjectManager.Me;
         protected WoWUnit _polymorphedEnemy = null;
 
-        protected float _distanceRange = 28f;
         protected bool _iCanUseWand = ToolBox.HaveRangedWeaponEquipped();
         protected bool _isPolymorphing;
         protected bool _polymorphableEnemyInThisFight = true;
         protected bool _knowImprovedScorch = ToolBox.GetTalentRank(2, 9) > 0;
-        protected List<WoWUnit> _partyEnemiesAround = new List<WoWUnit>();
 
         protected Mage specialization;
 
         public void Initialize(IClassRotation specialization)
         {
             settings = MageSettings.Current;
+            if (settings.PartyDrinkName != "")
+                ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
             cast = new Cast(Fireball, settings.ActivateCombatDebug, UseWand, settings.AutoDetectImmunities);
 
             this.specialization = specialization as Mage;
             (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);
             TalentsManager.InitTalents(settings);
 
-            _distanceRange = specialization is Fire ? 33f : _distanceRange;
-
-            RangeManager.SetRange(_distanceRange);
+            RangeManager.SetRange(30);
 
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightStart += FightStartHandler;
@@ -77,10 +73,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                         && !ObjectManager.Me.InCombatFlagOnly)
                             _polymorphedEnemy = null;
 
-                    if (RotationType == Enums.RotationType.Party)
-                        _partyEnemiesAround = ToolBox.GetSuroundingEnemies();
-
-                    if (StatusChecker.OutOfCombat())
+                    if (StatusChecker.OutOfCombat(RotationRole))
                         specialization.BuffRotation();
 
                     if (StatusChecker.InPull())
@@ -107,6 +100,15 @@ namespace WholesomeTBCAIO.Rotations.Mage
             _foodManager.CheckIfThrowFoodAndDrinks();
             _foodManager.CheckIfHaveManaStone();
 
+            if (specialization.RotationType == Enums.RotationType.Party)
+            {
+                // PARTY Arcane Intellect
+                WoWPlayer noAI = AIOParty.Group
+                    .Find(m => m.Mana > 0 && !m.HaveBuff(ArcaneIntellect.Name));
+                if (noAI != null && cast.OnFocusPlayer(ArcaneIntellect, noAI))
+                    return;
+            }
+
             // Dampen Magic
             if (!Me.HaveBuff("Dampen Magic")
                 && settings.UseDampenMagic
@@ -125,10 +127,28 @@ namespace WholesomeTBCAIO.Rotations.Mage
             if (ObjectManager.Pet.IsValid && !ObjectManager.Pet.HasTarget)
                 Lua.LuaDoString("PetAttack();", false);
 
+            if (specialization.RotationType == Enums.RotationType.Party)
+            {
+                if (Me.HealthPercent < 30
+                    && cast.OnSelf(IceBlock))
+                    return;
+
+                if (Me.HaveBuff("Ice Block")
+                    && Me.HealthPercent <= 50)
+                    return;
+
+                if (Me.HaveBuff("Ice Block")
+                    && Me.HealthPercent > 50)
+                {
+                    ToolBox.CancelPlayerBuff("Ice Block");
+                    return;
+                }
+            }
+
             // CounterSpell
             if (settings.UseCounterspell
                 && ToolBox.TargetIsCasting()
-                && cast.Normal(CounterSpell))
+                && cast.OnTarget(CounterSpell))
                 return;
         }
 
@@ -166,6 +186,12 @@ namespace WholesomeTBCAIO.Rotations.Mage
         protected AIOSpell ArcaneExplosion = new AIOSpell("Arcane Explosion");
         protected AIOSpell MoltenArmor = new AIOSpell("Molten Armor");
         protected AIOSpell Scorch = new AIOSpell("Scorch");
+        protected AIOSpell IceBlock = new AIOSpell("Ice Block");
+
+        protected bool CheckIceBlock()
+        {
+            return false;
+        }
 
         // EVENT HANDLERS
         private void FightEndHandler(ulong guid)
@@ -174,7 +200,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             _iCanUseWand = false;
             _polymorphableEnemyInThisFight = false;
             _isPolymorphing = false;
-            RangeManager.SetRange(_distanceRange);
+            RangeManager.SetRange(Fireball.MaxRange);
 
             if (!Fight.InFight
             && Me.InCombatFlagOnly
@@ -198,9 +224,11 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
         private void FightLoopHandler(WoWUnit unit, CancelEventArgs cancelable)
         {
+            float minDistance = RangeManager.GetMeleeRangeWithTarget() + 3f;
+
             // Do we need to backup?
             if ((ObjectManager.Target.HaveBuff("Frostbite") || ObjectManager.Target.HaveBuff("Frost Nova"))
-                && ObjectManager.Target.GetDistance < 10f
+                && ObjectManager.Target.GetDistance < minDistance
                 && Me.IsAlive
                 && ObjectManager.Target.IsAlive
                 && !cast.IsBackingUp
@@ -210,7 +238,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 && !_isPolymorphing)
             {
                 cast.IsBackingUp = true;
-                int limiter = 0;
+                Timer timer = new Timer(3000);
 
                 // Using CTM
                 if (settings.BackupUsingCTM)
@@ -222,17 +250,16 @@ namespace WholesomeTBCAIO.Rotations.Mage
                     // Backup loop
                     while (MovementManager.InMoveTo
                         && Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                        && ObjectManager.Target.GetDistance < 15f
+                        && ObjectManager.Target.GetDistance < minDistance
                         && ObjectManager.Me.IsAlive
                         && ObjectManager.Target.IsAlive
                         && (ObjectManager.Target.HaveBuff("Frostbite") || ObjectManager.Target.HaveBuff("Frost Nova"))
-                        && limiter < 10)
+                        && !timer.IsReady)
                     {
                         // Wait follow path
                         Thread.Sleep(300);
-                        limiter++;
                         if (settings.BlinkWhenBackup)
-                            cast.Normal(Blink);
+                            cast.OnSelf(Blink);
                     }
                     MovementManager.StopMove();
                     Thread.Sleep(500);
@@ -243,12 +270,11 @@ namespace WholesomeTBCAIO.Rotations.Mage
                     while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
                     && ObjectManager.Me.IsAlive
                     && ObjectManager.Target.IsAlive
-                    && ObjectManager.Target.GetDistance < 15f
+                    && ObjectManager.Target.GetDistance < minDistance
                     && (ObjectManager.Target.HaveBuff("Frostbite") || ObjectManager.Target.HaveBuff("Frost Nova"))
-                    && limiter <= 6)
+                    && !timer.IsReady)
                     {
-                        Move.Backward(Move.MoveAction.PressKey, 700);
-                        limiter++;
+                        Move.Backward(Move.MoveAction.PressKey, 500);
                     }
                 }
                 cast.IsBackingUp = false;
@@ -259,9 +285,8 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 && ObjectManager.GetNumberAttackPlayer() > 1
                 && Polymorph.KnownSpell
                 && !cast.IsBackingUp
-                && !(specialization is ArcaneParty)
-                && !(specialization is FireParty)
-                && !(specialization is FrostParty)
+                && !cast.IsApproachingTarget
+                && specialization.RotationType != Enums.RotationType.Party
                 && _polymorphableEnemyInThisFight)
             {
                 WoWUnit myNearbyPolymorphed = null;
@@ -294,24 +319,14 @@ namespace WholesomeTBCAIO.Rotations.Mage
                         _polymorphableEnemyInThisFight = false;
 
                     // Polymorph cast
-                    if (potentialPolymorphTarget != null && _polymorphedEnemy == null)
+                    if (potentialPolymorphTarget != null 
+                        && _polymorphedEnemy == null
+                        && cast.OnFocusUnit(Polymorph, potentialPolymorphTarget))
                     {
-                        Interact.InteractGameObject(potentialPolymorphTarget.GetBaseAddress);
-                        while (!cast.Normal(Polymorph)
-                           && ObjectManager.Target.IsAlive
-                           && ObjectManager.Me.IsAlive
-                           && Main.isLaunched
-                           && !Products.InPause)
-                        {
-                            Thread.Sleep(200);
-                        }
-                        _polymorphedEnemy = potentialPolymorphTarget;
                         Usefuls.WaitIsCasting();
-                        Thread.Sleep(500);
+                        _polymorphedEnemy = potentialPolymorphTarget;
                     }
 
-                    // Get back to actual target
-                    Interact.InteractGameObject(firstTarget.GetBaseAddress);
                     _isPolymorphing = false;
                 }
             }

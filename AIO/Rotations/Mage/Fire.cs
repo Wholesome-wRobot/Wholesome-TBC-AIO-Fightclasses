@@ -13,7 +13,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Evocation
             if (Me.ManaPercentage < 30
-                && cast.Normal(Evocation))
+                && cast.OnSelf(Evocation))
                 return;
 
             // Arcane Intellect
@@ -24,15 +24,15 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 return;
 
             // Ice Armor
-            if (!Me.HaveBuff("Ice Armor"))
-                if (cast.Normal(IceArmor))
-                    return;
+            if (!Me.HaveBuff("Ice Armor")
+                && cast.OnSelf(IceArmor))
+                return;
 
             // Frost Armor
             if (!Me.HaveBuff("Frost Armor")
-                && !IceArmor.KnownSpell)
-                if (cast.Normal(FrostArmor))
-                    return;
+                && !IceArmor.KnownSpell
+                && cast.OnSelf(FrostArmor))
+                return;
         }
 
         protected override void Pull()
@@ -42,15 +42,15 @@ namespace WholesomeTBCAIO.Rotations.Mage
             WoWUnit _target = ObjectManager.Target;
 
             // Combustion
-            if (!Me.HaveBuff("Combustion"))
-                if (cast.Normal(Combustion))
-                    return;
+            if (!Me.HaveBuff("Combustion")
+                && cast.OnSelf(Combustion))
+                return;
 
             // Fireball
             if (_target.GetDistance < 33f
-                && (_target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 30 || !_iCanUseWand))
-                if (cast.Normal(Fireball))
-                    return;
+                && (_target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 30 || !_iCanUseWand)
+                && cast.OnTarget(Fireball))
+                return;
         }
 
         protected override void CombatRotation()
@@ -77,81 +77,73 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // Mana Shield
             if (!Me.HaveBuff("Mana Shield")
                 && (Me.HealthPercent < 30 && Me.ManaPercentage > 50
-                || Me.HealthPercent < 10))
-                if (cast.Normal(ManaShield))
-                    return;
+                || Me.HealthPercent < 10)
+                && cast.OnTarget(ManaShield))
+                return;
 
             // Use Mana Stone
             if ((ObjectManager.GetNumberAttackPlayer() > 1 && Me.ManaPercentage < 50 || Me.ManaPercentage < 5)
-                && _foodManager.ManaStone != "")
-            {
-                _foodManager.UseManaStone();
-                _foodManager.ManaStone = "";
-            }
+                && _foodManager.UseManaStone())
+                return;
 
             // Combustion
-            if (!Me.HaveBuff("Combustion"))
-                if (cast.Normal(Combustion))
-                    return;
+            if (!Me.HaveBuff("Combustion")
+                && cast.OnSelf(Combustion))
+                return;
 
             // Blast Wave
             if (settings.BlastWaveOnMulti
                 && ToolBox.GetNbEnemiesClose(10) > 1
-                && ObjectManager.GetNumberAttackPlayer() > 1)
-                if (cast.Normal(BlastWave))
-                    return;
+                && ObjectManager.GetNumberAttackPlayer() > 1
+                && cast.OnSelf(BlastWave))
+                return;
 
             // Dragon's Breath
             if (Target.GetDistance <= 10f
                 && settings.UseDragonsBreath
                 && (Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand)
-                && _polymorphedEnemy == null)
-                if (cast.Normal(DragonsBreath))
-                    return;
+                && _polymorphedEnemy == null
+                && cast.OnSelf(DragonsBreath))
+                return;
 
             // Fire Blast
-            if (Target.GetDistance < 20f
-                && Target.HealthPercent <= settings.FireblastThreshold
+            if (Target.HealthPercent <= settings.FireblastThreshold
                 && (Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand)
-                && !Target.HaveBuff("Polymorph"))
-                if (cast.Normal(FireBlast))
-                    return;
+                && !Target.HaveBuff("Polymorph")
+                && cast.OnTarget(FireBlast))
+                return;
 
             // Cone of Cold
             if (Target.GetDistance < 10
                 && settings.UseConeOfCold
-                && _polymorphedEnemy == null)
-                if (cast.Normal(ConeOfCold))
-                    return;
+                && _polymorphedEnemy == null
+                && cast.OnTarget(ConeOfCold))
+                return;
 
             // FireBall
-            if (Target.GetDistance < 33f
-                && (Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand)
-                && !Target.HaveBuff("Polymorph"))
-                if (cast.Normal(Fireball, true))
-                    return;
+            if ((Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand)
+                && !Target.HaveBuff("Polymorph")
+                && cast.OnTarget(Fireball))
+                return;
 
             // Stop wand if banned
             if (ToolBox.UsingWand()
-                && cast.BannedSpells.Contains("Shoot"))
-                if (cast.Normal(UseWand))
+                && UnitImmunities.Contains(ObjectManager.Target, "Shoot"))
+                if (cast.OnTarget(UseWand))
                     return;
 
             // Spell if wand banned
-            if (cast.BannedSpells.Contains("Shoot")
-                && Target.GetDistance < _distanceRange)
-                if (cast.Normal(Fireball) || cast.Normal(Frostbolt) || cast.Normal(ArcaneMissiles))
+            if (UnitImmunities.Contains(ObjectManager.Target, "Shoot"))
+                if (cast.OnTarget(Fireball) || cast.OnTarget(Frostbolt) || cast.OnTarget(ArcaneMissiles))
                     return;
 
             // Use Wand
             if (!ToolBox.UsingWand()
                 && _iCanUseWand
-                && ObjectManager.Target.GetDistance <= _distanceRange
                 && !cast.IsBackingUp
                 && !MovementManager.InMovement)
             {
-                RangeManager.SetRange(_distanceRange);
-                if (cast.Normal(UseWand, false))
+                if (cast.OnTarget(UseWand, false))
                     return;
             }
 

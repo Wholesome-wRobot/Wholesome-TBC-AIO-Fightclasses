@@ -113,7 +113,7 @@ namespace WholesomeTBCAIO.Settings
         public int PartyMindBlastThreshold { get; set; }
 
         // TALENT
-        [DropdownList(new string[] { "Shadow", "Shadow Party", "Holy Party" })]
+        [DropdownList(new string[] { "Shadow", "Party Shadow", "Party Holy" })]
         public override string Specialization { get; set; }
     }
 }

@@ -1,10 +1,9 @@
-﻿using robotManager.Helpful;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using WholesomeTBCAIO.Helpers;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
+using Timer = robotManager.Helpful.Timer;
 
 namespace WholesomeTBCAIO.Rotations.Druid
 {
@@ -41,68 +40,58 @@ namespace WholesomeTBCAIO.Rotations.Druid
             // Omen of Clarity
             if (!Me.HaveBuff("Omen of Clarity") 
                 && OmenOfClarity.IsSpellUsable
-                && cast.Normal(OmenOfClarity))
+                && cast.OnSelf(OmenOfClarity))
                 return;
 
             // PARTY Drink
-            ToolBox.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold);
+            if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
+                return;
+
+            // Dire Bear Form
+            if (!Me.HaveBuff("Dire Bear Form")
+                && cast.OnSelf(DireBearForm))
+                return;
+
+            // Bear Form
+            if (!DireBearForm.KnownSpell
+                && !Me.HaveBuff("Bear Form")
+                && cast.OnSelf(BearForm))
+                return;
         }
 
         protected override void Pull()
         {
             base.Pull();
 
-            _pullFromAfar = true;
-
-            if (ObjectManager.Target.Guid == Me.Guid)
-                RangeManager.SetRangeToMelee();
-
-            if (_pullMeleeTimer.ElapsedMilliseconds <= 0
-                && ObjectManager.Target.GetDistance <= _pullRange)
-                _pullMeleeTimer.Start();
-
-            if (_pullMeleeTimer.ElapsedMilliseconds > 5000)
-            {
-                Logger.Log("Going in Melee range (pull)");
-                RangeManager.SetRangeToMelee();
-                ToolBox.CheckAutoAttack(Attack);
-                _pullMeleeTimer.Reset();
-            }
-
             // Dire Bear Form
-            if (DireBearForm.KnownSpell
-                && !Me.HaveBuff("Dire Bear Form")
-                && cast.Normal(DireBearForm))
+            if (!Me.HaveBuff("Dire Bear Form")
+                && cast.OnSelf(DireBearForm))
                 return;
 
             // Bear Form
             if (!DireBearForm.KnownSpell
                 && !Me.HaveBuff("Bear Form")
-                && cast.Normal(BearForm))
+                && cast.OnSelf(BearForm))
                 return;
 
-            // Pull from afar
-            if (_pullMeleeTimer.ElapsedMilliseconds < 5000
-                && ObjectManager.Target.GetDistance <= _pullRange)
+            // Check if caster in list
+            if (_casterEnemies.Contains(ObjectManager.Target.Name))
+                _fightingACaster = true;
+
+            // Pull logic
+            if (ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { FaerieFireFeral, MoonfireRank1, Wrath }))
             {
-                RangeManager.SetRange(_pullRange);
-                if (FaerieFireFeral.KnownSpell)
-                {
-                    Logger.Log("Pulling with Faerie Fire (Feral)");
-                    Lua.RunMacroText("/cast Faerie Fire (Feral)()");
-                    Thread.Sleep(2000);
-                    return;
-                }
-                else if (Moonfire.KnownSpell
-                    && !ObjectManager.Target.HaveBuff("Moonfire")
-                    && ObjectManager.Me.Level >= 10)
-                {
-                    Logger.Log("Pulling with Moonfire (Rank 1)");
-                    Lua.RunMacroText("/cast Moonfire(Rank 1)");
-                    Usefuls.WaitIsCasting();
-                    return;
-                }
+                _combatMeleeTimer = new Timer(1000);
+                return;
             }
+        }
+
+        protected override void CombatNoTarget()
+        {
+            base.CombatNoTarget();
+
+            if (settings.PartyTankSwitchTarget)
+                AIOParty.SwitchTarget(cast, null);
         }
 
         protected override void CombatRotation()
@@ -113,37 +102,24 @@ namespace WholesomeTBCAIO.Rotations.Druid
             bool _inMeleeRange = ObjectManager.Target.GetDistance < 6f;
             WoWUnit Target = ObjectManager.Target;
 
-            if (_shouldBeInterrupted || _pullMeleeTimer.ElapsedMilliseconds <= 0)
+            if (settings.PartyTankSwitchTarget)
+                AIOParty.SwitchTarget(cast, null);
+
+            // Force melee
+            if (_combatMeleeTimer.IsReady)
                 RangeManager.SetRangeToMelee();
-
-            RegainAggro();
-
-            // Check Auto-Attacking
-            ToolBox.CheckAutoAttack(Attack);
 
             // Check if fighting a caster
             if (_shouldBeInterrupted)
             {
                 _fightingACaster = true;
+                RangeManager.SetRangeToMelee();
                 if (!_casterEnemies.Contains(Target.Name))
                     _casterEnemies.Add(Target.Name);
             }
 
-            // Melee ?
-            if (_pullMeleeTimer.ElapsedMilliseconds > 0)
-                _pullMeleeTimer.Reset();
-
-            if (_meleeTimer.ElapsedMilliseconds <= 0
-                && _pullFromAfar)
-                _meleeTimer.Start();
-
-            if ((_shouldBeInterrupted || _meleeTimer.ElapsedMilliseconds > 3000)
-                && !RangeManager.CurrentRangeIsMelee())
-            {
-                Logger.Log("Going in Melee range (combat)");
-                RangeManager.SetRangeToMelee();
-                _meleeTimer.Stop();
-            }
+            // Check Auto-Attacking
+            ToolBox.CheckAutoAttack(Attack);
 
             // Party Tranquility
             if (settings.PartyTranquility && !AIOParty.Group.Any(e => e.IsTargetingMe))
@@ -152,7 +128,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     .FindAll(m => m.HealthPercent < 50)
                     .Count > 2;
                 if (needTranquility
-                    && cast.Normal(Tranquility))
+                    && cast.OnTarget(Tranquility))
                 {
                     Usefuls.WaitIsCasting();
                     return;
@@ -164,7 +140,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             {
                 WoWPlayer needRebirth = AIOParty.Group
                     .Find(m => m.IsDead);
-                if (needRebirth != null && cast.OnFocusPlayer(Rebirth, needRebirth, onDeadTarget: true))
+                if (needRebirth != null && cast.OnFocusPlayer(Rebirth, needRebirth))
                     return;
             }
 
@@ -198,30 +174,30 @@ namespace WholesomeTBCAIO.Rotations.Druid
             // Dire Bear Form
             if (DireBearForm.KnownSpell
                 && !Me.HaveBuff("Dire Bear Form")
-                && cast.Normal(DireBearForm))
+                && cast.OnSelf(DireBearForm))
                 return;
 
             // Bear Form
             if (!DireBearForm.KnownSpell
                 && !Me.HaveBuff("Bear Form")
-                && cast.Normal(BearForm))
+                && cast.OnSelf(BearForm))
                 return;
 
             // Feral Charge
             if (Target.GetDistance > 10
-                && cast.Normal(FeralCharge))
+                && cast.OnTarget(FeralCharge))
                 return;
 
             // Interrupt with Bash
             if (_shouldBeInterrupted
-                && cast.Normal(Bash))
+                && cast.OnTarget(Bash))
                 return;
 
             // Taunt
             if (_inMeleeRange
                 && !Target.IsTargetingMe
                 && Target.Target > 0
-                && cast.Normal(Growl))
+                && cast.OnTarget(Growl))
                 return;
 
             // Challenging roar
@@ -229,37 +205,34 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 && !Target.IsTargetingMe
                 && Target.Target > 0
                 && ToolBox.GetNbEnemiesClose(8) > 2
-                && cast.Normal(ChallengingRoar))
+                && cast.OnTarget(ChallengingRoar))
                 return;
 
             // Maul
             if (!MaulOn()
                 && Me.Rage > 70)
-                cast.Normal(Maul);
+                cast.OnTarget(Maul);
 
             // Frenzied Regeneration
             if (Me.HealthPercent < 50
-                && cast.Normal(FrenziedRegeneration))
+                && cast.OnSelf(FrenziedRegeneration))
                 return;
 
             // Enrage
             if (settings.UseEnrage
-                && cast.Normal(Enrage))
+                && cast.OnSelf(Enrage))
                 return;
 
             // Faerie Fire
             if (!Target.HaveBuff("Faerie Fire (Feral)")
-                && FaerieFireFeral.KnownSpell
-                && !cast.BannedSpells.Contains("Faerie Fire (Feral)"))
-            {
-                Lua.RunMacroText("/cast Faerie Fire (Feral)()");
+                && cast.OnTarget(FaerieFireFeral))
                 return;
-            }
 
             // Demoralizing Roar
             if (!Target.HaveBuff("Demoralizing Roar")
+                && !Target.HaveBuff("Demoralizing Shout")
                 && Target.GetDistance < 9f
-                && cast.Normal(DemoralizingRoar))
+                && cast.OnTarget(DemoralizingRoar))
                 return;
 
             // Mangle
@@ -267,26 +240,21 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 && Me.Rage > 15
                 && _inMeleeRange
                 && !Target.HaveBuff("Mangle (Bear)")
-                && Wrath.IsSpellUsable
-                && !cast.BannedSpells.Contains("Mangle (Bear)"))
-            {
-                Logging.WriteFight("[Spell] Cast Mangle (Bear)");
-                Lua.RunMacroText("/cast Mangle (Bear)()");
+                && cast.OnTarget(MangleBear))
                 return;
-            }
 
             // Swipe
-            List<WoWUnit> closeEnemies = _partyEnemiesAround
-                .Where(e => e.GetDistance < 10 && e.InCombatFlagOnly)
+            List<WoWUnit> closeEnemies = AIOParty.EnemiesFighting
+                .FindAll(e => e.GetDistance < 10)
                 .ToList();
             if (closeEnemies.Count > 1
                 && Target.IsTargetingMe
-                && cast.Normal(Swipe))
+                && cast.OnTarget(Swipe))
                 return;
 
             // Lacerate
             if (ToolBox.CountDebuff("Lacerate", "target") < 5
-                && cast.Normal(Lacerate))
+                && cast.OnTarget(Lacerate))
                 return;
         }
     }

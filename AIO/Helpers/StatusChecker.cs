@@ -1,6 +1,6 @@
-﻿using robotManager.Products;
-using wManager.Wow.Helpers;
+﻿using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
+using static WholesomeTBCAIO.Helpers.Enums;
 
 namespace WholesomeTBCAIO.Helpers
 {
@@ -19,7 +19,7 @@ namespace WholesomeTBCAIO.Helpers
         {
             return BasicConditions()
                 && (!ObjectManager.Me.IsMounted || ObjectManager.Me.HaveBuff("Ghost Wolf"))
-                && !ObjectManager.Me.HasTarget
+                && (!ObjectManager.Me.HasTarget || ObjectManager.Target.IsDead || !ObjectManager.Target.IsValid || !ObjectManager.Target.IsAttackable)
                 && ObjectManager.Me.InCombatFlagOnly;
         }
 
@@ -30,16 +30,26 @@ namespace WholesomeTBCAIO.Helpers
                 && !ObjectManager.Me.InCombatFlagOnly;
         }
 
-        public static bool OutOfCombat()
+        public static bool OutOfCombat(RotationRole rotationRole)
         {
-            return BasicConditions()
+            if (BasicConditions()
                 && !ObjectManager.Me.IsMounted
                 && !ObjectManager.Me.IsCast
                 && !Fight.InFight
                 && !ObjectManager.Me.InCombatFlagOnly
                 && (!ObjectManager.Me.HaveBuff("Drink") || ObjectManager.Me.ManaPercentage >= 95)
                 && (!ObjectManager.Me.HaveBuff("Food") || ObjectManager.Me.HealthPercent >= 95)
-                && !MovementManager.InMovement;
+                && !MovementManager.InMovement)
+            {
+                // Remove Earth Shield if not tank
+                if (rotationRole != RotationRole.Tank
+                    && rotationRole != RotationRole.None
+                    && ObjectManager.Me.HaveBuff("Earth Shield"))
+                    ToolBox.CancelPlayerBuff("Earth Shield");
+
+                return true;
+            }
+            return false;
         }
 
         public static bool OOCMounted()

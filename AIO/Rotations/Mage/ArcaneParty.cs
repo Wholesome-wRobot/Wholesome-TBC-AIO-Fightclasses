@@ -11,34 +11,29 @@ namespace WholesomeTBCAIO.Rotations.Mage
         protected override void BuffRotation()
         {
             base.BuffRotation();
-
-            // PARTY Arcane Intellect
-            WoWPlayer noAI = AIOParty.Group
-                .Find(m => !m.HaveBuff(ArcaneIntellect.Name));
-            if (noAI != null && cast.OnFocusPlayer(ArcaneIntellect, noAI))
-                return;
-
+            
             // Mage Armor
             if (!Me.HaveBuff("Mage Armor")
                 && settings.ACMageArmor
-                && cast.Normal(MageArmor))
+                && cast.OnSelf(MageArmor))
                 return;
 
             // Ice Armor
             if (!Me.HaveBuff("Ice Armor")
                 && (!settings.ACMageArmor || !MageArmor.KnownSpell)
-                && cast.Normal(IceArmor))
+                && cast.OnSelf(IceArmor))
                 return;
 
             // Frost Armor
             if (!Me.HaveBuff("Frost Armor")
                 && !IceArmor.KnownSpell
                 && (!settings.ACMageArmor || !MageArmor.KnownSpell)
-                && cast.Normal(FrostArmor))
+                && cast.OnSelf(FrostArmor))
                 return;
 
             // PARTY Drink
-            ToolBox.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold);
+            if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
+                return;
         }
 
         protected override void Pull()
@@ -50,18 +45,15 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // Slow
             if (settings.ACSlow
                 && !_target.HaveBuff("Slow")
-                && Slow.IsDistanceGood
-                && cast.Normal(Slow))
+                && cast.OnTarget(Slow))
                 return;
 
             // Arcane Blast
-            if (_target.GetDistance < _distanceRange
-                && cast.Normal(ArcaneBlast))
+            if (cast.OnTarget(ArcaneBlast))
                 return;
 
             // Frost Bolt
-            if (_target.GetDistance < _distanceRange
-                && cast.Normal(Frostbolt))
+            if (cast.OnTarget(Frostbolt))
                 return;
         }
 
@@ -70,14 +62,11 @@ namespace WholesomeTBCAIO.Rotations.Mage
             base.CombatRotation();
             Lua.LuaDoString("PetAttack();", false);
             WoWUnit Target = ObjectManager.Target;
-            List<WoWUnit> surroundingEnemies = ObjectManager.GetObjectWoWUnit()
-                .Where(e => e.IsAlive && e.IsValid && !e.PlayerControlled && e.IsAttackable && e.InCombatFlagOnly)
-                .ToList();
 
             // PARTY Remove Curse
             if (settings.PartyRemoveCurse)
             {
-                List<WoWPlayer> needRemoveCurse = AIOParty.Group
+                List<AIOPartyMember> needRemoveCurse = AIOParty.Group
                     .FindAll(m => ToolBox.HasCurseDebuff(m.Name))
                     .ToList();
                 if (needRemoveCurse.Count > 0 && cast.OnFocusPlayer(RemoveCurse, needRemoveCurse[0]))
@@ -86,47 +75,44 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Use Mana Stone
             if (Me.ManaPercentage < 20
-                && _foodManager.ManaStone != "")
-            {
-                _foodManager.UseManaStone();
-                _foodManager.ManaStone = "";
-            }
+                && _foodManager.UseManaStone())
+                return;
 
             // Evocation
             if (Me.ManaPercentage < 20
-                && !surroundingEnemies.Any(e => e.Target == Me.Guid)
-                && cast.Normal(Evocation))
+                && !AIOParty.EnemiesClose.Any(e => e.Target == Me.Guid)
+                && cast.OnSelf(Evocation))
             {
                 Usefuls.WaitIsCasting();
                 return;
             }
-
+            
             // Arcane Explosion
             if (ToolBox.GetNbEnemiesClose(8f) > 2
-                && !surroundingEnemies.Any(e => e.Target == Me.Guid)
+                && !AIOParty.EnemiesClose.Any(e => e.Target == Me.Guid)
                 && Me.Mana > 10
-                && cast.Normal(ArcaneExplosion))
+                && cast.OnSelf(ArcaneExplosion))
                 return;
 
             // Icy Veins
             if (Target.HealthPercent < 100
                 && Me.ManaPercentage > 10
-                && cast.Normal(IcyVeins))
+                && cast.OnSelf(IcyVeins))
                 return;
 
             // Arcane Power
             if (Target.HealthPercent < 100
                 && Me.ManaPercentage > 10
-                && cast.Normal(ArcanePower))
+                && cast.OnSelf(ArcanePower))
                 return;
 
             // Presence of Mind
             if (!Me.HaveBuff("Presence of Mind")
                 && Target.HealthPercent < 100
-                && cast.Normal(PresenceOfMind))
+                && cast.OnSelf(PresenceOfMind))
                 return;
             if (Me.HaveBuff("Presence of Mind"))
-                if (cast.Normal(ArcaneBlast) || cast.Normal(Frostbolt))
+                if (cast.OnTarget(ArcaneBlast) || cast.OnTarget(Frostbolt))
                 {
                     Usefuls.WaitIsCasting();
                     return;
@@ -136,7 +122,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             if (IcyVeins.GetCurrentCooldown > 0
                 && Me.ManaPercentage > 10
                 && !Me.HaveBuff(IcyVeins.Name)
-                && cast.Normal(ColdSnap))
+                && cast.OnSelf(ColdSnap))
                 return;
 
             // Slow
@@ -144,53 +130,45 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 && !Target.HaveBuff("Slow")
                 && Target.HealthPercent < 10
                 && Me.ManaPercentage > 10
-                && Slow.IsDistanceGood
-                && cast.Normal(Slow))
+                && cast.OnTarget(Slow))
                 return;
 
+            int arcaneBlastDebuffCount = ToolBox.CountDebuff("Arcane Blast");
             bool _shouldCastArcaneBlast =
                 ArcaneBlast.KnownSpell
                 && (Me.ManaPercentage > 70
                 || Me.HaveBuff("Clearcasting")
-                || (Me.ManaPercentage > 50 && ToolBox.CountDebuff("Arcane Blast") < 3)
-                || (Me.ManaPercentage > 35 && ToolBox.CountDebuff("Arcane Blast") < 2)
-                || (ToolBox.CountDebuff("Arcane Blast") < 1));
+                || (Me.ManaPercentage > 50 && arcaneBlastDebuffCount < 3)
+                || (Me.ManaPercentage > 35 && arcaneBlastDebuffCount < 2)
+                || (arcaneBlastDebuffCount < 1));
 
             // Arcane Blast
             if (_shouldCastArcaneBlast
-                && Target.GetDistance < _distanceRange
-                && cast.Normal(ArcaneBlast))
+                && cast.OnTarget(ArcaneBlast))
                 return;
 
             // Frost Bolt
-            if (Target.GetDistance < _distanceRange
-                && Me.ManaPercentage > 10
-                && cast.Normal(Frostbolt))
+            if (cast.OnTarget(Frostbolt))
                 return;
 
             // Stop wand if banned
             if (ToolBox.UsingWand()
-                && cast.BannedSpells.Contains("Shoot")
-                && cast.Normal(UseWand))
+                && UnitImmunities.Contains(ObjectManager.Target, "Shoot")
+                && cast.OnTarget(UseWand))
                 return;
 
             // Spell if wand banned
-            if (cast.BannedSpells.Contains("Shoot")
-                && Target.GetDistance < _distanceRange)
-                if (cast.Normal(ArcaneBlast) || cast.Normal(ArcaneMissiles) || cast.Normal(Frostbolt) || cast.Normal(Fireball))
+            if (UnitImmunities.Contains(ObjectManager.Target, "Shoot"))
+                if (cast.OnTarget(ArcaneBlast) || cast.OnTarget(ArcaneMissiles) || cast.OnTarget(Frostbolt) || cast.OnTarget(Fireball))
                     return;
 
             // Use Wand
             if (!ToolBox.UsingWand()
                 && _iCanUseWand
-                && ObjectManager.Target.GetDistance <= _distanceRange
                 && !cast.IsBackingUp
-                && !MovementManager.InMovement)
-            {
-                RangeManager.SetRange(_distanceRange);
-                if (cast.Normal(UseWand, false))
-                    return;
-            }
+                && !MovementManager.InMovement
+                && cast.OnTarget(UseWand, false))
+                return;
         }
     }
 }

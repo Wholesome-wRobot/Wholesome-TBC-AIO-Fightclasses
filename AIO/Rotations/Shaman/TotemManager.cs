@@ -1,4 +1,5 @@
 ﻿using robotManager.Helpful;
+using System.Collections.Generic;
 using WholesomeTBCAIO.Helpers;
 using wManager.Wow.Class;
 using wManager.Wow.Helpers;
@@ -22,6 +23,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         private AIOSpell GraceOfAirTotem = new AIOSpell("Grace of Air Totem");
         private AIOSpell EarthElementalTotem = new AIOSpell("Earth Elemental Totem");
         private AIOSpell TotemOfWrath = new AIOSpell("Totem of Wrath");
+        private AIOSpell ManaTideTotem = new AIOSpell("Mana Tide Totem");
 
         public bool CastTotems(IClassRotation spec)
         {
@@ -61,42 +63,45 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             string currentEarthTotem = Lua.LuaDoString<string>
                 (@"local haveTotem, totemName, startTime, duration = GetTotemInfo(2); return totemName;");
 
-            // Earth Elemental Totem on multiaggro
-            if (ObjectManager.GetNumberAttackPlayer() > 1
-                && EarthElementalTotem.KnownSpell
-                && !currentEarthTotem.Contains("Stoneclaw Totem")
-                && !currentEarthTotem.Contains("Earth Elemental Totem"))
+            if (spec.RotationType == Enums.RotationType.Solo)
             {
-                if (Cast(EarthElementalTotem))
-                    return true;
-            }
+                // Earth Elemental Totem on multiaggro
+                if (ObjectManager.GetNumberAttackPlayer() > 1
+                    && EarthElementalTotem.KnownSpell
+                    && !currentEarthTotem.Contains("Stoneclaw Totem")
+                    && !currentEarthTotem.Contains("Earth Elemental Totem"))
+                {
+                    if (Cast(EarthElementalTotem))
+                        return true;
+                }
 
-            // Stoneclaw on multiaggro
-            if (ObjectManager.GetNumberAttackPlayer() > 1
-                && StoneclawTotem.KnownSpell
-                && !currentEarthTotem.Contains("Stoneclaw Totem")
-                && !currentEarthTotem.Contains("Earth Elemental Totem"))
-            {
-                if (Cast(StoneclawTotem))
-                    return true;
+                // Stoneclaw on multiaggro
+                if (ObjectManager.GetNumberAttackPlayer() > 1
+                    && StoneclawTotem.KnownSpell
+                    && !currentEarthTotem.Contains("Stoneclaw Totem")
+                    && !currentEarthTotem.Contains("Earth Elemental Totem"))
+                {
+                    if (Cast(StoneclawTotem))
+                        return true;
+                }
             }
 
             if (Shaman.settings.UseEarthTotems)
             {
                 // Strenght of Earth totem
-                if (spec is Enhancement
+                if ((spec is Enhancement || spec is EnhancementParty || spec is ShamanRestoParty)
                     && (!Shaman.settings.UseStoneSkinTotem || !StoneskinTotem.KnownSpell)
                     && !Me.HaveBuff("Strength of Earth")
                     && !currentEarthTotem.Contains("Stoneclaw Totem")
                     && !currentEarthTotem.Contains("Earth Elemental Totem")
-                    && ObjectManager.GetNumberAttackPlayer() < 2)
+                    && (ObjectManager.GetNumberAttackPlayer() < 2 || spec.RotationType == Enums.RotationType.Party))
                 {
                     if (Cast(StrengthOfEarthTotem))
                         return true;
                 }
 
                 // Stoneskin Totem
-                if ((Shaman.settings.UseStoneSkinTotem || !StrengthOfEarthTotem.KnownSpell || spec is Elemental || ObjectManager.GetNumberAttackPlayer() > 1)
+                if ((Shaman.settings.UseStoneSkinTotem || !StrengthOfEarthTotem.KnownSpell || spec is Elemental || (spec.RotationType == Enums.RotationType.Solo && ObjectManager.GetNumberAttackPlayer() > 1))
                     && !Me.HaveBuff("Stoneskin")
                     && !currentEarthTotem.Contains("Stoneclaw Totem")
                     && !currentEarthTotem.Contains("Earth Elemental Totem"))
@@ -176,8 +181,19 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 string currentWaterTotem = Lua.LuaDoString<string>
                     (@"local _, totemName, _, _ = GetTotemInfo(3); return totemName;");
 
+                // Mana Tide Totem
+                if (ManaTideTotem.KnownSpell)
+                {
+                    List<AIOPartyMember> alliesNeedingMana = AIOParty.Group
+                        .FindAll(a => a.ManaPercentage < 20);
+                    if ((alliesNeedingMana.Count > 1 || Me.ManaPercentage < 10)
+                        && Cast(ManaTideTotem))
+                        return true;
+                }
+
                 // Mana Spring Totem
-                if (!Me.HaveBuff("Mana Spring"))
+                if (!currentWaterTotem.Contains("Mana Tide")
+                    && !Me.HaveBuff("Mana Spring"))
                 {
                     if (Cast(ManaSpringTotem))
                         return true;

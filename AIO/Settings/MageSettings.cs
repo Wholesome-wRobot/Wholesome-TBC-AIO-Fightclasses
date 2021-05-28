@@ -137,7 +137,7 @@ namespace WholesomeTBCAIO.Settings
         public bool PartyRemoveCurse { get; set; }
 
         // TALENT
-        [DropdownList(new string[] { "Frost", "Frost Party", "Arcane", "Arcane Party", "Fire", "Fire Party" })]
+        [DropdownList(new string[] { "Frost", "Arcane", "Fire", "Party Frost", "Party Arcane", "Party Fire" })]
         public override string Specialization { get; set; }
     }
 }

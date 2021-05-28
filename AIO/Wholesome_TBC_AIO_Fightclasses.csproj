@@ -32,7 +32,7 @@
     <PlatformTarget>x86</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>F:\WoW\WoW TBC\WRobot\WRobot\FightClass\</OutputPath>
+    <OutputPath>F:\WoW\WoW TBC\WRobot\FightClass\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -53,8 +53,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="MemoryRobot">
-      <HintPath>F:\WoW\WoW TBC\WRobot\WRobot\Bin\MemoryRobot.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>F:\WoW\WoW TBC\WRobot\Bin\MemoryRobot.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Xaml.Behaviors, Version=1.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Xaml.Behaviors.Wpf.1.1.19\lib\net45\Microsoft.Xaml.Behaviors.dll</HintPath>
@@ -62,8 +61,7 @@
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="robotManager">
-      <HintPath>F:\WoW\WoW TBC\WRobot\WRobot\Bin\robotManager.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>F:\WoW\WoW TBC\WRobot\Bin\robotManager.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
@@ -79,8 +77,7 @@
     <Reference Include="System.XML" />
     <Reference Include="WindowsBase" />
     <Reference Include="wManager">
-      <HintPath>F:\WoW\WoW TBC\WRobot\WRobot\Bin\wManager.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>F:\WoW\WoW TBC\WRobot\Bin\wManager.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -88,6 +85,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AutoUpdater.cs" />
+    <Compile Include="Helpers\AIOPartyMember.cs" />
     <Compile Include="Helpers\AIOSpell.cs" />
     <Compile Include="Helpers\Cast.cs" />
     <Compile Include="Helpers\Enums.cs" />
@@ -96,6 +94,7 @@
     <Compile Include="Helpers\Racials.cs" />
     <Compile Include="Helpers\RangeManager.cs" />
     <Compile Include="Helpers\StatusChecker.cs" />
+    <Compile Include="Helpers\UnitImmunities.cs" />
     <Compile Include="Rotations\Druid\RestorationParty.cs" />
     <Compile Include="Rotations\Druid\FeralTankParty.cs" />
     <Compile Include="Rotations\Druid\FeralDPSParty.cs" />
@@ -109,6 +108,9 @@
     <Compile Include="Rotations\Mage\Fire.cs" />
     <Compile Include="Rotations\Mage\Arcane.cs" />
     <Compile Include="Rotations\Mage\Frost.cs" />
+    <Compile Include="Rotations\Paladin\PaladinHolyParty.cs" />
+    <Compile Include="Rotations\Paladin\PaladinProtectionParty.cs" />
+    <Compile Include="Rotations\Paladin\RetributionParty.cs" />
     <Compile Include="Rotations\Paladin\Retribution.cs" />
     <Compile Include="Rotations\Priest\HolyPriestParty.cs" />
     <Compile Include="Rotations\Priest\ShadowParty.cs" />
@@ -116,7 +118,10 @@
     <Compile Include="Rotations\Rogue\Combat.cs" />
     <Compile Include="Rotations\Rogue\RogueCombatParty.cs" />
     <Compile Include="Rotations\Shaman\Elemental.cs" />
+    <Compile Include="Rotations\Shaman\ShamanRestoParty.cs" />
+    <Compile Include="Rotations\Shaman\EnhancementParty.cs" />
     <Compile Include="Rotations\Shaman\Enhancement.cs" />
+    <Compile Include="Rotations\Warlock\AfflictionParty.cs" />
     <Compile Include="Rotations\Warlock\Affliction.cs" />
     <Compile Include="Rotations\Warlock\Demonology.cs" />
     <Compile Include="Rotations\Warrior\FuryParty.cs" />

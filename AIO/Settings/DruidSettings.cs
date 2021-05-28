@@ -1,7 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
 using MarsSettingsGUI;
-using WholesomeTBCAIO.Helpers;
 
 namespace WholesomeTBCAIO.Settings
 {
@@ -133,7 +132,7 @@ namespace WholesomeTBCAIO.Settings
 
 
         // TALENT
-        [DropdownList(new string[] { "Feral", "Feral DPS Party", "Feral Tank Party", "Restoration Party" })]
+        [DropdownList(new string[] { "Feral", "Party Feral DPS", "Party Feral Tank", "Party Restoration" })]
         public override string Specialization { get; set; }
     }
 }

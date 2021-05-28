@@ -68,7 +68,7 @@ namespace WholesomeTBCAIO.Settings
         public bool RiposteAll { get; set; }
 
         // TALENT
-        [DropdownList(new string[] { "Combat", "Combat Party" })]
+        [DropdownList(new string[] { "Combat", "Party Combat" })]
         public override string Specialization { get; set; }
     }
 }

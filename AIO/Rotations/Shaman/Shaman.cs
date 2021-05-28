@@ -1,15 +1,15 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Threading;
 using robotManager.Helpful;
 using wManager.Events;
-using wManager.Wow.Class;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 using System.Collections.Generic;
 using WholesomeTBCAIO.Settings;
 using WholesomeTBCAIO.Helpers;
 using System.ComponentModel;
+using Timer = robotManager.Helpful.Timer;
+using System.Linq;
 
 namespace WholesomeTBCAIO.Rotations.Shaman
 {
@@ -23,8 +23,6 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
         protected TotemManager totemManager = new TotemManager();
 
-        protected Stopwatch _pullMeleeTimer = new Stopwatch();
-        protected Stopwatch _meleeTimer = new Stopwatch();
         protected WoWLocalPlayer Me = ObjectManager.Me;
 
         protected bool _fightingACaster = false;
@@ -32,24 +30,33 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         protected int _lowManaThreshold = 20;
         protected int _mediumManaThreshold = 50;
         protected List<string> _casterEnemies = new List<string>();
-        protected int _pullAttempt;
-        protected List<WoWUnit> _partyEnemiesAround = new List<WoWUnit>();
+
+        private Timer _moveBehindTimer = new Timer();
+        protected Timer _combatMeleeTimer = new Timer();
 
         protected Shaman specialization;
 
         public void Initialize(IClassRotation specialization)
         {
             settings = ShamanSettings.Current;
+            if (settings.PartyDrinkName != "")
+                ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
             cast = new Cast(LightningBolt, settings.ActivateCombatDebug, null, settings.AutoDetectImmunities);
 
             this.specialization = specialization as Shaman;
             (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);
             TalentsManager.InitTalents(settings);
 
+            ToolBox.AddToDoNotSellList("Air Totem");
+            ToolBox.AddToDoNotSellList("Earth Totem");
+            ToolBox.AddToDoNotSellList("Water Totem");
+            ToolBox.AddToDoNotSellList("Fire Totem");
+
             RangeManager.SetRange(_pullRange);
 
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightStart += FightStartHandler;
+            FightEvents.OnFightLoop += FightLoopHandler;
 
             Rotation();
         }
@@ -59,6 +66,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         {
             FightEvents.OnFightEnd -= FightEndHandler;
             FightEvents.OnFightStart -= FightStartHandler;
+            FightEvents.OnFightLoop -= FightLoopHandler;
             cast.Dispose();
             Logger.Log("Disposed");
         }
@@ -69,16 +77,13 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             {
                 try
                 {
-                    if (StatusChecker.BasicConditions())
+                    if (StatusChecker.BasicConditions() && !ObjectManager.Me.HaveBuff("Drink") && !ObjectManager.Me.HaveBuff("Food"))
                     {
                         ApplyEnchantWeapon();
                         totemManager.CheckForTotemicCall();
                     }
 
-                    if (RotationType == Enums.RotationType.Party)
-                        _partyEnemiesAround = ToolBox.GetSuroundingEnemies();
-
-                    if (StatusChecker.OutOfCombat())
+                    if (StatusChecker.OutOfCombat(RotationRole))
                         specialization.BuffRotation();
 
                     if (StatusChecker.InPull())
@@ -86,6 +91,9 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
                     if (StatusChecker.InCombat())
                         specialization.CombatRotation();
+
+                    if (AIOParty.Group.Any(p => p.InCombatFlagOnly && p.GetDistance < 50))
+                        specialization.HealerCombat();
                 }
                 catch (Exception arg)
                 {
@@ -98,126 +106,27 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
         protected virtual void BuffRotation()
         {
-            if (!Me.HaveBuff("Ghost Wolf"))
-            {
-                // Ghost Wolf
-                if (settings.GhostWolfMount
-                    && wManager.wManagerSetting.CurrentSetting.GroundMountName == ""
-                    && GhostWolf.KnownSpell)
-                    ToolBox.SetGroundMount(GhostWolf.Name);
-
-                // Lesser Healing Wave OOC
-                if (Me.HealthPercent < settings.OOCHealThreshold)
-                    if (cast.OnSelf(LesserHealingWave))
-                        return;
-
-                // Healing Wave OOC
-                if (Me.HealthPercent < settings.OOCHealThreshold)
-                    if (cast.OnSelf(HealingWave))
-                        return;
-
-                // Water Shield
-                if (!Me.HaveBuff("Water Shield")
-                    && !Me.HaveBuff("Lightning Shield")
-                    && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage < 20))
-                    if (cast.Normal(WaterShield))
-                        return;
-            }
         }
 
         protected virtual void Pull()
         {
-            // Check if caster
-            if (_casterEnemies.Contains(ObjectManager.Target.Name))
-                _fightingACaster = true;
-
-            // Remove Ghost Wolf
-            if (Me.HaveBuff("Ghost Wolf"))
-                if (cast.Normal(GhostWolf))
-                    return;
-
-            // Water Shield
-            if (!Me.HaveBuff("Water Shield")
-                && !Me.HaveBuff("Lightning Shield")
-                && (settings.UseWaterShield || !settings.UseLightningShield) || Me.ManaPercentage < _lowManaThreshold)
-                if (cast.Normal(WaterShield))
-                    return;
-
-            // Ligntning Shield
-            if (Me.ManaPercentage > _lowManaThreshold
-                && !Me.HaveBuff("Lightning Shield")
-                && !Me.HaveBuff("Water Shield")
-                && settings.UseLightningShield
-                && (!WaterShield.KnownSpell || !settings.UseWaterShield))
-                if (cast.Normal(LightningShield))
-                    return;
         }
 
         protected virtual void CombatRotation()
         {
-            WoWUnit Target = ObjectManager.Target;
-            bool _isPoisoned = ToolBox.HasPoisonDebuff();
-            bool _hasDisease = ToolBox.HasDiseaseDebuff();
+        }
 
-            // Remove Ghost Wolf
-            if (Me.HaveBuff("Ghost Wolf"))
-                if (cast.Normal(GhostWolf))
-                    return;
-
-            // Healing Wave + Lesser Healing Wave
-            if (Me.HealthPercent < settings.HealThreshold
-                && (Target.HealthPercent > 15 || Me.HealthPercent < 25))
-                if (cast.OnSelf(LesserHealingWave) || cast.OnSelf(HealingWave))
-                    return;
-
-            // Cure Poison
-            if (settings.CurePoison
-                && _isPoisoned 
-                && Me.ManaPercentage > _lowManaThreshold)
-            {
-                Thread.Sleep(Main.humanReflexTime);
-                if (cast.OnSelf(CurePoison))
-                    return;
-            }
-
-            // Cure Disease
-            if (settings.CureDisease
-                && _hasDisease 
-                && Me.ManaPercentage > _lowManaThreshold)
-            {
-                Thread.Sleep(Main.humanReflexTime);
-                if (cast.OnSelf(CureDisease))
-                    return;
-            }
-
-            // Bloodlust
-            if (!Me.HaveBuff("Bloodlust")
-                && Target.HealthPercent > 80)
-                if (cast.Normal(Bloodlust))
-                    return;
-
-            // Water Shield
-            if (!Me.HaveBuff("Water Shield")
-                && !Me.HaveBuff("Lightning Shield")
-                && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage <= _lowManaThreshold))
-                if (cast.Normal(WaterShield))
-                    return;
-
-            // Lightning Shield
-            if (Me.ManaPercentage > _lowManaThreshold
-                && !Me.HaveBuff("Lightning Shield")
-                && !Me.HaveBuff("Water Shield")
-                && settings.UseLightningShield
-                && (!WaterShield.KnownSpell || !settings.UseWaterShield))
-                if (cast.Normal(LightningShield))
-                    return;
+        protected virtual void HealerCombat()
+        {
         }
 
         protected AIOSpell LightningBolt = new AIOSpell("Lightning Bolt");
+        protected AIOSpell LightningBoltRank1 = new AIOSpell("Lightning Bolt", 1);
         protected AIOSpell HealingWave = new AIOSpell("Healing Wave");
         protected AIOSpell LesserHealingWave = new AIOSpell("Lesser Healing Wave");
         protected AIOSpell RockbiterWeapon = new AIOSpell("Rockbiter Weapon");
         protected AIOSpell EarthShock = new AIOSpell("Earth Shock");
+        protected AIOSpell EarthShockRank1 = new AIOSpell("Earth Shock", 1);
         protected AIOSpell FlameShock = new AIOSpell("Flame Shock");
         protected AIOSpell FrostShock = new AIOSpell("Frost Shock");
         protected AIOSpell LightningShield = new AIOSpell("Lightning Shield");
@@ -232,16 +141,20 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         protected AIOSpell ElementalMastery = new AIOSpell("Elemental Mastery");
         protected AIOSpell ChainLightning = new AIOSpell("Chain Lightning");
         protected AIOSpell Bloodlust = new AIOSpell("Bloodlust");
+        protected AIOSpell EarthShield = new AIOSpell("Earth Shield");
+        protected AIOSpell ChainHeal = new AIOSpell("Chain Heal");
+        protected AIOSpell NaturesSwiftness = new AIOSpell("Nature\'s Swiftness");
+        protected AIOSpell AncestralSpirit = new AIOSpell("Ancestral Spirit");
 
         protected virtual void ApplyEnchantWeapon()
         {
             if (!HaveMainHandEnchant || HaveOffHandWheapon && !HaveOffHandEnchant)
             {
                 if (!WindfuryWeapon.KnownSpell && RockbiterWeapon.KnownSpell)
-                    cast.Normal(RockbiterWeapon);
+                    cast.OnSelf(RockbiterWeapon);
 
                 if (WindfuryWeapon.KnownSpell)
-                    cast.Normal(WindfuryWeapon);
+                    cast.OnSelf(WindfuryWeapon);
             }
         }
 
@@ -268,14 +181,22 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         private void FightEndHandler(ulong guid)
         {
             _fightingACaster = false;
-            _meleeTimer.Reset();
-            _pullMeleeTimer.Reset();
-            _pullAttempt = 0;
         }
 
         private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)
         {
             RangeManager.SetRange(_pullRange);
+        }
+
+        private void FightLoopHandler(WoWUnit unit, CancelEventArgs cancel)
+        {
+            if (specialization is EnhancementParty
+                && settings.PartyStandBehind
+                && _moveBehindTimer.IsReady)
+            {
+                if (ToolBox.StandBehindTargetCombat())
+                    _moveBehindTimer = new Timer(4000);
+            }
         }
     }
 }

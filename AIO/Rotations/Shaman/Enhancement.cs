@@ -1,7 +1,8 @@
-﻿using System.Threading;
+﻿using System.Collections.Generic;
+using System.Threading;
 using WholesomeTBCAIO.Helpers;
-using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
+using Timer = robotManager.Helpful.Timer;
 
 namespace WholesomeTBCAIO.Rotations.Shaman
 {
@@ -10,204 +11,229 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         protected override void BuffRotation()
         {
             base.BuffRotation();
+
+            if (!Me.HaveBuff("Ghost Wolf"))
+            {
+                // Ghost Wolf
+                if (settings.GhostWolfMount
+                    && wManager.wManagerSetting.CurrentSetting.GroundMountName == ""
+                    && GhostWolf.KnownSpell)
+                    ToolBox.SetGroundMount(GhostWolf.Name);
+
+                // Lesser Healing Wave OOC
+                if (Me.HealthPercent < settings.OOCHealThreshold
+                    && cast.OnSelf(LesserHealingWave))
+                    return;
+
+                // Healing Wave OOC
+                if (Me.HealthPercent < settings.OOCHealThreshold
+                    && cast.OnSelf(HealingWave))
+                    return;
+
+                // Water Shield
+                if (!Me.HaveBuff("Water Shield")
+                    && !Me.HaveBuff("Lightning Shield")
+                    && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage < 20)
+                    && cast.OnSelf(WaterShield))
+                    return;
+            }
         }
 
         protected override void Pull()
         {
-            // Melee ?
-            if (_pullMeleeTimer.ElapsedMilliseconds <= 0
-                && ObjectManager.Target.GetDistance <= _pullRange + 3)
-                _pullMeleeTimer.Start();
-
-            if (_pullMeleeTimer.ElapsedMilliseconds > 8000
-                && !RangeManager.CurrentRangeIsMelee())
-            {
-                RangeManager.SetRangeToMelee();
-                _pullMeleeTimer.Reset();
-            }
-
             base.Pull();
 
-            if (!settings.ENPullWithLightningBolt && !ToolBox.CheckIfEnemiesAround(ObjectManager.Target, 20f))
-            {
-                RangeManager.SetRangeToMelee();
+            // Check if caster
+            if (_casterEnemies.Contains(ObjectManager.Target.Name))
+                _fightingACaster = true;
+
+            // Remove Ghost Wolf
+            if (Me.HaveBuff("Ghost Wolf")
+                && cast.OnSelf(GhostWolf))
                 return;
-            }
 
-            // Pull with Lightning Bolt
-            if (ObjectManager.Target.GetDistance <= _pullRange
-                && !RangeManager.CurrentRangeIsMelee())
+            // Water Shield
+            if (!Me.HaveBuff("Water Shield")
+                && !Me.HaveBuff("Lightning Shield")
+                && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage < _lowManaThreshold)
+                && cast.OnSelf(WaterShield))
+                return;
+
+            // Ligntning Shield
+            if (Me.ManaPercentage > _lowManaThreshold
+                && !Me.HaveBuff("Lightning Shield")
+                && !Me.HaveBuff("Water Shield")
+                && settings.UseLightningShield
+                && (!WaterShield.KnownSpell || !settings.UseWaterShield)
+                && cast.OnTarget(LightningShield))
+                return;
+
+            // Pull logic
+            if (ToolBox.Pull(cast, settings.ENAlwaysPullWithLightningBolt, new List<AIOSpell> { settings.ENPullRankOneLightningBolt ? LightningBoltRank1 : null, LightningBolt }))
             {
-                // pull with rank one
-                if (settings.ENPullRankOneLightningBolt
-                    && LightningBolt.IsSpellUsable)
-                {
-                    MovementManager.StopMove();
-                    Lua.RunMacroText("/cast Lightning Bolt(Rank 1)");
-                }
-
-                // pull with max rank
-                if (!settings.ENPullRankOneLightningBolt
-                    && LightningBolt.IsSpellUsable)
-                {
-                    MovementManager.StopMove();
-                    Lua.RunMacroText("/cast Lightning Bolt");
-                }
-
-                _pullAttempt++;
-                Thread.Sleep(300);
-
-                // Check if we're NOT casting
-                if (!Me.IsCast)
-                {
-                    Logger.Log($"Pull attempt failed ({_pullAttempt})");
-                    if (_pullAttempt > 3)
-                    {
-                        Logger.Log("Cast unsuccesful, going in melee");
-                        RangeManager.SetRangeToMelee();
-                    }
-                    return;
-                }
-
-                // If we're casting
-                Usefuls.WaitIsCasting();
-
-                int limit = 1500;
-                while (!Me.InCombatFlagOnly && limit > 0)
-                {
-                    Thread.Sleep(100);
-                    limit -= 100;
-                }
+                _combatMeleeTimer = new Timer(2000);
+                return;
             }
         }
 
         protected override void CombatRotation()
         {
-            bool _shouldBeInterrupted = false;
+            base.CombatRotation();
 
             WoWUnit Target = ObjectManager.Target;
+            bool _isPoisoned = ToolBox.HasPoisonDebuff();
+            bool _hasDisease = ToolBox.HasDiseaseDebuff();
+            bool _shouldBeInterrupted = ToolBox.TargetIsCasting();
+
+            // Force melee
+            if (_combatMeleeTimer.IsReady)
+                RangeManager.SetRangeToMelee();
 
             // Check Auto-Attacking
             ToolBox.CheckAutoAttack(Attack);
 
-            // Check if we need to interrupt
-            int channelTimeLeft = Lua.LuaDoString<int>(@"local spell, _, _, _, endTimeMS = UnitChannelInfo('target')
-                                    if spell then
-                                     local finish = endTimeMS / 1000 - GetTime()
-                                     return finish
-                                    end");
-            if (channelTimeLeft < 0 || Target.CastingTimeLeft > ToolBox.GetLatency())
-                _shouldBeInterrupted = true;
-
-            // Melee ?
-            if (_pullMeleeTimer.ElapsedMilliseconds > 0)
-                _pullMeleeTimer.Reset();
-
-            if (_meleeTimer.ElapsedMilliseconds <= 0
-                && !RangeManager.CurrentRangeIsMelee())
-                _meleeTimer.Start();
-
-            if ((_shouldBeInterrupted || _meleeTimer.ElapsedMilliseconds > 8000)
-                && !RangeManager.CurrentRangeIsMelee())
+            if (_shouldBeInterrupted)
             {
-                Logger.LogDebug("Going in melee range");
-                if (!_casterEnemies.Contains(Target.Name))
-                    _casterEnemies.Add(Target.Name);
                 _fightingACaster = true;
                 RangeManager.SetRangeToMelee();
-                _meleeTimer.Stop();
+                if (!_casterEnemies.Contains(Target.Name))
+                    _casterEnemies.Add(Target.Name);
             }
 
-            // BASE ROTATION
-            base.CombatRotation();
+            // Remove Ghost Wolf
+            if (Me.HaveBuff("Ghost Wolf")
+                && cast.OnSelf(GhostWolf))
+                return;
+
+            // Healing Wave + Lesser Healing Wave
+            if (Me.HealthPercent < settings.HealThreshold
+                && (Target.HealthPercent > 15 || Me.HealthPercent < 25))
+                if (cast.OnSelf(LesserHealingWave) || cast.OnSelf(HealingWave))
+                    return;
+
+            // Cure Poison
+            if (settings.CurePoison
+                && _isPoisoned
+                && CurePoison.KnownSpell
+                && Me.ManaPercentage > _lowManaThreshold)
+            {
+                Thread.Sleep(Main.humanReflexTime);
+                if (cast.OnSelf(CurePoison))
+                    return;
+            }
+
+            // Cure Disease
+            if (settings.CureDisease
+                && CureDisease.KnownSpell
+                && _hasDisease
+                && Me.ManaPercentage > _lowManaThreshold)
+            {
+                Thread.Sleep(Main.humanReflexTime);
+                if (cast.OnSelf(CureDisease))
+                    return;
+            }
+
+            // Bloodlust
+            if (!Me.HaveBuff("Bloodlust")
+                && Target.HealthPercent > 80
+                && cast.OnSelf(Bloodlust))
+                    return;
+
+            // Water Shield
+            if (!Me.HaveBuff("Water Shield")
+                && !Me.HaveBuff("Lightning Shield")
+                && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage <= _lowManaThreshold)
+                && cast.OnSelf(WaterShield))
+                return;
+
+            // Lightning Shield
+            if (Me.ManaPercentage > _lowManaThreshold
+                && !Me.HaveBuff("Lightning Shield")
+                && !Me.HaveBuff("Water Shield")
+                && settings.UseLightningShield
+                && (!WaterShield.KnownSpell || !settings.UseWaterShield)
+                && cast.OnTarget(LightningShield))
+                return;
 
             // Shamanistic Rage
             if (Me.ManaPercentage < _mediumManaThreshold
-                && (Target.HealthPercent > 80 && !settings.ENShamanisticRageOnMultiOnly || ObjectManager.GetNumberAttackPlayer() > 1))
-                if (cast.Normal(ShamanisticRage))
-                    return;
+                && (Target.HealthPercent > 80 && !settings.ENShamanisticRageOnMultiOnly || ObjectManager.GetNumberAttackPlayer() > 1)
+                && cast.OnSelf(ShamanisticRage))
+                return;
 
             // Earth Shock Focused
             if (Me.HaveBuff("Focused")
-                && Target.GetDistance < 19f)
-                if (cast.Normal(EarthShock))
-                    return;
+                && Target.GetDistance < 19f
+                && cast.OnTarget(EarthShock))
+                return;
 
             // Frost Shock
             if ((Target.CreatureTypeTarget == "Humanoid" || Target.Name.Contains("Plainstrider"))
                 && settings.ENFrostShockHumanoids
                 && Target.HealthPercent < 40
-                && !Target.HaveBuff("Frost Shock"))
-                if (cast.Normal(FrostShock))
-                    return;
+                && !Target.HaveBuff("Frost Shock")
+                && cast.OnTarget(FrostShock))
+                return;
 
             // Earth Shock Interupt Rank 1
             if (_shouldBeInterrupted
-                && Target.GetDistance < 19f
                 && (settings.ENInterruptWithRankOne || Me.ManaPercentage <= _lowManaThreshold))
             {
                 _fightingACaster = true;
                 if (!_casterEnemies.Contains(Target.Name))
                     _casterEnemies.Add(Target.Name);
                 Thread.Sleep(Main.humanReflexTime);
-                if (!cast.BannedSpells.Contains("Earth Shock(Rank 1)"))
-                {
-                    Lua.RunMacroText("/cast Earth Shock(Rank 1)");
+                if (cast.OnTarget(EarthShockRank1))
                     return;
-                }
             }
 
             // Earth Shock Interupt
             if (_shouldBeInterrupted
-                && Target.GetDistance < 19f
                 && !settings.ENInterruptWithRankOne)
             {
                 if (!_casterEnemies.Contains(Target.Name))
                     _casterEnemies.Add(Target.Name);
                 _fightingACaster = true;
                 Thread.Sleep(Main.humanReflexTime);
-                if (cast.Normal(EarthShock))
+                if (cast.OnTarget(EarthShock))
                     return;
             }
 
             // Totems
             if (Me.ManaPercentage > 20
-                && Target.GetDistance < 20)
-                if (totemManager.CastTotems(specialization))
-                    return;
+                && Target.GetDistance < 20
+                && totemManager.CastTotems(specialization))
+                return;
 
             // Flame Shock DPS
             if (Me.ManaPercentage > _lowManaThreshold
                 && Target.GetDistance < 19f
                 && !Target.HaveBuff("Flame Shock")
                 && Target.HealthPercent > 20
-                && settings.UseFlameShock)
-                if (cast.Normal(FlameShock))
-                    return;
+                && settings.UseFlameShock
+                && cast.OnTarget(FlameShock))
+                return;
 
             // Stormstrike
             if (Me.ManaPercentage > _lowManaThreshold
-                && Stormstrike.IsDistanceGood)
-                if (cast.Normal(Stormstrike))
-                    return;
+                && cast.OnTarget(Stormstrike))
+                return;
 
             // Earth Shock DPS
             if (Me.ManaPercentage > _lowManaThreshold
                 && Target.GetDistance < 19f
                 && !FlameShock.KnownSpell
                 && Target.HealthPercent > 25
-                && Me.ManaPercentage > 30)
-                if (cast.Normal(EarthShock))
-                    return;
+                && Me.ManaPercentage > 30
+                && cast.OnTarget(EarthShock))
+                return;
 
             // Low level lightning bolt
             if (!EarthShock.KnownSpell
-                && Me.ManaPercentage > 30
                 && Me.ManaPercentage > _lowManaThreshold
-                && Target.GetDistance < 29f
-                && Target.HealthPercent > 40)
-                if (cast.Normal(LightningBolt))
-                    return;
+                && Target.HealthPercent > 40
+                && cast.OnTarget(LightningBolt))
+                return;
         }
     }
 }

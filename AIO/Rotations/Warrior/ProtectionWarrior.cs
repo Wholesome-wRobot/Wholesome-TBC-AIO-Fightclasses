@@ -1,10 +1,7 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 using WholesomeTBCAIO.Helpers;
-using wManager.Wow.Bot.Tasks;
-using wManager.Wow.Class;
 using wManager.Wow.ObjectManager;
+using Timer = robotManager.Helpful.Timer;
 
 namespace WholesomeTBCAIO.Rotations.Warrior
 {
@@ -15,8 +12,8 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             base.BuffRotation();
 
             // Defensive Stance
-            if (InBattleStance())
-                cast.Normal(DefensiveStance);
+            if (InBattleStance() || !Taunt.IsSpellUsable)
+                cast.OnSelf(DefensiveStance);
         }
 
         protected override void Pull()
@@ -25,61 +22,27 @@ namespace WholesomeTBCAIO.Rotations.Warrior
 
             // Defensive Stance
             if (InBattleStance()
-                && cast.Normal(DefensiveStance))
+                && cast.OnSelf(DefensiveStance))
                 return;
-
-            // Check if surrounding enemies
-            if (ObjectManager.Target.GetDistance < _pullRange && !_pullFromAfar)
-                _pullFromAfar = ToolBox.CheckIfEnemiesAround(ObjectManager.Target, _pullRange);
-
-            // Pull from afar
-            if (_pullFromAfar
-                && _pullMeleeTimer.ElapsedMilliseconds < 5000 || settings.AlwaysPull
-                && ObjectManager.Target.GetDistance < 24f)
-            {
-                AIOSpell pullMethod = null;
-
-                if (Shoot.IsSpellUsable
-                    && Shoot.KnownSpell)
-                    pullMethod = Shoot;
-
-                if (Throw.IsSpellUsable
-                    && Throw.KnownSpell)
-                    pullMethod = Throw;
-
-                if (pullMethod == null)
-                {
-                    Logger.Log("Can't pull from distance. Please equip a ranged weapon in order to Throw or Shoot.");
-                    _pullFromAfar = false;
-                }
-                else
-                {
-                    if (Me.IsMounted)
-                        MountTask.DismountMount();
-
-                    RangeManager.SetRange(_pullRange + 10);
-                    Thread.Sleep(200);
-                    if (cast.Normal(pullMethod))
-                        Thread.Sleep(2000);
-                    RangeManager.SetRange(_pullRange);
-                }
-            }
-
-            // Melee ?
-            if (_pullMeleeTimer.ElapsedMilliseconds <= 0
-                && ObjectManager.Target.GetDistance <= _pullRange + 3)
-                _pullMeleeTimer.Start();
-
-            if (_pullMeleeTimer.ElapsedMilliseconds > 3000)
-            {
-                Logger.LogDebug("Going in Melee range");
-                RangeManager.SetRangeToMelee();
-                _pullMeleeTimer.Reset();
-            }
 
             // Check if caster in list
             if (_casterEnemies.Contains(ObjectManager.Target.Name))
                 _fightingACaster = true;
+
+            // Pull logic
+            if (ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { Shoot, Throw }))
+            {
+                _combatMeleeTimer = new Timer(2000);
+                return;
+            }
+        }
+
+        protected override void CombatNoTarget()
+        {
+            base.CombatNoTarget();
+
+            if (settings.PartyTankSwitchTarget)
+                AIOParty.SwitchTarget(cast, settings.PartyUseIntervene ? Intervene : null);
         }
 
         protected override void CombatRotation()
@@ -89,121 +52,111 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             bool _shouldBeInterrupted = ToolBox.TargetIsCasting();
             bool _inMeleeRange = Target.GetDistance < 6f;
 
-            RegainAggro();
-
-            // Defensive Stance
-                if (InBattleStance())
-                cast.Normal(DefensiveStance);
-
-            // Check Auto-Attacking
-            ToolBox.CheckAutoAttack(Attack);
+            // Force melee
+            if (_combatMeleeTimer.IsReady)
+                RangeManager.SetRangeToMelee();
 
             // Check if we need to interrupt
             if (_shouldBeInterrupted)
             {
                 _fightingACaster = true;
+                RangeManager.SetRangeToMelee();
                 if (!_casterEnemies.Contains(Target.Name))
                     _casterEnemies.Add(Target.Name);
             }
 
-            // Melee ?
-            if (_pullMeleeTimer.ElapsedMilliseconds > 0)
-                _pullMeleeTimer.Reset();
+            if (settings.PartyTankSwitchTarget)
+                AIOParty.SwitchTarget(cast, settings.PartyUseIntervene ? Intervene : null);
 
-            if (_meleeTimer.ElapsedMilliseconds <= 0
-                && _pullFromAfar)
-                _meleeTimer.Start();
+            // Defensive Stance
+            if (InBattleStance())
+                cast.OnTarget(DefensiveStance);
 
-            if ((_shouldBeInterrupted || _meleeTimer.ElapsedMilliseconds > 5000)
-                && !RangeManager.CurrentRangeIsMelee())
-            {
-                Logger.LogDebug("Going in Melee range 2");
-                RangeManager.SetRangeToMelee();
-                _meleeTimer.Stop();
-            }
+            // Check Auto-Attacking
+            ToolBox.CheckAutoAttack(Attack);
 
             // Taunt
             if (_inMeleeRange
                 && !Target.IsTargetingMe
                 && Target.Target > 0
-                && cast.Normal(Taunt))
+                && cast.OnTarget(Taunt))
                 return;
 
             // Cleave
-            List<WoWUnit> closeEnemies = _partyEnemiesAround
-                .Where(e => e.GetDistance < 10 && e.InCombatFlagOnly)
-                .ToList();
+            List<WoWUnit> closeEnemies = AIOParty.EnemiesFighting
+                .FindAll(e => e.GetDistance < 10);
             if (_inMeleeRange
                 && closeEnemies.Count > 1
                 && ObjectManager.Me.Rage > 70)
-                cast.Normal(Cleave);
+                cast.OnTarget(Cleave);
 
             // Heroic Strike
             if (_inMeleeRange
                 && !HeroicStrikeOn()
                 && Me.Rage > 90)
-                cast.Normal(HeroicStrike);
+                cast.OnTarget(HeroicStrike);
 
             // Last Stand
             if (Me.HealthPercent < 20
-                && cast.Normal(LastStand))
+                && cast.OnSelf(LastStand))
                 return;
 
             // Shied Bash
             if (ToolBox.TargetIsCasting()
-                && cast.Normal(ShieldBash))
+                && cast.OnTarget(ShieldBash))
                 return;
 
             // Demoralizing Shout
             if (settings.UseDemoralizingShout
                 && !Target.HaveBuff("Demoralizing Shout")
+                && !Target.HaveBuff("Demoralizing Roar")
                 && _inMeleeRange
-                && cast.Normal(DemoralizingShout))
+                && cast.OnSelf(DemoralizingShout))
                 return;
 
             // Thunderclap
             if (_inMeleeRange
                 && !ObjectManager.Target.HaveBuff(ThunderClap.Name)
-                && cast.Normal(ThunderClap))
+                && cast.OnSelf(ThunderClap))
                 return;
 
             // Shield Slam
             if (_inMeleeRange
                 && Me.Rage > 70
                 && ShieldSlam.IsSpellUsable
-                && cast.Normal(ShieldSlam))
+                && cast.OnTarget(ShieldSlam))
                 return;
 
             // Revenge
             if (_inMeleeRange
                 && ToolBox.GetPetSpellCooldown(Revenge.Name) <= 0
-                && cast.Normal(Revenge))
+                && cast.OnTarget(Revenge))
                 return;
 
             // Devastate
             if (_inMeleeRange
-                && cast.Normal(Devastate))
+                && cast.OnTarget(Devastate))
                 return;
 
             // Sunder Armor
             if (_inMeleeRange
-                && cast.Normal(SunderArmor))
+                && cast.OnTarget(SunderArmor))
                 return;
 
             // Shield Block
             if (ObjectManager.Me.HealthPercent < 50
-                && cast.Normal(ShieldBlock))
+                && cast.OnSelf(ShieldBlock))
                 return;
 
             // Spell Reflection
             if (ToolBox.TargetIsCasting()
-                && cast.Normal(SpellReflection))
+                && cast.OnSelf(SpellReflection))
                 return;
 
             // Commanding Shout
             if (!Me.HaveBuff("Commanding Shout")
                 && settings.UseCommandingShout
-                && cast.Normal(CommandingShout))
+                && cast.OnSelf(CommandingShout))
                 return;
         }
     }

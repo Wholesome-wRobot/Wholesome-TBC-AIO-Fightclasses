@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
-using wManager.Wow.Class;
 using WholesomeTBCAIO.Helpers;
+using System.Threading;
 
 namespace WholesomeTBCAIO.Rotations.Mage
 {
@@ -127,54 +127,57 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
         public void CheckIfHaveManaStone()
         {
-            if (!Fight.InFight && ManaStone == "")
-            {
-                _bagItems = Bag.GetBagItem();
-                bool haveManaStone = false;
-                foreach (WoWItem item in _bagItems)
-                {
-                    if (ManaStones().Contains(item.Name))
-                    {
-                        haveManaStone = true;
-                        ManaStone = item.Name;
-                    }
-                }
+            ManaStone = "";
+            _bagItems = Bag.GetBagItem();
 
-                if (!haveManaStone && Bag.GetContainerNumFreeSlotsNormalType > 1)
+            foreach (WoWItem item in _bagItems)
+            {
+                if (ManaStones().Contains(item.Name))
+                    ManaStone = item.Name;
+            }
+
+            if (!Fight.InFight 
+                && ManaStone == "" 
+                && Bag.GetContainerNumFreeSlotsNormalType > 1)
+            {
+                if (ConjureManaEmerald.KnownSpell)
                 {
-                    if (ConjureManaEmerald.KnownSpell)
-                    {
-                        if (ConjureManaEmerald.IsSpellUsable)
-                            ConjureManaEmerald.Launch();
-                    }
-                    else if (ConjureManaRuby.KnownSpell)
-                    {
-                        if (ConjureManaRuby.IsSpellUsable)
-                            ConjureManaRuby.Launch();
-                    }
-                    else if (ConjureManaCitrine.KnownSpell)
-                    {
-                        if (ConjureManaCitrine.IsSpellUsable)
-                            ConjureManaCitrine.Launch();
-                    }
-                    else if (ConjureManaJade.KnownSpell)
-                    {
-                        if (ConjureManaJade.IsSpellUsable)
-                            ConjureManaJade.Launch();
-                    }
-                    else if (ConjureManaAgate.KnownSpell)
-                    {
-                        if (ConjureManaAgate.IsSpellUsable)
-                            ConjureManaAgate.Launch();
-                    }
+                    if (ConjureManaEmerald.IsSpellUsable)
+                        ConjureManaEmerald.Launch();
+                }
+                else if (ConjureManaRuby.KnownSpell)
+                {
+                    if (ConjureManaRuby.IsSpellUsable)
+                        ConjureManaRuby.Launch();
+                }
+                else if (ConjureManaCitrine.KnownSpell)
+                {
+                    if (ConjureManaCitrine.IsSpellUsable)
+                        ConjureManaCitrine.Launch();
+                }
+                else if (ConjureManaJade.KnownSpell)
+                {
+                    if (ConjureManaJade.IsSpellUsable)
+                        ConjureManaJade.Launch();
+                }
+                else if (ConjureManaAgate.KnownSpell)
+                {
+                    if (ConjureManaAgate.IsSpellUsable)
+                        ConjureManaAgate.Launch();
                 }
             }
         }
 
-        public void UseManaStone()
+        public bool UseManaStone()
         {
+            if (ManaStone == "" || ToolBox.GetItemCooldown(ManaStone) >= 2)
+                return false;
+
             Logger.LogFight($"Using {ManaStone}");
+            while (ToolBox.GetItemCooldown(ManaStone) < 2 && ToolBox.GetItemCooldown(ManaStone) >= 0)
+                Thread.Sleep(100);
             ItemsManager.UseItemByNameOrId(ManaStone);
+            return true;
         }
     }
 }

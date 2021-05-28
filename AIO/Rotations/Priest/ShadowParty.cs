@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
-using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Priest
@@ -12,13 +11,14 @@ namespace WholesomeTBCAIO.Rotations.Priest
         protected override void BuffRotation()
         {
             // PARTY Resurrection
-            List<WoWPlayer> needRes = AIOParty.Group
+            List<AIOPartyMember> needRes = AIOParty.Group
                 .FindAll(m => m.IsDead)
                 .OrderBy(m => m.GetDistance)
                 .ToList();
-            if (needRes.Count > 0 && cast.OnFocusPlayer(Resurrection, needRes[0], onDeadTarget: true))
+            if (needRes.Count > 0 && cast.OnFocusPlayer(Resurrection, needRes[0]))
             {
                 Thread.Sleep(3000);
+                ToolBox.ClearCursor();
                 return;
             }
 
@@ -48,9 +48,9 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
             // OOC Inner Fire
             if (!Me.HaveBuff("Inner Fire")
-                && settings.UseInnerFire)
-                if (cast.Normal(InnerFire))
-                    return;
+                && settings.UseInnerFire
+                && cast.OnSelf(InnerFire))
+                return;
 
             // OOC Shadowguard
             if (!Me.HaveBuff("Shadowguard")
@@ -72,45 +72,50 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 && settings.UseShadowProtection
                 && cast.OnSelf(ShadowProtection))
                 return;
-
+           
             // OOC ShadowForm
             if (!Me.HaveBuff("ShadowForm")
-                && cast.Normal(Shadowform))
+                && cast.OnSelf(Shadowform))
                 return;
 
             // PARTY Drink
-            ToolBox.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold);
+            if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
+                return;
         }
 
         protected override void Pull()
         {
             // Pull ShadowForm
             if (!Me.HaveBuff("ShadowForm")
-                && cast.Normal(Shadowform))
+                && cast.OnSelf(Shadowform))
                 return;
 
             // Vampiric Touch
-            if (ObjectManager.Target.GetDistance <= _distanceRange
-                && !ObjectManager.Target.HaveBuff("Vampiric Touch")
-                && cast.Normal(VampiricTouch))
+            if (!ObjectManager.Target.HaveBuff("Vampiric Touch")
+                && cast.OnTarget(VampiricTouch))
                 return;
 
             // Shadow Word Pain
-            if (ObjectManager.Target.GetDistance <= _distanceRange
-                && !ObjectManager.Target.HaveBuff("Shadow Word: Pain")
-                && cast.Normal(ShadowWordPain))
-                    return;
+            if (!ObjectManager.Target.HaveBuff("Shadow Word: Pain")
+                && cast.OnTarget(ShadowWordPain))
+                return;
         }
 
         protected override void CombatRotation()
         {
             WoWUnit Target = ObjectManager.Target;
 
-            // Inner Focus  + sopell
-            if (Me.HaveBuff("Inner Focus") && Target.HealthPercent > 80)
+            // Fade
+            if (AIOParty.EnemiesClose.Exists(m => m.IsTargetingMe)
+                && cast.OnSelf(Fade))
+                return;
+
+            // Inner Focus  + spell
+            if (Me.HaveBuff("Inner Focus") 
+                && Target.HealthPercent > 80)
             {
-                cast.Normal(DevouringPlague);
-                cast.Normal(ShadowWordPain);
+                cast.OnTarget(DevouringPlague);
+                cast.OnTarget(ShadowWordPain);
                 return;
             }
 
@@ -124,20 +129,20 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
             // Silence
             if (ToolBox.TargetIsCasting()
-                && cast.Normal(Silence))
+                && cast.OnTarget(Silence))
                 return;
 
             // Cure Disease
             if (settings.PartyCureDisease)
             {
-                // Party Cure Disease
+                // PARTY Cure Disease
                 WoWPlayer needCureDisease = AIOParty.Group
                     .Find(m => ToolBox.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusPlayer(CureDisease, needCureDisease))
                     return;
             }
 
-            // Party Dispel Magic
+            // PARTY Dispel Magic
             if (settings.PartyDispelMagic)
             {
                 WoWPlayer needDispelMagic = AIOParty.Group
@@ -146,15 +151,19 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     return;
             }
 
+            // Combat ShadowForm
+            if (!Me.HaveBuff("ShadowForm")
+                && cast.OnSelf(Shadowform))
+                return;
+
             // ShadowFiend
             if (Me.ManaPercentage < 30
-                && cast.Normal(Shadowfiend))
+                && cast.OnTarget(Shadowfiend))
                 return;
 
             // Vampiric Touch
-            if (Target.GetDistance <= _distanceRange
-                && !Target.HaveBuff("Vampiric Touch")
-                && cast.Normal(VampiricTouch))
+            if (!Target.HaveBuff("Vampiric Touch")
+                && cast.OnTarget(VampiricTouch))
                 return;
 
             if (settings.PartyVampiricEmbrace)
@@ -162,78 +171,62 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 // Vampiric Embrace
                 if (!Target.HaveBuff("Vampiric Embrace")
                     && Target.HaveBuff("Vampiric Touch")
-                    && cast.Normal(VampiricEmbrace))
+                    && cast.OnTarget(VampiricEmbrace))
                     return;
             }
 
             // Inner Focus
             if (Target.HealthPercent > 80
-                && cast.Normal(InnerFocus))
+                && cast.OnSelf(InnerFocus))
                 return;
 
             // Devouring Plague
             if (!Target.HaveBuff("Devouring Plague")
                 && Target.HealthPercent > 80
-                && cast.Normal(DevouringPlague))
+                && cast.OnTarget(DevouringPlague))
                 return;
 
             // PARTY Shadow Word Pain
-            List<WoWUnit> enemiesWithoutPain = _partyEnemiesAround
+            List<WoWUnit> enemiesWithoutPain = AIOParty.EnemiesFighting
                 .Where(e => e.InCombatFlagOnly && !e.HaveBuff("Shadow Word: Pain"))
                 .OrderBy(e => e.GetDistance)
                 .ToList();
             if (enemiesWithoutPain.Count > 0
-               && _partyEnemiesAround.Where(e => e.InCombatFlagOnly).ToList().Count - enemiesWithoutPain.Count < 3
+               && AIOParty.EnemiesFighting.Count - enemiesWithoutPain.Count < 3
                && cast.OnFocusUnit(ShadowWordPain, enemiesWithoutPain[0]))
                return;
 
             // Mind Blast
             if (Me.ManaPercentage > settings.PartyMindBlastThreshold
-                && cast.Normal(MindBlast))
+                && cast.OnTarget(MindBlast))
                 return;
 
             // Shadow Word Death
             if (Me.HealthPercent > settings.PartySWDeathThreshold
-                && Target.GetDistance < _distanceRange
                 && settings.UseShadowWordDeath
-                && cast.Normal(ShadowWordDeath))
+                && cast.OnTarget(ShadowWordDeath))
                 return;
-
-            // Mind Flay Range check
-            if (Target.GetDistance > MindFlay.MaxRange
-                && MindFlay.KnownSpell)
-            {
-                Logger.LogFight("Approaching to be in Mind Flay range");
-                RangeManager.SetRange(MindFlay.MaxRange - 2);
-                return;
-            }
 
             // Mind FLay
-            if (MindFlay.IsDistanceGood
-                && cast.Normal(MindFlay))
+            if (cast.OnTarget(MindFlay))
                 return;
 
             // Stop wand if banned
             if (ToolBox.UsingWand()
-                && cast.BannedSpells.Contains("Shoot")
-                && cast.Normal(UseWand))
+                && UnitImmunities.Contains(ObjectManager.Target, "Shoot")
+                && cast.OnTarget(UseWand))
                 return;
 
             // Spell if wand banned
-            if (cast.BannedSpells.Contains("Shoot")
-                && Target.GetDistance < _distanceRange)
-                if (cast.Normal(MindBlast) || cast.Normal(Smite))
+            if (UnitImmunities.Contains(ObjectManager.Target, "Shoot"))
+                if (cast.OnTarget(MindBlast) || cast.OnTarget(Smite))
                     return;
 
             // Use Wand
             if (!ToolBox.UsingWand()
                 && _iCanUseWand
-                && Target.GetDistance <= _distanceRange + 2)
-            {
-                RangeManager.SetRange(_distanceRange);
-                if (cast.Normal(UseWand, false))
-                    return;
-            }
+                && cast.OnTarget(UseWand, false))
+                return;
         }
     }
 }

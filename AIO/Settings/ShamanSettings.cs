@@ -20,10 +20,10 @@ namespace WholesomeTBCAIO.Settings
             GhostWolfMount = false;
 
             ENPullRankOneLightningBolt = true;
-            ENPullWithLightningBolt = true;
             ENInterruptWithRankOne = false;
             ENShamanisticRageOnMultiOnly = true;
             ENFrostShockHumanoids = true;
+            ENAlwaysPullWithLightningBolt = true;
 
             ELShockDPSMana = 50;
             ELLBHealthThreshold = 20;
@@ -36,6 +36,12 @@ namespace WholesomeTBCAIO.Settings
             UseMagmaTotem = false;
             UseStoneSkinTotem = false;
             UseTotemOfWrath = true;
+
+            PartyStandBehind = true;
+            PartyLesserHealingWaveThreshold = 80;
+            PartyHealingWaveThreshold = 60;
+            PartyChainHealAmount = 3;
+            PartyChainHealThreshold = 80;
 
             Specialization = "Enhancement";
         }
@@ -107,9 +113,9 @@ namespace WholesomeTBCAIO.Settings
         // ENHANCEMENT
         [Category("Enhancement")]
         [DefaultValue(true)]
-        [DisplayName("Pull with LB")]
-        [Description("Use Lightning Bolt to pull enemies")]
-        public bool ENPullWithLightningBolt { get; set; }
+        [DisplayName("Always pull")]
+        [Description("Always use Lightning Bolt to pull enemies")]
+        public bool ENAlwaysPullWithLightningBolt { get; set; }
 
         [Category("Enhancement")]
         [DefaultValue(true)]
@@ -193,8 +199,54 @@ namespace WholesomeTBCAIO.Settings
         [Description("Use Chain Lightning on multi aggro")]
         public bool ELChainLightningOnMulti { get; set; }
 
+        // PARTY
+        [Category("Party")]
+        [DefaultValue(true)]
+        [DisplayName("[ENH] Stand behind")]
+        [Description("Try to stand behind the target in Enhancement")]
+        public bool PartyStandBehind { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(80)]
+        [DisplayName("[RES] Lesser H. Wave")]
+        [Description("Use Lesser Healing Wave when ally has less HP than this threshold")]
+        [Percentage(true)]
+        public int PartyLesserHealingWaveThreshold { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(60)]
+        [DisplayName("[RES] Healing Wave")]
+        [Description("Use Healing Wave when ally has less HP than this threshold")]
+        [Percentage(true)]
+        public int PartyHealingWaveThreshold { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(3)]
+        [DisplayName("[RES] Chain Heal count")]
+        [Description("Use Chain Heal when at least this amount of allies has less HP than Chain Heal threshold")]
+        public int PartyChainHealAmount { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(80)]
+        [DisplayName("[RES] Chain Heal")]
+        [Description("Use Chain Heal when allies has less HP than this threshold")]
+        [Percentage(true)]
+        public int PartyChainHealThreshold { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(false)]
+        [DisplayName("Cure Poison")]
+        [Description("Use Cure Poison in combat")]
+        public bool PartyCurePoison { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(false)]
+        [DisplayName("Cure Disease")]
+        [Description("Use Cure Disease in combat")]
+        public bool PartyCureDisease { get; set; }
+
         // TALENT
-        [DropdownList(new string[] { "Enhancement", "Elemental" })]
+        [DropdownList(new string[] { "Enhancement", "Elemental", "Party Enhancement", "Party Restoration"})]
         public override string Specialization { get; set; }
     }
 }

@@ -20,6 +20,7 @@ namespace WholesomeTBCAIO.Settings
             UseConcussiveShot = true;
             UseDisengage = false;
             UseRaptorStrike = true;
+            BackupDistance = 6;
 
             BestialWrathOnMulti = false;
             IntimidationInterrupt = true;
@@ -47,15 +48,21 @@ namespace WholesomeTBCAIO.Settings
         public bool UseFreezingTrap { get; set; }
         */
         [Category("Common")]
-        [DefaultValue(5)]
+        [DefaultValue(3)]
         [DisplayName("Max backup attempts")]
         [Description("Maximum number of attempts after failing to backup to a valid distance (eg when back to a wall)")]
         public int MaxBackupAttempts { get; set; }
 
         [Category("Common")]
+        [DefaultValue(6)]
+        [DisplayName("Backup distance")]
+        [Description("Adjusted backup distance (default 6). This distance will be added to a rough target size calculation.")]
+        public int BackupDistance { get; set; }
+
+        [Category("Common")]
         [DefaultValue(true)]
         [DisplayName("Feed Pet")]
-        [Description("Use Z.E.Hunter to manage pet feeding")]
+        [Description("Let the AIO manage pet feeding")]
         public bool FeedPet { get; set; }
 
         [Category("Common")]
@@ -108,7 +115,7 @@ namespace WholesomeTBCAIO.Settings
         public bool IntimidationInterrupt { get; set; }
 
         // TALENT
-        [DropdownList(new string[] { "BeastMaster", "BeastMaster Party" })]
+        [DropdownList(new string[] { "BeastMaster", "Party BeastMaster" })]
         public override string Specialization { get; set; }
     }
 }

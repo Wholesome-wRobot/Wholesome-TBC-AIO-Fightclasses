@@ -1,42 +1,76 @@
-﻿using wManager.Wow.Class;
+﻿using System.Collections.Generic;
+using wManager.Wow.Class;
 using wManager.Wow.Helpers;
 
 namespace WholesomeTBCAIO.Helpers
 {
-    public class AIOSpell
+    public class AIOSpell : Spell
     {
-        private Spell Spell { get; set; }
-        public string Name { get; set; }
+        public new string Name { get; set; }
         public int Rank { get; set; }
         public int Cost { get; set; }
         public int PowerType { get; set; }
-        public int CastTime { get; set; }
-        public int MinRange { get; set; }
-        public int MaxRange { get; set; }
-
-        public bool IsSpellUsable => Spell.IsSpellUsable;
-        public bool KnownSpell => Spell.KnownSpell;
-        public bool TargetHaveBuff => Spell.TargetHaveBuff;
-        public bool IsDistanceGood => Spell.IsDistanceGood;
-        public bool HaveBuff => Spell.HaveBuff;
-
-        public AIOSpell(string spellName)
-        {
-            Spell = new Spell(spellName);
-            Name = Spell.Name;
-            RecordSpellInfos();
-            //LogSpellInfos();
+        public new float CastTime { get; set; }
+        public new float MinRange { get; set; }
+        public new float MaxRange { get; set; }
+        public bool ForceLua { get; set; }
+        public bool IsChannel { get; set; }
+        public bool IsResurrectionSpell { get; set; }
+        public bool PreventDoubleCast { get; set; }
+        public bool OnDeadTarget { get; set; }
+        public new bool IsSpellUsable {
+            get
+            {
+                if (!ForceLua)
+                    return base.IsSpellUsable;
+                else
+                    return KnownSpell && GetCurrentCooldown < 0;
+            }
         }
 
-        public float GetCurrentCooldown => Lua.LuaDoString<float>($"local startTime, duration, enable = GetSpellCooldown('{Name}'); return duration - (GetTime() - startTime);");
+        private static List<AIOSpell> AllSpells = new List<AIOSpell>();
 
-        public int SpellCost() => Lua.LuaDoString<int>($"local name, rank, icon, cost, isFunnel, powerType, castTime, minRange, maxRange = GetSpellInfo('{Spell.Name}'); return cost");
 
-        public void RecordSpellInfos()
+        public AIOSpell(string spellName, int rank = 0) : base(spellName)
         {
+            Name = spellName;
+            IsChannel = ChannelSpells.Contains(Name);
+            PreventDoubleCast = SpellsToKeepFromDoubleCasting.Contains(Name);
+            OnDeadTarget = OnDeadSpells.Contains(Name);
+            IsResurrectionSpell = ResurrectionSpells.Contains(Name);
+
+            if (Name.Contains("(") || Name.Contains(")"))
+                Name += "()";
+
+            RecordSpellInfos(rank);
+            ForceLua = rank > 0 || Name.Contains("()");
+
+            AllSpells.Add(this);
+            //LogSpellInfos();
+        }
+        /*
+        public AIOSpell(int spellId, int rank = 0) : base(spellId)
+        {
+            RecordSpellInfos(rank);
+            ForceLua = rank > 0 || Name.Contains("(") || Name.Contains(")");
+            AllSpells.Add(this);
+            //LogSpellInfos();
+        }
+        */
+        public static AIOSpell GetSpellByName(string name) => AllSpells.Find(s => s.Name == name);
+
+        public float GetCurrentCooldown => Lua.LuaDoString<float>($@"local startTime, duration, _ = GetSpellCooldown(""{Name.Replace("\"", "\\\"")}"");
+            if (startTime == nil) then return 0 end;
+            return (duration - (GetTime() - startTime)) * 1000;");
+
+        public void RecordSpellInfos(int rank)
+        {
+            string rankString = rank > 0 ? $@", ""Rank {rank}""" : "";
+
             string infos = Lua.LuaDoString<string>($@"
-                local name, rank, icon, cost, isFunnel, powerType, castTime, minRange, maxRange = GetSpellInfo('{Spell.Name}');
-                if (rank == '' or rank == 'Racial' or rank == 'Shapeshift') then
+                local name, rank, icon, cost, isFunnel, powerType, castTime, minRange, maxRange = GetSpellInfo(""{Name.Replace("\"", "\\\"")}""{rankString});
+                if (name == nil) then return nil end
+                if (rank == '' or rank == 'Racial' or rank == 'Shapeshift' or rank == 'Summon') then
                     rank = 'Rank 0'
                 end
                 return name..'$'..rank..'$'..cost..'$'..powerType..'$'..castTime..'$'..minRange..'$'..maxRange;");
@@ -55,11 +89,9 @@ namespace WholesomeTBCAIO.Helpers
 
         private int ParseInt(string stringToParse)
         {
-            int result = 0;
-            if (!int.TryParse(stringToParse, out result))
+            if (!int.TryParse(stringToParse, out int result))
                 Logger.LogError($"Couldn't parse spell info {stringToParse}");
             return result;
-
         }
 
         public void LogSpellInfos()
@@ -74,14 +106,97 @@ namespace WholesomeTBCAIO.Helpers
             Logger.Log($"MaxRange : {MaxRange}");
         }
 
-        public void Launch(bool stopMove, bool waitIsCast = true, bool ignoreIfCast = false)
+        public new void Launch(bool stopMove, bool waitIsCast = true, bool ignoreIfCast = false, string luaUnitId = "target")
         {
-            Spell.Launch(stopMove, waitIsCast, ignoreIfCast);
+            if (!ForceLua)
+                base.Launch(stopMove, waitIsCast, ignoreIfCast, luaUnitId);
+            else
+            {
+                if (stopMove)
+                    MovementManager.StopMoveNewThread();
+
+                string rankString = Rank > 0 ? $"(Rank {Rank})" : "()";
+
+                Logger.LogFight($"[Spell-LUA] Cast (on {luaUnitId}) {Name.Replace("()", "")} {rankString}");
+                Lua.RunMacroText($"/cast [target={luaUnitId}] {Name.Replace("()", "")}{rankString}");
+            }
         }
 
-        public void Launch()
+        public new void Launch()
         {
-            Spell.Launch();
+            if (!ForceLua)
+                base.Launch();
+            else
+            {
+                string rankString = Rank > 0 ? $"(Rank {Rank})" : "()";
+                Logger.LogFight($"[Spell] Cast (on target) {Name} {rankString}");
+                Lua.RunMacroText($"/cast {Name}{rankString}");
+            }
         }
+
+        private List<string> OnDeadSpells = new List<string>()
+        {
+            "Revive",
+            "Rebirth",
+            "Redemption",
+            "Resurrection",
+            "Ancestral Spirit"
+        };
+
+        private List<string> SpellsToKeepFromDoubleCasting = new List<string>()
+        {
+            "Healing Touch",
+            "Regrowth",
+            "Revive Pet",
+            "Polymorph",
+            //"Arcane Blast",
+            //"Scorch",
+            "Hammer of Wrath",
+            "Unstable Affliction",
+            "Flash of Light",
+            "Holy Light",
+            "Redemption",
+            "Lesser Heal",
+            "Heal",
+            "Greater Heal",
+            "Holy Fire",
+            "Flash Heal",
+            "Vampiric Touch",
+            "Resurrection",
+            "Prayer of Healing",
+            "Prayer of Mending",
+            "Healing Wave",
+            "Lesser Healing Wave",
+            "Ghost Wolf",
+            "Earth Shield",
+            "Chain Heal",
+            "Ancestral Spirit",
+            "Immolate",
+            "Corruption",
+            "Summon Imp",
+            "Summon Voidwalker",
+            "Summon Felguard",
+            "Create HealthStone",
+            "Create Soulstone",
+            "Seed of Corruption"
+        };
+
+        private List<string> ChannelSpells = new List<string>()
+        {
+            "Arcane Missiles",
+            "Evocation",
+            "Mind Flay",
+            "Drain Soul",
+            "Drain Life",
+            "Drain Mana",
+            "Health Funnel"
+        };
+
+        private List<string> ResurrectionSpells = new List<string>()
+        {
+            "Redemption",
+            "Resurrection",
+            "Ancestral Spirit"
+        };
     }
 }

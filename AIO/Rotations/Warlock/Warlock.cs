@@ -10,7 +10,6 @@ using robotManager.Helpful;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
 using wManager.Events;
-using wManager.Wow.Class;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 
@@ -29,17 +28,17 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         protected Stopwatch _addCheckTimer = new Stopwatch();
         protected WoWLocalPlayer Me = ObjectManager.Me;
 
-        protected float _maxRange = 27f;
         protected int _innerManaSaveThreshold = 20;
         protected bool _iCanUseWand = ToolBox.HaveRangedWeaponEquipped();
         protected int _saveDrinkPercent = wManager.wManagerSetting.CurrentSetting.DrinkPercent;
-        protected List<WoWUnit> _partyEnemiesAround = new List<WoWUnit>();
 
         protected Warlock specialization;
 
         public void Initialize(IClassRotation specialization)
         {
             settings = WarlockSettings.Current;
+            if (settings.PartyDrinkName != "")
+                ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
             cast = new Cast(ShadowBolt, settings.ActivateCombatDebug, UseWand, settings.AutoDetectImmunities);
 
             this.specialization = specialization as Warlock;
@@ -49,7 +48,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             _petPulseThread.DoWork += PetThread;
             _petPulseThread.RunWorkerAsync();
             
-            RangeManager.SetRange(_maxRange);
+            RangeManager.SetRange(ShadowBolt.MaxRange);
 
             // Set pet mode
             if (settings.PetInPassiveWhenOOC)
@@ -148,7 +147,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                         }
 
                         // Switch Felguard Auto Cleave/Anguish
-                        if (WarlockPetAndConsumables.MyWarlockPet().Equals("Felguard"))
+                        if (WarlockPetAndConsumables.MyWarlockPet().Equals("Felguard") && specialization.RotationType == Enums.RotationType.Solo)
                         {
                             ToolBox.TogglePetSpellAuto("Cleave", settings.FelguardCleave);
                             ToolBox.TogglePetSpellAuto("Anguish", settings.AutoAnguish);
@@ -169,10 +168,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             {
                 try
                 {
-                    if (RotationType == Enums.RotationType.Party)
-                        _partyEnemiesAround = ToolBox.GetSuroundingEnemies();
-
-                    if (StatusChecker.OutOfCombat())
+                    if (StatusChecker.OutOfCombat(RotationRole))
                         specialization.BuffRotation();
 
                     if (StatusChecker.InPull())
@@ -211,6 +207,9 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 if (SummonVoidwalker.KnownSpell && !SummonFelguard.KnownSpell)
                     SummonSpell = SummonVoidwalker;
 
+                if (specialization.RotationType == Enums.RotationType.Party)
+                    SummonSpell = SummonImp;
+
                 if (SummonFelguard.KnownSpell)
                     SummonSpell = SummonFelguard;
 
@@ -237,329 +236,27 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
                 if (!ObjectManager.Me.IsMounted && !ObjectManager.Me.IsOnTaxi)
                 {
-                    if (cast.Normal(FelDomination))
+                    if (cast.OnSelf(FelDomination))
                         Thread.Sleep(200);
-                    if (cast.Normal(SummonSpell))
+                    if (cast.OnSelf(SummonSpell))
+                    {
+                        Usefuls.WaitIsCasting();
+                        Thread.Sleep(1000); // Prevent double summon
                         return;
+                    }
                 }
             }
             else
                 wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
             
-            // Life Tap
-            if (Me.HealthPercent > Me.ManaPercentage
-                && settings.UseLifeTap
-                && !Me.IsMounted)
-                if (cast.Normal(LifeTap))
-                    return;
-            
-            // Unending Breath
-            if (!Me.HaveBuff("Unending Breath")
-                && UnendingBreath.KnownSpell
-                && UnendingBreath.IsSpellUsable
-                && settings.UseUnendingBreath)
-            {
-                if (cast.OnSelf(UnendingBreath))
-                    return;
-            }
-            
-            // Demon Skin
-            if (!Me.HaveBuff("Demon Skin")
-                && !DemonArmor.KnownSpell
-                && DemonSkin.KnownSpell)
-                if (cast.Normal(DemonSkin))
-                    return;
-            
-            // Demon Armor
-            if ((!Me.HaveBuff("Demon Armor") || Me.HaveBuff("Demon Skin"))
-                && DemonArmor.KnownSpell
-                && (!FelArmor.KnownSpell || FelArmor.KnownSpell && !settings.UseFelArmor))
-                if (cast.Normal(DemonArmor))
-                    return;
-            
-            // Soul Link
-            if (SoulLink.KnownSpell
-                && !Me.HaveBuff("Soul Link")
-                && ObjectManager.Pet.IsAlive)
-                if (cast.Normal(SoulLink))
-                    return;
-            
-            // Fel Armor
-            if (!Me.HaveBuff("Fel Armor")
-                && FelArmor.KnownSpell
-                && settings.UseFelArmor)
-                if (cast.Normal(FelArmor))
-                    return;
-            
-            // Health Funnel OOC
-            if (ObjectManager.Pet.HealthPercent < 50
-                && Me.HealthPercent > 40
-                && ObjectManager.Pet.GetDistance < 19
-                && !ObjectManager.Pet.InCombatFlagOnly
-                && HealthFunnel.KnownSpell
-                && settings.HealthFunnelOOC
-                && HealthFunnel.IsSpellUsable)
-            {
-                Lua.LuaDoString("PetWait();");
-                MovementManager.StopMove();
-                Fight.StopFight();
-
-                if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
-                    cast.PetSpell("Consume Shadows", false, true);
-
-                if (cast.Normal(HealthFunnel))
-                {
-                    Thread.Sleep(500);
-                    Usefuls.WaitIsCasting();
-                    Lua.LuaDoString("PetFollow();");
-                    return;
-                }
-                Lua.LuaDoString("PetFollow();");
-            }
-            
-            // Health Stone
-            if (!WarlockPetAndConsumables.HaveHealthstone())
-                if (cast.Normal(CreateHealthStone))
-                    return;
-            
-            // Create Soul Stone
-            if (!WarlockPetAndConsumables.HaveSoulstone()
-                && CreateSoulstone.KnownSpell)
-            {
-                if (cast.Normal(CreateSoulstone))
-                    return;
-            }
-
-            // Use Soul Stone
-            if (!Me.HaveBuff("Soulstone Resurrection")
-                && CreateSoulstone.KnownSpell
-                && ToolBox.HaveOneInList(WarlockPetAndConsumables.SoulStones())
-                && ToolBox.GetItemCooldown(WarlockPetAndConsumables.SoulStones()) <= 0)
-            {
-                MovementManager.StopMoveNewThread();
-                MovementManager.StopMoveToNewThread();
-                Lua.RunMacroText("/target player");
-                ToolBox.UseFirstMatchingItem(WarlockPetAndConsumables.SoulStones());
-                Usefuls.WaitIsCasting();
-                Lua.RunMacroText("/cleartarget");
-            }
         }
 
         protected virtual void Pull()
         {
-            // Curse of Agony
-            if (ObjectManager.Target.GetDistance < _maxRange + 2
-                && !ObjectManager.Target.HaveBuff("Curse of Agony"))
-                if (cast.Normal(CurseOfAgony))
-                    return;
-
-            // Corruption
-            if (ObjectManager.Target.GetDistance < _maxRange + 2
-                && !ObjectManager.Target.HaveBuff("Corruption"))
-                if (cast.Normal(Corruption))
-                    return;
-
-            // Immolate
-            if (ObjectManager.Target.GetDistance < _maxRange + 2
-                && !ObjectManager.Target.HaveBuff("Immolate")
-                && !ObjectManager.Target.HaveBuff("Fire Ward")
-                && !Corruption.KnownSpell
-                /*&& ToolBox.CanBleed(ObjectManager.Target)*/)
-                if (cast.Normal(Immolate))
-                    return;
-
-            // Shadow Bolt
-            if (ObjectManager.Target.GetDistance < _maxRange + 2
-                && !Immolate.KnownSpell)
-                if (cast.Normal(ShadowBolt))
-                    return;
         }
 
         protected virtual void CombatRotation()
         {
-            WoWUnit Me = ObjectManager.Me;
-            WoWUnit Target = ObjectManager.Target;
-            double _myManaPC = Me.ManaPercentage;
-            bool _overLowManaThreshold = _myManaPC > _innerManaSaveThreshold;
-
-            // Drain Soul
-            bool _shouldDrainSoul = ToolBox.CountItemStacks("Soul Shard") < settings.NumberOfSoulShards || settings.AlwaysDrainSoul;
-            if (_shouldDrainSoul
-                && Target.HealthPercent < settings.DrainSoulHP
-                && Target.Level >= Me.Level - 8
-                && DrainSoul.KnownSpell
-                && !cast.BannedSpells.Contains("Drain Soul(Rank 1)"))
-                if (settings.DrainSoulLevel1)
-                {
-                    Lua.RunMacroText("/cast Drain Soul(Rank 1)");
-                    Usefuls.WaitIsCasting();
-                }
-                else
-                {
-                    if (cast.Normal(DrainSoul))
-                        return;
-                }
-
-            // How of Terror
-            if (HowlOfTerror.KnownSpell
-                && HowlOfTerror.IsSpellUsable
-                && ToolBox.GetNumberEnemiesAround(10f, Me) > 1)
-                if (cast.Normal(HowlOfTerror))
-                    return;
-
-            // Use Health Stone
-            if (Me.HealthPercent < 15)
-                WarlockPetAndConsumables.UseHealthstone();
-
-            // Shadow Trance
-            if (Me.HaveBuff("Shadow Trance") && _overLowManaThreshold)
-                if (cast.Normal(ShadowBolt))
-                    return;
-
-            // Siphon Life
-            if (Me.HealthPercent < 90
-                && _overLowManaThreshold
-                && Target.HealthPercent > 20
-                && !Target.HaveBuff("Siphon Life")
-                && settings.UseSiphonLife)
-                if (cast.Normal(SiphonLife))
-                    return;
-
-            // Death Coil
-            if (Me.HealthPercent < 20)
-                if (cast.Normal(DeathCoil))
-                    return;
-
-            // Drain Life low
-            if (Me.HealthPercent < 30
-                && Target.HealthPercent > 20)
-                if (cast.Normal(DrainLife))
-                    return;
-
-            // Curse of Agony
-            if (ObjectManager.Target.GetDistance < _maxRange
-                && !Target.HaveBuff("Curse of Agony")
-                && _overLowManaThreshold
-                && Target.HealthPercent > 20)
-                if (cast.Normal(CurseOfAgony))
-                    return;
-
-            // Unstable Affliction
-            if (ObjectManager.Target.GetDistance < _maxRange
-                && !Target.HaveBuff("Unstable Affliction")
-                && _overLowManaThreshold
-                && Target.HealthPercent > 30)
-                if (cast.Normal(UnstableAffliction))
-                    return;
-
-            // Corruption
-            if (ObjectManager.Target.GetDistance < _maxRange
-                && !Target.HaveBuff("Corruption")
-                && _overLowManaThreshold
-                && Target.HealthPercent > 20)
-                if (cast.Normal(Corruption))
-                    return;
-
-            // Immolate
-            if (ObjectManager.Target.GetDistance < _maxRange
-                && !Target.HaveBuff("Immolate")
-                && !ObjectManager.Target.HaveBuff("Fire Ward")
-                && _overLowManaThreshold
-                && Target.HealthPercent > 30
-                && (settings.UseImmolateHighLevel || !UnstableAffliction.KnownSpell)
-                /*&& ToolBox.CanBleed(ObjectManager.Target)*/)
-                if (cast.Normal(Immolate))
-                    return;
-
-            // Drain Life high
-            if (Me.HealthPercent < 70
-                && Target.HealthPercent > 20)
-                if (cast.Normal(DrainLife))
-                    return;
-
-            // Health Funnel
-            if (ObjectManager.Pet.IsValid
-                && ObjectManager.Pet.HealthPercent < 30
-                && Me.HealthPercent > 30)
-            {
-                if (RangeManager.GetRange() > 19)
-                    RangeManager.SetRange(19f);
-                if (HealthFunnel.IsDistanceGood && cast.Normal(HealthFunnel))
-                    return;
-            }
-
-            // Dark Pact
-            if (Me.ManaPercentage < 70
-                && ObjectManager.Pet.Mana > 0
-                && ObjectManager.Pet.ManaPercentage > 60
-                && settings.UseDarkPact)
-                if (cast.Normal(DarkPact))
-                    return;
-
-            // Drain Mana
-            if (Me.ManaPercentage < 70
-                && Target.Mana > 0
-                && Target.ManaPercentage > 30)
-                if (cast.Normal(DrainMana))
-                    return;
-
-            // Incinerate
-            if (ObjectManager.Target.GetDistance < _maxRange 
-                && Target.HaveBuff("Immolate")
-                && _overLowManaThreshold
-                && Target.HealthPercent > 30
-                && settings.UseIncinerate)
-                if (cast.Normal(Incinerate))
-                    return;
-
-            // Shadow Bolt
-            if ((!settings.PrioritizeWandingOverSB || !_iCanUseWand)
-                && (ObjectManager.Target.HealthPercent > 50 || Me.ManaPercentage > 90 && ObjectManager.Target.HealthPercent > 10)
-                && _myManaPC > 40
-                && ObjectManager.Target.GetDistance < _maxRange)
-                if (cast.Normal(ShadowBolt))
-                    return;
-
-            // Life Tap
-            if (Me.HealthPercent > 50
-                && Me.ManaPercentage < 40
-                && !ObjectManager.Target.IsTargetingMe
-                && settings.UseLifeTap)
-                if (cast.Normal(LifeTap))
-                    return;
-
-            // Stop wand if banned
-            if (ToolBox.UsingWand()
-                && cast.BannedSpells.Contains("Shoot"))
-                if (cast.Normal(UseWand))
-                    return;
-
-            // Spell if wand banned
-            if (cast.BannedSpells.Contains("Shoot")
-                && ObjectManager.Target.GetDistance < _maxRange)
-                if (cast.Normal(ShadowBolt))
-                    return;
-
-            // Use Wand
-            if (!ToolBox.UsingWand()
-                && _iCanUseWand
-                && ObjectManager.Target.GetDistance <= _maxRange + 2)
-            {
-                RangeManager.SetRange(_maxRange);
-                if (cast.Normal(UseWand, false))
-                    return;
-            }
-
-            // Go in melee because nothing else to do
-            if (!ToolBox.UsingWand() 
-                && !UseWand.IsSpellUsable
-                && !RangeManager.CurrentRangeIsMelee()
-                && Target.IsAlive)
-            {
-                Logger.Log("Going in melee");
-                RangeManager.SetRangeToMelee();
-                return;
-            }
         }
 
         protected AIOSpell DemonSkin = new AIOSpell("Demon Skin");
@@ -571,6 +268,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         protected AIOSpell Corruption = new AIOSpell("Corruption");
         protected AIOSpell CurseOfAgony = new AIOSpell("Curse of Agony");
         protected AIOSpell DrainSoul = new AIOSpell("Drain Soul");
+        protected AIOSpell DrainSoulRank1 = new AIOSpell("Drain Soul", 1);
         protected AIOSpell DrainLife = new AIOSpell("Drain Life");
         protected AIOSpell Fear = new AIOSpell("Fear");
         protected AIOSpell SummonImp = new AIOSpell("Summon Imp");
@@ -592,6 +290,10 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         protected AIOSpell FelDomination = new AIOSpell("Fel Domination");
         protected AIOSpell SoulLink = new AIOSpell("Soul Link");
         protected AIOSpell HowlOfTerror = new AIOSpell("Howl of Terror");
+        protected AIOSpell CurseOfTheElements = new AIOSpell("Curse of the Elements");
+        protected AIOSpell CurseOfRecklessness = new AIOSpell("Curse of Recklessness");
+        protected AIOSpell CurseOfDoom = new AIOSpell("Curse of Doom");
+        protected AIOSpell SeedOfCorruption = new AIOSpell("Seed of Corruption");
 
         // EVENT HANDLERS
         private void OnRunStateHandler(Engine engine, State state, CancelEventArgs cancelable)
@@ -609,7 +311,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         private void FightEndHandler(ulong guid)
         {
             _iCanUseWand = false;
-            RangeManager.SetRange(_maxRange);
+            RangeManager.SetRange(ShadowBolt.MaxRange);
             _addCheckTimer.Reset();
             if (settings.PetInPassiveWhenOOC)
                 Lua.LuaDoString("PetPassiveMode();");

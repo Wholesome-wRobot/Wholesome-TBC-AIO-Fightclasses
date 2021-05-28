@@ -24,18 +24,17 @@ namespace WholesomeTBCAIO.Rotations.Priest
         protected WoWLocalPlayer Me = ObjectManager.Me;
         protected Stopwatch _dispelTimer = new Stopwatch();
 
-        protected readonly float _distanceRange = 26f;
         protected bool _iCanUseWand = ToolBox.HaveRangedWeaponEquipped();
         protected int _innerManaSaveThreshold = 20;
         protected int _wandThreshold;
-        protected bool _goInMFRange = false;
-        protected List<WoWUnit> _partyEnemiesAround = new List<WoWUnit>();
 
         protected Priest specialization;
 
         public void Initialize(IClassRotation specialization)
         {
             settings = PriestSettings.Current;
+            if (settings.PartyDrinkName != "")
+                ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
             cast = new Cast(Smite, settings.ActivateCombatDebug, UseWand, settings.AutoDetectImmunities);
 
             this.specialization = specialization as Priest;
@@ -43,7 +42,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             TalentsManager.InitTalents(settings);
 
             _wandThreshold = settings.WandThreshold > 100 ? 50 : settings.WandThreshold;
-            RangeManager.SetRange(_distanceRange);
+            RangeManager.SetRange(28f);
 
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightStart += FightStartHandler;
@@ -65,21 +64,26 @@ namespace WholesomeTBCAIO.Rotations.Priest
             {
                 try
                 {
-                    if (StatusChecker.BasicConditions() && specialization is Shadow)
+                    if (Me.HaveBuff("Spirit of Redemption"))
                     {
-                        if (!RangeManager.CurrentRangeIsMelee())
-                        {
-                            if (_goInMFRange)
-                                RangeManager.SetRange(17f);
-                            else
-                                RangeManager.SetRange(_distanceRange);
-                        }
+                        // PARTY Greater heal
+                        List<AIOPartyMember> needGreaterHealSR = AIOParty.Group
+                            .FindAll(m => m.HealthPercent < 100)
+                            .OrderBy(m => m.HealthPercent)
+                            .ToList();
+                        if (needGreaterHealSR.Count > 0 && cast.OnFocusPlayer(GreaterHeal, needGreaterHealSR[0]))
+                            continue;
+
+                        // PARTY Heal
+                        List<AIOPartyMember> needHealSR = AIOParty.Group
+                            .FindAll(m => m.HealthPercent < 100)
+                            .OrderBy(m => m.HealthPercent)
+                            .ToList();
+                        if (!GreaterHeal.KnownSpell && needHealSR.Count > 0 && cast.OnFocusPlayer(GreaterHeal, needHealSR[0]))
+                            continue;
                     }
 
-                    if (RotationType == Enums.RotationType.Party)
-                        _partyEnemiesAround = ToolBox.GetSuroundingEnemies();
-
-                    if (StatusChecker.OutOfCombat())
+                    if (StatusChecker.OutOfCombat(RotationRole))
                         specialization.BuffRotation();
 
                     if (StatusChecker.InPull())
@@ -131,6 +135,8 @@ namespace WholesomeTBCAIO.Rotations.Priest
         protected AIOSpell PsychicScream = new AIOSpell("Psychic Scream");
         protected AIOSpell Heal = new AIOSpell("Heal");
         protected AIOSpell GreaterHeal = new AIOSpell("Greater Heal");
+        protected AIOSpell GreaterHealRank2 = new AIOSpell("Greater Heal", 2);
+        protected AIOSpell GreaterHealRank7 = new AIOSpell("Greater Heal", 7);
         protected AIOSpell MindFlay = new AIOSpell("Mind Flay");
         protected AIOSpell HolyFire = new AIOSpell("Holy Fire");
         protected AIOSpell DispelMagic = new AIOSpell("Dispel Magic");
@@ -148,14 +154,14 @@ namespace WholesomeTBCAIO.Rotations.Priest
         protected AIOSpell Resurrection = new AIOSpell("Resurrection");
         protected AIOSpell PrayerOfHealing = new AIOSpell("Prayer of Healing");
         protected AIOSpell PrayerOfMending = new AIOSpell("Prayer of Mending");
+        protected AIOSpell Fade = new AIOSpell("Fade");
 
         // EVENT HANDLERS
         private void FightEndHandler(ulong guid)
         {
-            _goInMFRange = false;
             _dispelTimer.Reset();
             _iCanUseWand = false;
-            RangeManager.SetRange(_distanceRange);
+            RangeManager.SetRange(28f);
         }
 
         private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)

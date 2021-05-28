@@ -7,9 +7,9 @@ using robotManager.Helpful;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
 using wManager.Events;
-using wManager.Wow.Class;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
+using Timer = robotManager.Helpful.Timer;
 
 namespace WholesomeTBCAIO.Rotations.Hunter
 {
@@ -17,6 +17,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
     {
         public Enums.RotationType RotationType { get; set; }
         public Enums.RotationRole RotationRole { get; set; }
+        public static DateTime LastAuto { get; set; }
 
         public static HunterSettings settings;
 
@@ -26,22 +27,20 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         protected Cast cast;
 
-        protected float _distanceRange = 28f;
         protected bool _autoshotRepeating;
         protected bool RangeCheck;
         protected int _backupAttempts = 0;
         protected int _steadyShotSleep = 0;
         protected bool _canOnlyMelee = false;
         protected int _saveDrinkPercent = wManager.wManagerSetting.CurrentSetting.DrinkPercent;
-        protected List<WoWUnit> _partyEnemiesAround = new List<WoWUnit>();
-
-        protected DateTime _lastAuto;
 
         protected Hunter specialization;
 
         public void Initialize(IClassRotation specialization)
         {
             settings = HunterSettings.Current;
+            if (settings.PartyDrinkName != "")
+                ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
             cast = new Cast(RaptorStrike, settings.ActivateCombatDebug, null, settings.AutoDetectImmunities);
 
             this.specialization = specialization as Hunter;
@@ -51,13 +50,24 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             _petPulseThread.DoWork += PetThread;
             _petPulseThread.RunWorkerAsync();
 
-            EventsLuaWithArgs.OnEventsLuaStringWithArgs += AutoShotEventHandler;
             FightEvents.OnFightStart += FightStartHandler;
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightLoop += FightLoopHandler;
             MovementEvents.OnMovementPulse += MovementEventsOnMovementPulse;
-
+            
             Rotation();
+        }
+
+        public void Dispose()
+        {
+            wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
+            _petPulseThread.DoWork -= PetThread;
+            _petPulseThread.Dispose();
+            FightEvents.OnFightStart -= FightStartHandler;
+            FightEvents.OnFightEnd -= FightEndHandler;
+            FightEvents.OnFightLoop -= FightLoopHandler;
+            cast.Dispose();
+            Logger.Log("Disposed");
         }
 
         // Pet thread
@@ -162,43 +172,36 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             }
         }
 
-        public void Dispose()
-        {
-            wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
-            _petPulseThread.DoWork -= PetThread;
-            _petPulseThread.Dispose();
-            EventsLuaWithArgs.OnEventsLuaStringWithArgs -= AutoShotEventHandler;
-            FightEvents.OnFightStart -= FightStartHandler;
-            FightEvents.OnFightEnd -= FightEndHandler;
-            FightEvents.OnFightLoop -= FightLoopHandler;
-            cast.Dispose();
-            Logger.Log("Disposed");
-        }
-
         private void Rotation()
         {
             while (Main.isLaunched)
             {
                 try
                 {
+                    if (Me.HaveBuff("Feign Death"))
+                    {
+                        Thread.Sleep(500);
+                        Move.Backward(Move.MoveAction.PressKey, 100);
+                        cast.OnTarget(AutoShot);
+                    }
+
                     if (StatusChecker.BasicConditions()
-                        && !Me.IsMounted)
+                        && !Me.IsMounted
+                        && !Me.HaveBuff("Food")
+                        && !Me.HaveBuff("Drink"))
                     {
                         if (_canOnlyMelee)
                             RangeManager.SetRangeToMelee();
                         else
-                            RangeManager.SetRange(_distanceRange);
+                            RangeManager.SetRange(AutoShot.MaxRange - 1);
 
-                        if (Me.Level > 10)
+                        if (Me.Level >= 10)
                             PetManager();
                     }
 
-                    if (RotationType == Enums.RotationType.Party)
-                        _partyEnemiesAround = ToolBox.GetSuroundingEnemies();
-
-                    if (StatusChecker.OutOfCombat())
+                    if (StatusChecker.OutOfCombat(RotationRole))
                         specialization.BuffRotation();
-
+                    
                     if (StatusChecker.InPull())
                         specialization.Pull();
 
@@ -249,11 +252,10 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         {
             // Call Pet
             if (!ObjectManager.Pet.IsValid
-                && CallPet.KnownSpell
-                && CallPet.IsSpellUsable)
+                && !Me.HaveBuff("Drink"))
             {
-                CallPet.Launch();
-                Thread.Sleep(Usefuls.Latency + 2000);
+                cast.OnSelf(CallPet);
+                Thread.Sleep(1000);
             }
 
             // Make sure we have mana to revive
@@ -273,26 +275,20 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
             // Revive Pet
             if ((!ObjectManager.Pet.IsAlive || !ObjectManager.Pet.IsValid)
-                && RevivePet.KnownSpell
-                && RevivePet.IsSpellUsable)
-            {
-                RevivePet.Launch(true);
-                Usefuls.WaitIsCasting();
-            }
+                && !Me.HaveBuff("Drink")
+                && (!Me.InCombatFlagOnly || specialization.RotationType == Enums.RotationType.Solo)
+                && cast.OnSelf(RevivePet))
+                return;
 
             // Mend Pet
-            if (ObjectManager.Pet.IsAlive 
-                && ObjectManager.Pet.IsValid 
+            if (ObjectManager.Pet.IsAlive
+                && ObjectManager.Pet.IsValid
                 && !ObjectManager.Pet.HaveBuff("Mend Pet")
                 && !Me.InCombatFlagOnly
-                && Me.IsAlive 
-                && MendPet.IsDistanceGood 
+                && Me.IsAlive
                 && ObjectManager.Pet.HealthPercent <= 60
-                && MendPet.IsSpellUsable)
-            {
-                MendPet.Launch();
-                Thread.Sleep(Usefuls.Latency + 1000);
-            }
+                && cast.OnFocusUnit(MendPet, ObjectManager.Pet))
+                return;
         }
 
         protected bool RaptorStrikeOn()
@@ -337,12 +333,6 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         protected AIOSpell Attack = new AIOSpell("Attack");
 
         // EVENT HANDLERS
-        private void AutoShotEventHandler(string id, List<string> args)
-        {
-            if (id == "COMBAT_LOG_EVENT" && args[9] == "Auto Shot")
-                _lastAuto = DateTime.Now;
-        }
-
         private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)
         {
             // Wait for feed pet
@@ -365,14 +355,17 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         {
             cast.IsBackingUp = false;
 
+            float minDistance = RangeManager.GetMeleeRangeWithTarget() + settings.BackupDistance;
+
             // Do we need to backup?
-            if (ObjectManager.Target.GetDistance < 8f + RangeManager.GetMeleeRangeWithTarget() 
+            if (ObjectManager.Target.GetDistance < minDistance
                 && !ObjectManager.Target.IsTargetingMe
                 && !MovementManager.InMovement
                 && Me.IsAlive
                 && ObjectManager.Target.IsAlive
                 && !ObjectManager.Pet.HaveBuff("Pacifying Dust")
                 && !_canOnlyMelee
+                && !cast.IsApproachingTarget
                 && !ObjectManager.Pet.IsStunned
                 && !Me.IsCast
                 && settings.BackupFromMelee
@@ -388,6 +381,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 }
 
                 cast.IsBackingUp = true;
+                Timer timer = new Timer(3000);
 
                 // Using CTM
                 if (settings.BackupUsingCTM)
@@ -397,40 +391,33 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     Thread.Sleep(500);
 
                     // Backup loop
-                    int limiter = 0;
-                    while (MovementManager.InMoveTo
-                    && Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
+                    while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
                     && ObjectManager.Me.IsAlive
                     && !ObjectManager.Target.IsTargetingMe
-                    && ObjectManager.Target.GetDistance < 8f + RangeManager.GetMeleeRangeWithTarget()
-                    && limiter < 10)
-                    {
-                        // Wait follow path
-                        Thread.Sleep(300);
-                        limiter++;
-                    }
+                    && ObjectManager.Target.GetDistance < minDistance
+                    && !timer.IsReady)
+                    Thread.Sleep(100);
                 }
                 // Using Keyboard
                 else
                 {
-                    int limiter = 0;
                     while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
                     && ObjectManager.Me.IsAlive
                     && !ObjectManager.Target.IsTargetingMe
-                    && ObjectManager.Target.GetDistance < 8f + RangeManager.GetMeleeRangeWithTarget()
-                    && limiter <= 6)
+                    && ObjectManager.Target.GetDistance < minDistance
+                    && !timer.IsReady)
                     {
                         Move.Backward(Move.MoveAction.PressKey, 500);
-                        limiter++;
                     }
                 }
 
                 _backupAttempts++;
                 Logger.Log($"Backup attempt : {_backupAttempts}");
+                //Logger.Log($"FINAL We are {ObjectManager.Target.GetDistance}/{minDistance} away from target");
                 cast.IsBackingUp = false;
 
                 if (RaptorStrikeOn())
-                    cast.Normal(RaptorStrike);
+                    cast.OnTarget(RaptorStrike);
                 ReenableAutoshot();
             }
         }

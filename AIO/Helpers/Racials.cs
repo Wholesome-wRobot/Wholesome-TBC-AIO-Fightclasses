@@ -2,9 +2,9 @@
 using System.ComponentModel;
 using System.Linq;
 using System.Threading;
-using wManager.Wow.Class;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
+using static WholesomeTBCAIO.Helpers.Enums;
 
 namespace WholesomeTBCAIO.Helpers
 {
@@ -33,7 +33,7 @@ namespace WholesomeTBCAIO.Helpers
                 {
                     if (StatusChecker.BasicConditions())
                     {
-                        if (StatusChecker.OutOfCombat())
+                        if (StatusChecker.OutOfCombat(RotationRole.None))
                             RacialCannibalize();
 
                         if (StatusChecker.InCombat())
@@ -62,6 +62,7 @@ namespace WholesomeTBCAIO.Helpers
         private void RacialBloodFury()
         {
             if (BloodFury.KnownSpell
+                && AIOParty.Group.Count <= 1
                 && BloodFury.IsSpellUsable
                 && ObjectManager.Target.HealthPercent > 70)
             {

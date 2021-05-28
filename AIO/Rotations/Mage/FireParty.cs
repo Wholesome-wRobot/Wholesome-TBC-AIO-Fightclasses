@@ -1,6 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using WholesomeTBCAIO.Helpers;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
@@ -13,37 +13,37 @@ namespace WholesomeTBCAIO.Rotations.Mage
         {
             base.BuffRotation();
 
-            // PARTY Arcane Intellect
-            WoWPlayer noAI = AIOParty.Group
-                .Find(m => !m.HaveBuff(ArcaneIntellect.Name));
-            if (noAI != null && cast.OnFocusPlayer(ArcaneIntellect, noAI))
-                return;
+            if (_knowImprovedScorch)
+                RangeManager.SetRange(Scorch.MaxRange);
+            else
+                RangeManager.SetRange(Fireball.MaxRange);
 
             // Molten Armor
             if (!Me.HaveBuff("Molten Armor")
-                && cast.Normal(MoltenArmor))
+                && cast.OnSelf(MoltenArmor))
                 return;
 
             // Mage Armor
             if (!Me.HaveBuff("Mage Armor")
                 && !MoltenArmor.KnownSpell
-                && cast.Normal(MageArmor))
+                && cast.OnSelf(MageArmor))
                 return;
 
             // Ice Armor
             if (!Me.HaveBuff("Ice Armor")
                 && (!MoltenArmor.KnownSpell && !MageArmor.KnownSpell)
-                && cast.Normal(IceArmor))
+                && cast.OnSelf(IceArmor))
                 return;
 
             // Frost Armor
             if (!Me.HaveBuff("Frost Armor")
                 && (!MoltenArmor.KnownSpell && !MageArmor.KnownSpell && !IceArmor.KnownSpell)
-                && cast.Normal(FrostArmor))
+                && cast.OnSelf(FrostArmor))
                 return;
 
             // PARTY Drink
-            ToolBox.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold);
+            if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
+                return;
         }
 
         protected override void Pull()
@@ -54,13 +54,11 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Scorch
             if (_knowImprovedScorch
-                && _target.GetDistance < 30f
-                && cast.Normal(Scorch))
+                && cast.OnTarget(Scorch))
                 return;
 
             // Fireball
-            if (_target.GetDistance < 30f
-                && cast.Normal(Fireball))
+            if (cast.OnTarget(Fireball))
                 return;
         }
 
@@ -68,14 +66,11 @@ namespace WholesomeTBCAIO.Rotations.Mage
         {
             base.CombatRotation();
             WoWUnit Target = ObjectManager.Target;
-            List<WoWUnit> surroundingEnemies = ObjectManager.GetObjectWoWUnit()
-                .Where(e => e.IsAttackable && e.IsAlive && e.IsValid && !e.PlayerControlled && e.InCombatFlagOnly)
-                .ToList();
 
             // PARTY Remove Curse
             if (settings.PartyRemoveCurse)
             {
-                List<WoWPlayer> needRemoveCurse = AIOParty.Group
+                List<AIOPartyMember> needRemoveCurse = AIOParty.Group
                     .FindAll(m => m.InCombatFlagOnly && ToolBox.HasCurseDebuff(m.Name))
                     .ToList();
                 if (needRemoveCurse.Count > 0 && cast.OnFocusPlayer(RemoveCurse, needRemoveCurse[0]))
@@ -84,16 +79,13 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Use Mana Stone
             if (Me.ManaPercentage < 20
-                && _foodManager.ManaStone != "")
-            {
-                _foodManager.UseManaStone();
-                _foodManager.ManaStone = "";
-            }
+                && _foodManager.UseManaStone())
+                return;
 
             // Evocation
             if (Me.ManaPercentage < 20
-                && !surroundingEnemies.Any(e => e.Target == Me.Guid)
-                && cast.Normal(Evocation))
+                && !AIOParty.EnemiesClose.Any(e => e.Target == Me.Guid)
+                && cast.OnSelf(Evocation))
             {
                 Usefuls.WaitIsCasting();
                 return;
@@ -101,33 +93,33 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Dragon's Breath
             if (ToolBox.GetNbEnemiesClose(10f) > 2
-                && cast.Normal(DragonsBreath))
+                && cast.OnSelf(DragonsBreath))
                 return;
 
             // Blast Wave
             if (ToolBox.GetNbEnemiesClose(10f) > 2
-                && cast.Normal(BlastWave))
+                && cast.OnSelf(BlastWave))
                 return;
 
             // Icy Veins
             if (Target.HealthPercent < 100
                 && Me.ManaPercentage > 10
-                && cast.Normal(IcyVeins))
+                && cast.OnSelf(IcyVeins))
                 return;
 
             // Arcane Power
             if (Target.HealthPercent < 100
                 && Me.ManaPercentage > 10
-                && cast.Normal(ArcanePower))
+                && cast.OnSelf(ArcanePower))
                 return;
 
             // Presence of Mind
             if (!Me.HaveBuff("Presence of Mind")
                 && Target.HealthPercent < 100
-                && cast.Normal(PresenceOfMind))
+                && cast.OnSelf(PresenceOfMind))
                 return;
             if (Me.HaveBuff("Presence of Mind"))
-                if (cast.Normal(Fireball) || cast.Normal(Frostbolt))
+                if (cast.OnTarget(Fireball) || cast.OnTarget(Frostbolt))
                 {
                     Usefuls.WaitIsCasting();
                     return;
@@ -137,51 +129,62 @@ namespace WholesomeTBCAIO.Rotations.Mage
             if (IcyVeins.GetCurrentCooldown > 0
                 && Me.ManaPercentage > 10
                 && !Me.HaveBuff(IcyVeins.Name)
-                && cast.Normal(ColdSnap))
+                && cast.OnSelf(ColdSnap))
                 return;
 
-            // Scorch
-            int scorchCount = Target.IsBoss ? 5 : 2;
+            // Scorch first
+            int wantedScorchCount = Target.IsBoss ? 5 : 2;
+            int nbScorchDebuffOnTarget = ToolBox.CountDebuff("Fire Vulnerability", "target");
             if (_knowImprovedScorch
-                && Scorch.Cost < Me.Mana
-                && (ToolBox.CountDebuff("Fire Vulnerability", "target") < scorchCount || ToolBox.DeBuffTimeLeft("Fire Vulnerability", "target") < 10)
-                && cast.Normal(Scorch))
+                && (nbScorchDebuffOnTarget < wantedScorchCount)
+                && cast.OnTarget(Scorch))
                 return;
+
+            // Scorch renewal
+            if (_knowImprovedScorch
+                && (nbScorchDebuffOnTarget >= wantedScorchCount && ToolBox.DeBuffTimeLeft("Fire Vulnerability", "target") < 10)
+                && cast.OnTarget(Scorch))
+            {
+                Thread.Sleep(1000);
+                return;
+            }
 
             // Combustion
             if (!Me.HaveBuff("Combustion")
                 && Combustion.GetCurrentCooldown <= 0
                 && ToolBox.DeBuffTimeLeft("Fire Vulnerability", "target") > 20
-                && ToolBox.CountDebuff("Fire Vulnerability", "target") >= scorchCount
-                && cast.Normal(Combustion))
+                && ToolBox.CountDebuff("Fire Vulnerability", "target") >= wantedScorchCount
+                && cast.OnSelf(Combustion))
+                return;
+
+            // Fire Blast
+            if (!_knowImprovedScorch
+                && cast.OnTarget(FireBlast))
                 return;
 
             // Fireball
-            if (cast.Normal(Fireball))
+            if (cast.OnTarget(Fireball))
                 return;
 
 
             // Stop wand if banned
             if (ToolBox.UsingWand()
-                && cast.BannedSpells.Contains("Shoot")
-                && cast.Normal(UseWand))
+                && UnitImmunities.Contains(ObjectManager.Target, "Shoot")
+                && cast.OnTarget(UseWand))
                 return;
 
             // Spell if wand banned
-            if (cast.BannedSpells.Contains("Shoot")
-                && Target.GetDistance < _distanceRange)
-                if (cast.Normal(ArcaneBlast) || cast.Normal(ArcaneMissiles) || cast.Normal(Frostbolt) || cast.Normal(Fireball))
+            if (UnitImmunities.Contains(ObjectManager.Target, "Shoot"))
+                if (cast.OnTarget(ArcaneBlast) || cast.OnTarget(ArcaneMissiles) || cast.OnTarget(Frostbolt) || cast.OnTarget(Fireball))
                     return;
 
             // Use Wand
             if (!ToolBox.UsingWand()
                 && _iCanUseWand
-                && ObjectManager.Target.GetDistance <= _distanceRange
                 && !cast.IsBackingUp
                 && !MovementManager.InMovement)
             {
-                RangeManager.SetRange(_distanceRange);
-                if (cast.Normal(UseWand, false))
+                if (cast.OnTarget(UseWand, false))
                     return;
             }
         }

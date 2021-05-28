@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Threading;
 using robotManager.Helpful;
 using wManager.Events;
@@ -22,30 +21,27 @@ namespace WholesomeTBCAIO.Rotations.Rogue
         public static RogueSettings settings;
 
         protected Cast cast;
+        protected Rogue specialization;
 
-        protected Stopwatch _pullMeleeTimer = new Stopwatch();
-        protected Stopwatch _meleeTimer = new Stopwatch();
-        protected Stopwatch _stealthApproachTimer = new Stopwatch();
-        protected WoWLocalPlayer Me = ObjectManager.Me;
         protected List<string> _casterEnemies = new List<string>();
 
         protected readonly BackgroundWorker _pulseThread = new BackgroundWorker();
 
-        protected float _pullRange = 25f;
         protected bool _fightingACaster = false;
-        protected bool _pullFromAfar = false;
         protected bool _isStealthApproching;
         public static uint MHPoison;
         public static uint OHPoison;
         protected string _myBestBandage = null;
-        protected List<WoWUnit> _partyEnemiesAround = new List<WoWUnit>();
-        private Timer _moveBehindTimer = new Timer(500);
+        protected WoWLocalPlayer Me = ObjectManager.Me;
 
-        protected Rogue specialization;
+        private Timer _moveBehindTimer = new Timer();
+        protected Timer _combatMeleeTimer = new Timer();
 
         public void Initialize(IClassRotation specialization)
         {
             settings = RogueSettings.Current;
+            if (settings.PartyDrinkName != "")
+                ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
             cast = new Cast(SinisterStrike, settings.ActivateCombatDebug, null, settings.AutoDetectImmunities);
 
             this.specialization = specialization as Rogue;
@@ -81,10 +77,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             {
                 try
                 {
-                    if (RotationType == Enums.RotationType.Party)
-                        _partyEnemiesAround = ToolBox.GetSuroundingEnemies();
-
-                    if (StatusChecker.OutOfCombat())
+                    if (StatusChecker.OutOfCombat(RotationRole))
                         specialization.BuffRotation();
 
                     if (StatusChecker.InPull())
@@ -148,31 +141,27 @@ namespace WholesomeTBCAIO.Rotations.Rogue
 
         protected void CastOpener()
         {
-            Logger.Log("OPENER");
-            // Opener
             if (ToolBox.MeBehindTarget())
             {
                 if (settings.UseGarrote
-                    && cast.Normal(Garrote))
-                        return;
-                if (cast.Normal(Backstab))
+                    && cast.OnTarget(Garrote))
                     return;
-                if (cast.Normal(CheapShot))
+                if (cast.OnTarget(Backstab))
                     return;
-                if (cast.Normal(Hemorrhage) || cast.Normal(SinisterStrike))
+                if (cast.OnTarget(CheapShot))
+                    return;
+                if (cast.OnTarget(Hemorrhage) || cast.OnTarget(SinisterStrike))
                     return;
             }
             else
             {
-                if (CheapShot.KnownSpell)
-                    if (cast.Normal(CheapShot))
-                        return;
-                else if (HaveDaggerInMH() && Gouge.KnownSpell)
-                    if (cast.Normal(Gouge))
-                        return;
-                else
-                    if (cast.Normal(Hemorrhage) || cast.Normal(SinisterStrike))
-                        return;
+                if (cast.OnTarget(CheapShot))
+                    return;
+                if (HaveDaggerInMH() 
+                    && cast.OnTarget(Gouge))
+                    return;
+                if (cast.OnTarget(Hemorrhage) || cast.OnTarget(SinisterStrike))
+                    return;
             }
         }
 
@@ -337,10 +326,46 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             ToolBox.AddToDoNotSellList("Deadly Poison VII");
         }
 
+        protected void StealthApproach()
+        {
+            RangeManager.SetRangeToMelee();
+            Timer stealthApproachTimer = new Timer(15000);
+            _isStealthApproching = true;
+
+            if (ObjectManager.Me.IsAlive && ObjectManager.Target.IsAlive)
+            {
+                while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
+                && ObjectManager.Target.GetDistance > 2.5f
+                && ToolBox.GetClosestHostileFrom(ObjectManager.Target, 20f) == null
+                && Fight.InFight
+                && !stealthApproachTimer.IsReady
+                && Me.HaveBuff("Stealth"))
+                {
+                    ToggleAutoAttack(false);
+
+                    Vector3 position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f);
+                    MovementManager.MoveTo(position);
+                    Thread.Sleep(50);
+                    CastOpener();
+                }
+
+                if (stealthApproachTimer.IsReady
+                    && ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { Shoot, Throw }))
+                {
+                    _combatMeleeTimer = new Timer(2000);
+                    return;
+                }
+
+                ToolBox.CheckAutoAttack(Attack);
+
+                _isStealthApproching = false;
+            }
+        }
+
         // EVENT HANDLERS
         private void BlackListHandler(ulong guid, int timeInMilisec, bool isSessionBlacklist, CancelEventArgs cancelable)
         {
-            if (Me.HaveBuff("Stealth") && !_pullFromAfar)
+            if (Me.HaveBuff("Stealth"))
             {
                 Logger.LogDebug("BL : " + guid + " ms : " + timeInMilisec + " is session: " + isSessionBlacklist);
                 Logger.Log("Cancelling Blacklist event");
@@ -350,11 +375,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
 
         private void FightEndHandler(ulong guid)
         {
-            _meleeTimer.Reset();
-            _pullMeleeTimer.Reset();
-            _stealthApproachTimer.Reset();
             _fightingACaster = false;
-            _pullFromAfar = false;
             _isStealthApproching = false;
             _myBestBandage = null;
             RangeManager.SetRangeToMelee();
@@ -370,27 +391,10 @@ namespace WholesomeTBCAIO.Rotations.Rogue
         private void FightLoopHandler(WoWUnit unit, CancelEventArgs cancel)
         {
             if (specialization.RotationType == Enums.RotationType.Party
-                && Me.IsAlive
-                && _moveBehindTimer.IsReady
-                && !Me.IsCast
-                && ObjectManager.Target.IsAlive
-                && ObjectManager.Target.HasTarget
-                && !ObjectManager.Target.IsTargetingMe
-                && !MovementManager.InMovement)
+                && _moveBehindTimer.IsReady)
             {
-                int limit = 5;
-                Vector3 position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2f);
-                while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                    && Me.Position.DistanceTo(position) > 1
-                    && limit >= 0)
-                {
-                    position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2f);
-                    MovementManager.Go(PathFinder.FindPath(position), false);
-                    // Wait follow path
-                    Thread.Sleep(500);
-                    limit--;
-                }
-                _moveBehindTimer = new Timer(4000);
+                if (ToolBox.StandBehindTargetCombat())
+                    _moveBehindTimer = new Timer(4000);
             }
             else
             {

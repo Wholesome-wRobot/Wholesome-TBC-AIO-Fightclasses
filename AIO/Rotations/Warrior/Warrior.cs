@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Threading;
 using robotManager.Helpful;
 using wManager.Events;
-using wManager.Wow.Class;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 using System.Collections.Generic;
@@ -22,23 +20,22 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         public static WarriorSettings settings;
 
         protected Cast cast;
-
-        protected Stopwatch _pullMeleeTimer = new Stopwatch();
-        protected Stopwatch _meleeTimer = new Stopwatch();
         protected WoWLocalPlayer Me = ObjectManager.Me;
 
-        protected float _pullRange = 25f;
         protected bool _fightingACaster = false;
         protected List<string> _casterEnemies = new List<string>();
         protected bool _pullFromAfar = false;
-        protected List<WoWUnit> _partyEnemiesAround = new List<WoWUnit>();
-        private Timer _moveBehindTimer = new Timer(500);
+
+        private Timer _moveBehindTimer = new Timer();
+        protected Timer _combatMeleeTimer = new Timer();
 
         protected Warrior specialization;
 
         public void Initialize(IClassRotation specialization)
         {
             settings = WarriorSettings.Current;
+            if (settings.PartyDrinkName != "")
+                ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
             cast = new Cast(BattleShout, settings.ActivateCombatDebug, null, settings.AutoDetectImmunities);
 
             this.specialization = specialization as Warrior;
@@ -48,7 +45,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightLoop += FightLoopHandler;
 
-            cast.Normal(BattleStance);
+            cast.OnTarget(BattleStance);
 
             Rotation();
         }
@@ -67,10 +64,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             {
                 try
                 {
-                    if (RotationType == Enums.RotationType.Party)
-                        _partyEnemiesAround = ToolBox.GetSuroundingEnemies();
-
-                    if (StatusChecker.OutOfCombat())
+                    if (StatusChecker.OutOfCombat(RotationRole))
                         specialization.BuffRotation();
 
                     if (StatusChecker.InPull())
@@ -97,23 +91,20 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             {
                 // Battle Shout
                 if (!Me.HaveBuff("Battle Shout")
-                    && BattleShout.IsSpellUsable &&
-                    (!settings.UseCommandingShout || !CommandingShout.KnownSpell))
-                    if (cast.Normal(BattleShout))
-                        return;
+                    && (!settings.UseCommandingShout || !CommandingShout.KnownSpell)
+                    && cast.OnSelf(BattleShout))
+                    return;
 
                 // Commanding Shout
                 if (!Me.HaveBuff("Commanding Shout")
                     && settings.UseCommandingShout
-                    && CommandingShout.KnownSpell)
-                    if (cast.Normal(CommandingShout))
-                        return;
+                    && cast.OnSelf(CommandingShout))
+                    return;
             }
         }
 
         protected virtual void Pull()
         {
-            RangeManager.SetRangeToMelee();
         }
 
         protected virtual void CombatRotation()
@@ -122,56 +113,16 @@ namespace WholesomeTBCAIO.Rotations.Warrior
 
         protected virtual void CombatNoTarget()
         {
-            RegainAggro();
         }
 
-        protected void RegainAggro()
-        {
-            // Regain aggro
-            if (settings.PartyTankSwitchTarget
-                && specialization is ProtectionWarrior
-                && (ObjectManager.Target.Target == ObjectManager.Me.Guid || !ObjectManager.Target.IsAlive || ObjectManager.Target.Target <= 0)
-                && !ToolBox.HasDebuff("Taunt", "target"))
-            {
-                foreach (WoWUnit enemy in _partyEnemiesAround)
-                {
-                    WoWPlayer partyMemberToSave = AIOParty.Group.Find(m => enemy.Target == m.Guid && m.Guid != ObjectManager.Me.Guid);
-                    if (partyMemberToSave != null)
-                    {
-                        Logger.Log($"Regaining aggro [{enemy.Name} attacking {partyMemberToSave.Name}]");
-                        ObjectManager.Me.Target = enemy.Guid;
-                        if (settings.PartyUseIntervene && enemy.Position.DistanceTo(partyMemberToSave.Position) < 10)
-                            cast.Normal(Intervene);
-                        break;
-                    }
-                }
-            }
-        }
         private void FightLoopHandler(WoWUnit unit, CancelEventArgs cancel)
         {
             if (specialization is FuryParty
                 && settings.PartyStandBehind
-                && Me.IsAlive
-                && _moveBehindTimer.IsReady
-                && !Me.IsCast
-                && ObjectManager.Target.IsAlive
-                && ObjectManager.Target.HasTarget
-                && !ObjectManager.Target.IsTargetingMe
-                && !MovementManager.InMovement)
+                && _moveBehindTimer.IsReady)
             {
-                int limit = 5;
-                Vector3 position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2f);
-                while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                    && Me.Position.DistanceTo(position) > 1
-                    && limit >= 0)
-                {
-                    position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2f);
-                    MovementManager.Go(PathFinder.FindPath(position), false);
-                    // Wait follow path
-                    Thread.Sleep(500);
-                    limit--;
-                }
-                _moveBehindTimer = new Timer(4000);
+                if (ToolBox.StandBehindTargetCombat())
+                    _moveBehindTimer = new Timer(4000);
             }
         }
 
@@ -232,10 +183,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         private void FightEndHandler(ulong guid)
         {
             _fightingACaster = false;
-            _meleeTimer.Reset();
-            _pullMeleeTimer.Reset();
             _pullFromAfar = false;
-            RangeManager.SetRange(RangeManager.DefaultMeleeRange);
         }
     }
 }

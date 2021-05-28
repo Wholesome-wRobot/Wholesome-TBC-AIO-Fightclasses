@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Threading;
 using robotManager.Helpful;
 using wManager.Events;
@@ -19,9 +18,6 @@ namespace WholesomeTBCAIO.Rotations.Druid
         public Enums.RotationType RotationType { get; set; }
         public Enums.RotationRole RotationRole { get; set; }
 
-        protected Stopwatch _pullMeleeTimer = new Stopwatch();
-        protected Stopwatch _meleeTimer = new Stopwatch();
-        protected Stopwatch _stealthApproachTimer = new Stopwatch();
         protected WoWLocalPlayer Me = ObjectManager.Me;
         protected DruidSettings settings;
 
@@ -29,20 +25,21 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
         protected bool _fightingACaster = false;
         protected List<string> _casterEnemies = new List<string>();
-        protected bool _pullFromAfar = false;
         protected int bigHealComboCost;
         protected int smallHealComboCost;
-        protected float _pullRange = 27f;
         protected bool _isStealthApproching;
-        protected List<WoWUnit> _partyEnemiesAround = new List<WoWUnit>();
-        private Timer _moveBehindTimer = new Timer(500);
+
+        private Timer _moveBehindTimer = new Timer();
+        protected Timer _combatMeleeTimer = new Timer();
 
         protected Druid specialization;
 
         public void Initialize(IClassRotation specialization)
         {
-            RangeManager.SetRange(_pullRange);
+            RangeManager.SetRange(28);
             settings = DruidSettings.Current;
+            if (settings.PartyDrinkName != "")
+                ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
             cast = new Cast(Wrath, settings.ActivateCombatDebug, null, settings.AutoDetectImmunities);
 
             this.specialization = specialization as Druid;
@@ -75,10 +72,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             {
                 try
                 {
-                    if (RotationType == Enums.RotationType.Party)
-                        _partyEnemiesAround = ToolBox.GetSuroundingEnemies();
-
-                    if (StatusChecker.OutOfCombat())
+                    if (StatusChecker.OutOfCombat(RotationRole))
                         specialization.BuffRotation();
 
                     if (StatusChecker.InPull())
@@ -116,32 +110,10 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
         protected virtual void CombatNoTarget()
         {
-            RegainAggro();
         }
 
         protected virtual void HealerCombat()
         {
-        }
-
-        protected void RegainAggro()
-        {
-            // Regain aggro
-            if (settings.PartyTankSwitchTarget
-                && specialization is FeralTankParty
-                && (ObjectManager.Target.Target == ObjectManager.Me.Guid || !ObjectManager.Target.IsAlive || !ObjectManager.Target.HasTarget)
-                && !ToolBox.HasDebuff("Growl", "target"))
-            {
-                foreach (WoWUnit enemy in _partyEnemiesAround)
-                {
-                    WoWPlayer partyMemberToSave = AIOParty.Group.Find(m => enemy.Target == m.Guid && m.Guid != ObjectManager.Me.Guid);
-                    if (partyMemberToSave != null)
-                    {
-                        Logger.Log($"Regaining aggro [{enemy.Name} attacking {partyMemberToSave.Name}]");
-                        ObjectManager.Me.Target = enemy.Guid;
-                        break;
-                    }
-                }
-            }
         }
 
         protected AIOSpell Attack = new AIOSpell("Attack");
@@ -193,70 +165,65 @@ namespace WholesomeTBCAIO.Rotations.Druid
         protected AIOSpell Tranquility = new AIOSpell("Tranquility");
         protected AIOSpell Swiftmend = new AIOSpell("Swiftmend");
         protected AIOSpell InsectSwarm = new AIOSpell("Insect Swarm");
+        protected AIOSpell MoonfireRank1 = new AIOSpell("Moonfire", 1);
 
         protected bool MaulOn()
         {
             return Lua.LuaDoString<bool>("maulon = false; if IsCurrentSpell('Maul') then maulon = true end", "maulon");
         }
 
-        protected bool PullSpell()
+        protected void StealthApproach()
         {
-            RangeManager.SetRange(_pullRange);
-            if ((Me.HaveBuff("Cat Form")
-                || Me.HaveBuff("Bear Form")
-                || Me.HaveBuff("Dire Bear Form"))
-                && FaerieFireFeral.KnownSpell)
-            {
-                Logger.Log("Pulling with Faerie Fire (Feral)");
-                Lua.RunMacroText("/cast Faerie Fire (Feral)()");
-                Thread.Sleep(2000);
-                return true;
-            }
-            else if (CatForm.KnownSpell
-                && !Me.HaveBuff("Cat Form")
-                && FaerieFireFeral.KnownSpell)
-            {
-                Logger.Log("Switching to cat form");
-                cast.Normal(CatForm);
-                return true;
-            }
-            else if (Moonfire.KnownSpell
-                && !ObjectManager.Target.HaveBuff("Moonfire")
-                && ObjectManager.Me.Level >= 10)
-            {
-                Logger.Log("Pulling with Moonfire (Rank 1)");
-                Lua.RunMacroText("/cast Moonfire(Rank 1)");
-                Usefuls.WaitIsCasting();
-                return true;
-            }
-            else if (cast.Normal(Wrath))
-                return true;
+            Timer stealthApproachTimer = new Timer(7000);
+            _isStealthApproching = true;
 
-            return false;
+            if (ObjectManager.Me.IsAlive && ObjectManager.Target.IsAlive)
+            {
+                while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
+                    && (ObjectManager.Target.GetDistance > 2.5f || !Claw.IsSpellUsable)
+                    && ToolBox.GetClosestHostileFrom(ObjectManager.Target, 20f) == null
+                    && Fight.InFight
+                    && !stealthApproachTimer.IsReady
+                    && Me.HaveBuff("Prowl"))
+                {
+                    Vector3 position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f);
+                    MovementManager.MoveTo(position);
+                    Thread.Sleep(50);
+                    CastOpener();
+                }
+
+                if (stealthApproachTimer.IsReady
+                    && ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { FaerieFireFeral, MoonfireRank1, Wrath }))
+                {
+                    _combatMeleeTimer = new Timer(2000);
+                    return;
+                }
+
+                ToolBox.CheckAutoAttack(Attack);
+
+                _isStealthApproching = false;
+            }
         }
 
         protected void CastOpener()
         {
-            if (Claw.IsDistanceGood)
+            if (Me.Energy > 80
+                && cast.OnTarget(Pounce))
+                return;
+
+            // Opener
+            if (ToolBox.MeBehindTarget())
             {
-                if (Me.Energy > 80)
-                    if (cast.Normal(Pounce))
-                        return;
-
-                // Opener
-                if (ToolBox.MeBehindTarget())
-                {
-                    if (cast.Normal(Ravage))
-                        return;
-                    if (cast.Normal(Shred))
-                        return;
-                }
-
-                if (cast.Normal(Rake))
+                if (cast.OnTarget(Ravage))
                     return;
-                if (cast.Normal(Claw))
+                if (cast.OnTarget(Shred))
                     return;
             }
+
+            if (cast.OnTarget(Rake))
+                return;
+            if (cast.OnTarget(Claw))
+                return;
         }
 
         // EVENT HANDLERS
@@ -270,11 +237,6 @@ namespace WholesomeTBCAIO.Rotations.Druid
         private void FightEndHandler(ulong guid)
         {
             _fightingACaster = false;
-            _meleeTimer.Reset();
-            _pullMeleeTimer.Reset();
-            _stealthApproachTimer.Reset();
-            _pullFromAfar = false;
-            RangeManager.SetRange(_pullRange);
             _isStealthApproching = false;
         }
 
@@ -292,27 +254,10 @@ namespace WholesomeTBCAIO.Rotations.Druid
         {
             if (specialization is FeralDPSParty
                 && settings.PartyStandBehind
-                && Me.IsAlive
-                && _moveBehindTimer.IsReady
-                && !Me.IsCast
-                && ObjectManager.Target.IsAlive
-                && ObjectManager.Target.HasTarget
-                && !ObjectManager.Target.IsTargetingMe
-                && !MovementManager.InMovement)
+                && _moveBehindTimer.IsReady)
             {
-                int limit = 5;
-                Vector3 position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2f);
-                while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                    && Me.Position.DistanceTo(position) > 1
-                    && limit >= 0)
-                {
-                    position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2f);
-                    MovementManager.Go(PathFinder.FindPath(position), false);
-                    // Wait follow path
-                    Thread.Sleep(500);
-                    limit--;
-                }
-                _moveBehindTimer = new Timer(4000);
+                if (ToolBox.StandBehindTargetCombat())
+                    _moveBehindTimer = new Timer(4000);
             }
 
             if (specialization is Feral

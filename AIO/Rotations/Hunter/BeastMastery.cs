@@ -17,7 +17,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && MovementManager.InMoveTo
                 && Me.ManaPercentage > 60
                 && settings.UseAspectOfTheCheetah
-                && cast.Normal(AspectCheetah))
+                && cast.OnSelf(AspectCheetah))
                 return;
         }
         protected override void Pull()
@@ -25,20 +25,18 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             // Hunter's Mark
             if (ObjectManager.Pet.IsValid
                 && !HuntersMark.TargetHaveBuff
-                && cast.Normal(HuntersMark))
+                && cast.OnTarget(HuntersMark))
                 return;
 
             // Serpent Sting
             if (!ObjectManager.Target.HaveBuff("Serpent Sting")
                 && ObjectManager.Target.GetDistance < 34f
                 && ObjectManager.Target.GetDistance > 13f
-                && cast.Normal(SerpentSting))
+                && cast.OnTarget(SerpentSting))
                 return;
         }
         protected override void CombatRotation()
         {
-            double lastAutoInMilliseconds = (DateTime.Now - _lastAuto).TotalMilliseconds;
-
             WoWUnit Target = ObjectManager.Target;
 
             if (Target.GetDistance < 10f
@@ -57,13 +55,13 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             if (ObjectManager.Pet.IsAlive
                 && ObjectManager.Pet.HealthPercent <= 50
                 && !ObjectManager.Pet.HaveBuff("Mend Pet")
-                && cast.Normal(MendPet))
+                && cast.OnFocusUnit(MendPet, ObjectManager.Pet))
                 return;
 
             // Aspect of the viper
             if (!Me.HaveBuff("Aspect of the Viper")
                 && Me.ManaPercentage < 30
-                && cast.Normal(AspectViper))
+                && cast.OnSelf(AspectViper))
                 return;
 
             // Aspect of the Hawk
@@ -72,13 +70,13 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 || !Me.HaveBuff("Aspect of the Hawk")
                 && !Me.HaveBuff("Aspect of the Cheetah")
                 && !Me.HaveBuff("Aspect of the Viper"))
-                if (cast.Normal(AspectHawk))
+                if (cast.OnSelf(AspectHawk))
                     return;
 
             // Aspect of the Monkey
             if (!Me.HaveBuff("Aspect of the Monkey")
                 && !AspectHawk.KnownSpell
-                && cast.Normal(AspectMonkey))
+                && cast.OnSelf(AspectMonkey))
                 return;
 
             // Disengage
@@ -86,7 +84,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && ObjectManager.Pet.Target == Me.Target
                 && Target.Target == Me.Guid
                 && Target.GetDistance < 10
-                && cast.Normal(Disengage))
+                && cast.OnTarget(Disengage))
                 return;
 
             // Bestial Wrath
@@ -95,59 +93,53 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && Me.ManaPercentage > 10
                 && BestialWrath.IsSpellUsable
                 && (settings.BestialWrathOnMulti && ObjectManager.GetUnitAttackPlayer().Count > 1 || !settings.BestialWrathOnMulti)
-                && cast.Normal(BestialWrath))
+                && cast.OnSelf(BestialWrath))
                 return;
 
             // Rapid Fire
             if (Target.GetDistance < 34f
                 && Target.HealthPercent >= 80.0
                 && (settings.RapidFireOnMulti && ObjectManager.GetUnitAttackPlayer().Count > 1 || !settings.RapidFireOnMulti)
-                && cast.Normal(RapidFire))
+                && cast.OnSelf(RapidFire))
                 return;
 
             // Kill Command
             if (ObjectManager.Pet.IsAlive
-                && cast.Normal(KillCommand))
+                && cast.OnSelf(KillCommand))
                 return;
 
             // Raptor Strike
             if (settings.UseRaptorStrike
                 && Target.GetDistance < 6f
                 && !RaptorStrikeOn()
-                && cast.Normal(RaptorStrike))
+                && cast.OnTarget(RaptorStrike))
                 return;
 
             // Mongoose Bite
             if (Target.GetDistance < 6f
-                && cast.Normal(MongooseBite))
+                && cast.OnTarget(MongooseBite))
                 return;
 
             // Feign Death
-            if (Me.HealthPercent < 20
-                || (ObjectManager.GetNumberAttackPlayer() > 1 && ObjectManager.GetUnitAttackPlayer().Where(u => u.Target == Me.Guid).Count() > 0)
-                && cast.Normal(FeignDeath))
-                {
-                    Thread.Sleep(500);
-                    Move.Backward(Move.MoveAction.PressKey, 100);
-                    return;
-                }
+            if ((Me.HealthPercent < 20
+                || (ObjectManager.GetNumberAttackPlayer() > 1 && ObjectManager.GetUnitAttackPlayer().Where(u => u.Target == Me.Guid).Count() > 0))
+                && cast.OnSelf(FeignDeath))
+                return;
 
             // Concussive Shot
             if ((Target.CreatureTypeTarget == "Humanoid" || Target.Name.Contains("Plainstrider"))
                 && settings.UseConcussiveShot
-                && ConcussiveShot.IsDistanceGood
                 && Target.HealthPercent < 20
                 && !ConcussiveShot.TargetHaveBuff
-                && cast.Normal(ConcussiveShot))
+                && cast.OnTarget(ConcussiveShot))
                 return;
 
             // Wing Clip
             if ((Target.CreatureTypeTarget == "Humanoid" || Target.Name.Contains("Plainstrider"))
                 && settings.UseConcussiveShot
-                && WingClip.IsDistanceGood
                 && Target.HealthPercent < 20
                 && !Target.HaveBuff("Wing Clip")
-                && cast.Normal(WingClip))
+                && cast.OnTarget(WingClip))
                 return;
 
             // Hunter's Mark
@@ -155,15 +147,15 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && !HuntersMark.TargetHaveBuff
                 && Target.GetDistance > 13f
                 && Target.IsAlive
-                && cast.Normal(HuntersMark))
+                && cast.OnTarget(HuntersMark))
                 return;
 
+            double lastAutoInMilliseconds = (DateTime.Now - LastAuto).TotalMilliseconds;
             // Steady Shot
-            if (lastAutoInMilliseconds > 100
+            if (lastAutoInMilliseconds > 0
                 && lastAutoInMilliseconds < 500
                 && Me.ManaPercentage > 30
-                && SteadyShot.IsDistanceGood
-                && cast.Normal(SteadyShot))
+                && cast.OnTarget(SteadyShot))
                 return;
 
             // Serpent Sting
@@ -173,7 +165,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && Me.ManaPercentage > 50u
                 && !SteadyShot.KnownSpell
                 && Target.GetDistance > 13f
-                && cast.Normal(SerpentSting))
+                && cast.OnTarget(SerpentSting))
                 return;
 
             // Intimidation
@@ -182,14 +174,14 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && Target.HealthPercent >= 20
                 && Me.ManaPercentage > 10
                 && !settings.IntimidationInterrupt
-                && cast.Normal(Intimidation))
+                && cast.OnSelf(Intimidation))
                 return;
 
             // Intimidation interrupt
             if (Target.GetDistance < 34f
                 && ToolBox.TargetIsCasting()
                 && settings.IntimidationInterrupt
-                && cast.Normal(Intimidation))
+                && cast.OnSelf(Intimidation))
                 return;
 
             // Arcane Shot
@@ -197,7 +189,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && Target.HealthPercent >= 30
                 && Me.ManaPercentage > 80
                 && !SteadyShot.KnownSpell
-                && cast.Normal(ArcaneShot))
+                && cast.OnTarget(ArcaneShot))
                 return;
         }
     }
