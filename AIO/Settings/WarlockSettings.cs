@@ -32,6 +32,7 @@ namespace WholesomeTBCAIO.Settings
             HealthThresholdResummon = 30;
             ManaThresholdResummon = 20;
 
+            PartyCurseOfTheElements = true;
             PartyLifeTapManaThreshold = 20;
             PartyLifeTapHealthThreshold = 50;
             PartySeedOfCorruptionAmount = 3;
@@ -166,6 +167,13 @@ namespace WholesomeTBCAIO.Settings
         public int ManaThresholdResummon { get; set; }
 
         // PARTY
+
+        [Category("Party")]
+        [DefaultValue(true)]
+        [DisplayName("Curse of the Elements")]
+        [Description("Use Curse of the Elements")]
+        public bool PartyCurseOfTheElements { get; set; }
+
         [Category("Party")]
         [DefaultValue(20)]
         [DisplayName("Life Tap Mana")]

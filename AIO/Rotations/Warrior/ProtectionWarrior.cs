@@ -50,7 +50,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             base.CombatRotation();
             WoWUnit Target = ObjectManager.Target;
             bool _shouldBeInterrupted = ToolBox.TargetIsCasting();
-            bool _inMeleeRange = Target.GetDistance < 6f;
+            bool _inMeleeRange = Target.GetDistance < RangeManager.GetMeleeRangeWithTarget();
 
             // Force melee
             if (_combatMeleeTimer.IsReady)

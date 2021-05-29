@@ -41,7 +41,9 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             settings = HunterSettings.Current;
             if (settings.PartyDrinkName != "")
                 ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
-            cast = new Cast(RaptorStrike, null, settings);
+
+            AIOSpell baseSpell = SerpentSting.KnownSpell ? SerpentSting : RaptorStrike;
+            cast = new Cast(baseSpell, null, settings);
 
             this.specialization = specialization as Hunter;
             (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);
@@ -250,45 +252,45 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         protected void PetManager()
         {
-            // Call Pet
-            if (!ObjectManager.Pet.IsValid
-                && !Me.HaveBuff("Drink"))
+            if (!Me.HaveBuff("Drink")
+                && !Me.HaveBuff("Food"))
             {
-                cast.OnSelf(CallPet);
-                Thread.Sleep(1000);
+                // Call Pet
+                if (!ObjectManager.Pet.IsValid)
+                    cast.OnSelf(CallPet);
+
+                // Make sure we have mana to revive
+                if ((!ObjectManager.Pet.IsAlive || !ObjectManager.Pet.IsValid)
+                    && !Me.InCombatFlagOnly
+                    && RevivePet.KnownSpell
+                    && !Me.HaveBuff("Drink")
+                    && RevivePet.Cost > Me.Mana)
+                {
+                    Logger.Log("Not enough mana to summon, forcing regen");
+                    wManager.wManagerSetting.CurrentSetting.DrinkPercent = 95;
+                    Thread.Sleep(1000);
+                    return;
+                }
+                else
+                    wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
+
+                // Revive Pet
+                if ((!ObjectManager.Pet.IsAlive || !ObjectManager.Pet.IsValid)
+                    && !Me.HaveBuff("Drink")
+                    && (!Me.InCombatFlagOnly || specialization.RotationType == Enums.RotationType.Solo)
+                    && cast.OnSelf(RevivePet))
+                    return;
+
+                // Mend Pet
+                if (ObjectManager.Pet.IsAlive
+                    && ObjectManager.Pet.IsValid
+                    && !ObjectManager.Pet.HaveBuff("Mend Pet")
+                    && !Me.InCombatFlagOnly
+                    && Me.IsAlive
+                    && ObjectManager.Pet.HealthPercent <= 60
+                    && cast.OnFocusUnit(MendPet, ObjectManager.Pet))
+                    return;
             }
-
-            // Make sure we have mana to revive
-            if ((!ObjectManager.Pet.IsAlive || !ObjectManager.Pet.IsValid)
-                && !Me.InCombatFlagOnly
-                && RevivePet.KnownSpell
-                && !Me.HaveBuff("Drink")
-                && RevivePet.Cost > Me.Mana)
-            {
-                Logger.Log("Not enough mana to summon, forcing regen");
-                wManager.wManagerSetting.CurrentSetting.DrinkPercent = 95;
-                Thread.Sleep(1000);
-                return;
-            }
-            else
-                wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
-
-            // Revive Pet
-            if ((!ObjectManager.Pet.IsAlive || !ObjectManager.Pet.IsValid)
-                && !Me.HaveBuff("Drink")
-                && (!Me.InCombatFlagOnly || specialization.RotationType == Enums.RotationType.Solo)
-                && cast.OnSelf(RevivePet))
-                return;
-
-            // Mend Pet
-            if (ObjectManager.Pet.IsAlive
-                && ObjectManager.Pet.IsValid
-                && !ObjectManager.Pet.HaveBuff("Mend Pet")
-                && !Me.InCombatFlagOnly
-                && Me.IsAlive
-                && ObjectManager.Pet.HealthPercent <= 60
-                && cast.OnFocusUnit(MendPet, ObjectManager.Pet))
-                return;
         }
 
         protected bool RaptorStrikeOn()
@@ -300,11 +302,9 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         {
             _autoshotRepeating = Lua.LuaDoString<bool>("isAutoRepeat = false; local name = GetSpellInfo(75); " +
                    "if IsAutoRepeatSpell(name) then isAutoRepeat = true end", "isAutoRepeat");
-            if (!_autoshotRepeating)
-            {
-                Logger.LogDebug("Re-enabling auto shot");
-                AutoShot.Launch();
-            }
+            if (!_autoshotRepeating
+                && cast.OnTarget(AutoShot))
+                Logger.LogDebug("Re-enabling auto shot");;
         }
 
         protected AIOSpell RevivePet = new AIOSpell("Revive Pet");

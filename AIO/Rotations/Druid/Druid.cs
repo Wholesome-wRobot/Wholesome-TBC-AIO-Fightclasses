@@ -181,7 +181,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             {
                 while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
                     && (ObjectManager.Target.GetDistance > 2.5f || !Claw.IsSpellUsable)
-                    && ToolBox.GetClosestHostileFrom(ObjectManager.Target, 20f) == null
+                    && (specialization.RotationType == Enums.RotationType.Party || ToolBox.GetClosestHostileFrom(ObjectManager.Target, 20f) == null)
                     && Fight.InFight
                     && !stealthApproachTimer.IsReady
                     && Me.HaveBuff("Prowl"))
@@ -199,7 +199,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     return;
                 }
 
-                ToolBox.CheckAutoAttack(Attack);
+                //ToolBox.CheckAutoAttack(Attack);
 
                 _isStealthApproching = false;
             }

@@ -80,6 +80,9 @@ namespace WholesomeTBCAIO.Helpers
         // Accepts resurrect
         public static void AcceptResurrect()
         {
+            int timer = new Random().Next(1000, 2000);
+            Logger.Log($"Accepting resurrection request in {timer} ms");
+            Thread.Sleep(timer);
             Lua.RunMacroText("/script AcceptResurrect(); StaticPopup1Button1: Click(\"left\", true);");
         }
 
@@ -739,8 +742,6 @@ namespace WholesomeTBCAIO.Helpers
         // Determines if me is behind the Target
         public static bool MeBehindTarget()
         {
-            var target = ObjectManager.Target;
-
             float Pi = (float)System.Math.PI;
             bool backLeft = false;
             bool backRight = false;

@@ -37,7 +37,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             base.CombatRotation();
             WoWUnit Target = ObjectManager.Target;
             bool _shouldBeInterrupted = ToolBox.TargetIsCasting();
-            bool _inMeleeRange = Target.GetDistance < 6f;
+            bool _inMeleeRange = Target.GetDistance < RangeManager.GetMeleeRangeWithTarget();
             bool _saveRage = Cleave.KnownSpell
                 && ObjectManager.GetNumberAttackPlayer() > 1
                 && ToolBox.GetNbEnemiesClose(15f) > 1

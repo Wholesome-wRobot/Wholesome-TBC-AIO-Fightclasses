@@ -42,7 +42,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                     .FindAll(m => m.HealthPercent < 10)
                     .OrderBy(m => m.HealthPercent)
                     .ToList();
-                if (needsLoH.Count > 0 && cast.OnFocusPlayer(LayOnHands, needsLoH[0]))
+                if (needsLoH.Count > 0 && cast.OnFocusUnit(LayOnHands, needsLoH[0]))
                     return;
             }
 
@@ -54,7 +54,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Holy Light with Divine Favor
             if (Me.HaveBuff("Divine Favor")
                 && allyNeedBigHeal.Count > 0
-                && cast.OnFocusPlayer(HolyLight, allyNeedBigHeal[0]))
+                && cast.OnFocusUnit(HolyLight, allyNeedBigHeal[0]))
                 return;
 
             // PARTY Divine Favor
@@ -69,19 +69,19 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 .OrderBy(a => a.HealthPercent)
                 .ToList();
             if (allyNeedMediumHeal.Count > 0 
-                && cast.OnFocusPlayer(HolyLight, allyNeedMediumHeal[0]))
+                && cast.OnFocusUnit(HolyLight, allyNeedMediumHeal[0]))
                 return;
 
             // PARTY Holy Light rank 5 (for the buff)
             if (allyNeedSmallHeal.Count == 1
                 && HolyLight.Cost == 840
                 && ToolBox.BuffTimeLeft("Light\'s Grace") < 5
-                && cast.OnFocusPlayer(HolyLightRank5, allyNeedSmallHeal[0]))
+                && cast.OnFocusUnit(HolyLightRank5, allyNeedSmallHeal[0]))
                 return;
 
             // PARTY Flash Heal
             if (allyNeedSmallHeal.Count > 0
-                && cast.OnFocusPlayer(FlashOfLight, allyNeedSmallHeal[0]))
+                && cast.OnFocusUnit(FlashOfLight, allyNeedSmallHeal[0]))
                 return;
 
             // Seal of light
@@ -101,7 +101,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             {
                 WoWPlayer needsPurify = AIOParty.Group
                     .Find(m => ToolBox.HasDiseaseDebuff(m.Name) || ToolBox.HasPoisonDebuff(m.Name));
-                if (needsPurify != null && cast.OnFocusPlayer(Purify, needsPurify))
+                if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
             }
 
@@ -110,7 +110,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             {
                 WoWPlayer needsCleanse = AIOParty.Group
                     .Find(m => ToolBox.HasMagicDebuff(m.Name));
-                if (needsCleanse != null && cast.OnFocusPlayer(Cleanse, needsCleanse))
+                if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;
             }
         }

@@ -21,7 +21,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         public static ShamanSettings settings;
         protected Cast cast;
 
-        protected TotemManager totemManager = new TotemManager();
+        protected TotemManager _totemManager;
 
         protected WoWLocalPlayer Me = ObjectManager.Me;
 
@@ -42,6 +42,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             if (settings.PartyDrinkName != "")
                 ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
             cast = new Cast(LightningBolt, null, settings);
+            _totemManager = new TotemManager(cast);
 
             this.specialization = specialization as Shaman;
             (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);
@@ -80,7 +81,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     if (StatusChecker.BasicConditions() && !ObjectManager.Me.HaveBuff("Drink") && !ObjectManager.Me.HaveBuff("Food"))
                     {
                         ApplyEnchantWeapon();
-                        totemManager.CheckForTotemicCall();
+                        _totemManager.CheckForTotemicCall();
                     }
 
                     if (StatusChecker.OutOfCombat(RotationRole))
@@ -106,6 +107,16 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
         protected virtual void BuffRotation()
         {
+            if (specialization.RotationType == Enums.RotationType.Party)
+            {
+                // PARTY Resurrection
+                List<AIOPartyMember> needRes = AIOParty.Group
+                    .FindAll(m => m.IsDead)
+                    .OrderBy(m => m.GetDistance)
+                    .ToList();
+                if (needRes.Count > 0 && cast.OnFocusUnit(AncestralSpirit, needRes[0]))
+                    return;
+            }
         }
 
         protected virtual void Pull()

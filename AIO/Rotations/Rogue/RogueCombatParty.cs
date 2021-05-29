@@ -141,13 +141,6 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 && Me.ComboPoint > 1
                 && cast.OnTarget(Rupture))
                 return;
-            /*
-            // Backstab in combat
-            if (ToolBox.GetMHWeaponType() == "Daggers"
-                && ToolBox.MeBehindTarget()
-                && cast.Normal(Backstab))
-                return;
-            */
 
             // Eviscerate
             if (ToolBox.DeBuffTimeLeft("Rupture", "target") > 5
@@ -165,11 +158,11 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 && cast.OnTarget(Hemorrhage))
                 return;
 
-            // Sinister Strike / Backstab
+            // Backstab
             if (Me.ComboPoint < 5
                 && Me.Energy >= 60
-                && cast.OnTarget(Backstab)
-                && cast.OnTarget(SinisterStrike))
+                && BehindTargetCheck
+                && cast.OnTarget(Backstab))
                 return;
 
             // Sinister Strike

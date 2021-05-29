@@ -129,7 +129,8 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             // Curse of The Elements
             if (!ObjectManager.Target.HaveBuff("Curse of the Elements")
-            && cast.OnTarget(CurseOfTheElements))
+                && settings.PartyCurseOfTheElements
+                && cast.OnTarget(CurseOfTheElements))
                 return;
 
             // Amplify Curse
@@ -196,7 +197,8 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 }
             }
 
-            if (CurseOfTheElements.KnownSpell)
+            if (CurseOfTheElements.KnownSpell
+                && settings.PartyCurseOfTheElements)
             {
                 // PARTY Curse of the Elements
                 List<WoWUnit> enemiesWithoutCurseOfTheElements = AIOParty.EnemiesFighting

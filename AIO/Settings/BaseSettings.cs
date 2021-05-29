@@ -20,6 +20,12 @@ namespace WholesomeTBCAIO.Settings
         public int ThreadSleepCycle { get; set; }
 
         [Category("General")]
+        [DefaultValue(true)]
+        [DisplayName("Combat log")]
+        [Description("Activate combat log")]
+        public bool ActivateCombatLog { get; set; }
+
+        [Category("General")]
         [DefaultValue(false)]
         [DisplayName("Combat log debug")]
         [Description("Activate combat log debug")]
@@ -87,6 +93,7 @@ namespace WholesomeTBCAIO.Settings
             UseDefaultTalents = true;
             Specialization = "Auto";
             AutoDetectImmunities = false;
+            ActivateCombatLog = true;
             UseRacialSkills = true;
 
             PartyDrinkName = "";

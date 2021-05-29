@@ -20,7 +20,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
         protected Cast cast;
 
-        protected MageFoodManager _foodManager = new MageFoodManager();
+        protected MageFoodManager _foodManager;
 
         protected WoWLocalPlayer Me = ObjectManager.Me;
         protected WoWUnit _polymorphedEnemy = null;
@@ -38,6 +38,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             if (settings.PartyDrinkName != "")
                 ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
             cast = new Cast(Fireball, UseWand, settings);
+            _foodManager = new MageFoodManager(cast);
 
             this.specialization = specialization as Mage;
             (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);
@@ -105,7 +106,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 // PARTY Arcane Intellect
                 WoWPlayer noAI = AIOParty.Group
                     .Find(m => m.Mana > 0 && !m.HaveBuff(ArcaneIntellect.Name));
-                if (noAI != null && cast.OnFocusPlayer(ArcaneIntellect, noAI))
+                if (noAI != null && cast.OnFocusUnit(ArcaneIntellect, noAI))
                     return;
             }
 

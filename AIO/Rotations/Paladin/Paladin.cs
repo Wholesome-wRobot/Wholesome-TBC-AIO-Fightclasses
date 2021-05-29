@@ -119,11 +119,8 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                     .FindAll(m => m.IsDead)
                     .OrderBy(m => m.GetDistance)
                     .ToList();
-                if (needRes.Count > 0 && cast.OnFocusPlayer(Redemption, needRes[0]))
-                {
-                    Thread.Sleep(3000);
+                if (needRes.Count > 0 && cast.OnFocusUnit(Redemption, needRes[0]))
                     return;
-                }
 
                 if (settings.PartyHealOOC || specialization is PaladinHolyParty)
                 {
@@ -132,7 +129,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                         .FindAll(m => m.HealthPercent < 70)
                         .OrderBy(m => m.HealthPercent)
                         .ToList();
-                    if (needHeal.Count > 0 && cast.OnFocusPlayer(HolyLight, needHeal[0]))
+                    if (needHeal.Count > 0 && cast.OnFocusUnit(HolyLight, needHeal[0]))
                         return;
 
                     // PARTY Flash of Light
@@ -140,20 +137,20 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                         .FindAll(m => m.HealthPercent < 85)
                         .OrderBy(m => m.HealthPercent)
                         .ToList();
-                    if (needFoL.Count > 0 && cast.OnFocusPlayer(FlashOfLight, needFoL[0]))
+                    if (needFoL.Count > 0 && cast.OnFocusUnit(FlashOfLight, needFoL[0]))
                         return;
                 }
 
                 // PARTY Purifiy
                 WoWPlayer needsPurify = AIOParty.Group
                     .Find(m => ToolBox.HasDiseaseDebuff(m.Name) || ToolBox.HasPoisonDebuff(m.Name));
-                if (needsPurify != null && cast.OnFocusPlayer(Purify, needsPurify))
+                if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
 
                 // Party Cleanse
                 WoWPlayer needsCleanse = AIOParty.Group
                     .Find(m => ToolBox.HasMagicDebuff(m.Name));
-                if (needsCleanse != null && cast.OnFocusPlayer(Cleanse, needsCleanse))
+                if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;
 
                 // Blessings
@@ -354,7 +351,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 for (int i = 0; i < buffsForThisMember.Count; i++)
                 {
                     if (!member.HaveBuff(buffsForThisMember[i].Name)
-                        && cast.OnFocusPlayer(buffsForThisMember[i], member))
+                        && cast.OnFocusUnit(buffsForThisMember[i], member))
                         return true;
                 }
             }

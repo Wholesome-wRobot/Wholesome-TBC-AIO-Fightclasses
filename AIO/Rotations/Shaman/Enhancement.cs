@@ -202,7 +202,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             // Totems
             if (Me.ManaPercentage > 20
                 && Target.GetDistance < 20
-                && totemManager.CastTotems(specialization))
+                && _totemManager.CastTotems(specialization))
                 return;
 
             // Flame Shock DPS

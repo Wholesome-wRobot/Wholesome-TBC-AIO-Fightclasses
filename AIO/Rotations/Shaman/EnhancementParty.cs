@@ -14,17 +14,6 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
             if (!Me.HaveBuff("Ghost Wolf"))
             {
-                // PARTY Resurrection
-                List<AIOPartyMember> needRes = AIOParty.Group
-                    .FindAll(m => m.IsDead)
-                    .OrderBy(m => m.GetDistance)
-                    .ToList();
-                if (needRes.Count > 0 && cast.OnFocusPlayer(AncestralSpirit, needRes[0]))
-                {
-                    Thread.Sleep(3000);
-                    return;
-                }
-
                 // Ghost Wolf
                 if (settings.GhostWolfMount
                     && wManager.wManagerSetting.CurrentSetting.GroundMountName == ""
@@ -51,13 +40,13 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 // PARTY Cure poison
                 WoWPlayer needCurePoison = AIOParty.Group
                     .Find(m => ToolBox.HasPoisonDebuff(m.Name));
-                if (needCurePoison != null && cast.OnFocusPlayer(CurePoison, needCurePoison))
+                if (needCurePoison != null && cast.OnFocusUnit(CurePoison, needCurePoison))
                     return;
 
                 // PARTY Cure Disease
                 WoWPlayer needCureDisease = AIOParty.Group
                     .Find(m => ToolBox.HasDiseaseDebuff(m.Name));
-                if (needCureDisease != null && cast.OnFocusPlayer(CureDisease, needCureDisease))
+                if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
 
                 // PARTY Drink
@@ -126,7 +115,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             {
                 WoWPlayer needCurePoison = AIOParty.Group
                     .Find(m => ToolBox.HasPoisonDebuff(m.Name));
-                if (needCurePoison != null && cast.OnFocusPlayer(CurePoison, needCurePoison))
+                if (needCurePoison != null && cast.OnFocusUnit(CurePoison, needCurePoison))
                     return;
             }
 
@@ -135,7 +124,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             {
                 WoWPlayer needCureDisease = AIOParty.Group
                     .Find(m => ToolBox.HasDiseaseDebuff(m.Name));
-                if (needCureDisease != null && cast.OnFocusPlayer(CureDisease, needCureDisease))
+                if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
             }
 
@@ -180,7 +169,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             // Totems
             if (Me.ManaPercentage > 20
                 && Target.GetDistance < 20
-                && totemManager.CastTotems(specialization))
+                && _totemManager.CastTotems(specialization))
                 return;
 
             // Flame Shock DPS

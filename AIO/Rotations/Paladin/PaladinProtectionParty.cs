@@ -27,8 +27,15 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             ToolBox.CheckAutoAttack(Attack);
 
             // Seal of Righteousness
-            if (!Me.HaveBuff("Seal of Righteousness")
+            if (Me.ManaPercentage > settings.PartyProtSealOfWisdom
+                && !Me.HaveBuff("Seal of Righteousness")
                 && cast.OnSelf(SealOfRighteousness))
+                return;
+
+            // Seal of Wisdom
+            if (Me.ManaPercentage <= settings.PartyProtSealOfWisdom
+                && !Me.HaveBuff("Seal of Wisdom")
+                && cast.OnSelf(SealOfWisdom))
                 return;
 
             AIOSpell avengersShield = settings.PartyAvengersShieldnRank1 ? AvengersShieldRank1 : AvengersShield;
@@ -80,7 +87,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 .FindAll(m => m.HealthPercent < 10)
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
-            if (needsLoH.Count > 0 && cast.OnFocusPlayer(LayOnHands, needsLoH[0]))
+            if (needsLoH.Count > 0 && cast.OnFocusUnit(LayOnHands, needsLoH[0]))
                 return;
 
             // PARTY Purifiy
@@ -88,7 +95,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             {
                 WoWPlayer needsPurify = AIOParty.Group
                     .Find(m => ToolBox.HasDiseaseDebuff(m.Name) || ToolBox.HasPoisonDebuff(m.Name));
-                if (needsPurify != null && cast.OnFocusPlayer(Purify, needsPurify))
+                if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
             }
 
@@ -97,7 +104,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             {
                 WoWPlayer needsCleanse = AIOParty.Group
                     .Find(m => ToolBox.HasMagicDebuff(m.Name));
-                if (needsCleanse != null && cast.OnFocusPlayer(Cleanse, needsCleanse))
+                if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;
             }
 

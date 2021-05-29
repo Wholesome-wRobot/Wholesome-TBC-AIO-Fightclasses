@@ -19,6 +19,7 @@ namespace WholesomeTBCAIO.Helpers
         private WoWUnit CurrentSpellTarget { get; set; }
         private AIOSpell CurrentSpell { get; set; }
         public bool IsApproachingTarget { get; set; }
+        private bool CombatLogON { get; set; }
 
         public Cast(AIOSpell defaultBaseSpell, AIOSpell wandSpell, BaseSettings settings)
         {
@@ -27,7 +28,8 @@ namespace WholesomeTBCAIO.Helpers
             CombatDebugON = settings.ActivateCombatDebug;
             WandSpell = wandSpell;
             IsApproachingTarget = false;
-            EventsLuaWithArgs.OnEventsLuaStringWithArgs += LuaEventsHandler;
+            CombatLogON = settings.ActivateCombatLog;
+            EventsLuaWithArgs.OnEventsLuaStringWithArgs += EventsLuaStringWithArgsHandler;
             FightEvents.OnFightLoop += FightLoopHandler;
         }
 
@@ -53,7 +55,7 @@ namespace WholesomeTBCAIO.Helpers
 
         public void Dispose()
         {
-            EventsLuaWithArgs.OnEventsLuaStringWithArgs -= LuaEventsHandler;
+            EventsLuaWithArgs.OnEventsLuaStringWithArgs -= EventsLuaStringWithArgsHandler;
             FightEvents.OnFightLoop -= FightLoopHandler;
         }
 
@@ -76,20 +78,20 @@ namespace WholesomeTBCAIO.Helpers
         {
             return AdvancedCast(s, stopWandAndCast, true);
         }
-
+        /*
         public bool OnFocusPlayer(AIOSpell s, WoWPlayer onPlayerFocus, bool stopWandAndCast = true)
         {
             return AdvancedCast(s, stopWandAndCast, onPlayerFocus: onPlayerFocus);
         }
-
+        */
         public bool OnFocusUnit(AIOSpell s, WoWUnit onUnitFocus, bool stopWandAndCast = true)
         {
             return AdvancedCast(s, stopWandAndCast, onUnitFocus: onUnitFocus);
         }
 
-        public bool AdvancedCast(AIOSpell spell, bool stopWandAndCast = true, bool onSelf = false, WoWPlayer onPlayerFocus = null, WoWUnit onUnitFocus = null)
+        public bool AdvancedCast(AIOSpell spell, bool stopWandAndCast = true, bool onSelf = false, WoWUnit onUnitFocus = null)
         {
-            WoWPlayer Me = ObjectManager.Me;
+            WoWUnit Me = ObjectManager.Me;
             float buffer = 700;
 
             if (IsApproachingTarget)
@@ -102,17 +104,16 @@ namespace WholesomeTBCAIO.Helpers
             if (!CurrentSpell.KnownSpell
                 || IsBackingUp
                 || Me.CastingTimeLeft > buffer
+                || !CurrentSpell.IsForcedCooldownReady
                 || Me.IsStunned)
                 return false;
 
             // Define target
-            if (onPlayerFocus != null)
-                CurrentSpellTarget = onPlayerFocus;
             else if (onUnitFocus != null)
                 CurrentSpellTarget = onUnitFocus;
             else if (onSelf)
                 CurrentSpellTarget = ObjectManager.Me;
-            else if (onPlayerFocus == null && onUnitFocus == null)
+            else
             {
                 if (CurrentSpell.MaxRange <= 0 && ObjectManager.Target.GetDistance > RangeManager.GetMeleeRangeWithTarget())
                     return false;
@@ -199,7 +200,7 @@ namespace WholesomeTBCAIO.Helpers
 
             bool stopMove = CurrentSpell.CastTime > 0 || CurrentSpell.IsChannel;
 
-            if (CurrentSpellTarget.GetDistance > CurrentSpell.MaxRange && CurrentSpell.MaxRange > 0 || TraceLine.TraceLineGo(CurrentSpellTarget.Position))
+            if (CurrentSpell.MaxRange > 0 && CurrentSpellTarget.GetDistance > CurrentSpell.MaxRange  || TraceLine.TraceLineGo(CurrentSpellTarget.Position))
             {
                 if (Me.HaveBuff("Spirit of Redemption"))
                     return false;
@@ -214,10 +215,10 @@ namespace WholesomeTBCAIO.Helpers
                 return true;
             }
 
-            if (onUnitFocus != null || onPlayerFocus != null)
+            if (onUnitFocus != null)
                 ObjectManager.Me.FocusGuid = CurrentSpellTarget.Guid;
 
-            string unit = onUnitFocus != null || onPlayerFocus != null ? "focus" : "target";
+            string unit = onUnitFocus != null ? "focus" : "target";
             unit = onSelf ? "player" : unit;
 
             // Wait for remaining cast in case of buffer
@@ -226,6 +227,12 @@ namespace WholesomeTBCAIO.Helpers
 
             if (stopMove)
                 MovementManager.StopMoveNewThread();
+
+            if (CombatLogON)
+            {
+                string rankString = CurrentSpell.Rank > 0 ? $"(Rank {CurrentSpell.Rank})" : "()";
+                Logger.Log($"[Spell] Cast (on {CurrentSpellTarget.Name}) {CurrentSpell.Name.Replace("()", "")} {rankString}");
+            }
 
             CurrentSpell.Launch(stopMove, false, true, unit);
             Thread.Sleep(100);
@@ -238,11 +245,15 @@ namespace WholesomeTBCAIO.Helpers
                 CombatDebug($"{CurrentSpell.Name} is channel, wait cast");
                 while (ToolBox.GetChannelTimeLeft("player") < 0)
                     Thread.Sleep(50);
+
+                CurrentSpell.StartForcedCooldown();
                 return true;
             }
+
             // Wait for instant cast GCD
             if (CurrentSpell.CastTime <= 0)
             {
+                CurrentSpell.StartForcedCooldown();
                 Timer gcdLimit = new Timer(1500);
                 CombatDebug($"{CurrentSpell.Name} is instant, wait GCD");
                 while (DefaultBaseSpell.GetCurrentCooldown > buffer && !gcdLimit.IsReady)
@@ -254,15 +265,19 @@ namespace WholesomeTBCAIO.Helpers
                 return true;
             }
 
-            // Wait for cast to end
-            buffer = CurrentSpell.PreventDoubleCast ? 0 : buffer;
-            CombatDebug($"{CurrentSpell.Name} is normal, wait until {buffer} left");
-            while (Me.CastingTimeLeft > buffer)
+            if (CurrentSpell.CastTime > 0)
             {
-                if (CurrentSpell.IsResurrectionSpell && CurrentSpellTarget.IsAlive)
-                    Lua.RunMacroText("/stopcasting");
+                // Wait for cast to end
+                buffer = CurrentSpell.PreventDoubleCast ? 0 : buffer;
+                CombatDebug($"{CurrentSpell.Name} is normal, wait until {buffer} left");
+                while (Me.CastingTimeLeft > buffer)
+                {
+                    if (CurrentSpell.IsResurrectionSpell && CurrentSpellTarget.IsAlive)
+                        Lua.RunMacroText("/stopcasting");
 
-                Thread.Sleep(50);
+                    Thread.Sleep(50);
+                }
+                CurrentSpell.StartForcedCooldown();
             }
 
             return true;
@@ -283,7 +298,7 @@ namespace WholesomeTBCAIO.Helpers
         {
             Logger.Log($"Approaching {CurrentSpellTarget.Name} to cast {CurrentSpell.Name} ({CurrentSpellTarget.GetDistance}/{CurrentSpell.MaxRange} - {!TraceLine.TraceLineGo(CurrentSpellTarget.Position)})");
             MovementManager.Go(PathFinder.FindPath(CurrentSpellTarget.Position), false);
-            Timer limit = new Timer(5000);
+            Timer limit = new Timer(10000);
             Thread.Sleep(1000);
 
             while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
@@ -314,7 +329,7 @@ namespace WholesomeTBCAIO.Helpers
                 Logger.CombatDebug(s);
         }
 
-        private void LuaEventsHandler(string id, List<string> args)
+        private void EventsLuaStringWithArgsHandler(string id, List<string> args)
         {
             if (AutoDetectImmunities && args[11] == "IMMUNE")
                 UnitImmunities.Add(CurrentSpellTarget, args[9]);

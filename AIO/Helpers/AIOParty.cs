@@ -42,7 +42,7 @@ namespace WholesomeTBCAIO.Helpers
                             if (!Group.Exists(m => m.Guid == player.Guid))
                             {
                                 Group.Add(new AIOPartyMember(player.GetBaseAddress));
-                                Logger.Log($"Added {player.Name} to party");
+                                //Logger.Log($"Added {player.Name} to party");
                                 changed = true;
                             }
                         }
@@ -50,7 +50,7 @@ namespace WholesomeTBCAIO.Helpers
                         // Add me
                         if (!Group.Exists(m => m.Guid == ObjectManager.Me.Guid))
                         {
-                            Logger.Log($"Added MYSELF to raid/party");
+                            //Logger.Log($"Added MYSELF to raid/party");
                             Group.Add(new AIOPartyMember(ObjectManager.Me.GetBaseAddress));
                             changed = true;
                         }
@@ -60,7 +60,7 @@ namespace WholesomeTBCAIO.Helpers
                         {
                             if (Group[i].Guid != ObjectManager.Me.Guid && !allMembersList.Exists(m => m.Guid == Group[i].Guid))
                             {
-                                Logger.Log($"Removing {Group[i].Name} from party");
+                                //Logger.Log($"Removing {Group[i].Name} from party");
                                 Group.Remove(Group[i]);
                                 changed = true;
                             }
@@ -115,7 +115,7 @@ namespace WholesomeTBCAIO.Helpers
                         if (spell != null)
                         {
                             if (spell.Name == "Righteous Defense")
-                                cast.OnFocusPlayer(spell, partyMemberToSave);
+                                cast.OnFocusUnit(spell, partyMemberToSave);
                             if (spell.Name == "Intervene" && enemy.Position.DistanceTo(partyMemberToSave.Position) < 10)
                                 cast.OnTarget(spell);
                         }

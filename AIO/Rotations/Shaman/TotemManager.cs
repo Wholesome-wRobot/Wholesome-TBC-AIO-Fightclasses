@@ -1,7 +1,6 @@
 ﻿using robotManager.Helpful;
 using System.Collections.Generic;
 using WholesomeTBCAIO.Helpers;
-using wManager.Wow.Class;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 
@@ -12,18 +11,24 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         private WoWLocalPlayer Me = ObjectManager.Me;
         private Vector3 _lastTotemPosition = null;
         private Vector3 _fireTotemPosition = null;
+        private Cast _cast;
 
+        private AIOSpell TotemicCall = new AIOSpell("Totemic Call");
         private AIOSpell StoneclawTotem = new AIOSpell("Stoneclaw Totem");
         private AIOSpell StrengthOfEarthTotem = new AIOSpell("Strength of Earth Totem");
         private AIOSpell StoneskinTotem = new AIOSpell("Stoneskin Totem");
         private AIOSpell SearingTotem = new AIOSpell("Searing Totem");
-        private AIOSpell TotemicCall = new AIOSpell("Totemic Call");
         private AIOSpell ManaSpringTotem = new AIOSpell("Mana Spring Totem");
         private AIOSpell MagmaTotem = new AIOSpell("Magma Totem");
         private AIOSpell GraceOfAirTotem = new AIOSpell("Grace of Air Totem");
         private AIOSpell EarthElementalTotem = new AIOSpell("Earth Elemental Totem");
         private AIOSpell TotemOfWrath = new AIOSpell("Totem of Wrath");
         private AIOSpell ManaTideTotem = new AIOSpell("Mana Tide Totem");
+
+        public TotemManager(Cast cast)
+        {
+            _cast = cast;
+        }
 
         public bool CastTotems(IClassRotation spec)
         {
@@ -48,13 +53,14 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 bool haveWaterTotem = Lua.LuaDoString<string>(@"local _, totemName, _, _ = GetTotemInfo(3); return totemName;").Contains("Totem");
                 bool haveTotem = haveEarthTotem || haveFireTotem || haveWaterTotem || haveWindTotem;
 
-                if (_lastTotemPosition != null 
-                    && haveTotem 
+                if (_lastTotemPosition != null
+                    && haveTotem
                     && _lastTotemPosition.DistanceTo(Me.Position) > 17
-                    && !Me.HaveBuff("Ghost Wolf") 
-                    && !Me.IsMounted 
-                    && !Me.IsCast)
-                    Cast(TotemicCall);
+                    && !Me.HaveBuff("Ghost Wolf")
+                    && !Me.IsMounted
+                    && !Me.IsCast
+                    && Cast(TotemicCall))
+                    return;
             }
         }
 
@@ -69,21 +75,17 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 if (ObjectManager.GetNumberAttackPlayer() > 1
                     && EarthElementalTotem.KnownSpell
                     && !currentEarthTotem.Contains("Stoneclaw Totem")
-                    && !currentEarthTotem.Contains("Earth Elemental Totem"))
-                {
-                    if (Cast(EarthElementalTotem))
-                        return true;
-                }
+                    && !currentEarthTotem.Contains("Earth Elemental Totem")
+                    && Cast(EarthElementalTotem))
+                    return true;
 
                 // Stoneclaw on multiaggro
                 if (ObjectManager.GetNumberAttackPlayer() > 1
                     && StoneclawTotem.KnownSpell
                     && !currentEarthTotem.Contains("Stoneclaw Totem")
-                    && !currentEarthTotem.Contains("Earth Elemental Totem"))
-                {
-                    if (Cast(StoneclawTotem))
-                        return true;
-                }
+                    && !currentEarthTotem.Contains("Earth Elemental Totem")
+                    && Cast(StoneclawTotem))
+                    return true;
             }
 
             if (Shaman.settings.UseEarthTotems)
@@ -94,22 +96,19 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     && !Me.HaveBuff("Strength of Earth")
                     && !currentEarthTotem.Contains("Stoneclaw Totem")
                     && !currentEarthTotem.Contains("Earth Elemental Totem")
-                    && (ObjectManager.GetNumberAttackPlayer() < 2 || spec.RotationType == Enums.RotationType.Party))
-                {
-                    if (Cast(StrengthOfEarthTotem))
-                        return true;
-                }
+                    && (ObjectManager.GetNumberAttackPlayer() < 2 || spec.RotationType == Enums.RotationType.Party)
+                    && Cast(StrengthOfEarthTotem))
+                    return true;
 
                 // Stoneskin Totem
                 if ((Shaman.settings.UseStoneSkinTotem || !StrengthOfEarthTotem.KnownSpell || spec is Elemental || (spec.RotationType == Enums.RotationType.Solo && ObjectManager.GetNumberAttackPlayer() > 1))
                     && !Me.HaveBuff("Stoneskin")
                     && !currentEarthTotem.Contains("Stoneclaw Totem")
-                    && !currentEarthTotem.Contains("Earth Elemental Totem"))
-                {
-                    if (Cast(StoneskinTotem))
-                        return true;
-                }
+                    && !currentEarthTotem.Contains("Earth Elemental Totem")
+                    && Cast(StoneskinTotem))
+                    return true;
             }
+
             return false;
         }
 
@@ -125,35 +124,30 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     && Me.ManaPercentage > 50
                     && ObjectManager.Target.GetDistance < 10
                     && !currentFireTotem.Contains("Magma Totem")
-                    && Shaman.settings.UseMagmaTotem)
-                {
-                    if (Cast(MagmaTotem))
-                        return true;
-                }
+                    && Shaman.settings.UseMagmaTotem
+                    && Cast(MagmaTotem))
+                    return true;
 
                 // Searing Totem
                 if ((!currentFireTotem.Contains("Searing Totem") || _fireTotemPosition == null || Me.Position.DistanceTo(_fireTotemPosition) > 15f)
                     && ObjectManager.Target.GetDistance < 15
                     && !currentFireTotem.Contains("Magma Totem")
-                    && (!Shaman.settings.UseTotemOfWrath || !TotemOfWrath.KnownSpell))
+                    && (!Shaman.settings.UseTotemOfWrath || !TotemOfWrath.KnownSpell)
+                    && Cast(SearingTotem))
                 {
-                    if (Cast(SearingTotem))
-                    {
-                        _fireTotemPosition = Me.Position;
-                        return true;
-                    }
+                    _fireTotemPosition = Me.Position;
+                    return true;
                 }
 
                 // Totem of Wrath
                 if (!currentFireTotem.Contains("Totem of Wrath")
                     && !Me.HaveBuff("Totem of Wrath")
-                    && Shaman.settings.UseTotemOfWrath)
-                {
-                    if (Cast(TotemOfWrath))
-                        return true;
-                }
+                    && Shaman.settings.UseTotemOfWrath
+                    && Cast(TotemOfWrath))
+                    return true;
 
             }
+
             return false;
         }
 
@@ -165,12 +159,11 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     (@"local _, totemName, _, _ = GetTotemInfo(4); return totemName;");
 
                 // Mana Spring Totem
-                if (!Me.HaveBuff("Grace of Air"))
-                {
-                    if (Cast(GraceOfAirTotem))
-                        return true;
-                }
+                if (!Me.HaveBuff("Grace of Air")
+                    && Cast(GraceOfAirTotem))
+                    return true;
             }
+
             return false;
         }
 
@@ -193,28 +186,25 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
                 // Mana Spring Totem
                 if (!currentWaterTotem.Contains("Mana Tide")
-                    && !Me.HaveBuff("Mana Spring"))
-                {
-                    if (Cast(ManaSpringTotem))
-                        return true;
-                }
+                    && !Me.HaveBuff("Mana Spring")
+                    && Cast(ManaSpringTotem))
+                    return true;
             }
+
             return false;
         }
 
-        private bool Cast(AIOSpell s)
+        private bool Cast(AIOSpell spell)
         {
-            Logger.LogDebug("Into Totem Cast() for " + s.Name);
+            if (_cast.OnSelf(spell))
+            {
+                if (spell.Name.Contains(" Totem") || spell.Name.Contains("Totem of"))
+                    _lastTotemPosition = Me.Position;
 
-            if (!s.IsSpellUsable || !s.KnownSpell || Me.IsCast)
-                return false;
+                return true;
+            }
 
-            if (s.Name.Contains(" Totem") || s.Name.Contains("Totem of"))
-                _lastTotemPosition = Me.Position;
-
-            s.Launch();
-
-            return true;
+            return false;
         }
     }
 }

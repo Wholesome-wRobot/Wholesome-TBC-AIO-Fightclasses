@@ -15,7 +15,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 .FindAll(m => m.IsDead)
                 .OrderBy(m => m.GetDistance)
                 .ToList();
-            if (needRes.Count > 0 && cast.OnFocusPlayer(Resurrection, needRes[0]))
+            if (needRes.Count > 0 && cast.OnFocusUnit(Resurrection, needRes[0]))
             {
                 Thread.Sleep(3000);
                 ToolBox.ClearCursor();
@@ -25,25 +25,25 @@ namespace WholesomeTBCAIO.Rotations.Priest
             // Party Cure Disease
             WoWPlayer needCureDisease = AIOParty.Group
                 .Find(m => ToolBox.HasDiseaseDebuff(m.Name));
-            if (needCureDisease != null && cast.OnFocusPlayer(CureDisease, needCureDisease))
+            if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                 return;
 
             // Party Dispel Magic
             WoWPlayer needDispelMagic = AIOParty.Group
                 .Find(m => ToolBox.HasMagicDebuff(m.Name));
-            if (needDispelMagic != null && cast.OnFocusPlayer(DispelMagic, needDispelMagic))
+            if (needDispelMagic != null && cast.OnFocusUnit(DispelMagic, needDispelMagic))
                 return;
 
             // PARTY Power Word Fortitude
             WoWPlayer noPWF = AIOParty.Group
                 .Find(m => !m.HaveBuff(PowerWordFortitude.Name));
-            if (noPWF != null && cast.OnFocusPlayer(PowerWordFortitude, noPWF))
+            if (noPWF != null && cast.OnFocusUnit(PowerWordFortitude, noPWF))
                 return;
 
             // PARTY Divine Spirit
             WoWPlayer noDS = AIOParty.Group
                 .Find(m => !m.HaveBuff(DivineSpirit.Name));
-            if (noDS != null && cast.OnFocusPlayer(DivineSpirit, noDS))
+            if (noDS != null && cast.OnFocusUnit(DivineSpirit, noDS))
                 return;
 
             // OOC Inner Fire
@@ -63,7 +63,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             {
                 WoWPlayer noShadowProtection = AIOParty.Group
                     .Find(m => !m.HaveBuff(ShadowProtection.Name));
-                if (noShadowProtection != null && cast.OnFocusPlayer(ShadowProtection, noShadowProtection))
+                if (noShadowProtection != null && cast.OnFocusUnit(ShadowProtection, noShadowProtection))
                     return;
             }
 
@@ -138,7 +138,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 // PARTY Cure Disease
                 WoWPlayer needCureDisease = AIOParty.Group
                     .Find(m => ToolBox.HasDiseaseDebuff(m.Name));
-                if (needCureDisease != null && cast.OnFocusPlayer(CureDisease, needCureDisease))
+                if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
             }
 
@@ -147,7 +147,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             {
                 WoWPlayer needDispelMagic = AIOParty.Group
                     .Find(m => ToolBox.HasMagicDebuff(m.Name));
-                if (needDispelMagic != null && cast.OnFocusPlayer(DispelMagic, needDispelMagic))
+                if (needDispelMagic != null && cast.OnFocusUnit(DispelMagic, needDispelMagic))
                     return;
             }
 

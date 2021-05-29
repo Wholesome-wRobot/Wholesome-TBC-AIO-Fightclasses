@@ -55,7 +55,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 List<AIOPartyMember> needRemoveCurse = AIOParty.Group
                     .FindAll(m => ToolBox.HasCurseDebuff(m.Name))
                     .ToList();
-                if (needRemoveCurse.Count > 0 && cast.OnFocusPlayer(RemoveCurse, needRemoveCurse[0]))
+                if (needRemoveCurse.Count > 0 && cast.OnFocusUnit(RemoveCurse, needRemoveCurse[0]))
                     return;
             }
 

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using wManager.Wow.Class;
 using wManager.Wow.Helpers;
+using Timer = robotManager.Helpful.Timer;
 
 namespace WholesomeTBCAIO.Helpers
 {
@@ -27,6 +28,8 @@ namespace WholesomeTBCAIO.Helpers
                     return KnownSpell && GetCurrentCooldown < 0;
             }
         }
+        private int ForcedCooldown { get; set; }
+        private Timer ForcedCooldownTimer { get; set; } = new Timer();
 
         private static List<AIOSpell> AllSpells = new List<AIOSpell>();
 
@@ -45,8 +48,37 @@ namespace WholesomeTBCAIO.Helpers
             RecordSpellInfos(rank);
             ForceLua = rank > 0 || Name.Contains("()");
 
+            ForcedCooldown = ForcedCoolDowns.ContainsKey(Name) ? ForcedCoolDowns[Name] : 0;
+
             AllSpells.Add(this);
             //LogSpellInfos();
+        }
+
+        public new void Launch(bool stopMove, bool waitIsCast = true, bool ignoreIfCast = false, string luaUnitId = "target")
+        {
+            if (!ForceLua)
+                base.Launch(stopMove, waitIsCast, ignoreIfCast, luaUnitId);
+            else
+            {
+                if (stopMove)
+                    MovementManager.StopMoveNewThread();
+
+                string rankString = Rank > 0 ? $"(Rank {Rank})" : "()";
+                Logger.LogFight($"[Spell-LUA] Cast (on {luaUnitId}) {Name.Replace("()", "")} {rankString}");
+                Lua.RunMacroText($"/cast [target={luaUnitId}] {Name.Replace("()", "")}{rankString}");
+            }
+        }
+
+        public new void Launch()
+        {
+            if (!ForceLua)
+                base.Launch();
+            else
+            {
+                string rankString = Rank > 0 ? $"(Rank {Rank})" : "()";
+                Logger.LogFight($"[Spell] Cast (on target) {Name} {rankString}");
+                Lua.RunMacroText($"/cast {Name}{rankString}");
+            }
         }
         /*
         public AIOSpell(int spellId, int rank = 0) : base(spellId)
@@ -58,6 +90,12 @@ namespace WholesomeTBCAIO.Helpers
         }
         */
         public static AIOSpell GetSpellByName(string name) => AllSpells.Find(s => s.Name == name);
+        public void StartForcedCooldown()
+        {
+            if (ForcedCooldown > 0)
+                ForcedCooldownTimer = new Timer(ForcedCooldown);
+        }
+        public bool IsForcedCooldownReady => ForcedCooldownTimer.IsReady;
 
         public float GetCurrentCooldown => Lua.LuaDoString<float>($@"local startTime, duration, _ = GetSpellCooldown(""{Name.Replace("\"", "\\\"")}"");
             if (startTime == nil) then return 0 end;
@@ -104,34 +142,6 @@ namespace WholesomeTBCAIO.Helpers
             Logger.Log($"CastTime : {CastTime}");
             Logger.Log($"MinRange : {MinRange}");
             Logger.Log($"MaxRange : {MaxRange}");
-        }
-
-        public new void Launch(bool stopMove, bool waitIsCast = true, bool ignoreIfCast = false, string luaUnitId = "target")
-        {
-            if (!ForceLua)
-                base.Launch(stopMove, waitIsCast, ignoreIfCast, luaUnitId);
-            else
-            {
-                if (stopMove)
-                    MovementManager.StopMoveNewThread();
-
-                string rankString = Rank > 0 ? $"(Rank {Rank})" : "()";
-
-                Logger.LogFight($"[Spell-LUA] Cast (on {luaUnitId}) {Name.Replace("()", "")} {rankString}");
-                Lua.RunMacroText($"/cast [target={luaUnitId}] {Name.Replace("()", "")}{rankString}");
-            }
-        }
-
-        public new void Launch()
-        {
-            if (!ForceLua)
-                base.Launch();
-            else
-            {
-                string rankString = Rank > 0 ? $"(Rank {Rank})" : "()";
-                Logger.LogFight($"[Spell] Cast (on target) {Name} {rankString}");
-                Lua.RunMacroText($"/cast {Name}{rankString}");
-            }
         }
 
         private List<string> OnDeadSpells = new List<string>()
@@ -189,7 +199,8 @@ namespace WholesomeTBCAIO.Helpers
             "Drain Soul",
             "Drain Life",
             "Drain Mana",
-            "Health Funnel"
+            "Health Funnel",
+            "Cannibalize"
         };
 
         private List<string> ResurrectionSpells = new List<string>()
@@ -197,6 +208,14 @@ namespace WholesomeTBCAIO.Helpers
             "Redemption",
             "Resurrection",
             "Ancestral Spirit"
+        };
+
+        private Dictionary<string, int> ForcedCoolDowns = new Dictionary<string, int>()
+        {
+            {"Redemption", 10000 },
+            {"Resurrection", 10000 },
+            {"Ancestral Spirit", 10000 },
+            {"Call Pet", 5000 },
         };
     }
 }

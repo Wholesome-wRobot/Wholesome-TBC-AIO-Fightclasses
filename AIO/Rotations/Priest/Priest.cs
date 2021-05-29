@@ -71,7 +71,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                             .FindAll(m => m.HealthPercent < 100)
                             .OrderBy(m => m.HealthPercent)
                             .ToList();
-                        if (needGreaterHealSR.Count > 0 && cast.OnFocusPlayer(GreaterHeal, needGreaterHealSR[0]))
+                        if (needGreaterHealSR.Count > 0 && cast.OnFocusUnit(GreaterHeal, needGreaterHealSR[0]))
                             continue;
 
                         // PARTY Heal
@@ -79,7 +79,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                             .FindAll(m => m.HealthPercent < 100)
                             .OrderBy(m => m.HealthPercent)
                             .ToList();
-                        if (!GreaterHeal.KnownSpell && needHealSR.Count > 0 && cast.OnFocusPlayer(GreaterHeal, needHealSR[0]))
+                        if (!GreaterHeal.KnownSpell && needHealSR.Count > 0 && cast.OnFocusUnit(GreaterHeal, needHealSR[0]))
                             continue;
                     }
 
@@ -107,6 +107,16 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
         protected virtual void BuffRotation()
         {
+            if (specialization.RotationType == Enums.RotationType.Party)
+            {
+                // PARTY Resurrection
+                List<AIOPartyMember> needRes = AIOParty.Group
+                    .FindAll(m => m.IsDead)
+                    .OrderBy(m => m.GetDistance)
+                    .ToList();
+                if (needRes.Count > 0 && cast.OnFocusUnit(Resurrection, needRes[0]))
+                    return;
+            }
         }
 
         protected virtual void Pull()

@@ -15,25 +15,25 @@ namespace WholesomeTBCAIO.Rotations.Druid
             // PARTY Remove Curse
             WoWPlayer needRemoveCurse = AIOParty.Group
                 .Find(m => ToolBox.HasCurseDebuff(m.Name));
-            if (needRemoveCurse != null && cast.OnFocusPlayer(RemoveCurse, needRemoveCurse))
+            if (needRemoveCurse != null && cast.OnFocusUnit(RemoveCurse, needRemoveCurse))
                 return;
 
             // PARTY Abolish Poison
             WoWPlayer needAbolishPoison = AIOParty.Group
                 .Find(m => ToolBox.HasPoisonDebuff(m.Name));
-            if (needAbolishPoison != null && cast.OnFocusPlayer(AbolishPoison, needAbolishPoison))
+            if (needAbolishPoison != null && cast.OnFocusUnit(AbolishPoison, needAbolishPoison))
                 return;
 
             // PARTY Mark of the Wild
             WoWPlayer needMotW = AIOParty.Group
                 .Find(m => !m.HaveBuff(MarkOfTheWild.Name));
-            if (needMotW != null && cast.OnFocusPlayer(MarkOfTheWild, needMotW))
+            if (needMotW != null && cast.OnFocusUnit(MarkOfTheWild, needMotW))
                 return;
 
             // PARTY Thorns
             WoWPlayer needThorns = AIOParty.Group
                 .Find(m => !m.HaveBuff(Thorns.Name));
-            if (needThorns != null && cast.OnFocusPlayer(Thorns, needThorns))
+            if (needThorns != null && cast.OnFocusUnit(Thorns, needThorns))
                 return;
 
             // Omen of Clarity
@@ -142,7 +142,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             {
                 WoWPlayer needRebirth = AIOParty.Group
                     .Find(m => m.IsDead);
-                if (needRebirth != null && cast.OnFocusPlayer(Rebirth, needRebirth))
+                if (needRebirth != null && cast.OnFocusUnit(Rebirth, needRebirth))
                     return;
             }
 
@@ -151,7 +151,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             {
                 WoWPlayer needInnervate = AIOParty.Group
                     .Find(m => m.ManaPercentage < 10 && !m.HaveBuff("Innervate"));
-                if (needInnervate != null && cast.OnFocusPlayer(Innervate, needInnervate))
+                if (needInnervate != null && cast.OnFocusUnit(Innervate, needInnervate))
                     return;
             }
 
@@ -160,7 +160,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 // PARTY Remove Curse
                 WoWPlayer needRemoveCurse = AIOParty.Group
                     .Find(m => ToolBox.HasCurseDebuff(m.Name));
-                if (needRemoveCurse != null && cast.OnFocusPlayer(RemoveCurse, needRemoveCurse))
+                if (needRemoveCurse != null && cast.OnFocusUnit(RemoveCurse, needRemoveCurse))
                     return;
             }
 
@@ -169,7 +169,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 // PARTY Abolish Poison
                 WoWPlayer needAbolishPoison = AIOParty.Group
                     .Find(m => ToolBox.HasPoisonDebuff(m.Name));
-                if (needAbolishPoison != null && cast.OnFocusPlayer(AbolishPoison, needAbolishPoison))
+                if (needAbolishPoison != null && cast.OnFocusUnit(AbolishPoison, needAbolishPoison))
                     return;
             }
 

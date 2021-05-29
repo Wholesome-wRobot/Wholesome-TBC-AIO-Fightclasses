@@ -36,6 +36,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
 
         private Timer _moveBehindTimer = new Timer();
         protected Timer _combatMeleeTimer = new Timer();
+        protected Timer _behindTargetTimer = new Timer();
 
         public void Initialize(IClassRotation specialization)
         {
@@ -56,6 +57,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             MovementEvents.OnMoveToPulse += MoveToPulseHandler;
             FightEvents.OnFightLoop += FightLoopHandler;
             OthersEvents.OnAddBlackListGuid += BlackListHandler;
+            EventsLuaWithArgs.OnEventsLuaStringWithArgs += EventsWithArgsHandler;
 
             Rotation();
         }
@@ -67,6 +69,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             MovementEvents.OnMoveToPulse -= MoveToPulseHandler;
             FightEvents.OnFightLoop -= FightLoopHandler;
             OthersEvents.OnAddBlackListGuid -= BlackListHandler;
+            EventsLuaWithArgs.OnEventsLuaStringWithArgs -= EventsWithArgsHandler;
             cast.Dispose();
             Logger.Log("Disposed");
         }
@@ -100,9 +103,11 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             PoisonWeapon();
 
             // Sprint
-            if (settings.SprintWhenAvail && Me.HealthPercent > 80 && MovementManager.InMovement && Sprint.IsSpellUsable
-                && Sprint.KnownSpell)
-                Sprint.Launch();
+            if (settings.SprintWhenAvail
+                && Me.HealthPercent >
+                80 && MovementManager.InMovement
+                && cast.OnSelf(Sprint))
+                return;
         }
 
         protected virtual void Pull()
@@ -139,9 +144,11 @@ namespace WholesomeTBCAIO.Rotations.Rogue
         protected AIOSpell Rupture = new AIOSpell("Rupture");
         protected AIOSpell Shiv = new AIOSpell("Shiv");
 
+        protected bool BehindTargetCheck => _behindTargetTimer.IsReady && ToolBox.MeBehindTarget();
+
         protected void CastOpener()
         {
-            if (ToolBox.MeBehindTarget())
+            if (ToolBox.MeBehindTarget() && BehindTargetCheck)
             {
                 if (settings.UseGarrote
                     && cast.OnTarget(Garrote))
@@ -196,10 +203,12 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 ToolBox.CheckAutoAttack(Attack);
             }
 
-            if (!activate && _autoAttacking)
+            if (!activate 
+                && _autoAttacking
+                && cast.OnTarget(Attack))
             {
                 Logger.Log("Turning auto attack OFF");
-                Attack.Launch();
+                return;
             }
         }
 
@@ -336,7 +345,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             {
                 while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
                 && ObjectManager.Target.GetDistance > 2.5f
-                && ToolBox.GetClosestHostileFrom(ObjectManager.Target, 20f) == null
+                && (specialization.RotationType == Enums.RotationType.Party || ToolBox.GetClosestHostileFrom(ObjectManager.Target, 20f) == null)
                 && Fight.InFight
                 && !stealthApproachTimer.IsReady
                 && Me.HaveBuff("Stealth"))
@@ -356,7 +365,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                     return;
                 }
 
-                ToolBox.CheckAutoAttack(Attack);
+                //ToolBox.CheckAutoAttack(Attack);
 
                 _isStealthApproching = false;
             }
@@ -423,6 +432,12 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             if (_isStealthApproching &&
             !point.ToString().Equals(ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f).ToString()))
                 cancelable.Cancel = true;
+        }
+
+        private void EventsWithArgsHandler(string id, List<string> args)
+        {
+            if (_behindTargetTimer.IsReady && args[11].Contains("You must be behind"))
+                _behindTargetTimer = new Timer(10000);
         }
     }
 }

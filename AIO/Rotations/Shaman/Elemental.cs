@@ -70,7 +70,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             // Totems
             if (Me.ManaPercentage > _lowManaThreshold
                 && ObjectManager.Target.GetDistance < 30
-                && totemManager.CastTotems(specialization))
+                && _totemManager.CastTotems(specialization))
                 return;
 
             // Elemental Mastery
@@ -179,7 +179,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             // Totems
             if (Me.ManaPercentage > _lowManaThreshold
                 && Target.GetDistance < 20
-                && totemManager.CastTotems(specialization))
+                && _totemManager.CastTotems(specialization))
                 return;
 
             // Chain Lightning

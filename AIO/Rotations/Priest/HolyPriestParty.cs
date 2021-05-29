@@ -10,23 +10,12 @@ namespace WholesomeTBCAIO.Rotations.Priest
     {
         protected override void BuffRotation()
         {
-            // PARTY Resurrection
-            List<AIOPartyMember> needRes = AIOParty.Group
-                .FindAll(m => m.IsDead)
-                .OrderBy(m => m.GetDistance)
-                .ToList();
-            if (needRes.Count > 0 && cast.OnFocusPlayer(Resurrection, needRes[0]))
-            {
-                Thread.Sleep(3000);
-                return;
-            } 
-
             // PARTY Greater heal
             List<AIOPartyMember> needGreaterHeal = AIOParty.Group
                 .FindAll(m => m.IsAlive && m.HealthPercent < 50)
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
-            if (needGreaterHeal.Count > 0 && cast.OnFocusPlayer(GreaterHeal, needGreaterHeal[0]))
+            if (needGreaterHeal.Count > 0 && cast.OnFocusUnit(GreaterHeal, needGreaterHeal[0]))
                 return;
 
             // PARTY Heal
@@ -34,7 +23,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 .FindAll(m => m.HealthPercent < 80)
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
-            if (needHeal.Count > 0 && cast.OnFocusPlayer(FlashHeal, needHeal[0]))
+            if (needHeal.Count > 0 && cast.OnFocusUnit(FlashHeal, needHeal[0]))
                 return;
 
             if (!FlashHeal.KnownSpell)
@@ -44,7 +33,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     .FindAll(m => m.HealthPercent < 80)
                     .OrderBy(m => m.HealthPercent)
                     .ToList();
-                if (needLesserHeal.Count > 0 && cast.OnFocusPlayer(LesserHeal, needLesserHeal[0]))
+                if (needLesserHeal.Count > 0 && cast.OnFocusUnit(LesserHeal, needLesserHeal[0]))
                     return;
             }
 
@@ -53,19 +42,19 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 .FindAll(m => m.HealthPercent < 90 && !m.HaveBuff(Renew.Name))
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
-            if (needRenew.Count > 0 && cast.OnFocusPlayer(Renew, needRenew[0]))
+            if (needRenew.Count > 0 && cast.OnFocusUnit(Renew, needRenew[0]))
                 return;
 
             // PARTY Power Word Fortitude
             WoWPlayer noPWF = AIOParty.Group
                 .Find(m => !m.HaveBuff(PowerWordFortitude.Name));
-            if (noPWF != null && cast.OnFocusPlayer(PowerWordFortitude, noPWF))
+            if (noPWF != null && cast.OnFocusUnit(PowerWordFortitude, noPWF))
                 return;
 
             // PARTY Divine Spirit
             WoWPlayer noDS = AIOParty.Group
                 .Find(m => m.Mana > 0 && !m.HaveBuff(DivineSpirit.Name));
-            if (noDS != null && cast.OnFocusPlayer(DivineSpirit, noDS))
+            if (noDS != null && cast.OnFocusUnit(DivineSpirit, noDS))
                 return;
 
             // OOC Inner Fire
@@ -79,7 +68,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             {
                 WoWPlayer noShadowProtection = AIOParty.Group
                     .Find(m => !m.HaveBuff(ShadowProtection.Name));
-                if (noShadowProtection != null && cast.OnFocusPlayer(ShadowProtection, noShadowProtection))
+                if (noShadowProtection != null && cast.OnFocusUnit(ShadowProtection, noShadowProtection))
                     return;
             }
 
@@ -102,7 +91,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 // Party Cure Disease
                 WoWPlayer needCureDisease = AIOParty.Group
                     .Find(m => ToolBox.HasDiseaseDebuff(m.Name));
-                if (needCureDisease != null && cast.OnFocusPlayer(CureDisease, needCureDisease))
+                if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
             }
 
@@ -121,7 +110,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             {
                 WoWPlayer needDispelMagic = AIOParty.Group
                     .Find(m => ToolBox.HasMagicDebuff(m.Name));
-                if (needDispelMagic != null && cast.OnFocusPlayer(DispelMagic, needDispelMagic))
+                if (needDispelMagic != null && cast.OnFocusUnit(DispelMagic, needDispelMagic))
                     return;
             }
 
@@ -132,7 +121,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     .FindAll(m => m.HealthPercent < 60)
                     .OrderBy(m => m.HealthPercent)
                     .ToList();
-                if (needHeal.Count > 0 && cast.OnFocusPlayer(Heal, needHeal[0]))
+                if (needHeal.Count > 0 && cast.OnFocusUnit(Heal, needHeal[0]))
                     return;
             }
 
@@ -143,7 +132,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     .FindAll(m => m.HealthPercent < 80)
                     .OrderBy(m => m.HealthPercent)
                     .ToList();
-                if (needLesserHeal.Count > 0 && cast.OnFocusPlayer(LesserHeal, needLesserHeal[0]))
+                if (needLesserHeal.Count > 0 && cast.OnFocusUnit(LesserHeal, needLesserHeal[0]))
                     return;
             }
 
@@ -152,7 +141,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 .FindAll(m => m.HealthPercent < 40)
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
-            if (needFlashHeal.Count > 0 && cast.OnFocusPlayer(FlashHeal, needFlashHeal[0]))
+            if (needFlashHeal.Count > 0 && cast.OnFocusUnit(FlashHeal, needFlashHeal[0]))
                 return;
 
             // PARTY Greater heal
@@ -160,7 +149,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 .FindAll(m => m.HealthPercent < 60)
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
-            if (needGreaterHeal.Count > 0 && cast.OnFocusPlayer(GreaterHeal, needGreaterHeal[0]))
+            if (needGreaterHeal.Count > 0 && cast.OnFocusUnit(GreaterHeal, needGreaterHeal[0]))
                 return;
 
             // PARTY Shield
@@ -168,7 +157,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 .FindAll(m => m.HealthPercent < 60 && !m.HaveBuff("Power Word: Shield") && !ToolBox.HasDebuff("Weakened Soul", m.Name))
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
-            if (neeedShield.Count > 0 && cast.OnFocusPlayer(PowerWordShield, neeedShield[0]))
+            if (neeedShield.Count > 0 && cast.OnFocusUnit(PowerWordShield, neeedShield[0]))
                 return;
 
             // PARTY Prayer Healing
@@ -184,7 +173,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 .FindAll(m => m.IsAlive && m.HealthPercent < 70 && !m.HaveBuff(PrayerOfMending.Name))
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
-            if (needPrayerOfMending.Count > 1 && cast.OnFocusPlayer(PrayerOfMending, needPrayerOfMending[0]))
+            if (needPrayerOfMending.Count > 1 && cast.OnFocusUnit(PrayerOfMending, needPrayerOfMending[0]))
                 return;
 
             // PARTY Greater Heal rank 2
@@ -194,7 +183,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     .FindAll(m => m.HealthPercent < 75)
                     .OrderBy(m => m.HealthPercent)
                     .ToList();
-                if (needGHeal2.Count > 0 && cast.OnFocusPlayer(GreaterHealRank2, needGHeal2[0]))
+                if (needGHeal2.Count > 0 && cast.OnFocusUnit(GreaterHealRank2, needGHeal2[0]))
                     return;
             }
             // PARTY Heal
@@ -204,7 +193,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     .FindAll(m => m.HealthPercent < 80)
                     .OrderBy(m => m.HealthPercent)
                     .ToList();
-                if (needHeal70.Count > 0 && cast.OnFocusPlayer(Heal, needHeal70[0]))
+                if (needHeal70.Count > 0 && cast.OnFocusUnit(Heal, needHeal70[0]))
                     return;
             }
 
@@ -214,7 +203,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 .FindAll(m => m.HealthPercent < 90 && !m.HaveBuff(Renew.Name))
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
-            if (needRenew.Count > 0 && cast.OnFocusPlayer(Renew, needRenew[0]))
+            if (needRenew.Count > 0 && cast.OnFocusUnit(Renew, needRenew[0]))
                 return;
         }
     }
