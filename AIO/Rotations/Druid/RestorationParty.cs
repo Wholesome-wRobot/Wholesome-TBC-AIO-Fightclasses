@@ -176,21 +176,21 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
             // Lifebloom 1
             WoWPlayer needLifeBloom1 = lisPartyOrdered
-                .Find(m => m.HealthPercent < 95 && ToolBox.CountBuff("Lifebloom", m.Name) < 1);
+                .Find(m => m.HealthPercent < 90 && ToolBox.CountBuff("Lifebloom", m.Name) < 1);
             if (needLifeBloom1 != null
                 && cast.OnFocusUnit(Lifebloom, needLifeBloom1))
                 return;
 
             // Lifebloom 2
             WoWPlayer needLifeBloom2 = lisPartyOrdered
-                .Find(m => m.HealthPercent < 90 && ToolBox.CountBuff("Lifebloom", m.Name) < 2);
+                .Find(m => m.HealthPercent < 85 && ToolBox.CountBuff("Lifebloom", m.Name) < 2);
             if (needLifeBloom2 != null
                 && cast.OnFocusUnit(Lifebloom, needLifeBloom2))
                 return;
 
             // Lifebloom 3
             WoWPlayer needLifeBloom3 = lisPartyOrdered
-                .Find(m => m.HealthPercent < 85 && ToolBox.CountBuff("Lifebloom", m.Name) < 3);
+                .Find(m => m.HealthPercent < 80 && ToolBox.CountBuff("Lifebloom", m.Name) < 3);
             if (needLifeBloom3 != null
                 && cast.OnFocusUnit(Lifebloom, needLifeBloom3))
                 return;
