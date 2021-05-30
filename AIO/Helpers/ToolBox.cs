@@ -484,11 +484,22 @@ namespace WholesomeTBCAIO.Helpers
         // Add to not sell  list
         public static void AddToDoNotSellList(string itemName)
         {
-            if (!wManagerSetting.CurrentSetting.DoNotSellList.Contains(itemName))
+            if (!wManagerSetting.CurrentSetting.DoNotSellList.Contains(itemName.Trim()))
             {
                 Logger.LogDebug($"Adding item {itemName} to Do not Sell List");
-                wManagerSetting.CurrentSetting.DoNotSellList.Add(itemName);
+                wManagerSetting.CurrentSetting.DoNotSellList.Add(itemName.Trim());
             }
+        }
+        public static void AddToDoNotSellList(List<string> items)
+        {
+            items.ForEach(item =>
+            {
+                if (!wManagerSetting.CurrentSetting.DoNotSellList.Contains(item.Trim()))
+                {
+                    Logger.LogDebug($"Adding item {item} to Do not Sell List");
+                    wManagerSetting.CurrentSetting.DoNotSellList.Add(item.Trim());
+                }
+            });
         }
 
         // Return Main hand weapon type as a string

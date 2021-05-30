@@ -200,19 +200,22 @@ namespace WholesomeTBCAIO.Helpers
 
             bool stopMove = CurrentSpell.CastTime > 0 || CurrentSpell.IsChannel;
 
-            if (CurrentSpell.MaxRange > 0 && CurrentSpellTarget.GetDistance > CurrentSpell.MaxRange  || TraceLine.TraceLineGo(CurrentSpellTarget.Position))
+            if (CurrentSpellTarget.Guid != Me.Guid)
             {
-                if (Me.HaveBuff("Spirit of Redemption"))
-                    return false;
+                if (CurrentSpell.MaxRange > 0 && CurrentSpellTarget.GetDistance > CurrentSpell.MaxRange || TraceLine.TraceLineGo(CurrentSpellTarget.Position))
+                {
+                    if (Me.HaveBuff("Spirit of Redemption"))
+                        return false;
 
-                Logger.LogFight($"Target not in range/sight, recycling {CurrentSpell.Name}");
+                    Logger.LogFight($"Target not in range/sight, recycling {CurrentSpell.Name}");
 
-                if (Fight.InFight)
-                    IsApproachingTarget = true;
-                else
-                    ApproachSpellTarget();
+                    if (Fight.InFight)
+                        IsApproachingTarget = true;
+                    else
+                        ApproachSpellTarget();
 
-                return true;
+                    return true;
+                }
             }
 
             if (onUnitFocus != null)
@@ -230,8 +233,8 @@ namespace WholesomeTBCAIO.Helpers
 
             if (CombatLogON)
             {
-                string rankString = CurrentSpell.Rank > 0 ? $"(Rank {CurrentSpell.Rank})" : "()";
-                Logger.Log($"[Spell] Cast (on {CurrentSpellTarget.Name}) {CurrentSpell.Name.Replace("()", "")} {rankString}");
+                string rankString = CurrentSpell.Rank > 0 ? $"(Rank {CurrentSpell.Rank})" : "";
+                Logger.Log($"[Spell] Casting {CurrentSpell.Name.Replace("()", "")} {rankString} on {CurrentSpellTarget.Name}");
             }
 
             CurrentSpell.Launch(stopMove, false, true, unit);
@@ -334,7 +337,7 @@ namespace WholesomeTBCAIO.Helpers
             if (AutoDetectImmunities && args[11] == "IMMUNE")
                 UnitImmunities.Add(CurrentSpellTarget, args[9]);
 
-            if (args[11] == "Target not in line of sight")
+            if (args[11] == "Target not in line of sight" && Fight.InFight)
             {
                 Logger.Log("Forcing Approach");
                 IsApproachingTarget = true;

@@ -162,20 +162,16 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             // Drain Soul
             bool _shouldDrainSoul = ToolBox.CountItemStacks("Soul Shard") < settings.NumberOfSoulShards || settings.AlwaysDrainSoul;
             if (_shouldDrainSoul
-                && Target.HealthPercent < settings.DrainSoulHP
-                && Target.Level >= Me.Level - 8
-                && DrainSoul.KnownSpell
+                && ObjectManager.Target.HealthPercent < settings.DrainSoulHP
+                && ObjectManager.Target.Level >= Me.Level - 8
                 && !UnitImmunities.Contains(ObjectManager.Target, "Drain Soul(Rank 1)"))
-                if (settings.DrainSoulLevel1)
-                {
-                    if (cast.OnTarget(DrainSoulRank1))
-                        return;
-                }
-                else
-                {
-                    if (cast.OnTarget(DrainSoul))
-                        return;
-                }
+            {
+                if (settings.DrainSoulLevel1
+                    && cast.OnTarget(DrainSoulRank1))
+                    return;
+                else if (cast.OnTarget(DrainSoul))
+                    return;
+            }
 
             // How of Terror
             if (ToolBox.GetNumberEnemiesAround(10f, Me) > 1

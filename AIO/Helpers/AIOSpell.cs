@@ -212,9 +212,9 @@ namespace WholesomeTBCAIO.Helpers
 
         private Dictionary<string, int> ForcedCoolDowns = new Dictionary<string, int>()
         {
-            {"Redemption", 10000 },
-            {"Resurrection", 10000 },
-            {"Ancestral Spirit", 10000 },
+            {"Redemption", 4000 },
+            {"Resurrection", 4000 },
+            {"Ancestral Spirit", 4000 },
             {"Call Pet", 5000 },
         };
     }

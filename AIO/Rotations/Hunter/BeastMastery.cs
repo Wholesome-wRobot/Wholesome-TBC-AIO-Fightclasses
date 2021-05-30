@@ -105,7 +105,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
             // Kill Command
             if (ObjectManager.Pet.IsAlive
-                && cast.OnSelf(KillCommand))
+                && cast.OnTarget(KillCommand))
                 return;
 
             // Raptor Strike

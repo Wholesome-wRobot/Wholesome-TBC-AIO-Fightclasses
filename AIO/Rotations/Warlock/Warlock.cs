@@ -44,7 +44,9 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             this.specialization = specialization as Warlock;
             (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);
             TalentsManager.InitTalents(settings);
-            
+
+            WarlockPetAndConsumables.Setup();
+
             _petPulseThread.DoWork += PetThread;
             _petPulseThread.RunWorkerAsync();
             
@@ -58,7 +60,6 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightStart += FightStartHandler;
-            FiniteStateMachineEvents.OnRunState += OnRunStateHandler;
 
             Rotation();
         }
@@ -70,7 +71,6 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             Lua.LuaDoString("PetPassiveMode();");
             FightEvents.OnFightEnd -= FightEndHandler;
             FightEvents.OnFightStart -= FightStartHandler;
-            FiniteStateMachineEvents.OnRunState -= OnRunStateHandler;
             wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
             cast.Dispose();
             Logger.Log("Disposed");
@@ -248,7 +248,6 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             }
             else
                 wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
-            
         }
 
         protected virtual void Pull()
@@ -296,18 +295,6 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         protected AIOSpell SeedOfCorruption = new AIOSpell("Seed of Corruption");
 
         // EVENT HANDLERS
-        private void OnRunStateHandler(Engine engine, State state, CancelEventArgs cancelable)
-        {
-            if (state is wManager.Wow.Bot.States.Resurrect 
-                || state is wManager.Wow.Bot.States.ResurrectBG
-                || state.DisplayName.Contains("Resurrect"))
-            {
-                Thread.Sleep(1000);
-                Lua.LuaDoString("UseSoulstone();");
-                Thread.Sleep(1000);
-            }
-        }
-
         private void FightEndHandler(ulong guid)
         {
             _iCanUseWand = false;

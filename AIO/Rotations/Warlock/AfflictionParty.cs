@@ -79,16 +79,23 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             {
                 WoWPlayer noSoulstone = AIOParty.Group
                     .Find(m => !m.HaveBuff("Soulstone Resurrection")
+                        && m.GetDistance < 20
+                        && m.Name !="Unknown"
+                        && !TraceLine.TraceLineGo(Me.Position, m.Position)
                         && (m.WowClass == WoWClass.Paladin || m.WowClass == WoWClass.Priest || m.WowClass == WoWClass.Shaman || m.WowClass == WoWClass.Druid));
                 if (noSoulstone != null)
                 {
+                    Logger.Log($"Using Soulstone on {noSoulstone.Name}");
                     MovementManager.StopMoveNewThread();
                     MovementManager.StopMoveToNewThread();
                     Lua.RunMacroText($"/target {noSoulstone.Name}");
-                    ToolBox.UseFirstMatchingItem(WarlockPetAndConsumables.SoulStones());
-                    Usefuls.WaitIsCasting();
-                    Lua.RunMacroText("/cleartarget");
-                    ToolBox.ClearCursor();
+                    if (ObjectManager.Target.Name == noSoulstone.Name)
+                    {
+                        ToolBox.UseFirstMatchingItem(WarlockPetAndConsumables.SoulStones());
+                        Usefuls.WaitIsCasting();
+                        Lua.RunMacroText("/cleartarget");
+                        ToolBox.ClearCursor();
+                    }
                 }
             }
 
@@ -173,6 +180,20 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             base.CombatRotation();
 
             WoWUnit target = ObjectManager.Target;
+
+            // Drain Soul
+            bool _shouldDrainSoul = ToolBox.CountItemStacks("Soul Shard") < settings.NumberOfSoulShards || settings.AlwaysDrainSoul;
+            if (_shouldDrainSoul
+                && ObjectManager.Target.HealthPercent < settings.DrainSoulHP
+                && ObjectManager.Target.Level >= Me.Level - 8
+                && !UnitImmunities.Contains(ObjectManager.Target, "Drain Soul(Rank 1)"))
+            {
+                if (settings.DrainSoulLevel1
+                    && cast.OnTarget(DrainSoulRank1))
+                    return;
+                else if (cast.OnTarget(DrainSoul))
+                    return;
+            }
 
             // Life Tap
             if (Me.ManaPercentage < settings.PartyLifeTapManaThreshold

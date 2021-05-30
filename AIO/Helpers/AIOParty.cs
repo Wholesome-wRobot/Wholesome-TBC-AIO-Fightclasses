@@ -164,11 +164,12 @@ namespace WholesomeTBCAIO.Helpers
         // Party Drink
         public static bool PartyDrink(string drinkName, int threshold)
         {
-            Timer wait = new Timer(3000);
+            Timer wait = new Timer(2000);
             while (!wait.IsReady && !ObjectManager.Me.InCombatFlagOnly && !Fight.InFight)
                 Thread.Sleep(300);
 
             if (ObjectManager.Me.ManaPercentage < threshold
+                && !ObjectManager.Me.HaveBuff("Drink")
                 && !MovementManager.InMovement
                 && !MovementManager.InMoveTo
                 && drinkName.Trim().Length > 0)
@@ -177,7 +178,7 @@ namespace WholesomeTBCAIO.Helpers
                 if (ToolBox.CountItemStacks(drinkName) > 0)
                 {
                     ItemsManager.UseItemByNameOrId(drinkName);
-                    Logger.Log($"Using {drinkName}");
+                    Logger.Log($"[Party drink] Using {drinkName}");
                     return true;
                 }
                 else

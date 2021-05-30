@@ -10,17 +10,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
     {
         protected override void BuffRotation()
         {
-            // PARTY Resurrection
-            List<AIOPartyMember> needRes = AIOParty.Group
-                .FindAll(m => m.IsDead)
-                .OrderBy(m => m.GetDistance)
-                .ToList();
-            if (needRes.Count > 0 && cast.OnFocusUnit(Resurrection, needRes[0]))
-            {
-                Thread.Sleep(3000);
-                ToolBox.ClearCursor();
-                return;
-            }
+            base.BuffRotation();
 
             // Party Cure Disease
             WoWPlayer needCureDisease = AIOParty.Group

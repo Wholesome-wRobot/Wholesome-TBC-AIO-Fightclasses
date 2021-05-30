@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using WholesomeTBCAIO.Helpers;
 using wManager.Wow.ObjectManager;
 
@@ -10,6 +9,8 @@ namespace WholesomeTBCAIO.Rotations.Priest
     {
         protected override void BuffRotation()
         {
+            base.BuffRotation();
+
             // PARTY Greater heal
             List<AIOPartyMember> needGreaterHeal = AIOParty.Group
                 .FindAll(m => m.IsAlive && m.HealthPercent < 50)

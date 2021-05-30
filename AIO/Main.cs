@@ -23,6 +23,7 @@ using robotManager.Events;
 using static WholesomeTBCAIO.Helpers.Enums;
 using System.Collections.Generic;
 using System;
+using System.Threading;
 
 public class Main : ICustomClass
 {
@@ -34,7 +35,7 @@ public class Main : ICustomClass
     public static string wowClass = ObjectManager.Me.WowClass.ToString();
     public static int humanReflexTime = 500;
     public static bool isLaunched;
-    public static string version = "3.0.03"; // Must match version in Version.txt
+    public static string version = "3.0.04"; // Must match version in Version.txt
     public static bool HMPrunningAway = false;
     public static State currentState;
 
@@ -200,6 +201,15 @@ public class Main : ICustomClass
     {
         if (engine.States.Count > 5)
             currentState = state;
+
+        if (state is wManager.Wow.Bot.States.Resurrect
+            || state is wManager.Wow.Bot.States.ResurrectBG
+            || state.DisplayName.Contains("Resurrect"))
+        {
+            Thread.Sleep(1000);
+            Lua.LuaDoString("UseSoulstone();");
+            Thread.Sleep(1000);
+        }
     }
 
     private void AddLogHandler(Logging.Log log)

@@ -10,14 +10,14 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         public static List<string> HealthStones()
         {
             return new List<string>
-        {
-            "Minor Healthstone",
-            "Lesser Healthstone",
-            "Healthstone",
-            "Greater Healthstone",
-            "Major Healthstone",
-            "Master Healthstone"
-        };
+            {
+                "Minor Healthstone",
+                "Lesser Healthstone",
+                "Healthstone",
+                "Greater Healthstone",
+                "Major Healthstone",
+                "Master Healthstone"
+            };
         }
 
         // Checks if we have a Healthstone
@@ -36,14 +36,21 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         public static List<string> SoulStones()
         {
             return new List<string>
+            {
+                "Minor Soulstone",
+                "Lesser Soulstone",
+                "Soulstone",
+                "Major Soulstone",
+                "Greater Soulstone",
+                "Master Soulstone"
+            };
+        }
+
+        public static void Setup()
         {
-            "Minor Soulstone",
-            "Lesser Soulstone",
-            "Soulstone",
-            "Major Soulstone",
-            "Greater Soulstone",
-            "Master Soulstone"
-        };
+            ToolBox.AddToDoNotSellList("Soul Shard");
+            ToolBox.AddToDoNotSellList(SoulStones());
+            ToolBox.AddToDoNotSellList(HealthStones());
         }
 
         // Checks if we have a Soulstone
