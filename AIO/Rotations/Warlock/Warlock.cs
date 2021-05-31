@@ -293,6 +293,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         protected AIOSpell CurseOfRecklessness = new AIOSpell("Curse of Recklessness");
         protected AIOSpell CurseOfDoom = new AIOSpell("Curse of Doom");
         protected AIOSpell SeedOfCorruption = new AIOSpell("Seed of Corruption");
+        protected AIOSpell Soulshatter = new AIOSpell("Soulshatter");
 
         // EVENT HANDLERS
         private void FightEndHandler(ulong guid)

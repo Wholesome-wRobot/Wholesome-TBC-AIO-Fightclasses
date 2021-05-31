@@ -36,6 +36,7 @@ namespace WholesomeTBCAIO.Settings
             PartyLifeTapManaThreshold = 20;
             PartyLifeTapHealthThreshold = 50;
             PartySeedOfCorruptionAmount = 3;
+            PartySoulShatter = true;
 
             Specialization = "Affliction";
         }
@@ -173,6 +174,12 @@ namespace WholesomeTBCAIO.Settings
         [DisplayName("Curse of the Elements")]
         [Description("Use Curse of the Elements")]
         public bool PartyCurseOfTheElements { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(true)]
+        [DisplayName("Soulshatter")]
+        [Description("Use Soulshatter (costs a Soul Shard)")]
+        public bool PartySoulShatter { get; set; }
 
         [Category("Party")]
         [DefaultValue(20)]

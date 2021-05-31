@@ -181,25 +181,24 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             WoWUnit target = ObjectManager.Target;
 
-            // Drain Soul
-            bool _shouldDrainSoul = ToolBox.CountItemStacks("Soul Shard") < settings.NumberOfSoulShards || settings.AlwaysDrainSoul;
-            if (_shouldDrainSoul
-                && ObjectManager.Target.HealthPercent < settings.DrainSoulHP
-                && ObjectManager.Target.Level >= Me.Level - 8
-                && !UnitImmunities.Contains(ObjectManager.Target, "Drain Soul(Rank 1)"))
-            {
-                if (settings.DrainSoulLevel1
-                    && cast.OnTarget(DrainSoulRank1))
-                    return;
-                else if (cast.OnTarget(DrainSoul))
-                    return;
-            }
+            // Soulshatter
+            if (SoulShatter.IsSpellUsable
+                && settings.UseSoulShatter
+                && AIOParty.EnemiesClose.Exists(m => m.IsTargetingMe)
+                && ToolBox.CountItemStacks("Soul Shard") > 0
+                && cast.OnSelf(SoulShatter))
+                return;
 
             // Life Tap
             if (Me.ManaPercentage < settings.PartyLifeTapManaThreshold
                 && Me.HealthPercent > settings.PartyLifeTapHealthThreshold
                 && settings.UseLifeTap
                 && cast.OnSelf(LifeTap))
+                return;
+
+            // Shadow Trance
+            if (Me.HaveBuff("Shadow Trance")
+                && cast.OnTarget(ShadowBolt))
                 return;
 
             // PARTY Seed of Corruption
@@ -283,6 +282,20 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                && AIOParty.EnemiesFighting.Count - enemiesWithoutSiphonLife.Count < 3
                && cast.OnFocusUnit(SiphonLife, enemiesWithoutSiphonLife[0]))
                 return;
+
+            // Drain Soul
+            bool _shouldDrainSoul = ToolBox.CountItemStacks("Soul Shard") < settings.NumberOfSoulShards || settings.AlwaysDrainSoul;
+            if (_shouldDrainSoul
+                && ObjectManager.Target.HealthPercent < settings.DrainSoulHP
+                && ObjectManager.Target.Level >= Me.Level - 8
+                && !UnitImmunities.Contains(ObjectManager.Target, "Drain Soul(Rank 1)"))
+            {
+                if (settings.DrainSoulLevel1
+                    && cast.OnTarget(DrainSoulRank1))
+                    return;
+                else if (cast.OnTarget(DrainSoul))
+                    return;
+            }
 
             // Shadow Bolt
             if (cast.OnTarget(ShadowBolt))
