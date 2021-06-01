@@ -24,27 +24,24 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && cast.OnSelf(UnendingBreath))
                 return;
 
-            // Demon Skin
-            if (!Me.HaveBuff("Demon Skin")
-                && cast.OnSelf(DemonSkin))
-                return;
-
-            // Demon Armor
-            if ((!Me.HaveBuff("Demon Armor") || Me.HaveBuff("Demon Skin"))
-                && (!FelArmor.KnownSpell || FelArmor.KnownSpell && !settings.UseFelArmor)
-                && cast.OnSelf(DemonArmor))
-                return;
-
-            // Soul Link
-            if (!Me.HaveBuff("Soul Link")
-                && ObjectManager.Pet.IsAlive
-                && cast.OnSelf(SoulLink))
-                return;
-
             // Fel Armor
             if (!Me.HaveBuff("Fel Armor")
                 && settings.UseFelArmor
                 && cast.OnSelf(FelArmor))
+                return;
+
+            // Demon Armor
+            if (!Me.HaveBuff("Demon Skin")
+                && !Me.HaveBuff("Demon Armor")
+                && !Me.HaveBuff("Fel Armor")
+                && cast.OnSelf(DemonArmor))
+                return;
+
+            // Demon Skin
+            if (!Me.HaveBuff("Demon Skin")
+                && !Me.HaveBuff("Demon Armor")
+                && !Me.HaveBuff("Fel Armor")
+                && cast.OnSelf(DemonSkin))
                 return;
 
             // Health Funnel OOC
@@ -112,7 +109,8 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 return;
 
             // Amplify Curse
-            if (cast.OnSelf(AmplifyCurse))
+            if (!Me.HaveBuff("Amplify Curse")
+                && cast.OnSelf(AmplifyCurse))
                 return;
 
             // Siphon Life
