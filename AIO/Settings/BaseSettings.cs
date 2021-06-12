@@ -13,7 +13,7 @@ namespace WholesomeTBCAIO.Settings
         SettingsWindow settingWindow;
 
         [Setting]
-        [DefaultValue(50)]
+        [DefaultValue(100)]
         [Category("General")]
         [DisplayName("Refresh rate")]
         [Description("Set this value higher if you have low CPU performance. In doubt, do not change this value")]
