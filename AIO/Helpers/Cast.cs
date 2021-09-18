@@ -334,10 +334,10 @@ namespace WholesomeTBCAIO.Helpers
 
         private void EventsLuaStringWithArgsHandler(string id, List<string> args)
         {
-            if (args.Count >= 11 && AutoDetectImmunities && args[11] == "IMMUNE")
+            if (args.Count >= 12 && AutoDetectImmunities && args[11] == "IMMUNE")
                 UnitImmunities.Add(CurrentSpellTarget, args[9]);
 
-            if (args.Count >= 11 && args[11] == "Target not in line of sight" && Fight.InFight)
+            if (args.Count >= 12 && args[11] == "Target not in line of sight" && Fight.InFight)
             {
                 Logger.Log("Forcing Approach");
                 IsApproachingTarget = true;
