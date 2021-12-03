@@ -46,11 +46,9 @@
     </Reference>
     <Reference Include="MahApps.Metro">
       <HintPath>..\Dependencies\MahApps.Metro.dll</HintPath>
-      <Private>False</Private>
     </Reference>
     <Reference Include="MarsSettingsGUI">
       <HintPath>..\Dependencies\MarsSettingsGUI.dll</HintPath>
-      <Private>False</Private>
     </Reference>
     <Reference Include="MemoryRobot">
       <HintPath>..\Dependencies\MemoryRobot.dll</HintPath>
@@ -173,7 +171,9 @@
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>copy /Y "$(TargetDir)\$(ProjectName).dll" "$(SolutionDir)\AIO\Compiled\$(ProjectName).dll"
