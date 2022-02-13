@@ -134,6 +134,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
         protected AIOSpell Smite = new AIOSpell("Smite");
         protected AIOSpell LesserHeal = new AIOSpell("Lesser Heal");
         protected AIOSpell PowerWordFortitude = new AIOSpell("Power Word: Fortitude");
+        protected AIOSpell PrayerOfFortitude = new AIOSpell("Prayer of Fortitude");
         protected AIOSpell PowerWordShield = new AIOSpell("Power Word: Shield");
         protected AIOSpell ShadowWordPain = new AIOSpell("Shadow Word: Pain");
         protected AIOSpell ShadowWordDeath = new AIOSpell("Shadow Word: Death");
@@ -154,6 +155,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
         protected AIOSpell VampiricEmbrace = new AIOSpell("Vampiric Embrace");
         protected AIOSpell Shadowguard = new AIOSpell("Shadowguard");
         protected AIOSpell ShadowProtection = new AIOSpell("Shadow Protection");
+        protected AIOSpell PrayerOfShadowProtection = new AIOSpell("Prayer of Shadow Protection");
         protected AIOSpell Shadowform = new AIOSpell("Shadowform");
         protected AIOSpell VampiricTouch = new AIOSpell("Vampiric Touch");
         protected AIOSpell InnerFocus = new AIOSpell("Inner Focus");
@@ -165,6 +167,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
         protected AIOSpell PrayerOfHealing = new AIOSpell("Prayer of Healing");
         protected AIOSpell PrayerOfMending = new AIOSpell("Prayer of Mending");
         protected AIOSpell Fade = new AIOSpell("Fade");
+        protected AIOSpell CircleOfHealing = new AIOSpell("Circle of Healing");
 
         // EVENT HANDLERS
         private void FightEndHandler(ulong guid)

@@ -13,7 +13,10 @@ namespace WholesomeTBCAIO.Settings
             UseInnerFire = true;
             UseShieldOnPull = true;
             UseShadowGuard = true;
-            UseShadowProtection = true;
+            UsePowerWordFortitude = false;
+            UsePrayerOfFortitude = false;
+            UseShadowProtection = false;
+            UsePrayerOfShadowProtection = false;
             UsePowerWordShield = true;
 
             UseShadowWordDeath = true;
@@ -54,11 +57,30 @@ namespace WholesomeTBCAIO.Settings
         [Description("Use Shadowguard")]
         public bool UseShadowGuard { get; set; }
 
+        // COMMON - Buffs
         [Category("Common")]
-        [DefaultValue(true)]
+        [DefaultValue(false)]
+        [DisplayName("Power Word: Fortitude")]
+        [Description("Use Power Word: Fortitude")]
+        public bool UsePowerWordFortitude { get; set; }
+
+        [Category("Common")]
+        [DefaultValue(false)]
+        [DisplayName("Prayer of Fortitude")]
+        [Description("Use Prayer of Fortitude")]
+        public bool UsePrayerOfFortitude { get; set; }
+
+        [Category("Common")]
+        [DefaultValue(false)]
         [DisplayName("Shadow Protection")]
         [Description("Use Shadow Protection")]
         public bool UseShadowProtection { get; set; }
+
+        [Category("Common")]
+        [DefaultValue(false)]
+        [DisplayName("Prayer of Shadow Protection")]
+        [Description("Use Prayer of Shadow Protection")]
+        public bool UsePrayerOfShadowProtection { get; set; }
 
         [Category("Common")]
         [DefaultValue(true)]

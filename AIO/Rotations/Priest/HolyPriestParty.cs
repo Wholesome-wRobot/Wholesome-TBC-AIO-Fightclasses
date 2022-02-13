@@ -46,11 +46,23 @@ namespace WholesomeTBCAIO.Rotations.Priest
             if (needRenew.Count > 0 && cast.OnFocusUnit(Renew, needRenew[0]))
                 return;
 
+            // PARTY Prayer of Fortitude
+            if (settings.UsePrayerOfFortitude)
+            {
+                WoWPlayer noPWF = AIOParty.Group
+                    .Find(m => !m.HaveBuff(PrayerOfFortitude.Name));
+                if (noPWF != null && cast.OnFocusUnit(PrayerOfFortitude, noPWF))
+                    return;
+            }
+
             // PARTY Power Word Fortitude
-            WoWPlayer noPWF = AIOParty.Group
-                .Find(m => !m.HaveBuff(PowerWordFortitude.Name));
-            if (noPWF != null && cast.OnFocusUnit(PowerWordFortitude, noPWF))
-                return;
+            if (settings.UsePowerWordFortitude)
+            {
+                WoWPlayer noPWF = AIOParty.Group
+                    .Find(m => !m.HaveBuff(PowerWordFortitude.Name));
+                if (noPWF != null && cast.OnFocusUnit(PowerWordFortitude, noPWF))
+                    return;
+            }
 
             // PARTY Divine Spirit
             WoWPlayer noDS = AIOParty.Group
@@ -70,6 +82,15 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 WoWPlayer noShadowProtection = AIOParty.Group
                     .Find(m => !m.HaveBuff(ShadowProtection.Name));
                 if (noShadowProtection != null && cast.OnFocusUnit(ShadowProtection, noShadowProtection))
+                    return;
+            }
+
+            // PARTY Prayer Of Shadow Protection
+            if (settings.UsePrayerOfShadowProtection)
+            {
+                WoWPlayer noShadowProtection = AIOParty.Group
+                    .Find(m => !m.HaveBuff(PrayerOfShadowProtection.Name));
+                if (noShadowProtection != null && cast.OnFocusUnit(PrayerOfShadowProtection, noShadowProtection))
                     return;
             }
 
@@ -112,6 +133,18 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 WoWPlayer needDispelMagic = AIOParty.Group
                     .Find(m => ToolBox.HasMagicDebuff(m.Name));
                 if (needDispelMagic != null && cast.OnFocusUnit(DispelMagic, needDispelMagic))
+                    return;
+            }
+
+            // PARTY Circle of Healing
+
+            if (CircleOfHealing.KnownSpell)
+            {
+                List<AIOPartyMember> needCircleOfHealing = AIOParty.Group
+                    .FindAll(m => m.IsAlive && m.HealthPercent < 85)
+                    .OrderBy(m => m.HealthPercent)
+                    .ToList();
+                if (needCircleOfHealing.Count > 2 && cast.OnTarget(CircleOfHealing))
                     return;
             }
 
