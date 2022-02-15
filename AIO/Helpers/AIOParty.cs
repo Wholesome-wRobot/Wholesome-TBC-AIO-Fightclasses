@@ -12,6 +12,7 @@ namespace WholesomeTBCAIO.Helpers
     {
         public static bool _isRunning;
         public static List<AIOPartyMember> Group { get; private set; } = new List<AIOPartyMember>();
+        public static Dictionary<string, List<AIOPartyMember>> RaidGroups { get; private set; } = new Dictionary<string, List<AIOPartyMember>>();
         public static List<WoWUnit> AllUnits { get; private set; } = new List<WoWUnit>();
         public static List<WoWUnit> EnemiesClose { get; private set; } = new List<WoWUnit>();
         public static bool ActivateSpecRecord { get; set; }
@@ -35,6 +36,8 @@ namespace WholesomeTBCAIO.Helpers
                         List<WoWPlayer> allMembersList = new List<WoWPlayer>();
                         allMembersList.AddRange(Party.GetRaidMembers());
                         allMembersList.AddRange(Party.GetParty());
+
+                        DoRaidUpdate();
 
                         // Add players to my own group list
                         foreach (WoWPlayer player in allMembersList)
@@ -89,6 +92,50 @@ namespace WholesomeTBCAIO.Helpers
                 Thread.Sleep(5000);
             }
             _isRunning = false;
+        }
+
+        public static void DoRaidUpdate()
+        {
+            string raidString = Lua.LuaDoString<string>
+                (@$"raidCount = GetNumRaidMembers()
+                    result = raidCount
+                    for i = 1 , raidCount do
+                        name, _, subgroup = GetRaidRosterInfo(i);
+                        result = result .. '|' .. name .. ':' .. subgroup
+                    end
+                    return result");
+
+            RaidGroups.Clear();
+            if (raidString == "0")
+            {
+                return;
+            }
+
+            string[] players = raidString.Split('|');
+            foreach (var playerString in players)
+            {
+                if (playerString.Contains(":"))
+                {
+                    string[] parts = playerString.Split(':');
+                    if (parts.Length == 2)
+                    {
+                        string name = parts[0];
+                        string subgroup= parts[1];
+
+                        AIOPartyMember player = Group.Find(m => (m.Name == name) && m.IsAlive && m.IsValid);
+                        if (player != null)
+                        {
+                            List<AIOPartyMember> raidGroup = RaidGroups[subgroup];
+                            if(raidGroup == null)
+                            {
+                                raidGroup = new List<AIOPartyMember>();
+                                RaidGroups[subgroup] = raidGroup;
+                            }
+                            raidGroup.Add(player);
+                        }
+                    }
+                }
+            }
         }
 
         public static List<WoWUnit> EnemiesFighting => EnemiesClose

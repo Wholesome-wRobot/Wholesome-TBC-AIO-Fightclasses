@@ -50,7 +50,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             if (settings.UsePrayerOfFortitude)
             {
                 WoWPlayer noPWF = AIOParty.Group
-                    .Find(m => !m.HaveBuff(PrayerOfFortitude.Name));
+                .Find(m => !m.HaveBuff(PrayerOfFortitude.Name));
                 if (noPWF != null && cast.OnFocusUnit(PrayerOfFortitude, noPWF))
                     return;
             }
@@ -137,16 +137,23 @@ namespace WholesomeTBCAIO.Rotations.Priest
             }
 
             // PARTY Circle of Healing
-
             if (CircleOfHealing.KnownSpell)
             {
                 List<AIOPartyMember> needCircleOfHealing = AIOParty.Group
                     .FindAll(m => m.IsAlive && m.HealthPercent < 85)
                     .OrderBy(m => m.HealthPercent)
                     .ToList();
-                if (needCircleOfHealing.Count > 2 && cast.OnTarget(CircleOfHealing))
+                if (needCircleOfHealing.Count > 2 && cast.OnFocusUnit(CircleOfHealing, needCircleOfHealing[0]))
                     return;
             }
+
+            // PARTY Renew
+            List<AIOPartyMember> needRenew = AIOParty.Group
+                .FindAll(m => m.HealthPercent < 80 && !m.HaveBuff(Renew.Name))
+                .OrderBy(m => m.HealthPercent)
+                .ToList();
+            if (needRenew.Count > 0 && cast.OnFocusUnit(Renew, needRenew[0]))
+                return;
 
             // PARTY Heal
             if (!FlashHeal.KnownSpell && !GreaterHealRank7.KnownSpell)
@@ -202,6 +209,15 @@ namespace WholesomeTBCAIO.Rotations.Priest
             if (needPrayerOfHealing.Count > 2 && cast.OnTarget(PrayerOfHealing))
                 return;
 
+
+            // PARTY Renew Rank 10
+            List<AIOPartyMember> needRenew10 = AIOParty.Group
+                .FindAll(m => m.HealthPercent < 90 && !m.HaveBuff(Renew.Name))
+                .OrderBy(m => m.HealthPercent)
+                .ToList();
+            if (needRenew.Count > 0 && cast.OnFocusUnit(Renew, needRenew[0]))
+                return;
+
             // PARTY Prayer of Mending
             List<AIOPartyMember> needPrayerOfMending = AIOParty.Group
                 .FindAll(m => m.IsAlive && m.HealthPercent < 70 && !m.HaveBuff(PrayerOfMending.Name))
@@ -230,15 +246,6 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 if (needHeal70.Count > 0 && cast.OnFocusUnit(Heal, needHeal70[0]))
                     return;
             }
-
-            
-            // PARTY Renew
-            List<AIOPartyMember> needRenew = AIOParty.Group
-                .FindAll(m => m.HealthPercent < 90 && !m.HaveBuff(Renew.Name))
-                .OrderBy(m => m.HealthPercent)
-                .ToList();
-            if (needRenew.Count > 0 && cast.OnFocusUnit(Renew, needRenew[0]))
-                return;
         }
     }
 }

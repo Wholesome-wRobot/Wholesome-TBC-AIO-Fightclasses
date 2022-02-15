@@ -140,6 +140,8 @@ namespace WholesomeTBCAIO.Rotations.Priest
         protected AIOSpell ShadowWordDeath = new AIOSpell("Shadow Word: Death");
         protected AIOSpell UseWand = new AIOSpell("Shoot");
         protected AIOSpell Renew = new AIOSpell("Renew");
+        protected AIOSpell RenewRank8 = new AIOSpell("Renew", 8);
+        protected AIOSpell RenewRank10 = new AIOSpell("Renew", 10);
         protected AIOSpell MindBlast = new AIOSpell("Mind Blast");
         protected AIOSpell InnerFire = new AIOSpell("Inner Fire");
         protected AIOSpell CureDisease = new AIOSpell("Cure Disease");
