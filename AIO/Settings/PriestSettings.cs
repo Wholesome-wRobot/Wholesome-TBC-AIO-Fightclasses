@@ -27,6 +27,7 @@ namespace WholesomeTBCAIO.Settings
             PartyVampiricEmbrace = false;
             PartySWDeathThreshold = 90;
             PartyMindBlastThreshold = 70;
+            PartyCircleOfHealingThreshold = 90;
 
             Specialization = "Shadow";
         }
@@ -113,6 +114,13 @@ namespace WholesomeTBCAIO.Settings
         [DisplayName("Shadow Protection")]
         [Description("Buff party with Shadow Protection")]
         public bool PartyShadowProtection { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(90)]
+        [DisplayName("[HOL] Circle of Healing")]
+        [Description("Use Circle of Healing on party members under this health threshold")]
+        [Percentage(true)]
+        public int PartyCircleOfHealingThreshold { get; set; }
 
         [Category("Party")]
         [DefaultValue(false)]

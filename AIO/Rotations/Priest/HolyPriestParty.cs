@@ -11,6 +11,12 @@ namespace WholesomeTBCAIO.Rotations.Priest
         {
             base.BuffRotation();
 
+            // PARTY Circle of Healing
+            if (CastCircleOfHealing())
+            {
+                return;
+            }
+
             // PARTY Greater heal
             List<AIOPartyMember> needGreaterHeal = AIOParty.Group
                 .FindAll(m => m.IsAlive && m.HealthPercent < 50)
@@ -40,7 +46,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
             // PARTY Renew
             List<AIOPartyMember> needRenew = AIOParty.Group
-                .FindAll(m => m.HealthPercent < 90 && !m.HaveBuff(Renew.Name))
+                .FindAll(m => m.HealthPercent < 100 && !m.HaveBuff(Renew.Name))
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
             if (needRenew.Count > 0 && cast.OnFocusUnit(Renew, needRenew[0]))
@@ -123,7 +129,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return;
 
             // ShadowFiend
-            if (Me.ManaPercentage < 10
+            if (Me.ManaPercentage < 50
                 && cast.OnTarget(Shadowfiend))
                 return;
 
@@ -137,14 +143,9 @@ namespace WholesomeTBCAIO.Rotations.Priest
             }
 
             // PARTY Circle of Healing
-            if (CircleOfHealing.KnownSpell)
+            if (CastCircleOfHealing())
             {
-                List<AIOPartyMember> needCircleOfHealing = AIOParty.Group
-                    .FindAll(m => m.IsAlive && m.HealthPercent < 85)
-                    .OrderBy(m => m.HealthPercent)
-                    .ToList();
-                if (needCircleOfHealing.Count > 2 && cast.OnFocusUnit(CircleOfHealing, needCircleOfHealing[0]))
-                    return;
+                return;
             }
 
             // PARTY Renew
@@ -212,7 +213,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
             // PARTY Renew Rank 10
             List<AIOPartyMember> needRenew10 = AIOParty.Group
-                .FindAll(m => m.HealthPercent < 90 && !m.HaveBuff(Renew.Name))
+                .FindAll(m => m.HealthPercent < 92 && !m.HaveBuff(Renew.Name))
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
             if (needRenew.Count > 0 && cast.OnFocusUnit(Renew, needRenew[0]))
@@ -246,6 +247,31 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 if (needHeal70.Count > 0 && cast.OnFocusUnit(Heal, needHeal70[0]))
                     return;
             }
+        }
+
+        private bool CastCircleOfHealing()
+        {
+            List<AIOPartyMember> needCircleOfHealing = new List<AIOPartyMember>();
+            foreach (var item in AIOParty.RaidGroups)
+            {
+                List<AIOPartyMember> subGroupNeedCircleOfHealing = item.Value
+                    .FindAll(m => m.IsAlive && m.HealthPercent < settings.PartyCircleOfHealingThreshold)
+                    .OrderBy(m => m.HealthPercent)
+                    .ToList();
+                if (subGroupNeedCircleOfHealing.Count > 2)
+                {
+                    needCircleOfHealing.Add(subGroupNeedCircleOfHealing[0]);
+                }
+            }
+            if (needCircleOfHealing.Count > 0)
+            {
+                List<AIOPartyMember> needCircleOfHealingOrdered = needCircleOfHealing
+                    .OrderBy(m => m.HealthPercent)
+                    .ToList();
+                if (cast.OnFocusUnit(CircleOfHealing, needCircleOfHealingOrdered[0]))
+                    return true;
+            }
+            return false;
         }
     }
 }
