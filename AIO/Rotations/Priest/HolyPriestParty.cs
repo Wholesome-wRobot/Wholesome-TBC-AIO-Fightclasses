@@ -18,41 +18,10 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
             List<AIOPartyMember> aliveMembers = AIOParty.Group
                 .FindAll(m => m.IsAlive && m.GetDistance < 60)
-                .ToList();
-
-            // PARTY Greater heal
-            List<AIOPartyMember> needGreaterHeal = aliveMembers
-                .FindAll(m => m.HealthPercent < 50)
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
-            if (needGreaterHeal.Count > 0 && cast.OnFocusUnit(GreaterHeal, needGreaterHeal[0]))
-                return;
 
-            // PARTY Heal
-            List<AIOPartyMember> needHeal = aliveMembers
-                .FindAll(m => m.HealthPercent < 80)
-                .OrderBy(m => m.HealthPercent)
-                .ToList();
-            if (needHeal.Count > 0 && cast.OnFocusUnit(FlashHeal, needHeal[0]))
-                return;
-
-            if (!FlashHeal.KnownSpell)
-            {
-                // PARTY Lesser Heal
-                List<AIOPartyMember> needLesserHeal = aliveMembers
-                    .FindAll(m => m.HealthPercent < 80)
-                    .OrderBy(m => m.HealthPercent)
-                    .ToList();
-                if (needLesserHeal.Count > 0 && cast.OnFocusUnit(LesserHeal, needLesserHeal[0]))
-                    return;
-            }
-
-            // PARTY Renew
-            List<AIOPartyMember> needRenew = aliveMembers
-                .FindAll(m => m.HealthPercent < 100 && !m.HaveBuff(Renew.Name))
-                .OrderBy(m => m.HealthPercent)
-                .ToList();
-            if (needRenew.Count > 0 && cast.OnFocusUnit(Renew, needRenew[0]))
+            if (SingleTargetHeal(aliveMembers[0], false))
                 return;
 
             if (BuffParty())
@@ -72,7 +41,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
         protected override void HealerCombat()
         {
             List<AIOPartyMember> aliveMembers = AIOParty.Group
-                .FindAll(m => m.IsAlive)
+                .FindAll(m => m.IsAlive && m.GetDistance < 70)
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
 
@@ -85,14 +54,6 @@ namespace WholesomeTBCAIO.Rotations.Priest
             if (AIOParty.EnemiesClose.Exists(m => m.IsTargetingMe)
                 && cast.OnSelf(Fade))
                 return;
-
-            // ShadowFiend
-            if (Shadowfiend.IsSpellUsable && Me.ManaPercentage < 50)
-            {
-                WoWUnit unit = AIOParty.EnemiesClose.OrderBy(m => m.Health).Last();
-                if (unit != null && cast.OnFocusUnit(Shadowfiend, unit))
-                    return;
-            }
 
             // PARTY Mass Dispel
             if (settings.PartyMassDispel && needDispelMagic.Count > 4)
@@ -111,6 +72,14 @@ namespace WholesomeTBCAIO.Rotations.Priest
             {
                 ToolBox.UseConsumableToSelfHeal();
                 if (SingleTargetHeal(Me))
+                    return;
+            }
+
+            // ShadowFiend
+            if (Shadowfiend.IsSpellUsable && Me.ManaPercentage < 50)
+            {
+                WoWUnit unit = AIOParty.EnemiesClose.OrderBy(m => m.Health).Last();
+                if (unit != null && cast.OnFocusUnit(Shadowfiend, unit))
                     return;
             }
 
@@ -138,7 +107,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             SingleTargetHeal(aliveMembers[0]);
         }
 
-        private bool SingleTargetHeal(WoWPlayer player)
+        private bool SingleTargetHeal(WoWPlayer player, bool combat = true)
         {
             if (!player.IsAlive)
                 return false;
@@ -157,7 +126,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return true;
             if (player.HealthPercent < 95 && !player.HaveBuff(Renew.Name) && cast.OnFocusUnit(RenewRank8, player))
                 return true;
-            if (player.HealthPercent < 100)
+            if (combat && player.HealthPercent < 100)
             {
                 if (PrayerOfMending.IsSpellUsable && cast.OnFocusUnit(PrayerOfMending, player))
                     return true;
