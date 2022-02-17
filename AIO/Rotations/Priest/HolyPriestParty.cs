@@ -170,26 +170,50 @@ namespace WholesomeTBCAIO.Rotations.Priest
             if (CircleOfHealing.KnownSpell)
             {
                 List<AIOPartyMember> needCircleOfHealing = new List<AIOPartyMember>();
-                foreach (var item in AIOParty.RaidGroups)
+                if (AIOParty.RaidGroups.Count == 0)
                 {
-                    List<AIOPartyMember> subGroupNeedCircleOfHealing = item.Value
-                        .FindAll(m => m.IsAlive && m.HealthPercent < settings.PartyCircleOfHealingThreshold)
+                    // Party healing
+                    needCircleOfHealing = AIOParty.Group
+                        .FindAll(m => m.IsAlive && m.GetDistance < 70 && m.HealthPercent < settings.PartyCircleOfHealingThreshold)
                         .OrderBy(m => m.HealthPercent)
                         .ToList();
-                    if (subGroupNeedCircleOfHealing.Count > 2)
+                    if (needCircleOfHealing.Count > 2)
                     {
-                        needCircleOfHealing.Add(subGroupNeedCircleOfHealing[0]);
+                        if (cast.OnFocusUnit(CircleOfHealing, needCircleOfHealing[0]))
+                            return true;
+                    }
+                } else {
+                    // Raid healing
+                    foreach (var item in AIOParty.RaidGroups)
+                    {
+                        List<AIOPartyMember> subGroupNeedCircleOfHealing = item.Value
+                            .FindAll(m => m.IsAlive && m.GetDistance < 70 && m.HealthPercent < settings.PartyCircleOfHealingThreshold)
+                            .OrderBy(m => m.HealthPercent)
+                            .ToList();
+                        if (subGroupNeedCircleOfHealing.Count > 2)
+                        {
+                            needCircleOfHealing.Add(subGroupNeedCircleOfHealing[0]);
+                        }
+                    }
+                    if (needCircleOfHealing.Count > 0)
+                    {
+                        List<AIOPartyMember> needCircleOfHealingOrdered = needCircleOfHealing
+                            .OrderBy(m => m.HealthPercent)
+                            .ToList();
+                        if (cast.OnFocusUnit(CircleOfHealing, needCircleOfHealingOrdered[0]))
+                            return true;
                     }
                 }
-                if (needCircleOfHealing.Count > 0)
-                {
-                    List<AIOPartyMember> needCircleOfHealingOrdered = needCircleOfHealing
-                        .OrderBy(m => m.HealthPercent)
-                        .ToList();
-                    if (cast.OnFocusUnit(CircleOfHealing, needCircleOfHealingOrdered[0]))
-                        return true;
-                }
+            } 
+            else if (PrayerOfHealing.KnownSpell)
+            {
+                List<AIOPartyMember> needPrayerOfHealing = AIOParty.Group
+                    .FindAll(m => m.IsAlive && m.GetDistance < 33 && m.HealthPercent < 75)
+                    .ToList();
+                if (needPrayerOfHealing.Count > 2 && cast.OnSelf(PrayerOfHealing))
+                    return true;
             }
+
             return false;
         }
     }
