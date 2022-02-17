@@ -60,7 +60,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             // OOC Shadow Protection
             if (!Me.HaveBuff("Shadow Protection")
                 && ShadowProtection.KnownSpell
-                && settings.UseShadowProtection
+                && settings.PartyShadowProtection
                 && cast.OnSelf(ShadowProtection))
                 return;
 
@@ -251,7 +251,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             // Shadow Protection
             if (!Me.HaveBuff("Shadow Protection")
                 && _myManaPC > 70
-                && settings.UseShadowProtection
+                && settings.PartyShadowProtection
                 && cast.OnSelf(ShadowProtection))
                 return;
 

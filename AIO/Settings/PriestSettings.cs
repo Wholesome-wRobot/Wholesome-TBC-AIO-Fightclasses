@@ -13,17 +13,18 @@ namespace WholesomeTBCAIO.Settings
             UseInnerFire = true;
             UseShieldOnPull = true;
             UseShadowGuard = true;
-            UsePowerWordFortitude = false;
-            UsePrayerOfFortitude = false;
-            UseShadowProtection = false;
-            UsePrayerOfShadowProtection = false;
             UsePowerWordShield = true;
-
             UseShadowWordDeath = true;
 
             PartyCureDisease = false;
-            PartyShadowProtection = true;
             PartyDispelMagic = false;
+            PartyMassDispel = false;
+            PartyPowerWordFortitude = false;
+            PartyPrayerOfFortitude = false;
+            PartyShadowProtection = false;
+            PartyPrayerOfShadowProtection = false;
+            PartyDivineSpirit = false;
+            PartyPrayerOfSpirit = false;
             PartyVampiricEmbrace = false;
             PartySWDeathThreshold = 90;
             PartyMindBlastThreshold = 70;
@@ -60,30 +61,6 @@ namespace WholesomeTBCAIO.Settings
 
         // COMMON - Buffs
         [Category("Common")]
-        [DefaultValue(false)]
-        [DisplayName("Power Word: Fortitude")]
-        [Description("Use Power Word: Fortitude")]
-        public bool UsePowerWordFortitude { get; set; }
-
-        [Category("Common")]
-        [DefaultValue(false)]
-        [DisplayName("Prayer of Fortitude")]
-        [Description("Use Prayer of Fortitude")]
-        public bool UsePrayerOfFortitude { get; set; }
-
-        [Category("Common")]
-        [DefaultValue(false)]
-        [DisplayName("Shadow Protection")]
-        [Description("Use Shadow Protection")]
-        public bool UseShadowProtection { get; set; }
-
-        [Category("Common")]
-        [DefaultValue(false)]
-        [DisplayName("Prayer of Shadow Protection")]
-        [Description("Use Prayer of Shadow Protection")]
-        public bool UsePrayerOfShadowProtection { get; set; }
-
-        [Category("Common")]
         [DefaultValue(true)]
         [DisplayName("Inner Fire")]
         [Description("Use Inner Fire")]
@@ -99,6 +76,42 @@ namespace WholesomeTBCAIO.Settings
         // PARTY
         [Category("Party")]
         [DefaultValue(false)]
+        [DisplayName("Power Word: Fortitude")]
+        [Description("Use Power Word: Fortitude")]
+        public bool PartyPowerWordFortitude { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(false)]
+        [DisplayName("Prayer of Fortitude")]
+        [Description("Use Prayer of Fortitude")]
+        public bool PartyPrayerOfFortitude { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(false)]
+        [DisplayName("Shadow Protection")]
+        [Description("Use Shadow Protection")]
+        public bool PartyShadowProtection { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(false)]
+        [DisplayName("Prayer of Shadow Protection")]
+        [Description("Use Prayer of Shadow Protection")]
+        public bool PartyPrayerOfShadowProtection { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(false)]
+        [DisplayName("Divine Spirit")]
+        [Description("Use Divine Spirit")]
+        public bool PartyDivineSpirit { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(false)]
+        [DisplayName("Prayer of Spirit")]
+        [Description("Use Prayer of Spirit")]
+        public bool PartyPrayerOfSpirit { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(false)]
         [DisplayName("Cure Disease")]
         [Description("Use Cure Disease in combat")]
         public bool PartyCureDisease { get; set; }
@@ -110,17 +123,17 @@ namespace WholesomeTBCAIO.Settings
         public bool PartyDispelMagic { get; set; }
 
         [Category("Party")]
-        [DefaultValue(true)]
-        [DisplayName("Shadow Protection")]
-        [Description("Buff party with Shadow Protection")]
-        public bool PartyShadowProtection { get; set; }
-
-        [Category("Party")]
         [DefaultValue(90)]
         [DisplayName("[HOL] Circle of Healing")]
         [Description("Use Circle of Healing on party members under this health threshold")]
         [Percentage(true)]
         public int PartyCircleOfHealingThreshold { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(false)]
+        [DisplayName("Mass Dispel")]
+        [Description("Use Mass Dispel in combat")]
+        public bool PartyMassDispel { get; set; }
 
         [Category("Party")]
         [DefaultValue(false)]

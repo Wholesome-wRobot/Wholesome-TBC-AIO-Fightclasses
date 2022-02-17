@@ -24,16 +24,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             if (needDispelMagic != null && cast.OnFocusUnit(DispelMagic, needDispelMagic))
                 return;
 
-            // PARTY Power Word Fortitude
-            WoWPlayer noPWF = AIOParty.Group
-                .Find(m => !m.HaveBuff(PowerWordFortitude.Name));
-            if (noPWF != null && cast.OnFocusUnit(PowerWordFortitude, noPWF))
-                return;
-
-            // PARTY Divine Spirit
-            WoWPlayer noDS = AIOParty.Group
-                .Find(m => !m.HaveBuff(DivineSpirit.Name));
-            if (noDS != null && cast.OnFocusUnit(DivineSpirit, noDS))
+            if (BuffParty())
                 return;
 
             // OOC Inner Fire
@@ -48,18 +39,9 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 && cast.OnSelf(Shadowguard))
                 return;
 
-            // PARTY Shadow Protection
-            if (settings.PartyShadowProtection)
-            {
-                WoWPlayer noShadowProtection = AIOParty.Group
-                    .Find(m => !m.HaveBuff(ShadowProtection.Name));
-                if (noShadowProtection != null && cast.OnFocusUnit(ShadowProtection, noShadowProtection))
-                    return;
-            }
-
             // OOC Shadow Protection
             if (!Me.HaveBuff("Shadow Protection")
-                && settings.UseShadowProtection
+                && settings.PartyShadowProtection
                 && cast.OnSelf(ShadowProtection))
                 return;
            

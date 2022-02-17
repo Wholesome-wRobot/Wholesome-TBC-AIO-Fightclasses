@@ -418,15 +418,20 @@ namespace WholesomeTBCAIO.Helpers
         }
 
         // Returns the unit in the middle of the pack
-        public static WoWUnit GetBestAoETarget(float range, float size, IEnumerable<WoWUnit> units, int minimum = 0)
+        public static WoWUnit GetBestAoETarget(float range, IEnumerable<WoWUnit> units)
         {
-            // As this is still a C language, we can use fixed memory addresses with direct memory access -> Performance
             WoWUnit[] unitArray = units as WoWUnit[] ?? units.ToArray();
-            return unitArray.Where(target => target.GetDistance < range)
-                .Select(unit => new KeyValuePair<WoWUnit, int>(unit,
-                    unitArray.Count(otherUnit =>
-                        unit.Position.DistanceTo(otherUnit.Position) < size)))
-                .OrderByDescending(pair => pair.Value).FirstOrDefault(pair => pair.Value >= minimum).Key;
+            List<WoWUnit> unitsInRange = unitArray.Where(target => target.GetDistance < range).ToList();
+            if (unitsInRange.Count < 1)
+                return null;
+
+            Vector3 center = unitsInRange
+                .Select(unit => unit.Position)
+                .Aggregate(new Vector3(0, 0, 0), (s, v) => s + v) / (float)unitsInRange.Count;
+            WoWUnit unitClosestToCenter = unitsInRange
+                .OrderBy(unit => unit.Position.DistanceTo(center))
+                .First();
+            return unitClosestToCenter;
         }
 
         // Get Talent Rank
@@ -610,6 +615,12 @@ namespace WholesomeTBCAIO.Helpers
 
             Logger.Log("Couldn't find item");
             return 0;
+        }
+
+        public static void UseConsumableToSelfHeal()
+        {
+            List<string> consumables = new List<string>{"Master Healthstone"};
+            UseFirstMatchingItem(consumables);
         }
 
         // Uses the first item found in your bags that matches any element from the list

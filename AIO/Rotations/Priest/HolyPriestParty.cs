@@ -16,7 +16,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             if (AoEHeal())
                 return;
 
-            List<AIOPartyMember> aliveMembers= AIOParty.Group
+            List<AIOPartyMember> aliveMembers = AIOParty.Group
                 .FindAll(m => m.IsAlive && m.GetDistance < 60)
                 .ToList();
 
@@ -55,58 +55,13 @@ namespace WholesomeTBCAIO.Rotations.Priest
             if (needRenew.Count > 0 && cast.OnFocusUnit(Renew, needRenew[0]))
                 return;
 
-            // PARTY Prayer of Fortitude
-            if (settings.UsePrayerOfFortitude)
-            {
-                WoWPlayer noPWF = aliveMembers
-                .Find(m => !m.HaveBuff(PrayerOfFortitude.Name));
-                if (noPWF != null && cast.OnFocusUnit(PrayerOfFortitude, noPWF))
-                    return;
-            }
-
-            // PARTY Power Word Fortitude
-            if (settings.UsePowerWordFortitude)
-            {
-                WoWPlayer noPWF = aliveMembers
-                    .Find(m => !m.HaveBuff(PowerWordFortitude.Name));
-                if (noPWF != null && cast.OnFocusUnit(PowerWordFortitude, noPWF))
-                    return;
-            }
-
-            // PARTY Divine Spirit
-            WoWPlayer noDS = aliveMembers
-                .Find(m => m.Mana > 0 && !m.HaveBuff(DivineSpirit.Name));
-            if (noDS != null && cast.OnFocusUnit(DivineSpirit, noDS))
+            if (BuffParty())
                 return;
-
+                
             // OOC Inner Fire
             if (!Me.HaveBuff("Inner Fire")
                 && settings.UseInnerFire
                 && cast.OnSelf(InnerFire))
-                return;
-
-            // PARTY Shadow Protection
-            if (settings.PartyShadowProtection)
-            {
-                WoWPlayer noShadowProtection = aliveMembers
-                    .Find(m => !m.HaveBuff(ShadowProtection.Name));
-                if (noShadowProtection != null && cast.OnFocusUnit(ShadowProtection, noShadowProtection))
-                    return;
-            }
-
-            // PARTY Prayer Of Shadow Protection
-            if (settings.UsePrayerOfShadowProtection)
-            {
-                WoWPlayer noShadowProtection = aliveMembers
-                    .Find(m => !m.HaveBuff(PrayerOfShadowProtection.Name));
-                if (noShadowProtection != null && cast.OnFocusUnit(PrayerOfShadowProtection, noShadowProtection))
-                    return;
-            }
-
-            // OOC Shadow Protection
-            if (!Me.HaveBuff("Shadow Protection")
-                && settings.UseShadowProtection
-                && cast.OnSelf(ShadowProtection))
                 return;
 
             // PARTY Drink
@@ -132,17 +87,19 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return;
 
             // ShadowFiend
-            if (Shadowfiend.IsSpellUsable
-                && Me.ManaPercentage < 50
-                && cast.OnTarget(Shadowfiend))
-                return;
+            if (Shadowfiend.IsSpellUsable && Me.ManaPercentage < 50)
+            {
+                WoWUnit unit = AIOParty.EnemiesClose.OrderBy(m => m.Health).Last();
+                if (unit != null && cast.OnFocusUnit(Shadowfiend, unit))
+                    return;
+            }
 
             // PARTY Mass Dispel
-            if (settings.PartyDispelMagic && needDispelMagic.Count > 4) // TODO SETTINGS VALUES
+            if (settings.PartyMassDispel && needDispelMagic.Count > 4)
             {
                 // Get unit in the middle of the pack
-                WoWUnit unit = ToolBox.GetBestAoETarget(40, 25, aliveMembers);
-                if (cast.OnSelf(MassDispel))
+                WoWUnit unit = ToolBox.GetBestAoETarget(40, needDispelMagic);
+                if (unit != null && cast.OnSelf(MassDispel))
                 {
                     ClickOnTerrain.Pulse(unit.Position);
                     return;
@@ -150,8 +107,12 @@ namespace WholesomeTBCAIO.Rotations.Priest
             }
 
             // Prioritize self healing over other things in case of danger
-            if (Me.HealthPercent < 40 && SingleTargetHeal(Me))
-                return;
+            if (Me.HealthPercent < 40)
+            {
+                ToolBox.UseConsumableToSelfHeal();
+                if (SingleTargetHeal(Me))
+                    return;
+            }
 
             // PARTY Circle of Healing
             if (AoEHeal())
