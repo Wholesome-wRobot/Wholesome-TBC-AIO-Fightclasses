@@ -417,6 +417,18 @@ namespace WholesomeTBCAIO.Helpers
             return null;
         }
 
+        // Returns the unit in the middle of the pack
+        public static WoWUnit GetBestAoETarget(float range, float size, IEnumerable<WoWUnit> units, int minimum = 0)
+        {
+            // As this is still a C language, we can use fixed memory addresses with direct memory access -> Performance
+            WoWUnit[] unitArray = units as WoWUnit[] ?? units.ToArray();
+            return unitArray.Where(target => target.GetDistance < range)
+                .Select(unit => new KeyValuePair<WoWUnit, int>(unit,
+                    unitArray.Count(otherUnit =>
+                        unit.Position.DistanceTo(otherUnit.Position) < size)))
+                .OrderByDescending(pair => pair.Value).FirstOrDefault(pair => pair.Value >= minimum).Key;
+        }
+
         // Get Talent Rank
         public static int GetTalentRank(int tabIndex, int talentIndex)
         {

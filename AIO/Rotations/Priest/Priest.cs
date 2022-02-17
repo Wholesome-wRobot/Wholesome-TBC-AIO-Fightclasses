@@ -170,6 +170,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
         protected AIOSpell PrayerOfMending = new AIOSpell("Prayer of Mending");
         protected AIOSpell Fade = new AIOSpell("Fade");
         protected AIOSpell CircleOfHealing = new AIOSpell("Circle of Healing");
+        protected AIOSpell MassDispel = new AIOSpell("Mass Dispel");
 
         // EVENT HANDLERS
         private void FightEndHandler(ulong guid)
