@@ -73,14 +73,24 @@ namespace WholesomeTBCAIO.Helpers
             return false;
         }
 
-        public bool Buff(List<AIOPartyMember> units, AIOSpell spell, uint reagent = 0)
+        public bool BuffSelf(AIOSpell spell, uint reagent = 0)
+        {
+            WoWUnit Me = ObjectManager.Me;
+            List<WoWUnit> units = new List<WoWUnit>();
+            units.Add(Me);
+            return Buff(units, spell, reagent);
+        }
+
+        public bool Buff(IEnumerable<WoWUnit> units, AIOSpell spell, uint reagent = 0)
         {
             if (!spell.KnownSpell)
                 return false;
             if (reagent != 0 && !ItemsManager.HasItemById(reagent))
                 return false;
-            List<AIOPartyMember> unitsNeedsBuff = units
-                .FindAll(m => !m.HaveBuff(spell.Name))
+            WoWUnit[] unitArray = units as WoWUnit[] ?? units.ToArray();
+            List<WoWUnit> unitsNeedsBuff = unitArray
+                .ToList()
+                .FindAll(m => ToolBox.BuffTimeLeft(spell.Name, m.Name) < 180)
                 .OrderBy(m => rng.Next())
                 .ToList();
             if (unitsNeedsBuff.Count <= 0)

@@ -13,7 +13,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             base.BuffRotation();
 
             // PARTY Circle of Healing
-            if (AoEHeal())
+            if (AoEHeal(false))
                 return;
 
             List<AIOPartyMember> aliveMembers = AIOParty.Group
@@ -28,9 +28,8 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return;
                 
             // OOC Inner Fire
-            if (!Me.HaveBuff("Inner Fire")
-                && settings.UseInnerFire
-                && cast.OnSelf(InnerFire))
+            if (settings.UseInnerFire
+                && cast.BuffSelf(InnerFire))
                 return;
 
             // PARTY Drink
@@ -134,16 +133,17 @@ namespace WholesomeTBCAIO.Rotations.Priest
             return false;
         }
 
-        private bool AoEHeal()
+        private bool AoEHeal(bool combat = true)
         {
             if (CircleOfHealing.KnownSpell)
             {
                 List<AIOPartyMember> needCircleOfHealing = new List<AIOPartyMember>();
+                int treshold = combat ? settings.PartyCircleOfHealingThreshold : 95;
                 if (AIOParty.RaidGroups.Count == 0)
                 {
                     // Party healing
                     needCircleOfHealing = AIOParty.Group
-                        .FindAll(m => m.IsAlive && m.GetDistance < 70 && m.HealthPercent < settings.PartyCircleOfHealingThreshold)
+                        .FindAll(m => m.IsAlive && m.GetDistance < 70 && m.HealthPercent < treshold)
                         .OrderBy(m => m.HealthPercent)
                         .ToList();
                     if (needCircleOfHealing.Count > 2)
@@ -156,7 +156,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     foreach (var item in AIOParty.RaidGroups)
                     {
                         List<AIOPartyMember> subGroupNeedCircleOfHealing = item.Value
-                            .FindAll(m => m.IsAlive && m.GetDistance < 70 && m.HealthPercent < settings.PartyCircleOfHealingThreshold)
+                            .FindAll(m => m.IsAlive && m.GetDistance < 70 && m.HealthPercent < treshold)
                             .OrderBy(m => m.HealthPercent)
                             .ToList();
                         if (subGroupNeedCircleOfHealing.Count > 2)

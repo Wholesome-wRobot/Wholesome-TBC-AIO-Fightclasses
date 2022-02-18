@@ -424,7 +424,6 @@ namespace WholesomeTBCAIO.Helpers
             List<WoWUnit> unitsInRange = unitArray.Where(target => target.GetDistance < range).ToList();
             if (unitsInRange.Count < 1)
                 return null;
-
             Vector3 center = unitsInRange
                 .Select(unit => unit.Position)
                 .Aggregate(new Vector3(0, 0, 0), (s, v) => s + v) / (float)unitsInRange.Count;
