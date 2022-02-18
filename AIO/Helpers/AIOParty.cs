@@ -120,17 +120,19 @@ namespace WholesomeTBCAIO.Helpers
                     if (parts.Length == 2)
                     {
                         string name = parts[0];
-                        string subgroup= parts[1];
+                        string subgroupNumber = parts[1];
 
                         AIOPartyMember player = Group.Find(m => (m.Name == name) && m.IsValid);
                         if (player != null)
                         {
-                            if(!RaidGroups.ContainsKey(subgroup))
+                            if (RaidGroups.TryGetValue(subgroupNumber, out var subgroup))
                             {
-                                RaidGroups[subgroup] = new List<AIOPartyMember>();
+                                subgroup.Add(player);
                             }
-                            List<AIOPartyMember> raidGroup = RaidGroups[subgroup];
-                            raidGroup.Add(player);
+                            else
+                            {                                
+                                RaidGroups[subgroupNumber] = new List<AIOPartyMember>() { player };
+                            }
                         }
                     }
                 }
