@@ -75,10 +75,7 @@ namespace WholesomeTBCAIO.Helpers
 
         public bool BuffSelf(AIOSpell spell, uint reagent = 0)
         {
-            WoWUnit Me = ObjectManager.Me;
-            List<WoWUnit> units = new List<WoWUnit>();
-            units.Add(Me);
-            return Buff(units, spell, reagent);
+            return Buff(new List<WoWUnit>() { ObjectManager.Me }, spell, reagent);
         }
 
         public bool Buff(IEnumerable<WoWUnit> units, AIOSpell spell, uint reagent = 0)
