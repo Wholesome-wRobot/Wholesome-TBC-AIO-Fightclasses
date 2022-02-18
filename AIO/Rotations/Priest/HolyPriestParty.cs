@@ -138,7 +138,8 @@ namespace WholesomeTBCAIO.Rotations.Priest
             if (CircleOfHealing.KnownSpell)
             {
                 List<AIOPartyMember> needCircleOfHealing = new List<AIOPartyMember>();
-                int treshold = combat ? settings.PartyCircleOfHealingThreshold : 95;
+                // Healing very proactively while there is a lot of mana
+                int treshold = (combat && Me.ManaPercentage < 80) ? settings.PartyCircleOfHealingThreshold : 95;
                 if (AIOParty.RaidGroups.Count == 0)
                 {
                     // Party healing
