@@ -55,6 +55,11 @@ namespace WholesomeTBCAIO.Rotations.Druid
             Rotation();
         }
 
+        public bool AnswerReadyCheck()
+        {
+            return true;
+        }
+
         public void Dispose()
         {
             FightEvents.OnFightEnd -= FightEndHandler;

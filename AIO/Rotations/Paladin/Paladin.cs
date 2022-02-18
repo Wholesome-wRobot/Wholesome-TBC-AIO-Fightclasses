@@ -58,6 +58,10 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             Rotation();
         }
 
+        public bool AnswerReadyCheck()
+        {
+            return true;
+        }
 
         public void Dispose()
         {

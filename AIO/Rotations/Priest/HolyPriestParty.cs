@@ -103,13 +103,12 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     return;
             }
 
-            SingleTargetHeal(aliveMembers[0]);
+            if (SingleTargetHeal(aliveMembers[0]))
+                return;
         }
 
         private bool SingleTargetHeal(WoWPlayer player, bool combat = true)
         {
-            if (!player.IsAlive)
-                return false;
             if (player.HealthPercent < 30 && cast.OnFocusUnit(FlashHeal, player))
                 return true;
             if (player.HealthPercent < 50
@@ -127,7 +126,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return true;
             if (combat && player.HealthPercent < 100)
             {
-                if (PrayerOfMending.IsSpellUsable && cast.OnFocusUnit(PrayerOfMending, player))
+                if (cast.OnFocusUnit(PrayerOfMending, player))
                     return true;
             }
             return false;

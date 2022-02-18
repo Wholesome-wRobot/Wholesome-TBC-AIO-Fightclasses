@@ -53,6 +53,11 @@ namespace WholesomeTBCAIO.Rotations.Mage
             Rotation();
         }
 
+        public bool AnswerReadyCheck()
+        {
+            return true;
+        }
+
         public void Dispose()
         {
             cast.IsBackingUp = false;

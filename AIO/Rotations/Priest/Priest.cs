@@ -50,6 +50,11 @@ namespace WholesomeTBCAIO.Rotations.Priest
             Rotation();
         }
 
+        public bool AnswerReadyCheck()
+        {
+            return Me.ManaPercentage > settings.PartyDrinkThreshold;
+        }
+
         public void Dispose()
         {
             FightEvents.OnFightEnd -= FightEndHandler;

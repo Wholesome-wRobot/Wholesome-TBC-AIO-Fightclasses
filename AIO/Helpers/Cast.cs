@@ -83,14 +83,12 @@ namespace WholesomeTBCAIO.Helpers
 
         public bool Buff(IEnumerable<WoWUnit> units, AIOSpell spell, uint reagent = 0)
         {
-            if (!spell.KnownSpell)
-                return false;
             if (reagent != 0 && !ItemsManager.HasItemById(reagent))
                 return false;
             WoWUnit[] unitArray = units as WoWUnit[] ?? units.ToArray();
             List<WoWUnit> unitsNeedsBuff = unitArray
                 .ToList()
-                .FindAll(m => ToolBox.BuffTimeLeft(spell.Name, m.Name) < 180)
+                .FindAll(m => !m.HaveBuff(spell.Name))
                 .OrderBy(m => rng.Next())
                 .ToList();
             if (unitsNeedsBuff.Count <= 0)

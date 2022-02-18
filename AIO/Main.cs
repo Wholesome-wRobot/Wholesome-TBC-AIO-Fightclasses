@@ -59,6 +59,7 @@ public class Main : ICustomClass
             LoggingEvents.OnAddLog += AddLogHandler;
             EventsLua.AttachEventLua("RESURRECT_REQUEST", e => ResurrectionEventHandler(e));
             EventsLua.AttachEventLua("PLAYER_DEAD", e => PlayerDeadHandler(e));
+            EventsLua.AttachEventLua("READY_CHECK", e => ReadyCheckHandler(e));
             EventsLua.AttachEventLua("INSPECT_TALENT_READY", e => AIOParty.InspectTalentReadyHeandler());
             EventsLuaWithArgs.OnEventsLuaStringWithArgs += EventsWithArgsHandler;
 
@@ -230,6 +231,13 @@ public class Main : ICustomClass
             cancelable.Cancel = true;
             Fight.StartFight(player.Guid, robotManager.Products.Products.ProductName != "WRotation", false);
         }
+    }
+
+    private void ReadyCheckHandler(object context)
+    {
+        Thread.Sleep(2000 + new Random().Next(1, 3000));
+        bool isReady = selectedRotation.AnswerReadyCheck();
+        Lua.LuaDoString($"ConfirmReadyCheck({isReady});");
     }
 
     private void ResurrectionEventHandler(object context)
