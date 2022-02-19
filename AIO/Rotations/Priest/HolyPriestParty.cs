@@ -21,7 +21,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
 
-            if (SingleTargetHeal(aliveMembers[0], false))
+            if (aliveMembers.Count > 0 && SingleTargetHeal(aliveMembers[0], false))
                 return;
 
             if (BuffParty())
@@ -59,9 +59,9 @@ namespace WholesomeTBCAIO.Rotations.Priest
             {
                 // Get unit in the middle of the pack
                 WoWUnit unit = ToolBox.GetBestAoETarget(40, needDispelMagic);
-                if (unit != null && cast.OnSelf(MassDispel))
+                if (unit != null)
                 {
-                    ClickOnTerrain.Pulse(unit.Position);
+                    ClickOnTerrain.Spell(MassDispel.Id, unit.Position);
                     return;
                 }
             }
@@ -103,7 +103,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     return;
             }
 
-            if (SingleTargetHeal(aliveMembers[0]))
+            if (aliveMembers.Count > 0 && SingleTargetHeal(aliveMembers[0]))
                 return;
         }
 

@@ -235,9 +235,10 @@ public class Main : ICustomClass
 
     private void ReadyCheckHandler(object context)
     {
-        Thread.Sleep(2000 + new Random().Next(1, 3000));
-        bool isReady = selectedRotation.AnswerReadyCheck();
+        Thread.Sleep(1000 + new Random().Next(1, 2000));
+        string isReady = selectedRotation.AnswerReadyCheck() ? "true" : "false";
         Lua.LuaDoString($"ConfirmReadyCheck({isReady});");
+        Lua.LuaDoString($"GetClickFrame('ReadyCheckFrame'):Hide();");
     }
 
     private void ResurrectionEventHandler(object context)
