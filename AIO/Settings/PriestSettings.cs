@@ -26,6 +26,7 @@ namespace WholesomeTBCAIO.Settings
             PartyDivineSpirit = false;
             PartyPrayerOfSpirit = false;
             PartyVampiricEmbrace = false;
+            PartyMassDispelCount = 5;
             PartySWDeathThreshold = 90;
             PartyMindBlastThreshold = 70;
             PartyCircleOfHealingThreshold = 90;
@@ -134,6 +135,12 @@ namespace WholesomeTBCAIO.Settings
         [DisplayName("Mass Dispel")]
         [Description("Use Mass Dispel in combat")]
         public bool PartyMassDispel { get; set; }
+
+        [DefaultValue(5)]
+        [Category("Party")]
+        [DisplayName("Mass Dispel Count")]
+        [Description("Minimum number of group members with dispellable debuff to use Mass Dispel")]
+        public int PartyMassDispelCount { get; set; }
 
         [Category("Party")]
         [DefaultValue(false)]
