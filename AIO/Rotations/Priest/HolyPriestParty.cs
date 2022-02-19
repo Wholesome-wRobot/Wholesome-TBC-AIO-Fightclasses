@@ -61,7 +61,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 WoWUnit unit = ToolBox.GetBestAoETarget(40, needDispelMagic);
                 if (unit != null)
                 {
-                    ClickOnTerrain.Spell(MassDispel.Id, unit.Position);
+                    ClickOnTerrain.Spell(MassDispel.Id, unit.Position, false);
                     return;
                 }
             }
@@ -77,7 +77,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             // ShadowFiend
             if (Shadowfiend.IsSpellUsable && Me.ManaPercentage < 50)
             {
-                WoWUnit unit = AIOParty.EnemiesClose.OrderBy(m => m.Health).Last();
+                WoWUnit unit = AIOParty.EnemiesFighting.OrderBy(m => m.Health).Last();
                 if (unit != null && cast.OnFocusUnit(Shadowfiend, unit))
                     return;
             }
