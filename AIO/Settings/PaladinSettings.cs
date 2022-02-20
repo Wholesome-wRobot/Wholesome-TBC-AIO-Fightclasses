@@ -26,6 +26,7 @@ namespace WholesomeTBCAIO.Settings
             PartyAura = "Devotion Aura";
             PartyPurify = false;
             PartyCleanse = false;
+            PartyCleansePriority = "Random";
             PartyStandBehind = true;
             PartyTankSwitchTarget = true;
             PartyRetConsecrationThreshold = 70;
@@ -217,7 +218,14 @@ namespace WholesomeTBCAIO.Settings
         [DisplayName("Cleanse")]
         [Description("Use Cleanse in Party combat")]
         public bool PartyCleanse { get; set; }
-        
+
+        [Category("Party")]
+        [DefaultValue(false)]
+        [DisplayName("Cleanse priority")]
+        [Description("Use Cleanse with the selected priority")]
+        [DropdownList(new string[] { "High", "Random", "Low" })]
+        public string PartyCleansePriority { get; set; }
+
         [Category("Party")]
         [DefaultValue(false)]
         [DisplayName("Detect party specs")]

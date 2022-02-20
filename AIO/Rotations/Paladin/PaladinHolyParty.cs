@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
 using wManager.Wow.ObjectManager;
@@ -7,6 +8,8 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 {
     public class PaladinHolyParty : Paladin
     {
+        private static Random rng = new Random();
+
         protected override void BuffRotation()
         {
             RangeManager.SetRange(30);
@@ -29,12 +32,14 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 .FindAll(a => a.HealthPercent < 20)
                 .OrderBy(a => a.HealthPercent)
                 .ToList();
-
             List<AIOPartyMember> allyNeedBigHeal = aliveMembers
                 .FindAll(a => a.HealthPercent < 40)
                 .OrderBy(a => a.HealthPercent)
                 .ToList();
-
+            List<AIOPartyMember> allyNeedMediumHeal = aliveMembers
+                .FindAll(a => a.HealthPercent < settings.PartyHolyLightThreshold)
+                .OrderBy(a => a.HealthPercent)
+                .ToList();
             List<AIOPartyMember> allyNeedSmallHeal = aliveMembers
                 .FindAll(a => a.HealthPercent < settings.PartyFlashOfLightThreshold)
                 .OrderBy(a => a.HealthPercent)
@@ -70,11 +75,14 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                     return;
             }
 
-            // PARTY Cleanse
-            if (settings.PartyCleanse)
-            {
-                WoWPlayer needsCleanse = AIOParty.Group
+            bool isCleanseHighPriority = settings.PartyCleansePriority != "Low"
+                && (settings.PartyCleansePriority == "High" || rng.NextDouble() >= 0.5);
+            WoWPlayer needsCleanse = AIOParty.Group
                     .Find(m => UnitHasCleansableDebuff(m.Name));
+
+            // PARTY Cleanse
+            if (settings.PartyCleanse && isCleanseHighPriority)
+            {
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;
             }
@@ -92,10 +100,6 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 return;
 
             // PARTY Holy Light
-            List<AIOPartyMember> allyNeedMediumHeal = AIOParty.Group
-                .FindAll(a => a.IsAlive && a.HealthPercent < settings.PartyHolyLightThreshold)
-                .OrderBy(a => a.HealthPercent)
-                .ToList();
             if (allyNeedMediumHeal.Count > 0 
                 && cast.OnFocusUnit(HolyLight, allyNeedMediumHeal[0]))
                 return;
@@ -107,10 +111,17 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 && cast.OnFocusUnit(HolyLightRank5, allyNeedSmallHeal[0]))
                 return;
 
-            // PARTY Flash Heal
+            // PARTY Flash of Light
             if (allyNeedSmallHeal.Count > 0
                 && cast.OnFocusUnit(FlashOfLight, allyNeedSmallHeal[0]))
                 return;
+
+            // PARTY Cleanse
+            if (settings.PartyCleanse && !isCleanseHighPriority)
+            {
+                if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
+                    return;
+            }
 
             // Seal of light
             if (settings.PartyHolySealOfLight
@@ -132,7 +143,6 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
             }
-
         }
     }
 }
