@@ -24,30 +24,30 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             WoWUnit Target = ObjectManager.Target;
 
             List<AIOPartyMember> aliveMembers = AIOParty.Group
-                .FindAll(a => a.IsAlive && a.GetDistance < 60);
+                .FindAll(a => a.IsAlive && a.GetDistance < 60)
+                .OrderBy(a => a.HealthPercent)
+                .ToList();
             double groupHealthAverage = aliveMembers
                 .Aggregate(0.0, (s, a) => s + a.HealthPercent) / (double)aliveMembers.Count;
+            var tanks = AIOParty.Tanks
+                .FindAll(a => a.IsAlive && a.GetDistance < 60)
+                .OrderBy(a => a.HealthPercent)
+                .ToList();
 
-            List<AIOPartyMember> allyNeedQuickHeal = aliveMembers
-                .FindAll(a => a.HealthPercent < 20)
-                .OrderBy(a => a.HealthPercent)
-                .ToList();
-            List<AIOPartyMember> allyNeedBigHeal = aliveMembers
-                .FindAll(a => a.HealthPercent < 40)
-                .OrderBy(a => a.HealthPercent)
-                .ToList();
-            List<AIOPartyMember> allyNeedMediumHeal = aliveMembers
-                .FindAll(a => a.HealthPercent < settings.PartyHolyLightThreshold)
-                .OrderBy(a => a.HealthPercent)
-                .ToList();
-            List<AIOPartyMember> allyNeedSmallHeal = aliveMembers
-                .FindAll(a => a.HealthPercent < settings.PartyFlashOfLightThreshold)
-                .OrderBy(a => a.HealthPercent)
-                .ToList();
+            string logMessage = "TANKS detected [";
+            tanks.ForEach(m => logMessage += m.Name + "-");
+            logMessage = logMessage.Remove(logMessage.Length - 1);
+            logMessage += "]";
+            Logger.Log(logMessage);
 
             // Divine Illumination
-            if (groupHealthAverage < 60
+            if (groupHealthAverage < 70
                 && cast.OnSelf(DivineIllumination))
+                return;
+
+            // Divine Shield
+            if (Me.HealthPercent < 30
+                && cast.OnSelf(DivineShield))
                 return;
 
             // PARTY Lay On Hands
@@ -61,62 +61,36 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                     return;
             }
 
-            // Divine Shield
-            if (Me.HealthPercent < 30
-                && cast.OnSelf(DivineShield))
-                return;
-
-            if (allyNeedQuickHeal.Count > 0)
-            {
-                var ally = allyNeedQuickHeal[0];
-                if (cast.OnFocusUnit(HolyShock, ally))
-                    return;
-                if (cast.OnFocusUnit(FlashOfLight, ally))
-                    return;
-            }
-
             bool isCleanseHighPriority = settings.PartyCleansePriority != "Low"
                 && (settings.PartyCleansePriority == "High" || rng.NextDouble() >= 0.5);
             WoWPlayer needsCleanse = AIOParty.Group
                     .Find(m => UnitHasCleansableDebuff(m.Name));
 
-            // PARTY Cleanse
+            // High priority Cleanse
             if (settings.PartyCleanse && isCleanseHighPriority)
             {
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;
             }
 
-            // PARTY Holy Light with Divine Favor
-            if (Me.HaveBuff("Divine Favor")
-                && allyNeedBigHeal.Count > 0
-                && cast.OnFocusUnit(HolyLight, allyNeedBigHeal[0]))
+            if (tanks.Count > 0 && aliveMembers.Count > 0)
+            {
+                var lowestTankHealth = tanks[0].HealthPercent;
+                // Virtually increasing missing HP based on user settings
+                var virtualHP = 100 - (100.0 - lowestTankHealth) * (1.0 + ((float)settings.PartyTankHealingPriority) / 100);
+                if (virtualHP < aliveMembers[0].HealthPercent)
+                {
+                    Logger.Log("Healing " + tanks[0].Name + " virtual HP:" + virtualHP + " real HP:" + tanks[0].HealthPercent);
+                    if (SingleTargetHeal(tanks[0]))
+                        return;
+                }
+            }
+
+            // Single target heal
+            if (aliveMembers.Count > 0 && SingleTargetHeal(aliveMembers[0]))
                 return;
 
-            // PARTY Divine Favor
-            if (allyNeedBigHeal.Count > 0
-                && !Me.HaveBuff("Divine Favor")
-                && cast.OnSelf(DivineFavor))
-                return;
-
-            // PARTY Holy Light
-            if (allyNeedMediumHeal.Count > 0 
-                && cast.OnFocusUnit(HolyLight, allyNeedMediumHeal[0]))
-                return;
-
-            // PARTY Holy Light rank 5 (for the buff)
-            if (allyNeedSmallHeal.Count == 1
-                && HolyLight.Cost == 840
-                && ToolBox.BuffTimeLeft("Light\'s Grace") < 5
-                && cast.OnFocusUnit(HolyLightRank5, allyNeedSmallHeal[0]))
-                return;
-
-            // PARTY Flash of Light
-            if (allyNeedSmallHeal.Count > 0
-                && cast.OnFocusUnit(FlashOfLight, allyNeedSmallHeal[0]))
-                return;
-
-            // PARTY Cleanse
+            // Low priority Cleanse
             if (settings.PartyCleanse && !isCleanseHighPriority)
             {
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
@@ -143,6 +117,47 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
             }
+        }
+
+        private bool SingleTargetHeal(WoWUnit unit)
+        {
+            if (unit.HealthPercent == 100)
+                return false;
+
+            // Quick heal
+            if (unit.HealthPercent < 20)
+            {
+                if (unit.GetDistance < HolyShock.MaxRange && cast.OnFocusUnit(HolyShock, unit))
+                    return true;
+                if (cast.OnFocusUnit(FlashOfLight, unit))
+                    return true;
+            }
+            // Big heal
+            if (unit.HealthPercent < 40)
+            {
+                // Divine Favor
+                if (!Me.HaveBuff("Divine Favor") && cast.OnSelf(DivineFavor))
+                    return true;
+                if (cast.OnFocusUnit(HolyLight, unit))
+                    return true;
+            }
+            // Medium heal
+            if (unit.HealthPercent < settings.PartyHolyLightThreshold)
+            {
+                if (cast.OnFocusUnit(HolyLight, unit))
+                    return true;
+            }
+            // Small heal
+            if (unit.HealthPercent < settings.PartyFlashOfLightThreshold)
+            {
+                if (HolyLight.Cost == 840
+                    && ToolBox.BuffTimeLeft("Light\'s Grace") < 5
+                    && cast.OnFocusUnit(HolyLightRank5, unit))
+                    return true;
+                if (cast.OnFocusUnit(FlashOfLight, unit))
+                    return true;
+            }            
+            return false;
         }
     }
 }

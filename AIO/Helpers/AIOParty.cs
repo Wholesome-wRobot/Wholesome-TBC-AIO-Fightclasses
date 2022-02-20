@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
@@ -141,6 +142,12 @@ namespace WholesomeTBCAIO.Helpers
 
         public static List<WoWUnit> EnemiesFighting => EnemiesClose
             .FindAll(e => e.InCombatFlagOnly && e.IsTargetingMeOrMyPetOrPartyMember);
+
+        public static List<WoWUnit> Tanks => EnemiesFighting
+            .Select(a => a.TargetObject)
+            .Distinct()
+            .OrderBy(a => a.HealthPercent)
+            .ToList();
 
         public static void SwitchTarget(Cast cast, AIOSpell spell)
         {

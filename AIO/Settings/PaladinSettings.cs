@@ -41,6 +41,7 @@ namespace WholesomeTBCAIO.Settings
             PartyHealOOC = false;
             PartyBlessings = true;
             PartyProtSealOfWisdom = 40;
+            PartyTankHealingPriority = 0;
 
             Specialization = "Retribution";
         }
@@ -220,11 +221,18 @@ namespace WholesomeTBCAIO.Settings
         public bool PartyCleanse { get; set; }
 
         [Category("Party")]
-        [DefaultValue(false)]
+        [DefaultValue("Random")]
         [DisplayName("Cleanse priority")]
         [Description("Use Cleanse with the selected priority")]
         [DropdownList(new string[] { "High", "Random", "Low" })]
         public string PartyCleansePriority { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(0)]
+        [DisplayName("[HOL] Tank healing priority")]
+        [Description("Prefer healing tanks over other group members")]
+        [Percentage(true)]
+        public int PartyTankHealingPriority { get; set; }
 
         [Category("Party")]
         [DefaultValue(false)]
