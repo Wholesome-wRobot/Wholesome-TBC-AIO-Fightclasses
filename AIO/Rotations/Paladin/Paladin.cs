@@ -158,7 +158,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                     return;
 
                 // Blessings
-                if (PartyBlessingBuffs())
+                if (settings.PartyBlessings && PartyBlessingBuffs())
                     return;
 
                 // PARTY Drink

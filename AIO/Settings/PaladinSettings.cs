@@ -38,6 +38,7 @@ namespace WholesomeTBCAIO.Settings
             PartyConsecrationRank1 = false;
             PartyHolyShieldRank1 = false;
             PartyHealOOC = false;
+            PartyBlessings = true;
             PartyProtSealOfWisdom = 40;
 
             Specialization = "Retribution";
@@ -198,6 +199,12 @@ namespace WholesomeTBCAIO.Settings
         [Description("Select the aura to use")]
         [DropdownList(new string[] { "Devotion Aura", "Retribution Aura", "Concentration Aura", "Sanctity Aura", "Shadow Resistance Aura", "Frost Resistance Aura", "Fire Resistance Aura" })]
         public string PartyAura { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(true)]
+        [DisplayName("Buff Group")]
+        [Description("Buff group members with automatically inferred blessing")]
+        public bool PartyBlessings { get; set; }
 
         [Category("Party")]
         [DefaultValue(false)]
