@@ -20,23 +20,33 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             WoWUnit Target = ObjectManager.Target;
 
-            List<AIOPartyMember> allyNeedBigHeal = AIOParty.Group
-                .FindAll(a => a.IsAlive && a.HealthPercent < 40)
+            List<AIOPartyMember> aliveMembers = AIOParty.Group
+                .FindAll(a => a.IsAlive && a.GetDistance < 60);
+            double groupHealthAverage = aliveMembers
+                .Aggregate(0.0, (s, a) => s + a.HealthPercent) / (double)aliveMembers.Count;
+
+            List<AIOPartyMember> allyNeedQuickHeal = aliveMembers
+                .FindAll(a => a.HealthPercent < 20)
                 .OrderBy(a => a.HealthPercent)
                 .ToList();
 
-            List<AIOPartyMember> allyNeedSmallHeal = AIOParty.Group
-                .FindAll(a => a.IsAlive && a.HealthPercent < settings.PartyFlashOfLightThreshold)
+            List<AIOPartyMember> allyNeedBigHeal = aliveMembers
+                .FindAll(a => a.HealthPercent < 40)
+                .OrderBy(a => a.HealthPercent)
+                .ToList();
+
+            List<AIOPartyMember> allyNeedSmallHeal = aliveMembers
+                .FindAll(a => a.HealthPercent < settings.PartyFlashOfLightThreshold)
                 .OrderBy(a => a.HealthPercent)
                 .ToList();
 
             // Divine Illumination
-            if (allyNeedSmallHeal.Count > 2
+            if (groupHealthAverage < 60
                 && cast.OnSelf(DivineIllumination))
                 return;
 
             // PARTY Lay On Hands
-            if (Me.ManaPercentage < 10)
+            if (Me.ManaPercentage < 5)
             {
                 List<AIOPartyMember> needsLoH = AIOParty.Group
                     .FindAll(m => m.HealthPercent < 10)
@@ -50,6 +60,24 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if (Me.HealthPercent < 30
                 && cast.OnSelf(DivineShield))
                 return;
+
+            if (allyNeedQuickHeal.Count > 0)
+            {
+                var ally = allyNeedQuickHeal[0];
+                if (cast.OnFocusUnit(HolyShock, ally))
+                    return;
+                if (cast.OnFocusUnit(FlashOfLight, ally))
+                    return;
+            }
+
+            // PARTY Cleanse
+            if (settings.PartyCleanse)
+            {
+                WoWPlayer needsCleanse = AIOParty.Group
+                    .Find(m => UnitHasCleansableDebuff(m.Name));
+                if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
+                    return;
+            }
 
             // PARTY Holy Light with Divine Favor
             if (Me.HaveBuff("Divine Favor")
@@ -105,14 +133,6 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                     return;
             }
 
-            // PARTY Cleanse
-            if (settings.PartyCleanse)
-            {
-                WoWPlayer needsCleanse = AIOParty.Group
-                    .Find(m => ToolBox.HasMagicDebuff(m.Name));
-                if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
-                    return;
-            }
         }
     }
 }

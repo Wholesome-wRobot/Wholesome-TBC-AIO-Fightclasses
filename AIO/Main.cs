@@ -262,6 +262,7 @@ public class Main : ICustomClass
             Hunter.LastAuto = DateTime.Now;
 
         if (selectedRotation is Paladin
+            && args.Count >= 10
             && args[1] == "SPELL_CAST_SUCCESS"
             && id == "COMBAT_LOG_EVENT_UNFILTERED"
             && (args[9] == "Blessing of Might" || args[9] == "Blessing of Kings" || args[9] == "Blessing of Wisdom"))

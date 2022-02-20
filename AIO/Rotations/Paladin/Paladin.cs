@@ -9,6 +9,7 @@ using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
 using wManager.Events;
 using wManager.Wow.Enums;
+using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 using Timer = robotManager.Helpful.Timer;
 
@@ -60,7 +61,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
         public bool AnswerReadyCheck()
         {
-            return true;
+            return Me.ManaPercentage > settings.PartyDrinkThreshold;
         }
 
         public void Dispose()
@@ -426,6 +427,18 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 return new List<AIOSpell>() { BlessingOfWisdom, BlessingOfKings, BlessingOfMight };
 
             return null;
+        }
+
+        // Returns whether the player has a debuff that is one of the following: 'Poison', 'Magic', 'Disease'
+        protected bool UnitHasCleansableDebuff(string unit = "player")
+        {
+            return Lua.LuaDoString<bool>
+                (@$"for i=1,25 do 
+	                local _, _, _, _, d  = UnitDebuff('{unit}',i);
+	                if (d == 'Poison' or d == 'Magic' or d == 'Disease') then
+                    return true
+                    end
+                end");
         }
     }
 }
