@@ -160,7 +160,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return true;
 
             // Power Word Fortitude
-            if (settings.PartyPowerWordFortitude 
+            if (settings.UsePowerWordFortitude 
                 && !settings.PartyPrayerOfFortitude 
                 && cast.Buff(aliveMembers, PowerWordFortitude))
                 return true;
@@ -171,7 +171,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return true;
 
             // Shadow Protection
-            if (settings.PartyShadowProtection
+            if (settings.UseShadowProtection
                 && !settings.PartyPrayerOfShadowProtection
                 && cast.Buff(aliveMembers, ShadowProtection))
                 return true;
@@ -182,7 +182,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return true;
 
             // Divine Spirit
-            if (settings.PartyDivineSpirit 
+            if (settings.UseDivineSpirit 
                 && !settings.PartyPrayerOfSpirit
                 && cast.Buff(aliveMembers, DivineSpirit))
                 return true;

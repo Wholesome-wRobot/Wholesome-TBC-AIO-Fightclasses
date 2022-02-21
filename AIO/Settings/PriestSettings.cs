@@ -19,11 +19,11 @@ namespace WholesomeTBCAIO.Settings
             PartyCureDisease = false;
             PartyDispelMagic = false;
             PartyMassDispel = false;
-            PartyPowerWordFortitude = false;
+            UsePowerWordFortitude = false;
             PartyPrayerOfFortitude = false;
-            PartyShadowProtection = false;
+            UseShadowProtection = false;
             PartyPrayerOfShadowProtection = false;
-            PartyDivineSpirit = false;
+            UseDivineSpirit = false;
             PartyPrayerOfSpirit = false;
             PartyVampiricEmbrace = false;
             PartyMassDispelCount = 5;
@@ -71,37 +71,19 @@ namespace WholesomeTBCAIO.Settings
         [DefaultValue(false)]
         [DisplayName("Power Word: Fortitude")]
         [Description("Use Power Word: Fortitude")]
-        public bool PartyPowerWordFortitude { get; set; }
-
-        [Category("Common")]
-        [DefaultValue(false)]
-        [DisplayName("Prayer of Fortitude")]
-        [Description("Use Prayer of Fortitude")]
-        public bool PartyPrayerOfFortitude { get; set; }
+        public bool UsePowerWordFortitude { get; set; }
 
         [Category("Common")]
         [DefaultValue(false)]
         [DisplayName("Shadow Protection")]
         [Description("Use Shadow Protection")]
-        public bool PartyShadowProtection { get; set; }
-
-        [Category("Common")]
-        [DefaultValue(false)]
-        [DisplayName("Prayer of Shadow Protection")]
-        [Description("Use Prayer of Shadow Protection")]
-        public bool PartyPrayerOfShadowProtection { get; set; }
+        public bool UseShadowProtection { get; set; }
 
         [Category("Common")]
         [DefaultValue(false)]
         [DisplayName("Divine Spirit")]
         [Description("Use Divine Spirit")]
-        public bool PartyDivineSpirit { get; set; }
-
-        [Category("Common")]
-        [DefaultValue(false)]
-        [DisplayName("Prayer of Spirit")]
-        [Description("Use Prayer of Spirit")]
-        public bool PartyPrayerOfSpirit { get; set; }
+        public bool UseDivineSpirit { get; set; }
 
         // SHADOW
         [Category("Shadow")]
@@ -117,6 +99,7 @@ namespace WholesomeTBCAIO.Settings
         [Percentage(true)]
         public int PartyCircleOfHealingThreshold { get; set; }
 
+        // HOLY
         [Category("Holy")]
         [DefaultValue(false)]
         [DisplayName("[Party] Mass Dispel")]
@@ -161,6 +144,24 @@ namespace WholesomeTBCAIO.Settings
         [DisplayName("Dispel Magic")]
         [Description("Use Dispel Magic in combat")]
         public bool PartyDispelMagic { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(false)]
+        [DisplayName("Prayer of Fortitude")]
+        [Description("Use Prayer of Fortitude")]
+        public bool PartyPrayerOfFortitude { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(false)]
+        [DisplayName("Prayer of Shadow Protection")]
+        [Description("Use Prayer of Shadow Protection")]
+        public bool PartyPrayerOfShadowProtection { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(false)]
+        [DisplayName("Prayer of Spirit")]
+        [Description("Use Prayer of Spirit")]
+        public bool PartyPrayerOfSpirit { get; set; }
 
         // TALENT
         [DropdownList(new string[] { "Shadow", "Party Shadow", "Party Holy", "Raid Holy" })]
