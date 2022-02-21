@@ -158,6 +158,7 @@ public class Main : ICustomClass
             case Specs.PriestShadow: return new Shadow();
             case Specs.PriestShadowParty: return new ShadowParty();
             case Specs.PriestHolyParty: return new HolyPriestParty();
+            case Specs.PriestRaidParty: return new HolyPriestRaid();
             // Rogue
             case Specs.RogueCombat: return new Combat();
             case Specs.RogueCombatParty: return new RogueCombatParty();
@@ -235,10 +236,12 @@ public class Main : ICustomClass
 
     private void ReadyCheckHandler(object context)
     {
-        Thread.Sleep(1000 + new Random().Next(1, 2000));
+        var delay = 1000 + new Random().Next(1, 2000);
+        Thread.Sleep(delay);
         string isReady = selectedRotation.AnswerReadyCheck() ? "true" : "false";
         Lua.LuaDoString($"ConfirmReadyCheck({isReady});");
         Lua.LuaDoString($"GetClickFrame('ReadyCheckFrame'):Hide();");
+        Logger.Log("Answered ReadyCheck isReady: " + isReady + ", after: " + delay + " ms");
     }
 
     private void ResurrectionEventHandler(object context)

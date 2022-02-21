@@ -121,6 +121,30 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     .ToList();
                 if (needRes.Count > 0 && cast.OnFocusUnit(Resurrection, needRes[0]))
                     return;
+
+                List<AIOPartyMember> aliveMembers = AIOParty.Group
+                    .FindAll(m => m.IsAlive && m.GetDistance < 60)
+                    .ToList();
+
+                // Party Cure Disease
+                WoWPlayer needCureDisease = aliveMembers
+                    .Find(m => ToolBox.HasDiseaseDebuff(m.Name));
+                if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
+                    return;
+
+                // Party Dispel Magic
+                WoWPlayer needDispelMagic = aliveMembers
+                    .Find(m => ToolBox.HasMagicDebuff(m.Name));
+                if (needDispelMagic != null && cast.OnFocusUnit(DispelMagic, needDispelMagic))
+                    return;
+
+                // OOC Inner Fire
+                if (settings.UseInnerFire
+                    && cast.BuffSelf(InnerFire))
+                    return;
+
+                if (BuffParty())
+                    return;
             }
         }
 
@@ -136,7 +160,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return true;
 
             // Power Word Fortitude
-            if (settings.PartyPowerWordFortitude 
+            if (settings.UsePowerWordFortitude 
                 && !settings.PartyPrayerOfFortitude 
                 && cast.Buff(aliveMembers, PowerWordFortitude))
                 return true;
@@ -146,8 +170,8 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 && cast.Buff(aliveMembers, PrayerOfShadowProtection, 17029))
                 return true;
 
-            // Prayer Of Shadow Protection
-            if (settings.PartyShadowProtection
+            // Shadow Protection
+            if (settings.UseShadowProtection
                 && !settings.PartyPrayerOfShadowProtection
                 && cast.Buff(aliveMembers, ShadowProtection))
                 return true;
@@ -158,7 +182,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return true;
 
             // Divine Spirit
-            if (settings.PartyDivineSpirit 
+            if (settings.UseDivineSpirit 
                 && !settings.PartyPrayerOfSpirit
                 && cast.Buff(aliveMembers, DivineSpirit))
                 return true;
