@@ -75,11 +75,17 @@ namespace WholesomeTBCAIO.Rotations.Priest
             }
 
             // ShadowFiend
-            if (Shadowfiend.IsSpellUsable && Me.ManaPercentage < 50)
+            if (Me.ManaPercentage < 50)
             {
-                WoWUnit unit = AIOParty.EnemiesFighting.OrderBy(m => m.Health).Last();
-                if (unit != null && cast.OnFocusUnit(Shadowfiend, unit))
-                    return;
+                var enemies = AIOParty.EnemiesFighting
+                    .OrderBy(m => m.Health)
+                    .ToList();
+                if (enemies.Count > 0)
+                {
+                    WoWUnit unit = enemies.Last();
+                    if (unit != null && cast.OnFocusUnit(Shadowfiend, unit))
+                        return;
+                }                
             }
 
             // PARTY Circle of Healing
@@ -112,7 +118,6 @@ namespace WholesomeTBCAIO.Rotations.Priest
             if (player.HealthPercent < 30 && cast.OnFocusUnit(FlashHeal, player))
                 return true;
             if (player.HealthPercent < 50
-                && PowerWordShield.IsSpellUsable
                 && player.RagePercentage <= 0
                 && player.HaveBuff("Power Word: Shield")
                 && !ToolBox.HasDebuff("Weakened Soul", player.Name)
