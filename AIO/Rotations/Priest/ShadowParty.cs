@@ -12,37 +12,10 @@ namespace WholesomeTBCAIO.Rotations.Priest
         {
             base.BuffRotation();
 
-            // Party Cure Disease
-            WoWPlayer needCureDisease = AIOParty.Group
-                .Find(m => ToolBox.HasDiseaseDebuff(m.Name));
-            if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
-                return;
-
-            // Party Dispel Magic
-            WoWPlayer needDispelMagic = AIOParty.Group
-                .Find(m => ToolBox.HasMagicDebuff(m.Name));
-            if (needDispelMagic != null && cast.OnFocusUnit(DispelMagic, needDispelMagic))
-                return;
-
-            if (BuffParty())
-                return;
-
-            // OOC Inner Fire
-            if (!Me.HaveBuff("Inner Fire")
-                && settings.UseInnerFire
-                && cast.OnSelf(InnerFire))
-                return;
-
             // OOC Shadowguard
             if (!Me.HaveBuff("Shadowguard")
                 && settings.UseShadowGuard
                 && cast.OnSelf(Shadowguard))
-                return;
-
-            // OOC Shadow Protection
-            if (!Me.HaveBuff("Shadow Protection")
-                && settings.PartyShadowProtection
-                && cast.OnSelf(ShadowProtection))
                 return;
            
             // OOC ShadowForm

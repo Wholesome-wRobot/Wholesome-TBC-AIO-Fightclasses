@@ -158,6 +158,7 @@ public class Main : ICustomClass
             case Specs.PriestShadow: return new Shadow();
             case Specs.PriestShadowParty: return new ShadowParty();
             case Specs.PriestHolyParty: return new HolyPriestParty();
+            case Specs.PriestRaidParty: return new HolyPriestRaid();
             // Rogue
             case Specs.RogueCombat: return new Combat();
             case Specs.RogueCombatParty: return new RogueCombatParty();

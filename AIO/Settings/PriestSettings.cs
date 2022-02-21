@@ -67,6 +67,42 @@ namespace WholesomeTBCAIO.Settings
         [Description("Use Inner Fire")]
         public bool UseInnerFire { get; set; }
 
+        [Category("Common")]
+        [DefaultValue(false)]
+        [DisplayName("Power Word: Fortitude")]
+        [Description("Use Power Word: Fortitude")]
+        public bool PartyPowerWordFortitude { get; set; }
+
+        [Category("Common")]
+        [DefaultValue(false)]
+        [DisplayName("Prayer of Fortitude")]
+        [Description("Use Prayer of Fortitude")]
+        public bool PartyPrayerOfFortitude { get; set; }
+
+        [Category("Common")]
+        [DefaultValue(false)]
+        [DisplayName("Shadow Protection")]
+        [Description("Use Shadow Protection")]
+        public bool PartyShadowProtection { get; set; }
+
+        [Category("Common")]
+        [DefaultValue(false)]
+        [DisplayName("Prayer of Shadow Protection")]
+        [Description("Use Prayer of Shadow Protection")]
+        public bool PartyPrayerOfShadowProtection { get; set; }
+
+        [Category("Common")]
+        [DefaultValue(false)]
+        [DisplayName("Divine Spirit")]
+        [Description("Use Divine Spirit")]
+        public bool PartyDivineSpirit { get; set; }
+
+        [Category("Common")]
+        [DefaultValue(false)]
+        [DisplayName("Prayer of Spirit")]
+        [Description("Use Prayer of Spirit")]
+        public bool PartyPrayerOfSpirit { get; set; }
+
         // SHADOW
         [Category("Shadow")]
         [DefaultValue(true)]
@@ -74,43 +110,46 @@ namespace WholesomeTBCAIO.Settings
         [Description("Use Shadow Word: Death")]
         public bool UseShadowWordDeath { get; set; }
 
+        [Category("Holy")]
+        [DefaultValue(90)]
+        [DisplayName("[Party] Circle of Healing")]
+        [Description("Use Circle of Healing on party members under this health threshold")]
+        [Percentage(true)]
+        public int PartyCircleOfHealingThreshold { get; set; }
+
+        [Category("Holy")]
+        [DefaultValue(false)]
+        [DisplayName("[Party] Mass Dispel")]
+        [Description("Use Mass Dispel in combat")]
+        public bool PartyMassDispel { get; set; }
+
+        [DefaultValue(5)]
+        [Category("Holy")]
+        [DisplayName("[Party] Mass Dispel Count")]
+        [Description("Minimum number of group members with dispellable debuff to use Mass Dispel")]
+        public int PartyMassDispelCount { get; set; }
+
+        [Category("Shadow")]
+        [DefaultValue(false)]
+        [DisplayName("[Party] Vamp. Embrace")]
+        [Description("Use Vampiric Embrace in combat")]
+        public bool PartyVampiricEmbrace { get; set; }
+
+        [Category("Shadow")]
+        [DefaultValue(90)]
+        [DisplayName("[Party] SW: Death")]
+        [Description("Use Shadow Word: Death when above this HEALTH percentage threshold (100 to disable)")]
+        [Percentage(true)]
+        public int PartySWDeathThreshold { get; set; }
+
+        [Category("Shadow")]
+        [DefaultValue(70)]
+        [DisplayName("[Party] Mind Blast")]
+        [Description("Use Mind Blast when above this MANA percentage threshold (100 to disable)")]
+        [Percentage(true)]
+        public int PartyMindBlastThreshold { get; set; }
+
         // PARTY
-        [Category("Party")]
-        [DefaultValue(false)]
-        [DisplayName("Power Word: Fortitude")]
-        [Description("Use Power Word: Fortitude")]
-        public bool PartyPowerWordFortitude { get; set; }
-
-        [Category("Party")]
-        [DefaultValue(false)]
-        [DisplayName("Prayer of Fortitude")]
-        [Description("Use Prayer of Fortitude")]
-        public bool PartyPrayerOfFortitude { get; set; }
-
-        [Category("Party")]
-        [DefaultValue(false)]
-        [DisplayName("Shadow Protection")]
-        [Description("Use Shadow Protection")]
-        public bool PartyShadowProtection { get; set; }
-
-        [Category("Party")]
-        [DefaultValue(false)]
-        [DisplayName("Prayer of Shadow Protection")]
-        [Description("Use Prayer of Shadow Protection")]
-        public bool PartyPrayerOfShadowProtection { get; set; }
-
-        [Category("Party")]
-        [DefaultValue(false)]
-        [DisplayName("Divine Spirit")]
-        [Description("Use Divine Spirit")]
-        public bool PartyDivineSpirit { get; set; }
-
-        [Category("Party")]
-        [DefaultValue(false)]
-        [DisplayName("Prayer of Spirit")]
-        [Description("Use Prayer of Spirit")]
-        public bool PartyPrayerOfSpirit { get; set; }
-
         [Category("Party")]
         [DefaultValue(false)]
         [DisplayName("Cure Disease")]
@@ -123,47 +162,8 @@ namespace WholesomeTBCAIO.Settings
         [Description("Use Dispel Magic in combat")]
         public bool PartyDispelMagic { get; set; }
 
-        [Category("Party")]
-        [DefaultValue(90)]
-        [DisplayName("[HOL] Circle of Healing")]
-        [Description("Use Circle of Healing on party members under this health threshold")]
-        [Percentage(true)]
-        public int PartyCircleOfHealingThreshold { get; set; }
-
-        [Category("Party")]
-        [DefaultValue(false)]
-        [DisplayName("Mass Dispel")]
-        [Description("Use Mass Dispel in combat")]
-        public bool PartyMassDispel { get; set; }
-
-        [DefaultValue(5)]
-        [Category("Party")]
-        [DisplayName("Mass Dispel Count")]
-        [Description("Minimum number of group members with dispellable debuff to use Mass Dispel")]
-        public int PartyMassDispelCount { get; set; }
-
-        [Category("Party")]
-        [DefaultValue(false)]
-        [DisplayName("[SH] Vamp. Embrace")]
-        [Description("Use Vampiric Embrace in combat")]
-        public bool PartyVampiricEmbrace { get; set; }
-
-        [Category("Party")]
-        [DefaultValue(90)]
-        [DisplayName("[SH] SW: Death")]
-        [Description("Use Shadow Word: Death when above this HEALTH percentage threshold (100 to disable)")]
-        [Percentage(true)]
-        public int PartySWDeathThreshold { get; set; }
-
-        [Category("Party")]
-        [DefaultValue(70)]
-        [DisplayName("[SH] Mind Blast")]
-        [Description("Use Mind Blast when above this MANA percentage threshold (100 to disable)")]
-        [Percentage(true)]
-        public int PartyMindBlastThreshold { get; set; }
-
         // TALENT
-        [DropdownList(new string[] { "Shadow", "Party Shadow", "Party Holy" })]
+        [DropdownList(new string[] { "Shadow", "Party Shadow", "Party Holy", "Raid Holy" })]
         public override string Specialization { get; set; }
     }
 }

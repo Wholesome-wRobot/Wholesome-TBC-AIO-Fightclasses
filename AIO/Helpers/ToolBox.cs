@@ -318,7 +318,7 @@ namespace WholesomeTBCAIO.Helpers
             // PRIEST
             if (rotation is Shadow) return (RotationType.Solo, RotationRole.DPS);
             if (rotation is ShadowParty) return (RotationType.Party, RotationRole.DPS);
-            if (rotation is HolyPriestParty) return (RotationType.Party, RotationRole.Healer);
+            if (rotation is HolyPriestRaid) return (RotationType.Party, RotationRole.Healer);
             // ROGUE
             if (rotation is Combat) return (RotationType.Solo, RotationRole.DPS);
             if (rotation is RogueCombatParty) return (RotationType.Party, RotationRole.DPS);
