@@ -117,7 +117,8 @@ namespace WholesomeTBCAIO.Rotations.Priest
         {
             if (player.HealthPercent < 30 && cast.OnFocusUnit(FlashHeal, player))
                 return true;
-            if (player.HealthPercent < 50
+            if (settings.UsePowerWordShield
+                && player.HealthPercent < 50
                 && player.RagePercentage <= 0
                 && player.HaveBuff("Power Word: Shield")
                 && !ToolBox.HasDebuff("Weakened Soul", player.Name)
