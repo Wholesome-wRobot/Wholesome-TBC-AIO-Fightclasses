@@ -51,17 +51,10 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 && needDispelMagic.Count >= settings.PartyMassDispelCount)
             {
                 // Get unit in the middle of the pack
-                var watch = System.Diagnostics.Stopwatch.StartNew();
                 WoWUnit unit = ToolBox.GetBestAoETarget(40, needDispelMagic);
-                watch.Stop();
-                Logger.LogDebug("ToolBox.GetBestAoETarget ran in " + watch.ElapsedMilliseconds + " ms");
                 if (unit != null)
                 {
-                    Logger.LogDebug("Sending Mass Dispel to " + unit.Name);
-                    var watch2 = System.Diagnostics.Stopwatch.StartNew();
                     ClickOnTerrain.Spell(MassDispel.Id, unit.Position);
-                    watch2.Stop();
-                    Logger.LogDebug("Mass Dispel arrived after " + watch2.ElapsedMilliseconds + " ms");
                     return;
                 }
             }
