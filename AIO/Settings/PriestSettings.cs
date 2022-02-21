@@ -92,26 +92,6 @@ namespace WholesomeTBCAIO.Settings
         [Description("Use Shadow Word: Death")]
         public bool UseShadowWordDeath { get; set; }
 
-        [Category("Holy")]
-        [DefaultValue(90)]
-        [DisplayName("[Party] Circle of Healing")]
-        [Description("Use Circle of Healing on party members under this health threshold")]
-        [Percentage(true)]
-        public int PartyCircleOfHealingThreshold { get; set; }
-
-        // HOLY
-        [Category("Holy")]
-        [DefaultValue(false)]
-        [DisplayName("[Party] Mass Dispel")]
-        [Description("Use Mass Dispel in combat")]
-        public bool PartyMassDispel { get; set; }
-
-        [DefaultValue(5)]
-        [Category("Holy")]
-        [DisplayName("[Party] Mass Dispel Count")]
-        [Description("Minimum number of group members with dispellable debuff to use Mass Dispel")]
-        public int PartyMassDispelCount { get; set; }
-
         [Category("Shadow")]
         [DefaultValue(false)]
         [DisplayName("[Party] Vamp. Embrace")]
@@ -131,6 +111,26 @@ namespace WholesomeTBCAIO.Settings
         [Description("Use Mind Blast when above this MANA percentage threshold (100 to disable)")]
         [Percentage(true)]
         public int PartyMindBlastThreshold { get; set; }
+
+        // HOLY
+        [Category("Holy")]
+        [DefaultValue(false)]
+        [DisplayName("[Party] Mass Dispel")]
+        [Description("Use Mass Dispel in combat")]
+        public bool PartyMassDispel { get; set; }
+
+        [Category("Holy")]
+        [DefaultValue(5)]
+        [DisplayName("[Party] Mass Dispel Count")]
+        [Description("Minimum number of group members with dispellable debuff to use Mass Dispel")]
+        public int PartyMassDispelCount { get; set; }
+
+        [Category("Holy")]
+        [DefaultValue(90)]
+        [DisplayName("[Party] Circle of Healing")]
+        [Description("Use Circle of Healing on party members under this health threshold")]
+        [Percentage(true)]
+        public int PartyCircleOfHealingThreshold { get; set; }
 
         // PARTY
         [Category("Party")]
