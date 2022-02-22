@@ -12,7 +12,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         {
             base.BuffRotation();
 
-            if (!Me.HaveBuff("Ghost Wolf"))
+            if (!Me.HaveBuff("Ghost Wolf") && (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95))
             {
                 // Ghost Wolf
                 if (settings.GhostWolfMount
@@ -38,13 +38,13 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     return;
 
                 // PARTY Cure poison
-                WoWPlayer needCurePoison = AIOParty.Group
+                WoWPlayer needCurePoison = AIOParty.GroupAndRaid
                     .Find(m => ToolBox.HasPoisonDebuff(m.Name));
                 if (needCurePoison != null && cast.OnFocusUnit(CurePoison, needCurePoison))
                     return;
 
                 // PARTY Cure Disease
-                WoWPlayer needCureDisease = AIOParty.Group
+                WoWPlayer needCureDisease = AIOParty.GroupAndRaid
                     .Find(m => ToolBox.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
@@ -113,7 +113,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             // PARTY Cure Poison
             if (settings.PartyCurePoison)
             {
-                WoWPlayer needCurePoison = AIOParty.Group
+                WoWPlayer needCurePoison = AIOParty.GroupAndRaid
                     .Find(m => ToolBox.HasPoisonDebuff(m.Name));
                 if (needCurePoison != null && cast.OnFocusUnit(CurePoison, needCurePoison))
                     return;
@@ -122,7 +122,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             // PARTY Cure Disease
             if (settings.CureDisease)
             {
-                WoWPlayer needCureDisease = AIOParty.Group
+                WoWPlayer needCureDisease = AIOParty.GroupAndRaid
                     .Find(m => ToolBox.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;

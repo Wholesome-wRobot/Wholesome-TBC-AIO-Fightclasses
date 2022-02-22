@@ -10,22 +10,25 @@ namespace WholesomeTBCAIO.Rotations.Priest
     {
         protected override void BuffRotation()
         {
-            base.BuffRotation();
+            if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
+            {
+                base.BuffRotation();
 
-            // OOC Shadowguard
-            if (!Me.HaveBuff("Shadowguard")
-                && settings.UseShadowGuard
-                && cast.OnSelf(Shadowguard))
-                return;
-           
-            // OOC ShadowForm
-            if (!Me.HaveBuff("ShadowForm")
-                && cast.OnSelf(Shadowform))
-                return;
+                // OOC Shadowguard
+                if (!Me.HaveBuff("Shadowguard")
+                    && settings.UseShadowGuard
+                    && cast.OnSelf(Shadowguard))
+                    return;
 
-            // PARTY Drink
-            if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
-                return;
+                // OOC ShadowForm
+                if (!Me.HaveBuff("ShadowForm")
+                    && cast.OnSelf(Shadowform))
+                    return;
+
+                // PARTY Drink
+                if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
+                    return;
+            }
         }
 
         protected override void Pull()
@@ -51,7 +54,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             WoWUnit Target = ObjectManager.Target;
 
             // Fade
-            if (AIOParty.EnemiesClose.Exists(m => m.IsTargetingMe)
+            if (AIORadar.CloseUnitsTargetingMe.Count > 0
                 && cast.OnSelf(Fade))
                 return;
 
@@ -81,7 +84,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             if (settings.PartyCureDisease)
             {
                 // PARTY Cure Disease
-                WoWPlayer needCureDisease = AIOParty.Group
+                WoWPlayer needCureDisease = AIOParty.GroupAndRaid
                     .Find(m => ToolBox.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
@@ -90,7 +93,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             // PARTY Dispel Magic
             if (settings.PartyDispelMagic)
             {
-                WoWPlayer needDispelMagic = AIOParty.Group
+                WoWPlayer needDispelMagic = AIOParty.GroupAndRaid
                     .Find(m => ToolBox.HasMagicDebuff(m.Name));
                 if (needDispelMagic != null && cast.OnFocusUnit(DispelMagic, needDispelMagic))
                     return;

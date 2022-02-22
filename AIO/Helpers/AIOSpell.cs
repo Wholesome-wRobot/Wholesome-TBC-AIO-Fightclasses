@@ -7,19 +7,21 @@ namespace WholesomeTBCAIO.Helpers
 {
     public class AIOSpell : Spell
     {
-        public new string Name { get; set; }
-        public int Rank { get; set; }
-        public int Cost { get; set; }
-        public int PowerType { get; set; }
-        public new float CastTime { get; set; }
-        public new float MinRange { get; set; }
-        public new float MaxRange { get; set; }
-        public bool ForceLua { get; set; }
-        public bool IsChannel { get; set; }
-        public bool IsResurrectionSpell { get; set; }
-        public bool PreventDoubleCast { get; set; }
-        public bool OnDeadTarget { get; set; }
-        public new bool IsSpellUsable {
+        public new string Name { get; }
+        public int Rank { get; }
+        public int Cost { get; }
+        public int PowerType { get; }
+        public new float CastTime { get; }
+        public new float MinRange { get; }
+        public new float MaxRange { get; }
+        public bool ForceLua { get; }
+        public bool IsChannel { get; }
+        public bool IsClickOnTerrain { get; }
+        public bool IsResurrectionSpell { get; }
+        public bool PreventDoubleCast { get; }
+        public bool OnDeadTarget { get; }
+        public new bool IsSpellUsable
+        {
             get
             {
                 if (!ForceLua)
@@ -41,11 +43,32 @@ namespace WholesomeTBCAIO.Helpers
             PreventDoubleCast = SpellsToKeepFromDoubleCasting.Contains(Name);
             OnDeadTarget = OnDeadSpells.Contains(Name);
             IsResurrectionSpell = ResurrectionSpells.Contains(Name);
+            IsClickOnTerrain = ClickOnTerrainSpells.Contains(Name);
 
             if (Name.Contains("(") || Name.Contains(")"))
                 Name += "()";
 
-            RecordSpellInfos(rank);
+            string rankString = rank > 0 ? $@", ""Rank {rank}""" : "";
+
+            string infos = Lua.LuaDoString<string>($@"
+                local name, rank, icon, cost, isFunnel, powerType, castTime, minRange, maxRange = GetSpellInfo(""{Name.Replace("\"", "\\\"")}""{rankString});
+                if (name == nil) then return nil end
+                if (rank == '' or rank == 'Racial' or rank == 'Shapeshift' or rank == 'Summon') then
+                    rank = 'Rank 0'
+                end
+                return name..'$'..rank..'$'..cost..'$'..powerType..'$'..castTime..'$'..minRange..'$'..maxRange;");
+            string[] infosArray = infos.Split('$');
+
+            if (infosArray.Length > 1)
+            {
+                Rank = ParseInt(infosArray[1].Replace("Rank ", ""));
+                Cost = ParseInt(infosArray[2]);
+                PowerType = ParseInt(infosArray[3]);
+                CastTime = ParseInt(infosArray[4]);
+                MinRange = ParseInt(infosArray[5]);
+                MaxRange = ParseInt(infosArray[6]);
+            }
+
             ForceLua = rank > 0 || Name.Contains("()");
 
             ForcedCooldown = ForcedCoolDowns.ContainsKey(Name) ? ForcedCoolDowns[Name] : 0;
@@ -80,15 +103,7 @@ namespace WholesomeTBCAIO.Helpers
                 Lua.RunMacroText($"/cast {Name}{rankString}");
             }
         }
-        /*
-        public AIOSpell(int spellId, int rank = 0) : base(spellId)
-        {
-            RecordSpellInfos(rank);
-            ForceLua = rank > 0 || Name.Contains("(") || Name.Contains(")");
-            AllSpells.Add(this);
-            //LogSpellInfos();
-        }
-        */
+
         public static AIOSpell GetSpellByName(string name) => AllSpells.Find(s => s.Name == name);
         public void StartForcedCooldown()
         {
@@ -97,33 +112,11 @@ namespace WholesomeTBCAIO.Helpers
         }
         public bool IsForcedCooldownReady => ForcedCooldownTimer.IsReady;
 
-        public float GetCurrentCooldown => Lua.LuaDoString<float>($@"local startTime, duration, _ = GetSpellCooldown(""{Name.Replace("\"", "\\\"")}"");
+        public float GetCurrentCooldown => Lua.LuaDoString<float>($@"
+            local startTime, duration, _ = GetSpellCooldown(""{Name.Replace("\"", "\\\"")}"");
             if (startTime == nil) then return 0 end;
             return (duration - (GetTime() - startTime)) * 1000;");
 
-        public void RecordSpellInfos(int rank)
-        {
-            string rankString = rank > 0 ? $@", ""Rank {rank}""" : "";
-
-            string infos = Lua.LuaDoString<string>($@"
-                local name, rank, icon, cost, isFunnel, powerType, castTime, minRange, maxRange = GetSpellInfo(""{Name.Replace("\"", "\\\"")}""{rankString});
-                if (name == nil) then return nil end
-                if (rank == '' or rank == 'Racial' or rank == 'Shapeshift' or rank == 'Summon') then
-                    rank = 'Rank 0'
-                end
-                return name..'$'..rank..'$'..cost..'$'..powerType..'$'..castTime..'$'..minRange..'$'..maxRange;");
-            string[] infosArray = infos.Split('$');
-
-            if (infosArray.Length > 1)
-            {
-                Rank = ParseInt(infosArray[1].Replace("Rank ", ""));
-                Cost = ParseInt(infosArray[2]);
-                PowerType = ParseInt(infosArray[3]);
-                CastTime = ParseInt(infosArray[4]);
-                MinRange = ParseInt(infosArray[5]);
-                MaxRange = ParseInt(infosArray[6]);
-            }
-        }
 
         private int ParseInt(string stringToParse)
         {
@@ -143,6 +136,11 @@ namespace WholesomeTBCAIO.Helpers
             Logger.Log($"MinRange : {MinRange}");
             Logger.Log($"MaxRange : {MaxRange}");
         }
+
+        private List<string> ClickOnTerrainSpells = new List<string>()
+        {
+            "Mass Dispel"
+        };
 
         private List<string> OnDeadSpells = new List<string>()
         {

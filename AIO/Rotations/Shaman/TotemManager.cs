@@ -177,7 +177,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 // Mana Tide Totem
                 if (ManaTideTotem.KnownSpell)
                 {
-                    List<AIOPartyMember> alliesNeedingMana = AIOParty.Group
+                    List<AIOPartyMember> alliesNeedingMana = AIOParty.GroupAndRaid
                         .FindAll(a => a.ManaPercentage < 20);
                     if ((alliesNeedingMana.Count > 1 || Me.ManaPercentage < 10)
                         && Cast(ManaTideTotem))

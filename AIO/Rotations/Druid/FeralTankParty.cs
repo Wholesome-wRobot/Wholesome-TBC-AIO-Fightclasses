@@ -11,52 +11,55 @@ namespace WholesomeTBCAIO.Rotations.Druid
     {
         protected override void BuffRotation()
         {
-            base.BuffRotation();
+            if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
+            {
+                base.BuffRotation();
 
-            // PARTY Remove Curse
-            WoWPlayer needRemoveCurse = AIOParty.Group
-                .Find(m => ToolBox.HasCurseDebuff(m.Name));
-            if (needRemoveCurse != null && cast.OnFocusUnit(RemoveCurse, needRemoveCurse))
-                return;
+                // PARTY Remove Curse
+                WoWPlayer needRemoveCurse = AIOParty.GroupAndRaid
+                    .Find(m => ToolBox.HasCurseDebuff(m.Name));
+                if (needRemoveCurse != null && cast.OnFocusUnit(RemoveCurse, needRemoveCurse))
+                    return;
 
-            // PARTY Abolish Poison
-            WoWPlayer needAbolishPoison = AIOParty.Group
-                .Find(m => ToolBox.HasPoisonDebuff(m.Name));
-            if (needAbolishPoison != null && cast.OnFocusUnit(AbolishPoison, needAbolishPoison))
-                return;
+                // PARTY Abolish Poison
+                WoWPlayer needAbolishPoison = AIOParty.GroupAndRaid
+                    .Find(m => ToolBox.HasPoisonDebuff(m.Name));
+                if (needAbolishPoison != null && cast.OnFocusUnit(AbolishPoison, needAbolishPoison))
+                    return;
 
-            // PARTY Mark of the Wild
-            WoWPlayer needMotW = AIOParty.Group
-                .Find(m => !m.HaveBuff(MarkOfTheWild.Name));
-            if (needMotW != null && cast.OnFocusUnit(MarkOfTheWild, needMotW))
-                return;
+                // PARTY Mark of the Wild
+                WoWPlayer needMotW = AIOParty.GroupAndRaid
+                    .Find(m => !m.HaveBuff(MarkOfTheWild.Name));
+                if (needMotW != null && cast.OnFocusUnit(MarkOfTheWild, needMotW))
+                    return;
 
-            // PARTY Thorns
-            WoWPlayer needThorns = AIOParty.Group
-                .Find(m => !m.HaveBuff(Thorns.Name));
-            if (needThorns != null && cast.OnFocusUnit(Thorns, needThorns))
-                return;
+                // PARTY Thorns
+                WoWPlayer needThorns = AIOParty.GroupAndRaid
+                    .Find(m => !m.HaveBuff(Thorns.Name));
+                if (needThorns != null && cast.OnFocusUnit(Thorns, needThorns))
+                    return;
 
-            // Omen of Clarity
-            if (!Me.HaveBuff("Omen of Clarity") 
-                && OmenOfClarity.IsSpellUsable
-                && cast.OnSelf(OmenOfClarity))
-                return;
+                // Omen of Clarity
+                if (!Me.HaveBuff("Omen of Clarity")
+                    && OmenOfClarity.IsSpellUsable
+                    && cast.OnSelf(OmenOfClarity))
+                    return;
 
-            // PARTY Drink
-            if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
-                return;
+                // PARTY Drink
+                if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
+                    return;
 
-            // Dire Bear Form
-            if (!Me.HaveBuff("Dire Bear Form")
-                && cast.OnSelf(DireBearForm))
-                return;
+                // Dire Bear Form
+                if (!Me.HaveBuff("Dire Bear Form")
+                    && cast.OnSelf(DireBearForm))
+                    return;
 
-            // Bear Form
-            if (!DireBearForm.KnownSpell
-                && !Me.HaveBuff("Bear Form")
-                && cast.OnSelf(BearForm))
-                return;
+                // Bear Form
+                if (!DireBearForm.KnownSpell
+                    && !Me.HaveBuff("Bear Form")
+                    && cast.OnSelf(BearForm))
+                    return;
+            }
         }
 
         protected override void Pull()
@@ -122,9 +125,9 @@ namespace WholesomeTBCAIO.Rotations.Druid
             ToolBox.CheckAutoAttack(Attack);
 
             // Party Tranquility
-            if (settings.PartyTranquility && !AIOParty.Group.Any(e => e.IsTargetingMe))
+            if (settings.PartyTranquility && !AIOParty.GroupAndRaid.Any(e => e.IsTargetingMe))
             {
-                bool needTranquility = AIOParty.Group
+                bool needTranquility = AIOParty.GroupAndRaid
                     .FindAll(m => m.HealthPercent < 50)
                     .Count > 2;
                 if (needTranquility
@@ -138,7 +141,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             // PARTY Rebirth
             if (settings.PartyUseRebirth)
             {
-                WoWPlayer needRebirth = AIOParty.Group
+                WoWPlayer needRebirth = AIOParty.GroupAndRaid
                     .Find(m => m.IsDead);
                 if (needRebirth != null && cast.OnFocusUnit(Rebirth, needRebirth))
                     return;
@@ -147,7 +150,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             // PARTY Innervate
             if (settings.PartyUseInnervate)
             {
-                WoWPlayer needInnervate = AIOParty.Group
+                WoWPlayer needInnervate = AIOParty.GroupAndRaid
                     .Find(m => m.ManaPercentage < 10 && !m.HaveBuff("Innervate"));
                 if (needInnervate != null && cast.OnFocusUnit(Innervate, needInnervate))
                     return;
@@ -156,7 +159,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             if (settings.PartyRemoveCurse)
             {
                 // PARTY Remove Curse
-                WoWPlayer needRemoveCurse = AIOParty.Group
+                WoWPlayer needRemoveCurse = AIOParty.GroupAndRaid
                     .Find(m => ToolBox.HasCurseDebuff(m.Name));
                 if (needRemoveCurse != null && cast.OnFocusUnit(RemoveCurse, needRemoveCurse))
                     return;
@@ -165,7 +168,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             if (settings.PartyAbolishPoison)
             {
                 // PARTY Abolish Poison
-                WoWPlayer needAbolishPoison = AIOParty.Group
+                WoWPlayer needAbolishPoison = AIOParty.GroupAndRaid
                     .Find(m => ToolBox.HasPoisonDebuff(m.Name));
                 if (needAbolishPoison != null && cast.OnFocusUnit(AbolishPoison, needAbolishPoison))
                     return;

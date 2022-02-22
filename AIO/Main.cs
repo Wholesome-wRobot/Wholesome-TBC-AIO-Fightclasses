@@ -1,28 +1,28 @@
-﻿using wManager.Wow.Helpers;
-using wManager.Wow.ObjectManager;
+﻿using robotManager.Events;
 using robotManager.Helpful;
-using wManager.Events;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
+using System.Threading;
 using WholesomeTBCAIO;
-using WholesomeTBCAIO.Rotations;
-using WholesomeTBCAIO.Settings;
 using WholesomeTBCAIO.Helpers;
-using WholesomeTBCAIO.Rotations.Shaman;
+using WholesomeTBCAIO.Rotations;
 using WholesomeTBCAIO.Rotations.Druid;
 using WholesomeTBCAIO.Rotations.Hunter;
 using WholesomeTBCAIO.Rotations.Mage;
 using WholesomeTBCAIO.Rotations.Paladin;
 using WholesomeTBCAIO.Rotations.Priest;
 using WholesomeTBCAIO.Rotations.Rogue;
+using WholesomeTBCAIO.Rotations.Shaman;
 using WholesomeTBCAIO.Rotations.Warlock;
 using WholesomeTBCAIO.Rotations.Warrior;
+using WholesomeTBCAIO.Settings;
+using wManager.Events;
 using wManager.Wow.Enums;
-using System.Linq;
-using robotManager.Events;
+using wManager.Wow.Helpers;
+using wManager.Wow.ObjectManager;
 using static WholesomeTBCAIO.Helpers.Enums;
-using System.Collections.Generic;
-using System;
-using System.Threading;
 
 public class Main : ICustomClass
 {
@@ -34,7 +34,7 @@ public class Main : ICustomClass
     public static string wowClass = ObjectManager.Me.WowClass.ToString();
     public static int humanReflexTime = 500;
     public static bool isLaunched;
-    public static string version = "3.0.10"; // Must match version in Version.txt
+    public static string version = "3.1.00"; // Must match version in Version.txt
     public static bool HMPrunningAway = false;
 
     private IClassRotation selectedRotation;
@@ -52,7 +52,7 @@ public class Main : ICustomClass
         if (selectedRotation != null)
         {
             isLaunched = true;
-            
+
             FightEvents.OnFightLoop += FightLoopHandler;
             FightEvents.OnFightStart += FightStartHandler;
             FightEvents.OnFightEnd += FightEndHandler;
@@ -60,8 +60,12 @@ public class Main : ICustomClass
             EventsLua.AttachEventLua("RESURRECT_REQUEST", e => ResurrectionEventHandler(e));
             EventsLua.AttachEventLua("PLAYER_DEAD", e => PlayerDeadHandler(e));
             EventsLua.AttachEventLua("READY_CHECK", e => ReadyCheckHandler(e));
-            EventsLua.AttachEventLua("INSPECT_TALENT_READY", e => AIOParty.InspectTalentReadyHeandler());
+            EventsLua.AttachEventLua("INSPECT_TALENT_READY", e => AIOParty.InspectTalentReadyHandler());
+            EventsLua.AttachEventLua("PARTY_MEMBERS_CHANGED", e => AIOParty.GroupRosterChangedHandler());
+            EventsLua.AttachEventLua("PARTY_MEMBER_DISABLE", e => AIOParty.GroupRosterChangedHandler());
+            EventsLua.AttachEventLua("PARTY_MEMBER_ENABLE", e => AIOParty.GroupRosterChangedHandler());
             EventsLuaWithArgs.OnEventsLuaStringWithArgs += EventsWithArgsHandler;
+            AIOParty.UpdateParty();
 
             if (!TalentsManager._isRunning)
             {
@@ -74,10 +78,10 @@ public class Main : ICustomClass
                 _racialsThread.DoWork += _racials.DoRacialsPulse;
                 _racialsThread.RunWorkerAsync();
             }
-
-            if (!AIOParty._isRunning)
+            
+            if (!AIORadar._isRunning)
             {
-                _partyThread.DoWork += AIOParty.DoPartyUpdatePulse;
+                _partyThread.DoWork += AIORadar.Pulse;
                 _partyThread.RunWorkerAsync();
             }
 
@@ -103,10 +107,11 @@ public class Main : ICustomClass
             _racialsThread.Dispose();
             _racials._isRunning = false;
         }
-        _partyThread.DoWork -= AIOParty.DoPartyUpdatePulse;
+        
+        _partyThread.DoWork -= AIORadar.Pulse;
         _partyThread.Dispose();
-        AIOParty._isRunning = false;
-
+        AIORadar._isRunning = false;
+        
         FightEvents.OnFightLoop -= FightLoopHandler;
         FightEvents.OnFightStart -= FightStartHandler;
         FightEvents.OnFightEnd -= FightEndHandler;
@@ -158,7 +163,7 @@ public class Main : ICustomClass
             case Specs.PriestShadow: return new Shadow();
             case Specs.PriestShadowParty: return new ShadowParty();
             case Specs.PriestHolyParty: return new HolyPriestParty();
-            case Specs.PriestRaidParty: return new HolyPriestRaid();
+            case Specs.PriestHolyRaid: return new HolyPriestRaid();
             // Rogue
             case Specs.RogueCombat: return new Combat();
             case Specs.RogueCombatParty: return new RogueCombatParty();
@@ -237,11 +242,12 @@ public class Main : ICustomClass
     private void ReadyCheckHandler(object context)
     {
         var delay = 1000 + new Random().Next(1, 2000);
-        Thread.Sleep(delay);
         string isReady = selectedRotation.AnswerReadyCheck() ? "true" : "false";
+        Logger.Log($"Answering ReadyCheck ({isReady}), in {delay} ms");
+        Thread.Sleep(delay);
+        // Test with static instead
         Lua.LuaDoString($"ConfirmReadyCheck({isReady});");
         Lua.LuaDoString($"GetClickFrame('ReadyCheckFrame'):Hide();");
-        Logger.Log("Answered ReadyCheck isReady: " + isReady + ", after: " + delay + " ms");
     }
 
     private void ResurrectionEventHandler(object context)
@@ -258,9 +264,9 @@ public class Main : ICustomClass
 
     private void EventsWithArgsHandler(string id, List<string> args)
     {
-        if (selectedRotation is Hunter 
-            && id == "UNIT_SPELLCAST_SUCCEEDED" 
-            && args[0] == "player" 
+        if (selectedRotation is Hunter
+            && id == "UNIT_SPELLCAST_SUCCEEDED"
+            && args[0] == "player"
             && args[1] == "Auto Shot")
             Hunter.LastAuto = DateTime.Now;
 

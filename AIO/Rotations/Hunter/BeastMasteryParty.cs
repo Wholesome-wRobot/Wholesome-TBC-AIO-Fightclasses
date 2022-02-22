@@ -11,18 +11,21 @@ namespace WholesomeTBCAIO.Rotations.Hunter
     {
         protected override void BuffRotation()
         {
-            // Aspect of the Cheetah
-            if (!Me.IsMounted
+            if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
+            {
+                // Aspect of the Cheetah
+                if (!Me.IsMounted
                 && !Me.HaveBuff("Aspect of the Cheetah")
                 && MovementManager.InMoveTo
                 && Me.ManaPercentage > 60
                 && settings.UseAspectOfTheCheetah
                 && cast.OnSelf(AspectCheetah))
-                return;
+                    return;
 
-            // PARTY Drink
-            if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
-                return;
+                // PARTY Drink
+                if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
+                    return;
+            }
         }
 
         protected override void Pull()

@@ -54,7 +54,7 @@ namespace WholesomeTBCAIO.Helpers
             { "Shadow", Specs.PriestShadow },
             { "Party Shadow", Specs.PriestShadowParty },
             { "Party Holy", Specs.PriestHolyParty },
-            { "Raid Holy", Specs.PriestRaidParty },
+            { "Raid Holy", Specs.PriestHolyRaid },
         };
         private readonly static Dictionary<string, Specs> RogueSpecs = new Dictionary<string, Specs>()
         {
@@ -112,7 +112,7 @@ namespace WholesomeTBCAIO.Helpers
             PriestShadow,
             PriestShadowParty,
             PriestHolyParty,
-            PriestRaidParty,
+            PriestHolyRaid,
             // Rogue
             RogueCombat,
             RogueCombatParty,

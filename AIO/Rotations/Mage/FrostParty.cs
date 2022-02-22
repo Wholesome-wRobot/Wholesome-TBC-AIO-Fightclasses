@@ -10,22 +10,25 @@ namespace WholesomeTBCAIO.Rotations.Mage
     {
         protected override void BuffRotation()
         {
-            base.BuffRotation();
+            if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
+            {
+                base.BuffRotation();
 
-            // Ice Armor
-            if (!Me.HaveBuff("Ice Armor")
-                && cast.OnSelf(IceArmor))
-                return;
+                // Ice Armor
+                if (!Me.HaveBuff("Ice Armor")
+                    && cast.OnSelf(IceArmor))
+                    return;
 
-            // Frost Armor
-            if (!Me.HaveBuff("Frost Armor")
-                && !IceArmor.KnownSpell
-                && cast.OnSelf(FrostArmor))
-                return;
+                // Frost Armor
+                if (!Me.HaveBuff("Frost Armor")
+                    && !IceArmor.KnownSpell
+                    && cast.OnSelf(FrostArmor))
+                    return;
 
-            // PARTY Drink
-            if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
-                return;
+                // PARTY Drink
+                if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
+                    return;
+            }
         }
 
         protected override void Pull()
@@ -52,7 +55,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // PARTY Remove Curse
             if (settings.PartyRemoveCurse)
             {
-                List<AIOPartyMember> needRemoveCurse = AIOParty.Group
+                List<AIOPartyMember> needRemoveCurse = AIOParty.GroupAndRaid
                     .FindAll(m => ToolBox.HasCurseDebuff(m.Name))
                     .ToList();
                 if (needRemoveCurse.Count > 0 && cast.OnFocusUnit(RemoveCurse, needRemoveCurse[0]))
@@ -76,7 +79,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Evocation
             if (Me.ManaPercentage < 15
-                && !AIOParty.EnemiesClose.Any(e => e.Target == Me.Guid)
+                && AIORadar.CloseUnitsTargetingMe.Count <= 0
                 && cast.OnSelf(Evocation))
             {
                 Usefuls.WaitIsCasting();

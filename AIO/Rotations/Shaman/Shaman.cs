@@ -97,7 +97,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     if (StatusChecker.InCombat())
                         specialization.CombatRotation();
 
-                    if (AIOParty.Group.Any(p => p.InCombatFlagOnly && p.GetDistance < 50))
+                    if (AIOParty.GroupAndRaid.Any(p => p.InCombatFlagOnly && p.GetDistance < 50))
                         specialization.HealerCombat();
                 }
                 catch (Exception arg)
@@ -114,7 +114,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             if (specialization.RotationType == Enums.RotationType.Party)
             {
                 // PARTY Resurrection
-                List<AIOPartyMember> needRes = AIOParty.Group
+                List<AIOPartyMember> needRes = AIOParty.GroupAndRaid
                     .FindAll(m => m.IsDead)
                     .OrderBy(m => m.GetDistance)
                     .ToList();

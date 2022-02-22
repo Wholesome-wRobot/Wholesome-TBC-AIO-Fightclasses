@@ -91,6 +91,7 @@
   <ItemGroup>
     <Compile Include="AutoUpdater.cs" />
     <Compile Include="Helpers\AIOPartyMember.cs" />
+    <Compile Include="Helpers\AIORadar.cs" />
     <Compile Include="Helpers\AIOSpell.cs" />
     <Compile Include="Helpers\Cast.cs" />
     <Compile Include="Helpers\Enums.cs" />
@@ -118,6 +119,7 @@
     <Compile Include="Rotations\Paladin\RetributionParty.cs" />
     <Compile Include="Rotations\Paladin\Retribution.cs" />
     <Compile Include="Rotations\Priest\HolyPriestParty.cs" />
+    <Compile Include="Rotations\Priest\HolyPriestRaid.cs" />
     <Compile Include="Rotations\Priest\ShadowParty.cs" />
     <Compile Include="Rotations\Priest\Shadow.cs" />
     <Compile Include="Rotations\Rogue\Combat.cs" />

@@ -14,7 +14,10 @@ namespace WholesomeTBCAIO.Rotations.Paladin
         {
             RangeManager.SetRange(30);
 
-            base.BuffRotation();
+            if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
+            {
+                base.BuffRotation();
+            }
         }
 
         protected override void HealerCombat()
@@ -23,7 +26,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             WoWUnit Target = ObjectManager.Target;
 
-            List<AIOPartyMember> aliveMembers = AIOParty.Group
+            List<AIOPartyMember> aliveMembers = AIOParty.GroupAndRaid
                 .FindAll(a => a.IsAlive && a.GetDistance < 60)
                 .OrderBy(a => a.HealthPercent)
                 .ToList();
@@ -31,7 +34,6 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 .Aggregate(0.0, (s, a) => s + a.HealthPercent) / (double)aliveMembers.Count;
             var tanks = AIOParty.Tanks
                 .FindAll(a => a.IsAlive && a.GetDistance < 60)
-                .OrderBy(a => a.HealthPercent)
                 .ToList();
 
             string logMessage = "TANKS detected [";
@@ -53,7 +55,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Lay On Hands
             if (Me.ManaPercentage < 5)
             {
-                List<AIOPartyMember> needsLoH = AIOParty.Group
+                List<AIOPartyMember> needsLoH = AIOParty.GroupAndRaid
                     .FindAll(m => m.HealthPercent < 10)
                     .OrderBy(m => m.HealthPercent)
                     .ToList();
@@ -63,7 +65,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             bool isCleanseHighPriority = settings.PartyCleansePriority != "Low"
                 && (settings.PartyCleansePriority == "High" || rng.NextDouble() >= 0.5);
-            WoWPlayer needsCleanse = AIOParty.Group
+            WoWPlayer needsCleanse = AIOParty.GroupAndRaid
                     .Find(m => UnitHasCleansableDebuff(m.Name));
 
             // High priority Cleanse
@@ -112,7 +114,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Purifiy
             if (settings.PartyPurify)
             {
-                WoWPlayer needsPurify = AIOParty.Group
+                WoWPlayer needsPurify = AIOParty.GroupAndRaid
                     .Find(m => ToolBox.HasDiseaseDebuff(m.Name) || ToolBox.HasPoisonDebuff(m.Name));
                 if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
