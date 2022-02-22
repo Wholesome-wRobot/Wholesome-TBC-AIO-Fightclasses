@@ -46,30 +46,12 @@ namespace WholesomeTBCAIO.Rotations.Priest
             // PARTY Mass Dispel
             if (settings.PartyMassDispel && MassDispel.KnownSpell)
             {
-                if (AIOParty.RaidGroups.Count == 0)
-                {
-                    // PARTY Mass Dispel
-                    List<AIOPartyMember> needMassDispel = AIOParty.ClosePartyMembers
-                        .FindAll(m => m.IsAlive && ToolBox.HasMagicDebuff(m.Name));
-                    Vector3 centerPosition = ToolBox.FindAggregatedCenter(needMassDispel.Select(u => u.Position).ToList(), 15, settings.PartyMassDispelCount);
-                    if (centerPosition != null && cast.OnLocation(MassDispel, centerPosition))
-                        return;
-                }
-                else
-                {
-                    // RAID Mass Dispel
-                    foreach (var item in AIOParty.RaidGroups)
-                    {
-                        List<AIOPartyMember> subGroupNeedMassDispel = item.Value
-                            .FindAll(m => m.IsAlive && m.GetDistance < 70 && ToolBox.HasMagicDebuff(m.Name));
-                        if (subGroupNeedMassDispel.Count >= settings.PartyMassDispelCount)
-                        {
-                            Vector3 centerPosition = ToolBox.FindAggregatedCenter(subGroupNeedMassDispel.Select(u => u.Position).ToList(), 15, settings.PartyMassDispelCount);
-                            if (centerPosition != null && cast.OnLocation(MassDispel, centerPosition))
-                                return;
-                        }
-                    }
-                }
+                // PARTY Mass Dispel
+                List<AIOPartyMember> needMassDispel = AIOParty.ClosePartyMembers
+                    .FindAll(m => m.IsAlive && ToolBox.HasMagicDebuff(m.Name));
+                Vector3 centerPosition = ToolBox.FindAggregatedCenter(needMassDispel.Select(u => u.Position).ToList(), 15, settings.PartyMassDispelCount);
+                if (centerPosition != null && cast.OnLocation(MassDispel, centerPosition))
+                    return;
             }
 
             // Prioritize self healing over other things in case of danger
