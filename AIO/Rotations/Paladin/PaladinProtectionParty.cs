@@ -10,12 +10,15 @@ namespace WholesomeTBCAIO.Rotations.Paladin
     {
         protected override void BuffRotation()
         {
-            // Righteous Fury
-            if (!Me.HaveBuff("Righteous Fury")
+            if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
+            {
+                // Righteous Fury
+                if (!Me.HaveBuff("Righteous Fury")
                 && cast.OnSelf(RighteousFury))
-                return;
+                    return;
 
-            base.BuffRotation();
+                base.BuffRotation();
+            }
         }
 
         protected override void PullRotation()
@@ -73,7 +76,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // Righteous Defense
             if (!Target.IsTargetingMe
                 && Target.Target > 0
-                && AIOParty.Group.Contains(Target.TargetObject)
+                && AIOParty.GroupAndRaid.Contains(Target.TargetObject)
                 && cast.OnFocusUnit(RighteousDefense, Target.TargetObject))
                 return;
 
@@ -83,7 +86,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 return;
 
             // PARTY Lay On Hands
-            List<AIOPartyMember> needsLoH = AIOParty.Group
+            List<AIOPartyMember> needsLoH = AIOParty.GroupAndRaid
                 .FindAll(m => m.HealthPercent < 10)
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
@@ -93,7 +96,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Purifiy
             if (settings.PartyPurify)
             {
-                WoWPlayer needsPurify = AIOParty.Group
+                WoWPlayer needsPurify = AIOParty.GroupAndRaid
                     .Find(m => ToolBox.HasDiseaseDebuff(m.Name) || ToolBox.HasPoisonDebuff(m.Name));
                 if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
@@ -102,7 +105,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Cleanse
             if (settings.PartyCleanse)
             {
-                WoWPlayer needsCleanse = AIOParty.Group
+                WoWPlayer needsCleanse = AIOParty.GroupAndRaid
                     .Find(m => ToolBox.HasMagicDebuff(m.Name));
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;

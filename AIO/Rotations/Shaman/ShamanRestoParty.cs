@@ -12,7 +12,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         {
             base.BuffRotation();
 
-            if (!Me.HaveBuff("Ghost Wolf"))
+            if (!Me.HaveBuff("Ghost Wolf") && (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95))
             {
                 // Ghost Wolf
                 if (settings.GhostWolfMount
@@ -21,7 +21,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     ToolBox.SetGroundMount(GhostWolf.Name);
 
                 // PARTY Healing Wave
-                List<AIOPartyMember> alliesNeedingHealWave = AIOParty.Group
+                List<AIOPartyMember> alliesNeedingHealWave = AIOParty.GroupAndRaid
                     .FindAll(a => a.IsAlive && a.HealthPercent < 70)
                     .OrderBy(a => a.HealthPercent)
                     .ToList();
@@ -37,13 +37,13 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     return;
 
                 // PARTY Cure poison
-                WoWPlayer needCurePoison = AIOParty.Group
+                WoWPlayer needCurePoison = AIOParty.GroupAndRaid
                     .Find(m => ToolBox.HasPoisonDebuff(m.Name));
                 if (needCurePoison != null && cast.OnFocusUnit(CurePoison, needCurePoison))
                     return;
 
                 // PARTY Cure Disease
-                WoWPlayer needCureDisease = AIOParty.Group
+                WoWPlayer needCureDisease = AIOParty.GroupAndRaid
                     .Find(m => ToolBox.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
@@ -77,7 +77,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
             WoWUnit Target = ObjectManager.Target;
 
-            WoWPlayer allyNeedBigHeal = AIOParty.Group
+            WoWPlayer allyNeedBigHeal = AIOParty.GroupAndRaid
                 .Find(a => a.IsAlive && a.HealthPercent < 40);
 
             RangeManager.SetRange(25);
@@ -101,7 +101,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 return;
 
             // PARTY Lesser Healing Wave
-            List<AIOPartyMember> alliesNeedingLesserHealWave = AIOParty.Group
+            List<AIOPartyMember> alliesNeedingLesserHealWave = AIOParty.GroupAndRaid
                 .FindAll(a => a.IsAlive && a.HealthPercent < settings.PartyLesserHealingWaveThreshold)
                 .OrderBy(a => a.HealthPercent)
                 .ToList();
@@ -110,7 +110,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 return;
 
             // PARTY Healing Wave
-            List<AIOPartyMember> alliesNeedingHealWave = AIOParty.Group
+            List<AIOPartyMember> alliesNeedingHealWave = AIOParty.GroupAndRaid
                 .FindAll(a => a.IsAlive && a.HealthPercent < settings.PartyHealingWaveThreshold)
                 .OrderBy(a => a.HealthPercent)
                 .ToList();
@@ -119,7 +119,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 return;
 
             // PARTY Chain Heal
-            List<AIOPartyMember> alliesNeedChainHeal = AIOParty.Group
+            List<AIOPartyMember> alliesNeedChainHeal = AIOParty.GroupAndRaid
                 .FindAll(a => a.IsAlive && a.HealthPercent < settings.PartyChainHealThreshold)
                 .OrderBy(a => a.GetDistance)
                 .ToList();
@@ -133,9 +133,9 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             }
 
             // PARTY Earth Shield
-            if (EarthShield.KnownSpell && !AIOParty.Group.Exists(a => a.HaveBuff("Earth Shield")))
+            if (EarthShield.KnownSpell && !AIOParty.GroupAndRaid.Exists(a => a.HaveBuff("Earth Shield")))
             {
-                foreach (WoWPlayer player in AIOParty.Group.FindAll(p => p.IsAlive && p.WowClass != wManager.Wow.Enums.WoWClass.Shaman))
+                foreach (WoWPlayer player in AIOParty.GroupAndRaid.FindAll(p => p.IsAlive && p.WowClass != wManager.Wow.Enums.WoWClass.Shaman))
                 {
                     List<WoWUnit> enemiesTargetingHim = AIOParty.EnemiesFighting
                         .FindAll(e => e.Target == player.Guid);
@@ -147,7 +147,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             // PARTY Cure Poison
             if (settings.PartyCurePoison)
             {
-                WoWPlayer needCurePoison = AIOParty.Group
+                WoWPlayer needCurePoison = AIOParty.GroupAndRaid
                     .Find(m => ToolBox.HasPoisonDebuff(m.Name));
                 if (needCurePoison != null && cast.OnFocusUnit(CurePoison, needCurePoison))
                     return;
@@ -156,7 +156,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             // PARTY Cure Disease
             if (settings.PartyCureDisease)
             {
-                WoWPlayer needCureDisease = AIOParty.Group
+                WoWPlayer needCureDisease = AIOParty.GroupAndRaid
                     .Find(m => m.IsAlive && ToolBox.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;

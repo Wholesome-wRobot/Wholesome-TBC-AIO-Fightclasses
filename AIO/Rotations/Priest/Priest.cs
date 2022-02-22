@@ -72,7 +72,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     if (Me.HaveBuff("Spirit of Redemption"))
                     {
                         // PARTY Greater heal
-                        List<AIOPartyMember> needGreaterHealSR = AIOParty.Group
+                        List<AIOPartyMember> needGreaterHealSR = AIOParty.GroupAndRaid
                             .FindAll(m => m.HealthPercent < 100)
                             .OrderBy(m => m.HealthPercent)
                             .ToList();
@@ -80,11 +80,11 @@ namespace WholesomeTBCAIO.Rotations.Priest
                             continue;
 
                         // PARTY Heal
-                        List<AIOPartyMember> needHealSR = AIOParty.Group
+                        List<AIOPartyMember> needHealSR = AIOParty.GroupAndRaid
                             .FindAll(m => m.HealthPercent < 100)
                             .OrderBy(m => m.HealthPercent)
                             .ToList();
-                        if (!GreaterHeal.KnownSpell && needHealSR.Count > 0 && cast.OnFocusUnit(GreaterHeal, needHealSR[0]))
+                        if (!GreaterHeal.KnownSpell && needHealSR.Count > 0 && cast.OnFocusUnit(FlashHeal, needHealSR[0]))
                             continue;
                     }
 
@@ -97,7 +97,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     if (StatusChecker.InCombat())
                         specialization.CombatRotation();
 
-                    if (AIOParty.Group.Any(p => p.InCombatFlagOnly && p.GetDistance < 50) || ObjectManager.Me.HaveBuff("Spirit of Redemption"))
+                    if (AIOParty.GroupAndRaid.Any(p => p.InCombatFlagOnly && p.GetDistance < 50) || ObjectManager.Me.HaveBuff("Spirit of Redemption"))
                         specialization.HealerCombat();
 
                 }
@@ -115,79 +115,66 @@ namespace WholesomeTBCAIO.Rotations.Priest
             if (specialization.RotationType == Enums.RotationType.Party)
             {
                 // PARTY Resurrection
-                List<AIOPartyMember> needRes = AIOParty.Group
+                List<AIOPartyMember> needRes = AIOParty.GroupAndRaid
                     .FindAll(m => m.IsDead)
                     .OrderBy(m => m.GetDistance)
                     .ToList();
                 if (needRes.Count > 0 && cast.OnFocusUnit(Resurrection, needRes[0]))
                     return;
 
-                List<AIOPartyMember> aliveMembers = AIOParty.Group
-                    .FindAll(m => m.IsAlive && m.GetDistance < 60)
-                    .ToList();
+                List<AIOPartyMember> closeMembers = AIOParty.ClosePartyMembers;
 
                 // Party Cure Disease
-                WoWPlayer needCureDisease = aliveMembers
+                WoWPlayer needCureDisease = closeMembers
                     .Find(m => ToolBox.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
 
                 // Party Dispel Magic
-                WoWPlayer needDispelMagic = aliveMembers
+                WoWPlayer needDispelMagic = closeMembers
                     .Find(m => ToolBox.HasMagicDebuff(m.Name));
                 if (needDispelMagic != null && cast.OnFocusUnit(DispelMagic, needDispelMagic))
                     return;
 
-                // OOC Inner Fire
-                if (settings.UseInnerFire
-                    && cast.BuffSelf(InnerFire))
+                // Prayer of Fortitude
+                if (settings.PartyPrayerOfFortitude
+                    && cast.Buff(closeMembers, PrayerOfFortitude, 17029))
                     return;
 
-                if (BuffParty())
+                // Power Word Fortitude
+                if (settings.UsePowerWordFortitude
+                    && !settings.PartyPrayerOfFortitude
+                    && cast.Buff(closeMembers, PowerWordFortitude))
+                    return;
+
+                // Prayer Of Shadow Protection
+                if (settings.PartyPrayerOfShadowProtection
+                    && cast.Buff(closeMembers, PrayerOfShadowProtection, 17029))
+                    return;
+
+                // Shadow Protection
+                if (settings.UseShadowProtection
+                    && !settings.PartyPrayerOfShadowProtection
+                    && cast.Buff(closeMembers, ShadowProtection))
+                    return;
+
+                // Prayer of Spirit
+                if (settings.PartyPrayerOfSpirit
+                    && cast.Buff(closeMembers, PrayerOfSpirit, 17029))
+                    return;
+
+                // Divine Spirit
+                if (settings.UseDivineSpirit
+                    && !settings.PartyPrayerOfSpirit
+                    && cast.Buff(closeMembers, DivineSpirit))
                     return;
             }
-        }
 
-        protected bool BuffParty()
-        {
-            List<AIOPartyMember> aliveMembers = AIOParty.Group
-                .FindAll(m => m.IsAlive && m.GetDistance < 60)
-                .ToList();
-
-            // Prayer of Fortitude
-            if (settings.PartyPrayerOfFortitude 
-                && cast.Buff(aliveMembers, PrayerOfFortitude, 17029))
-                return true;
-
-            // Power Word Fortitude
-            if (settings.UsePowerWordFortitude 
-                && !settings.PartyPrayerOfFortitude 
-                && cast.Buff(aliveMembers, PowerWordFortitude))
-                return true;
-
-            // Prayer Of Shadow Protection
-            if (settings.PartyPrayerOfShadowProtection 
-                && cast.Buff(aliveMembers, PrayerOfShadowProtection, 17029))
-                return true;
-
-            // Shadow Protection
-            if (settings.UseShadowProtection
-                && !settings.PartyPrayerOfShadowProtection
-                && cast.Buff(aliveMembers, ShadowProtection))
-                return true;
-
-            // Prayer of Spirit
-            if (settings.PartyPrayerOfSpirit 
-                && cast.Buff(aliveMembers, PrayerOfSpirit, 17029))
-                return true;
-
-            // Divine Spirit
-            if (settings.UseDivineSpirit 
-                && !settings.PartyPrayerOfSpirit
-                && cast.Buff(aliveMembers, DivineSpirit))
-                return true;
-
-            return false;
+            // OOC Inner Fire
+            if (settings.UseInnerFire
+                && !Me.HaveBuff("Inner Fire")
+                && cast.OnSelf(InnerFire))
+                return;
         }
 
         protected virtual void Pull()

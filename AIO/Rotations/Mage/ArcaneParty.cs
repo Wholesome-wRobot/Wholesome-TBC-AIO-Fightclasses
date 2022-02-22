@@ -10,30 +10,33 @@ namespace WholesomeTBCAIO.Rotations.Mage
     {
         protected override void BuffRotation()
         {
-            base.BuffRotation();
-            
-            // Mage Armor
-            if (!Me.HaveBuff("Mage Armor")
-                && settings.ACMageArmor
-                && cast.OnSelf(MageArmor))
-                return;
+            if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
+            {
+                base.BuffRotation();
 
-            // Ice Armor
-            if (!Me.HaveBuff("Ice Armor")
-                && (!settings.ACMageArmor || !MageArmor.KnownSpell)
-                && cast.OnSelf(IceArmor))
-                return;
+                // Mage Armor
+                if (!Me.HaveBuff("Mage Armor")
+                    && settings.ACMageArmor
+                    && cast.OnSelf(MageArmor))
+                    return;
 
-            // Frost Armor
-            if (!Me.HaveBuff("Frost Armor")
-                && !IceArmor.KnownSpell
-                && (!settings.ACMageArmor || !MageArmor.KnownSpell)
-                && cast.OnSelf(FrostArmor))
-                return;
+                // Ice Armor
+                if (!Me.HaveBuff("Ice Armor")
+                    && (!settings.ACMageArmor || !MageArmor.KnownSpell)
+                    && cast.OnSelf(IceArmor))
+                    return;
 
-            // PARTY Drink
-            if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
-                return;
+                // Frost Armor
+                if (!Me.HaveBuff("Frost Armor")
+                    && !IceArmor.KnownSpell
+                    && (!settings.ACMageArmor || !MageArmor.KnownSpell)
+                    && cast.OnSelf(FrostArmor))
+                    return;
+
+                // PARTY Drink
+                if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
+                    return;
+            }
         }
 
         protected override void Pull()
@@ -66,7 +69,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // PARTY Remove Curse
             if (settings.PartyRemoveCurse)
             {
-                List<AIOPartyMember> needRemoveCurse = AIOParty.Group
+                List<AIOPartyMember> needRemoveCurse = AIOParty.GroupAndRaid
                     .FindAll(m => ToolBox.HasCurseDebuff(m.Name))
                     .ToList();
                 if (needRemoveCurse.Count > 0 && cast.OnFocusUnit(RemoveCurse, needRemoveCurse[0]))
@@ -80,7 +83,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Evocation
             if (Me.ManaPercentage < 20
-                && !AIOParty.EnemiesClose.Any(e => e.Target == Me.Guid)
+                && AIORadar.CloseUnitsTargetingMe.Count <= 0
                 && cast.OnSelf(Evocation))
             {
                 Usefuls.WaitIsCasting();
@@ -89,7 +92,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             
             // Arcane Explosion
             if (ToolBox.GetNbEnemiesClose(8f) > 2
-                && !AIOParty.EnemiesClose.Any(e => e.Target == Me.Guid)
+                && AIORadar.CloseUnitsTargetingMe.Count <= 0
                 && Me.Mana > 10
                 && cast.OnSelf(ArcaneExplosion))
                 return;

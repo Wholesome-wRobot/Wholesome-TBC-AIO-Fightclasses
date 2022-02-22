@@ -109,7 +109,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             if (specialization.RotationType == Enums.RotationType.Party)
             {
                 // PARTY Arcane Intellect
-                WoWPlayer noAI = AIOParty.Group
+                WoWPlayer noAI = AIOParty.GroupAndRaid
                     .Find(m => m.Mana > 0 && !m.HaveBuff(ArcaneIntellect.Name));
                 if (noAI != null && cast.OnFocusUnit(ArcaneIntellect, noAI))
                     return;

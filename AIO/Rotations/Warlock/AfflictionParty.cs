@@ -12,102 +12,105 @@ namespace WholesomeTBCAIO.Rotations.Warlock
     {
         protected override void BuffRotation()
         {
-            base.BuffRotation();
-
-            // Unending Breath
-            if (!Me.HaveBuff("Unending Breath")
-                && settings.UseUnendingBreath
-                && cast.OnSelf(UnendingBreath))
-                return;
-
-            // Demon Skin
-            if (!Me.HaveBuff("Demon Skin")
-                && !DemonArmor.KnownSpell
-                && !FelArmor.KnownSpell
-                && cast.OnSelf(DemonSkin))
-                return;
-
-            // Demon Armor
-            if ((!Me.HaveBuff("Demon Armor"))
-                && !FelArmor.KnownSpell
-                && cast.OnSelf(DemonArmor))
-                return;
-
-            // Fel Armor
-            if (!Me.HaveBuff("Fel Armor")
-                && cast.OnSelf(FelArmor))
-                return;
-
-            // Health Funnel OOC
-            if (ObjectManager.Pet.HealthPercent < 50
-                && Me.HealthPercent > 40
-                && ObjectManager.Pet.GetDistance < 19
-                && !ObjectManager.Pet.InCombatFlagOnly
-                && settings.HealthFunnelOOC)
+            if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
             {
-                Lua.LuaDoString("PetWait();");
-                MovementManager.StopMove();
-                Fight.StopFight();
+                base.BuffRotation();
 
-                if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
-                    cast.PetSpell("Consume Shadows", false, true);
-
-                if (cast.OnSelf(HealthFunnel))
-                {
-                    Thread.Sleep(500);
-                    Usefuls.WaitIsCasting();
-                    Lua.LuaDoString("PetFollow();");
+                // Unending Breath
+                if (!Me.HaveBuff("Unending Breath")
+                    && settings.UseUnendingBreath
+                    && cast.OnSelf(UnendingBreath))
                     return;
-                }
-                Lua.LuaDoString("PetFollow();");
-            }
 
-            // Health Stone
-            if (!WarlockPetAndConsumables.HaveHealthstone()
-                && cast.OnSelf(CreateHealthStone))
-                return;
+                // Demon Skin
+                if (!Me.HaveBuff("Demon Skin")
+                    && !DemonArmor.KnownSpell
+                    && !FelArmor.KnownSpell
+                    && cast.OnSelf(DemonSkin))
+                    return;
 
-            // Create Soul Stone
-            if (!WarlockPetAndConsumables.HaveSoulstone()
-                && cast.OnSelf(CreateSoulstone))
-                return;
+                // Demon Armor
+                if ((!Me.HaveBuff("Demon Armor"))
+                    && !FelArmor.KnownSpell
+                    && cast.OnSelf(DemonArmor))
+                    return;
 
-            // PARTY Soul Stone
-            if (CreateSoulstone.KnownSpell
-                && ToolBox.HaveOneInList(WarlockPetAndConsumables.SoulStones())
-                && ToolBox.GetItemCooldown(WarlockPetAndConsumables.SoulStones()) <= 0)
-            {
-                WoWPlayer noSoulstone = AIOParty.Group
-                    .Find(m => !m.HaveBuff("Soulstone Resurrection")
-                        && m.GetDistance < 20
-                        && m.Name !="Unknown"
-                        && !TraceLine.TraceLineGo(Me.Position, m.Position)
-                        && (m.WowClass == WoWClass.Paladin || m.WowClass == WoWClass.Priest || m.WowClass == WoWClass.Shaman || m.WowClass == WoWClass.Druid));
-                if (noSoulstone != null)
+                // Fel Armor
+                if (!Me.HaveBuff("Fel Armor")
+                    && cast.OnSelf(FelArmor))
+                    return;
+
+                // Health Funnel OOC
+                if (ObjectManager.Pet.HealthPercent < 50
+                    && Me.HealthPercent > 40
+                    && ObjectManager.Pet.GetDistance < 19
+                    && !ObjectManager.Pet.InCombatFlagOnly
+                    && settings.HealthFunnelOOC)
                 {
-                    Logger.Log($"Using Soulstone on {noSoulstone.Name}");
-                    MovementManager.StopMoveNewThread();
-                    MovementManager.StopMoveToNewThread();
-                    Lua.RunMacroText($"/target {noSoulstone.Name}");
-                    if (ObjectManager.Target.Name == noSoulstone.Name)
+                    Lua.LuaDoString("PetWait();");
+                    MovementManager.StopMove();
+                    Fight.StopFight();
+
+                    if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
+                        cast.PetSpell("Consume Shadows", false, true);
+
+                    if (cast.OnSelf(HealthFunnel))
                     {
-                        ToolBox.UseFirstMatchingItem(WarlockPetAndConsumables.SoulStones());
+                        Thread.Sleep(500);
                         Usefuls.WaitIsCasting();
-                        Lua.RunMacroText("/cleartarget");
-                        ToolBox.ClearCursor();
+                        Lua.LuaDoString("PetFollow();");
+                        return;
+                    }
+                    Lua.LuaDoString("PetFollow();");
+                }
+
+                // Health Stone
+                if (!WarlockPetAndConsumables.HaveHealthstone()
+                    && cast.OnSelf(CreateHealthStone))
+                    return;
+
+                // Create Soul Stone
+                if (!WarlockPetAndConsumables.HaveSoulstone()
+                    && cast.OnSelf(CreateSoulstone))
+                    return;
+
+                // PARTY Soul Stone
+                if (CreateSoulstone.KnownSpell
+                    && ToolBox.HaveOneInList(WarlockPetAndConsumables.SoulStones())
+                    && ToolBox.GetItemCooldown(WarlockPetAndConsumables.SoulStones()) <= 0)
+                {
+                    WoWPlayer noSoulstone = AIOParty.GroupAndRaid
+                        .Find(m => !m.HaveBuff("Soulstone Resurrection")
+                            && m.GetDistance < 20
+                            && m.Name != "Unknown"
+                            && !TraceLine.TraceLineGo(Me.Position, m.Position)
+                            && (m.WowClass == WoWClass.Paladin || m.WowClass == WoWClass.Priest || m.WowClass == WoWClass.Shaman || m.WowClass == WoWClass.Druid));
+                    if (noSoulstone != null)
+                    {
+                        Logger.Log($"Using Soulstone on {noSoulstone.Name}");
+                        MovementManager.StopMoveNewThread();
+                        MovementManager.StopMoveToNewThread();
+                        Lua.RunMacroText($"/target {noSoulstone.Name}");
+                        if (ObjectManager.Target.Name == noSoulstone.Name)
+                        {
+                            ToolBox.UseFirstMatchingItem(WarlockPetAndConsumables.SoulStones());
+                            Usefuls.WaitIsCasting();
+                            Lua.RunMacroText("/cleartarget");
+                            ToolBox.ClearCursor();
+                        }
                     }
                 }
+
+                // PARTY Drink
+                if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
+                    return;
+
+                // Life Tap
+                if (Me.HealthPercent > Me.ManaPercentage
+                    && settings.UseLifeTap
+                    && cast.OnSelf(LifeTap))
+                    return;
             }
-
-            // PARTY Drink
-            if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
-                return;
-
-            // Life Tap
-            if (Me.HealthPercent > Me.ManaPercentage
-                && settings.UseLifeTap
-                && cast.OnSelf(LifeTap))
-                return;
         }
 
         protected override void Pull()
@@ -184,7 +187,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             // Soulshatter
             if (SoulShatter.IsSpellUsable
                 && settings.UseSoulShatter
-                && AIOParty.EnemiesClose.Exists(m => m.IsTargetingMe)
+                && AIORadar.CloseUnitsTargetingMe.Count > 0
                 && ToolBox.CountItemStacks("Soul Shard") > 0
                 && cast.OnSelf(SoulShatter))
                 return;

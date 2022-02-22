@@ -11,7 +11,10 @@ namespace WholesomeTBCAIO.Rotations.Paladin
         {
             RangeManager.SetRange(30);
 
-            base.BuffRotation();
+            if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
+            {
+                base.BuffRotation();
+            }
         }
 
         protected override void HealerCombat()
@@ -20,12 +23,12 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             WoWUnit Target = ObjectManager.Target;
 
-            List<AIOPartyMember> allyNeedBigHeal = AIOParty.Group
+            List<AIOPartyMember> allyNeedBigHeal = AIOParty.GroupAndRaid
                 .FindAll(a => a.IsAlive && a.HealthPercent < 40)
                 .OrderBy(a => a.HealthPercent)
                 .ToList();
 
-            List<AIOPartyMember> allyNeedSmallHeal = AIOParty.Group
+            List<AIOPartyMember> allyNeedSmallHeal = AIOParty.GroupAndRaid
                 .FindAll(a => a.IsAlive && a.HealthPercent < settings.PartyFlashOfLightThreshold)
                 .OrderBy(a => a.HealthPercent)
                 .ToList();
@@ -38,7 +41,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Lay On Hands
             if (Me.ManaPercentage < 10)
             {
-                List<AIOPartyMember> needsLoH = AIOParty.Group
+                List<AIOPartyMember> needsLoH = AIOParty.GroupAndRaid
                     .FindAll(m => m.HealthPercent < 10)
                     .OrderBy(m => m.HealthPercent)
                     .ToList();
@@ -64,11 +67,11 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 return;
 
             // PARTY Holy Light
-            List<AIOPartyMember> allyNeedMediumHeal = AIOParty.Group
+            List<AIOPartyMember> allyNeedMediumHeal = AIOParty.GroupAndRaid
                 .FindAll(a => a.IsAlive && a.HealthPercent < settings.PartyHolyLightThreshold)
                 .OrderBy(a => a.HealthPercent)
                 .ToList();
-            if (allyNeedMediumHeal.Count > 0 
+            if (allyNeedMediumHeal.Count > 0
                 && cast.OnFocusUnit(HolyLight, allyNeedMediumHeal[0]))
                 return;
 
@@ -99,7 +102,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Purifiy
             if (settings.PartyPurify)
             {
-                WoWPlayer needsPurify = AIOParty.Group
+                WoWPlayer needsPurify = AIOParty.GroupAndRaid
                     .Find(m => ToolBox.HasDiseaseDebuff(m.Name) || ToolBox.HasPoisonDebuff(m.Name));
                 if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
@@ -108,7 +111,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Cleanse
             if (settings.PartyCleanse)
             {
-                WoWPlayer needsCleanse = AIOParty.Group
+                WoWPlayer needsCleanse = AIOParty.GroupAndRaid
                     .Find(m => ToolBox.HasMagicDebuff(m.Name));
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;

@@ -62,7 +62,7 @@ namespace WholesomeTBCAIO.Helpers
         private void RacialBloodFury()
         {
             if (BloodFury.KnownSpell
-                && AIOParty.Group.Count <= 1
+                && AIOParty.GroupAndRaid.Count <= 1
                 && BloodFury.IsSpellUsable
                 && ObjectManager.Target.HealthPercent > 70)
             {

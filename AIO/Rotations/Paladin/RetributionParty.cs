@@ -9,7 +9,10 @@ namespace WholesomeTBCAIO.Rotations.Paladin
     {
         protected override void BuffRotation()
         {
-            base.BuffRotation();
+            if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
+            {
+                base.BuffRotation();
+            }
         }
 
         protected override void PullRotation()
@@ -21,7 +24,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             ToolBox.CheckAutoAttack(Attack);
 
             // PARTY Lay On Hands
-            List<AIOPartyMember> needsLoH = AIOParty.Group
+            List<AIOPartyMember> needsLoH = AIOParty.GroupAndRaid
                 .FindAll(m => m.HealthPercent < 10)
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
@@ -31,7 +34,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Purifiy
             if (settings.PartyPurify)
             {
-                WoWPlayer needsPurify = AIOParty.Group
+                WoWPlayer needsPurify = AIOParty.GroupAndRaid
                     .Find(m => ToolBox.HasDiseaseDebuff(m.Name) || ToolBox.HasPoisonDebuff(m.Name));
                 if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
@@ -40,7 +43,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Cleanse
             if (settings.PartyCleanse)
             {
-                WoWPlayer needsCleanse = AIOParty.Group
+                WoWPlayer needsCleanse = AIOParty.GroupAndRaid
                     .Find(m => ToolBox.HasMagicDebuff(m.Name));
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;
@@ -99,7 +102,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             ToolBox.CheckAutoAttack(Attack);
 
             // PARTY Lay On Hands
-            List<AIOPartyMember> needsLoH = AIOParty.Group
+            List<AIOPartyMember> needsLoH = AIOParty.GroupAndRaid
                 .FindAll(m => m.HealthPercent < 10)
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
@@ -109,7 +112,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Purifiy
             if (settings.PartyPurify)
             {
-                WoWPlayer needsPurify = AIOParty.Group
+                WoWPlayer needsPurify = AIOParty.GroupAndRaid
                     .Find(m => ToolBox.HasDiseaseDebuff(m.Name) || ToolBox.HasPoisonDebuff(m.Name));
                 if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
@@ -118,7 +121,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Cleanse
             if (settings.PartyCleanse)
             {
-                WoWPlayer needsCleanse = AIOParty.Group
+                WoWPlayer needsCleanse = AIOParty.GroupAndRaid
                     .Find(m => ToolBox.HasMagicDebuff(m.Name));
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;

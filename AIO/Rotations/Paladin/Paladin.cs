@@ -96,7 +96,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                     if (StatusChecker.InCombatNoTarget())
                         specialization.CombatNoTarget();
 
-                    if (AIOParty.Group.Any(p => p.InCombatFlagOnly && p.GetDistance < 50))
+                    if (AIOParty.GroupAndRaid.Any(p => p.InCombatFlagOnly && p.GetDistance < 50))
                         specialization.HealerCombat();
                 }
                 catch (Exception arg)
@@ -119,7 +119,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                     return;
 
                 // PARTY Resurrection
-                List<AIOPartyMember> needRes = AIOParty.Group
+                List<AIOPartyMember> needRes = AIOParty.GroupAndRaid
                     .FindAll(m => m.IsDead)
                     .OrderBy(m => m.GetDistance)
                     .ToList();
@@ -129,7 +129,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 if (settings.PartyHealOOC || specialization is PaladinHolyParty)
                 {
                     // PARTY Heal
-                    List<AIOPartyMember> needHeal = AIOParty.Group
+                    List<AIOPartyMember> needHeal = AIOParty.GroupAndRaid
                         .FindAll(m => m.HealthPercent < 70)
                         .OrderBy(m => m.HealthPercent)
                         .ToList();
@@ -137,7 +137,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                         return;
 
                     // PARTY Flash of Light
-                    List<AIOPartyMember> needFoL = AIOParty.Group
+                    List<AIOPartyMember> needFoL = AIOParty.GroupAndRaid
                         .FindAll(m => m.HealthPercent < 85)
                         .OrderBy(m => m.HealthPercent)
                         .ToList();
@@ -146,13 +146,13 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 }
 
                 // PARTY Purifiy
-                WoWPlayer needsPurify = AIOParty.Group
+                WoWPlayer needsPurify = AIOParty.GroupAndRaid
                     .Find(m => ToolBox.HasDiseaseDebuff(m.Name) || ToolBox.HasPoisonDebuff(m.Name));
                 if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
 
                 // Party Cleanse
-                WoWPlayer needsCleanse = AIOParty.Group
+                WoWPlayer needsCleanse = AIOParty.GroupAndRaid
                     .Find(m => ToolBox.HasMagicDebuff(m.Name));
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;
@@ -313,11 +313,11 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 }
             }
             
-            foreach (AIOPartyMember member in AIOParty.Group)
+            foreach (AIOPartyMember member in AIOParty.GroupAndRaid)
             {
                 // Avoid paladin loop buff
                 if (member.WowClass == WoWClass.Paladin
-                    && AIOParty.Group.Exists(m => m.WowClass == WoWClass.Paladin && (m.HaveBuff("Drink") || m.GetDistance > 25)))
+                    && AIOParty.GroupAndRaid.Exists(m => m.WowClass == WoWClass.Paladin && (m.HaveBuff("Drink") || m.GetDistance > 25)))
                     continue;
 
                 List<AIOSpell> buffsForThisMember = settings.PartyDetectSpecs ? GetBlessingPerSpec(member.Specialization, member.WowClass) : GetBlessingPerClass(member.WowClass);

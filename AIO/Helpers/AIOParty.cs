@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
+﻿using System.Collections.Generic;
 using System.Threading;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
@@ -10,88 +8,90 @@ namespace WholesomeTBCAIO.Helpers
 {
     public class AIOParty
     {
-        public static bool _isRunning;
-        public static List<AIOPartyMember> Group { get; private set; } = new List<AIOPartyMember>();
-        public static Dictionary<string, List<AIOPartyMember>> RaidGroups { get; private set; } = new Dictionary<string, List<AIOPartyMember>>();
-        public static List<WoWUnit> AllUnits { get; private set; } = new List<WoWUnit>();
-        public static List<WoWUnit> EnemiesClose { get; private set; } = new List<WoWUnit>();
+        private static object _groupLock = new object();
+        private static List<AIOPartyMember> _groupAndRaid = new List<AIOPartyMember>();
+        private static Dictionary<int, List<AIOPartyMember>> _raidGroups = new Dictionary<int, List<AIOPartyMember>>();
+        private static Dictionary<string, string> _partySpecsCache = new Dictionary<string, string>();
+
         public static bool ActivateSpecRecord { get; set; }
         public static bool InspectTalentReady { get; set; } = true;
-        private static Dictionary<string, string> PartySpecsCache { get; set; } = new Dictionary<string, string>();
 
-        public static void DoPartyUpdatePulse(object sender, DoWorkEventArgs args)
+        public static Dictionary<int, List<AIOPartyMember>> RaidGroups
         {
-            _isRunning = true;
-            while (Main.isLaunched && _isRunning)
+            get
             {
-                try
+                lock (_groupLock)
                 {
-                    if (StatusChecker.BasicConditions())
-                    {
-                        bool changed = false;
-
-                        if (Group.Exists(p => p.Name == ""))
-                            Group.Clear();
-
-                        List<WoWPlayer> allMembersList = new List<WoWPlayer>();
-                        allMembersList.AddRange(Party.GetRaidMembers());
-                        allMembersList.AddRange(Party.GetParty());
-
-                        DoRaidUpdate();
-
-                        // Add players to my own group list
-                        foreach (WoWPlayer player in allMembersList)
-                        {
-                            if (!Group.Exists(m => m.Guid == player.Guid))
-                            {
-                                Group.Add(new AIOPartyMember(player.GetBaseAddress));
-                                //Logger.Log($"Added {player.Name} to party");
-                                changed = true;
-                            }
-                        }
-
-                        // Add me
-                        if (!Group.Exists(m => m.Guid == ObjectManager.Me.Guid))
-                        {
-                            //Logger.Log($"Added MYSELF to raid/party");
-                            Group.Add(new AIOPartyMember(ObjectManager.Me.GetBaseAddress));
-                            changed = true;
-                        }
-
-                        // Remove players
-                        for (int i = Group.Count - 1; i >= 0; i--)
-                        {
-                            if (Group[i].Guid != ObjectManager.Me.Guid && !allMembersList.Exists(m => m.Guid == Group[i].Guid))
-                            {
-                                //Logger.Log($"Removing {Group[i].Name} from party");
-                                Group.Remove(Group[i]);
-                                changed = true;
-                            }
-                        }
-
-                        if (changed && Group.Count > 1)
-                        {
-                            string logMessage = "Party detected [";
-                            Group.ForEach(m => logMessage += m.Name + "-");
-                            logMessage = logMessage.Remove(logMessage.Length - 1);
-                            logMessage += "]";
-                            Logger.Log(logMessage);
-                        }
-
-                        AllUnits = ObjectManager.GetObjectWoWUnit();
-                        EnemiesClose = AllUnits.FindAll(e => e.GetDistance < 50);
-
-                        if (ActivateSpecRecord)
-                            RecordPartySpecs();
-                    }
+                    return _raidGroups;
                 }
-                catch (Exception arg)
-                {
-                    Logger.LogError("AIOParty -> " + string.Concat(arg));
-                }
-                Thread.Sleep(5000);
             }
-            _isRunning = false;
+        }
+
+        public static List<AIOPartyMember> GroupAndRaid
+        {
+            get
+            {
+                lock (_groupLock)
+                {
+                    return _groupAndRaid;
+                }
+            }
+        }
+
+        public static List<AIOPartyMember> ClosePartyMembers
+        {
+            get
+            {
+                lock (_groupLock)
+                {
+                    return _groupAndRaid.FindAll(m => m.GetDistance < 60);
+                }
+            }
+        }
+
+        public static void UpdateParty()
+        {
+            if (StatusChecker.BasicConditions())
+            {
+                lock (_groupLock)
+                {
+                    if (_groupAndRaid.Exists(p => p.Name == ""))
+                        _groupAndRaid.Clear();
+
+                    List<WoWPlayer> allMembersList = new List<WoWPlayer>();
+                    allMembersList.AddRange(Party.GetRaidMembers());
+                    allMembersList.AddRange(Party.GetParty());
+
+                    // Add players to my own group list
+                    foreach (WoWPlayer player in allMembersList)
+                    {
+                        if (!_groupAndRaid.Exists(m => m.Guid == player.Guid))
+                        {
+                            _groupAndRaid.Add(new AIOPartyMember(player.GetBaseAddress));
+                        }
+                    }
+
+                    // Add me
+                    if (!_groupAndRaid.Exists(m => m.Guid == ObjectManager.Me.Guid))
+                    {
+                        _groupAndRaid.Add(new AIOPartyMember(ObjectManager.Me.GetBaseAddress));
+                    }
+
+                    // Remove players
+                    for (int i = _groupAndRaid.Count - 1; i >= 0; i--)
+                    {
+                        if (_groupAndRaid[i].Guid != ObjectManager.Me.Guid && !allMembersList.Exists(m => m.Guid == _groupAndRaid[i].Guid))
+                        {
+                            _groupAndRaid.Remove(_groupAndRaid[i]);
+                        }
+                    }
+
+                    if (ActivateSpecRecord)
+                        RecordPartySpecs();
+
+                    DoRaidUpdate();
+                }
+            }
         }
 
         public static void DoRaidUpdate()
@@ -105,7 +105,7 @@ namespace WholesomeTBCAIO.Helpers
                     end
                     return result");
 
-            RaidGroups.Clear();
+            _raidGroups.Clear();
             if (raidString == "0")
             {
                 return;
@@ -120,27 +120,43 @@ namespace WholesomeTBCAIO.Helpers
                     if (parts.Length == 2)
                     {
                         string name = parts[0];
-                        string subgroupNumber = parts[1];
+                        string stringSubgroupNumber = parts[1];
 
-                        AIOPartyMember player = Group.Find(m => (m.Name == name) && m.IsValid);
-                        if (player != null)
+                        if (int.TryParse(parts[1], out int subGroupNumber))
                         {
-                            if (RaidGroups.TryGetValue(subgroupNumber, out var subgroup))
+                            AIOPartyMember player = _groupAndRaid.Find(m => (m.Name == name) && m.IsValid);
+                            if (player != null)
                             {
-                                subgroup.Add(player);
+                                if (_raidGroups.TryGetValue(subGroupNumber, out var subgroup))
+                                {
+                                    subgroup.Add(player);
+                                }
+                                else
+                                {
+                                    _raidGroups[subGroupNumber] = new List<AIOPartyMember>() { player };
+                                }
                             }
-                            else
-                            {                                
-                                RaidGroups[subgroupNumber] = new List<AIOPartyMember>() { player };
-                            }
+                        }
+                        else
+                        {
+                            Logger.LogError($"{name} - {subGroupNumber}, not a valid group number");
                         }
                     }
                 }
             }
         }
 
-        public static List<WoWUnit> EnemiesFighting => EnemiesClose
-            .FindAll(e => e.InCombatFlagOnly && e.IsTargetingMeOrMyPetOrPartyMember);
+        public static List<WoWUnit> EnemiesFighting
+        {
+            get
+            {
+                lock (_groupLock)
+                {
+                    return AIORadar.AllUnits.FindAll(e => GroupAndRaid.Exists(u => e.Target == u.Guid));
+                }
+            }
+        }
+
 
         public static void SwitchTarget(Cast cast, AIOSpell spell)
         {
@@ -151,23 +167,27 @@ namespace WholesomeTBCAIO.Helpers
                 && !ToolBox.HasDebuff("Taunt", "target")
                 && !ToolBox.HasDebuff("Growl", "target"))
             {
-                foreach (WoWUnit enemy in EnemiesFighting)
+                lock (_groupLock)
                 {
-                    WoWPlayer partyMemberToSave = Group.Find(m => enemy.Target == m.Guid && (m.Guid != ObjectManager.Me.Guid || !ObjectManager.Me.HasTarget));
-
-                    if (partyMemberToSave != null)
+                    foreach (WoWUnit enemy in EnemiesFighting)
                     {
-                        Logger.Log($"Regaining aggro [{enemy.Name} attacking {partyMemberToSave.Name}]");
-                        ObjectManager.Me.Target = enemy.Guid;
+                        WoWPlayer partyMemberToSave = _groupAndRaid
+                            .Find(m => enemy.Target == m.Guid && (m.Guid != ObjectManager.Me.Guid || !ObjectManager.Me.HasTarget));
 
-                        if (spell != null)
+                        if (partyMemberToSave != null)
                         {
-                            if (spell.Name == "Righteous Defense")
-                                cast.OnFocusUnit(spell, partyMemberToSave);
-                            if (spell.Name == "Intervene" && enemy.Position.DistanceTo(partyMemberToSave.Position) < 10)
-                                cast.OnTarget(spell);
+                            Logger.Log($"Regaining aggro [{enemy.Name} attacking {partyMemberToSave.Name}]");
+                            ObjectManager.Me.Target = enemy.Guid;
+
+                            if (spell != null)
+                            {
+                                if (spell.Name == "Righteous Defense")
+                                    cast.OnFocusUnit(spell, partyMemberToSave);
+                                if (spell.Name == "Intervene" && enemy.Position.DistanceTo(partyMemberToSave.Position) < 10)
+                                    cast.OnTarget(spell);
+                            }
+                            return;
                         }
-                        return;
                     }
                 }
             }
@@ -175,36 +195,39 @@ namespace WholesomeTBCAIO.Helpers
 
         public static void RecordPartySpecs()
         {
-            foreach (AIOPartyMember p in Group)
+            lock (_groupLock)
             {
-                if (p.Guid != ObjectManager.Me.Guid
-                    && p.GetDistance < 25
-                    && p.IsAlive
-                    && p.IsValid
-                    && p.Specialization == null)
+                foreach (AIOPartyMember p in _groupAndRaid)
                 {
-                    if (PartySpecsCache.ContainsKey(p.Name))
+                    if (p.Guid != ObjectManager.Me.Guid
+                        && p.GetDistance < 25
+                        && p.IsAlive
+                        && p.IsValid
+                        && p.Specialization == null)
                     {
-                        p.Specialization = PartySpecsCache[p.Name];
-                        continue;
-                    }
+                        if (_partySpecsCache.ContainsKey(p.Name))
+                        {
+                            p.Specialization = _partySpecsCache[p.Name];
+                            continue;
+                        }
 
-                    string spec = ToolBox.GetSpec(p.Name);
+                        string spec = ToolBox.GetSpec(p.Name);
 
-                    if (spec == null)
-                    {
-                        Logger.Log($"Couldn't record {p.Name}'s specialization");
-                        p.Specialization = null;
+                        if (spec == null)
+                        {
+                            Logger.Log($"Couldn't record {p.Name}'s specialization");
+                            p.Specialization = null;
+                            break;
+                        }
+
+                        if (spec == "retry")
+                            break;
+
+                        p.Specialization = spec;
+                        _partySpecsCache.Add(p.Name, spec);
+                        Logger.Log($"{p.Name}'s specialization is {p.Specialization}");
                         break;
                     }
-
-                    if (spec == "retry")
-                        break;
-
-                    p.Specialization = spec;
-                    PartySpecsCache.Add(p.Name, spec);
-                    Logger.Log($"{p.Name}'s specialization is {p.Specialization}");
-                    break;
                 }
             }
         }
@@ -212,7 +235,10 @@ namespace WholesomeTBCAIO.Helpers
         // Party Drink
         public static bool PartyDrink(string drinkName, int threshold)
         {
-            Timer wait = new Timer(2000);
+            if (ObjectManager.Me.ManaPercentage >= threshold)
+                return false;
+
+            Timer wait = new Timer(1000);
             while (!wait.IsReady && !ObjectManager.Me.InCombatFlagOnly && !Fight.InFight)
                 Thread.Sleep(300);
 
@@ -238,9 +264,14 @@ namespace WholesomeTBCAIO.Helpers
             return false;
         }
 
-        public static void InspectTalentReadyHeandler()
+        public static void InspectTalentReadyHandler()
         {
             InspectTalentReady = true;
+        }
+
+        public static void GroupRosterChangedHandler()
+        {
+            UpdateParty();
         }
     }
 }

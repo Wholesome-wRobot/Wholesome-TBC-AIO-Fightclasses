@@ -10,60 +10,63 @@ namespace WholesomeTBCAIO.Rotations.Druid
     {
         protected override void BuffRotation()
         {
-            base.BuffRotation();
+            if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
+            {
+                base.BuffRotation();
 
-            // PARTY Remove Curse
-            WoWPlayer needRemoveCurse = AIOParty.Group
-                .Find(m => ToolBox.HasCurseDebuff(m.Name));
-            if (needRemoveCurse != null && cast.OnFocusUnit(RemoveCurse, needRemoveCurse))
-                return;
+                // PARTY Remove Curse
+                WoWPlayer needRemoveCurse = AIOParty.GroupAndRaid
+                    .Find(m => ToolBox.HasCurseDebuff(m.Name));
+                if (needRemoveCurse != null && cast.OnFocusUnit(RemoveCurse, needRemoveCurse))
+                    return;
 
-            // PARTY Abolish Poison
-            WoWPlayer needAbolishPoison = AIOParty.Group
-                .Find(m => ToolBox.HasPoisonDebuff(m.Name));
-            if (needAbolishPoison != null && cast.OnFocusUnit(AbolishPoison, needAbolishPoison))
-                return;
+                // PARTY Abolish Poison
+                WoWPlayer needAbolishPoison = AIOParty.GroupAndRaid
+                    .Find(m => ToolBox.HasPoisonDebuff(m.Name));
+                if (needAbolishPoison != null && cast.OnFocusUnit(AbolishPoison, needAbolishPoison))
+                    return;
 
-            // PARTY Mark of the Wild
-            WoWPlayer needMotW = AIOParty.Group
-                .Find(m => !m.HaveBuff(MarkOfTheWild.Name));
-            if (needMotW != null && cast.OnFocusUnit(MarkOfTheWild, needMotW))
-                return;
+                // PARTY Mark of the Wild
+                WoWPlayer needMotW = AIOParty.GroupAndRaid
+                    .Find(m => !m.HaveBuff(MarkOfTheWild.Name));
+                if (needMotW != null && cast.OnFocusUnit(MarkOfTheWild, needMotW))
+                    return;
 
-            // PARTY Thorns
-            WoWPlayer needThorns = AIOParty.Group
-                .Find(m => !m.HaveBuff(Thorns.Name));
-            if (needThorns != null && cast.OnFocusUnit(Thorns, needThorns))
-                return;
+                // PARTY Thorns
+                WoWPlayer needThorns = AIOParty.GroupAndRaid
+                    .Find(m => !m.HaveBuff(Thorns.Name));
+                if (needThorns != null && cast.OnFocusUnit(Thorns, needThorns))
+                    return;
 
-            // Omen of Clarity
-            if (!Me.HaveBuff("Omen of Clarity")
-                && OmenOfClarity.IsSpellUsable
-                && cast.OnTarget(OmenOfClarity))
-                return;
+                // Omen of Clarity
+                if (!Me.HaveBuff("Omen of Clarity")
+                    && OmenOfClarity.IsSpellUsable
+                    && cast.OnTarget(OmenOfClarity))
+                    return;
 
-            // Regrowth
-            WoWPlayer needRegrowth = AIOParty.Group
-                .Find(m => m.HealthPercent < 80 && !m.HaveBuff("Regrowth"));
-            if (needRegrowth != null
-                && cast.OnFocusUnit(Regrowth, needRegrowth))
-                return;
+                // Regrowth
+                WoWPlayer needRegrowth = AIOParty.GroupAndRaid
+                    .Find(m => m.HealthPercent < 80 && !m.HaveBuff("Regrowth"));
+                if (needRegrowth != null
+                    && cast.OnFocusUnit(Regrowth, needRegrowth))
+                    return;
 
-            // Rejuvenation
-            WoWPlayer needRejuvenation = AIOParty.Group
-                .Find(m => m.HealthPercent < 80 && !m.HaveBuff("Rejuvenation"));
-            if (needRejuvenation != null
-                && cast.OnFocusUnit(Rejuvenation, needRejuvenation))
-                return;
+                // Rejuvenation
+                WoWPlayer needRejuvenation = AIOParty.GroupAndRaid
+                    .Find(m => m.HealthPercent < 80 && !m.HaveBuff("Rejuvenation"));
+                if (needRejuvenation != null
+                    && cast.OnFocusUnit(Rejuvenation, needRejuvenation))
+                    return;
 
-            // PARTY Drink
-            if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
-                return;
+                // PARTY Drink
+                if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
+                    return;
 
-            // Tree form
-            if (!Me.HaveBuff("Tree of Life")
-                && cast.OnSelf(TreeOfLife))
-                return;
+                // Tree form
+                if (!Me.HaveBuff("Tree of Life")
+                    && cast.OnSelf(TreeOfLife))
+                    return;
+            }
         }
 
         protected override void HealerCombat()
@@ -71,14 +74,14 @@ namespace WholesomeTBCAIO.Rotations.Druid
             base.HealerCombat();
 
             WoWUnit Target = ObjectManager.Target;
-            List<AIOPartyMember> lisPartyOrdered = AIOParty.Group
+            List<AIOPartyMember> lisPartyOrdered = AIOParty.GroupAndRaid
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
 
             // Party Tranquility
-            if (settings.PartyTranquility && !AIOParty.Group.Any(e => e.IsTargetingMe))
+            if (settings.PartyTranquility && !AIOParty.GroupAndRaid.Any(e => e.IsTargetingMe))
             {
-                bool needTranquility = AIOParty.Group
+                bool needTranquility = AIOParty.GroupAndRaid
                     .FindAll(m => m.HealthPercent < 50)
                     .Count > 2;
                 if (needTranquility

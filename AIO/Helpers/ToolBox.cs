@@ -1,15 +1,11 @@
 ﻿using robotManager.Helpful;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using wManager.Wow.Class;
-using wManager.Wow.Helpers;
-using wManager.Wow.ObjectManager;
-using wManager;
 using WholesomeTBCAIO.Rotations;
 using WholesomeTBCAIO.Rotations.Druid;
 using WholesomeTBCAIO.Rotations.Hunter;
-using static WholesomeTBCAIO.Helpers.Enums;
 using WholesomeTBCAIO.Rotations.Mage;
 using WholesomeTBCAIO.Rotations.Paladin;
 using WholesomeTBCAIO.Rotations.Priest;
@@ -17,14 +13,61 @@ using WholesomeTBCAIO.Rotations.Rogue;
 using WholesomeTBCAIO.Rotations.Shaman;
 using WholesomeTBCAIO.Rotations.Warlock;
 using WholesomeTBCAIO.Rotations.Warrior;
-using System;
+using wManager;
 using wManager.Wow.Bot.Tasks;
+using wManager.Wow.Class;
+using wManager.Wow.Helpers;
+using wManager.Wow.ObjectManager;
+using static WholesomeTBCAIO.Helpers.Enums;
 
 namespace WholesomeTBCAIO.Helpers
 {
     public class ToolBox
     {
         #region Combat
+
+        // Returns the center of aggregated positions
+        // radius is the max radius, ex 15 for Circle of Healing
+        // minCount is the minimum wanted amount of positions aggregated together
+        public static Vector3 FindAggregatedCenter(List<Vector3> positions, int radius, int minCount)
+        {
+            Vector3 centerVector = GetCenterVector(positions);
+            int nbAttempts = 5;
+            for (int i = 0; i < nbAttempts; i++)
+            {
+                if (i >= nbAttempts - 1 || positions.Count < minCount)
+                {
+                    return null;
+                }
+
+                List<Vector3> positionsInRadius = positions
+                    .FindAll(pos => pos.DistanceTo(centerVector) < radius)
+                    .OrderBy(pos => pos.DistanceTo(centerVector))
+                    .ToList();
+
+                if (positionsInRadius.Count < minCount)
+                {
+                    positions.RemoveAt(positions.Count - 1);
+                    centerVector = GetCenterVector(positions);
+                }
+                else
+                {
+                    return GetCenterVector(positionsInRadius);
+                }
+            }
+
+            return null;
+        }
+
+        private static Vector3 GetCenterVector(List<Vector3> positions)
+        {
+            Vector3 centerVector = new Vector3(0, 0, 0);
+            foreach (Vector3 position in positions)
+            {
+                centerVector += position;
+            }
+            return centerVector /= positions.Count;
+        }
 
         // Pull
         public static bool Pull(Cast cast, bool alwaysPull, List<AIOSpell> spells)
@@ -318,6 +361,7 @@ namespace WholesomeTBCAIO.Helpers
             // PRIEST
             if (rotation is Shadow) return (RotationType.Solo, RotationRole.DPS);
             if (rotation is ShadowParty) return (RotationType.Party, RotationRole.DPS);
+            if (rotation is HolyPriestParty) return (RotationType.Party, RotationRole.Healer);
             if (rotation is HolyPriestRaid) return (RotationType.Party, RotationRole.Healer);
             // ROGUE
             if (rotation is Combat) return (RotationType.Solo, RotationRole.DPS);
@@ -363,11 +407,11 @@ namespace WholesomeTBCAIO.Helpers
 
             foreach (WoWUnit unitAround in surroundingEnemies)
             {
-                if (unitAround.IsAlive 
-                    && !unitAround.IsTapDenied 
-                    && unitAround.IsValid 
-                    && !unitAround.IsTaggedByOther 
-                    && unitAround.IsAttackable 
+                if (unitAround.IsAlive
+                    && !unitAround.IsTapDenied
+                    && unitAround.IsValid
+                    && !unitAround.IsTaggedByOther
+                    && unitAround.IsAttackable
                     && unitAround.Position.DistanceTo(unit.Position) < distance
                     && unitAround.Guid != ObjectManager.Target.Guid)
                 {
@@ -384,12 +428,12 @@ namespace WholesomeTBCAIO.Helpers
             int result = 0;
             foreach (WoWUnit unit in surroundingEnemies)
             {
-                if (unit.IsAlive 
-                    && !unit.IsTapDenied 
-                    && unit.IsValid 
-                    && !unit.IsTaggedByOther 
+                if (unit.IsAlive
+                    && !unit.IsTapDenied
+                    && unit.IsValid
+                    && !unit.IsTaggedByOther
                     && !unit.PlayerControlled
-                    && unit.IsAttackable 
+                    && unit.IsAttackable
                     && unit.GetDistance < distance)
                     result++;
             }
@@ -416,7 +460,7 @@ namespace WholesomeTBCAIO.Helpers
 
             return null;
         }
-
+        /*
         // Returns the unit in the middle of the pack
         public static WoWUnit GetBestAoETarget(float range, IEnumerable<WoWUnit> units)
         {
@@ -426,13 +470,13 @@ namespace WholesomeTBCAIO.Helpers
                 return null;
             Vector3 center = unitsInRange
                 .Select(unit => unit.Position)
-                .Aggregate(new Vector3(0, 0, 0), (s, v) => s + v) / (float)unitsInRange.Count;
+                .Aggregate(new Vector3(0, 0, 0), (s, v) => s + v) / unitsInRange.Count;
             WoWUnit unitClosestToCenter = unitsInRange
                 .OrderBy(unit => unit.Position.DistanceTo(center))
                 .First();
             return unitClosestToCenter;
         }
-
+        */
         // Get Talent Rank
         public static int GetTalentRank(int tabIndex, int talentIndex)
         {
@@ -496,7 +540,7 @@ namespace WholesomeTBCAIO.Helpers
         #endregion
 
         #region Items
-               
+
         // Add to not sell  list
         public static void AddToDoNotSellList(string itemName)
         {
@@ -618,7 +662,7 @@ namespace WholesomeTBCAIO.Helpers
 
         public static void UseConsumableToSelfHeal()
         {
-            List<string> consumables = new List<string>{"Master Healthstone"};
+            List<string> consumables = new List<string> { "Master Healthstone" };
             UseFirstMatchingItem(consumables);
         }
 

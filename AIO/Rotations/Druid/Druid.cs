@@ -89,7 +89,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     if (StatusChecker.InCombatNoTarget())
                         specialization.CombatNoTarget();
 
-                    if (AIOParty.Group.Any(p => p.InCombatFlagOnly))
+                    if (AIOParty.GroupAndRaid.Any(p => p.InCombatFlagOnly))
                         specialization.HealerCombat();
                 }
                 catch (Exception arg)
