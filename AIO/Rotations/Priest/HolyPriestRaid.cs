@@ -33,6 +33,14 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
         protected override void HealerCombat()
         {
+            // Target an enemy if we have a shadowfiend
+            if (ObjectManager.Pet.IsValid && !ObjectManager.Me.HasTarget)
+            {
+                WoWUnit target = AIOParty.EnemiesFighting.Find(u => u.IsValid);
+                if (target != null)
+                    ObjectManager.Me.Target = target.Guid;
+            }
+
             List<AIOPartyMember> membersByMissingHealth = AIOParty.ClosePartyMembers
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
@@ -62,8 +70,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             }
 
             // ShadowFiend
-            if (Me.ManaPercentage < 50
-                && cast.OnTarget(Shadowfiend))
+            if (Me.ManaPercentage < 50 && !ObjectManager.Pet.IsValid && cast.OnSelf(Shadowfiend))
                 return;
 
             if (AoEHeal())
