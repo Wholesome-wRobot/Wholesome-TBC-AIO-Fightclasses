@@ -60,6 +60,11 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             Rotation();
         }
 
+        public bool AnswerReadyCheck()
+        {
+            return true;
+        }
+
         public void Dispose()
         {
             wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;

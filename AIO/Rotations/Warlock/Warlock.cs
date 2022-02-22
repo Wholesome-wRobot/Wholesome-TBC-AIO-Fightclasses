@@ -62,6 +62,11 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             Rotation();
         }
 
+        public bool AnswerReadyCheck()
+        {
+            return true;
+        }
+
         public void Dispose()
         {
             _petPulseThread.DoWork -= PetThread;

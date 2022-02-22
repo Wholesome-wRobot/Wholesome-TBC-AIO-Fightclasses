@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using WholesomeTBCAIO.Settings;
 using wManager.Events;
@@ -20,6 +22,8 @@ namespace WholesomeTBCAIO.Helpers
         private AIOSpell CurrentSpell { get; set; }
         public bool IsApproachingTarget { get; set; }
         private bool CombatLogON { get; set; }
+
+        private static Random rng = new Random();
 
         public Cast(AIOSpell defaultBaseSpell, AIOSpell wandSpell, BaseSettings settings)
         {
@@ -67,6 +71,26 @@ namespace WholesomeTBCAIO.Helpers
                 if (PetSpell(spellName))
                     return true;
             return false;
+        }
+
+        public bool BuffSelf(AIOSpell spell, uint reagent = 0)
+        {
+            return Buff(new List<WoWUnit>() { ObjectManager.Me }, spell, reagent);
+        }
+
+        public bool Buff(IEnumerable<WoWUnit> units, AIOSpell spell, uint reagent = 0)
+        {
+            if (reagent != 0 && !ItemsManager.HasItemById(reagent))
+                return false;
+            WoWUnit[] unitArray = units as WoWUnit[] ?? units.ToArray();
+            List<WoWUnit> unitsNeedsBuff = unitArray
+                .ToList()
+                .FindAll(m => !m.HaveBuff(spell.Name))
+                .OrderBy(m => rng.Next())
+                .ToList();
+            if (unitsNeedsBuff.Count <= 0)
+                return false;
+            return OnFocusUnit(spell, unitsNeedsBuff[0]);
         }
 
         public bool OnTarget(AIOSpell s, bool stopWandAndCast = true)

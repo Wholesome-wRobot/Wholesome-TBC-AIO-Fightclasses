@@ -62,6 +62,10 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             Rotation();
         }
 
+        public bool AnswerReadyCheck()
+        {
+            return true;
+        }
 
         public void Dispose()
         {

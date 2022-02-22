@@ -46,39 +46,6 @@ namespace WholesomeTBCAIO.Rotations.Priest
             if (needRenew.Count > 0 && cast.OnFocusUnit(Renew, needRenew[0]))
                 return;
 
-            // PARTY Power Word Fortitude
-            WoWPlayer noPWF = AIOParty.Group
-                .Find(m => !m.HaveBuff(PowerWordFortitude.Name));
-            if (noPWF != null && cast.OnFocusUnit(PowerWordFortitude, noPWF))
-                return;
-
-            // PARTY Divine Spirit
-            WoWPlayer noDS = AIOParty.Group
-                .Find(m => m.Mana > 0 && !m.HaveBuff(DivineSpirit.Name));
-            if (noDS != null && cast.OnFocusUnit(DivineSpirit, noDS))
-                return;
-
-            // OOC Inner Fire
-            if (!Me.HaveBuff("Inner Fire")
-                && settings.UseInnerFire
-                && cast.OnSelf(InnerFire))
-                return;
-
-            // PARTY Shadow Protection
-            if (settings.PartyShadowProtection)
-            {
-                WoWPlayer noShadowProtection = AIOParty.Group
-                    .Find(m => !m.HaveBuff(ShadowProtection.Name));
-                if (noShadowProtection != null && cast.OnFocusUnit(ShadowProtection, noShadowProtection))
-                    return;
-            }
-
-            // OOC Shadow Protection
-            if (!Me.HaveBuff("Shadow Protection")
-                && settings.UseShadowProtection
-                && cast.OnSelf(ShadowProtection))
-                return;
-
             // PARTY Drink
             if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
                 return;

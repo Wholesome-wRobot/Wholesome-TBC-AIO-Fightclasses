@@ -50,6 +50,11 @@ namespace WholesomeTBCAIO.Rotations.Priest
             Rotation();
         }
 
+        public bool AnswerReadyCheck()
+        {
+            return Me.ManaPercentage > settings.PartyDrinkThreshold;
+        }
+
         public void Dispose()
         {
             FightEvents.OnFightEnd -= FightEndHandler;
@@ -116,7 +121,73 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     .ToList();
                 if (needRes.Count > 0 && cast.OnFocusUnit(Resurrection, needRes[0]))
                     return;
+
+                List<AIOPartyMember> aliveMembers = AIOParty.Group
+                    .FindAll(m => m.IsAlive && m.GetDistance < 60)
+                    .ToList();
+
+                // Party Cure Disease
+                WoWPlayer needCureDisease = aliveMembers
+                    .Find(m => ToolBox.HasDiseaseDebuff(m.Name));
+                if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
+                    return;
+
+                // Party Dispel Magic
+                WoWPlayer needDispelMagic = aliveMembers
+                    .Find(m => ToolBox.HasMagicDebuff(m.Name));
+                if (needDispelMagic != null && cast.OnFocusUnit(DispelMagic, needDispelMagic))
+                    return;
+
+                // OOC Inner Fire
+                if (settings.UseInnerFire
+                    && cast.BuffSelf(InnerFire))
+                    return;
+
+                if (BuffParty())
+                    return;
             }
+        }
+
+        protected bool BuffParty()
+        {
+            List<AIOPartyMember> aliveMembers = AIOParty.Group
+                .FindAll(m => m.IsAlive && m.GetDistance < 60)
+                .ToList();
+
+            // Prayer of Fortitude
+            if (settings.PartyPrayerOfFortitude 
+                && cast.Buff(aliveMembers, PrayerOfFortitude, 17029))
+                return true;
+
+            // Power Word Fortitude
+            if (settings.UsePowerWordFortitude 
+                && !settings.PartyPrayerOfFortitude 
+                && cast.Buff(aliveMembers, PowerWordFortitude))
+                return true;
+
+            // Prayer Of Shadow Protection
+            if (settings.PartyPrayerOfShadowProtection 
+                && cast.Buff(aliveMembers, PrayerOfShadowProtection, 17029))
+                return true;
+
+            // Shadow Protection
+            if (settings.UseShadowProtection
+                && !settings.PartyPrayerOfShadowProtection
+                && cast.Buff(aliveMembers, ShadowProtection))
+                return true;
+
+            // Prayer of Spirit
+            if (settings.PartyPrayerOfSpirit 
+                && cast.Buff(aliveMembers, PrayerOfSpirit, 17029))
+                return true;
+
+            // Divine Spirit
+            if (settings.UseDivineSpirit 
+                && !settings.PartyPrayerOfSpirit
+                && cast.Buff(aliveMembers, DivineSpirit))
+                return true;
+
+            return false;
         }
 
         protected virtual void Pull()
@@ -134,11 +205,14 @@ namespace WholesomeTBCAIO.Rotations.Priest
         protected AIOSpell Smite = new AIOSpell("Smite");
         protected AIOSpell LesserHeal = new AIOSpell("Lesser Heal");
         protected AIOSpell PowerWordFortitude = new AIOSpell("Power Word: Fortitude");
+        protected AIOSpell PrayerOfFortitude = new AIOSpell("Prayer of Fortitude");
         protected AIOSpell PowerWordShield = new AIOSpell("Power Word: Shield");
         protected AIOSpell ShadowWordPain = new AIOSpell("Shadow Word: Pain");
         protected AIOSpell ShadowWordDeath = new AIOSpell("Shadow Word: Death");
         protected AIOSpell UseWand = new AIOSpell("Shoot");
         protected AIOSpell Renew = new AIOSpell("Renew");
+        protected AIOSpell RenewRank8 = new AIOSpell("Renew", 8);
+        protected AIOSpell RenewRank10 = new AIOSpell("Renew", 10);
         protected AIOSpell MindBlast = new AIOSpell("Mind Blast");
         protected AIOSpell InnerFire = new AIOSpell("Inner Fire");
         protected AIOSpell CureDisease = new AIOSpell("Cure Disease");
@@ -154,17 +228,21 @@ namespace WholesomeTBCAIO.Rotations.Priest
         protected AIOSpell VampiricEmbrace = new AIOSpell("Vampiric Embrace");
         protected AIOSpell Shadowguard = new AIOSpell("Shadowguard");
         protected AIOSpell ShadowProtection = new AIOSpell("Shadow Protection");
+        protected AIOSpell PrayerOfShadowProtection = new AIOSpell("Prayer of Shadow Protection");
         protected AIOSpell Shadowform = new AIOSpell("Shadowform");
         protected AIOSpell VampiricTouch = new AIOSpell("Vampiric Touch");
         protected AIOSpell InnerFocus = new AIOSpell("Inner Focus");
         protected AIOSpell Shadowfiend = new AIOSpell("Shadowfiend");
         protected AIOSpell Silence = new AIOSpell("Silence");
-        protected AIOSpell DivineSpirit = new AIOSpell("Divine Spirit");
         protected AIOSpell DevouringPlague = new AIOSpell("Devouring Plague");
         protected AIOSpell Resurrection = new AIOSpell("Resurrection");
         protected AIOSpell PrayerOfHealing = new AIOSpell("Prayer of Healing");
         protected AIOSpell PrayerOfMending = new AIOSpell("Prayer of Mending");
         protected AIOSpell Fade = new AIOSpell("Fade");
+        protected AIOSpell CircleOfHealing = new AIOSpell("Circle of Healing");
+        protected AIOSpell MassDispel = new AIOSpell("Mass Dispel");
+        protected AIOSpell DivineSpirit = new AIOSpell("Divine Spirit");
+        protected AIOSpell PrayerOfSpirit = new AIOSpell("Prayer of Spirit");
 
         // EVENT HANDLERS
         private void FightEndHandler(ulong guid)

@@ -318,7 +318,7 @@ namespace WholesomeTBCAIO.Helpers
             // PRIEST
             if (rotation is Shadow) return (RotationType.Solo, RotationRole.DPS);
             if (rotation is ShadowParty) return (RotationType.Party, RotationRole.DPS);
-            if (rotation is HolyPriestParty) return (RotationType.Party, RotationRole.Healer);
+            if (rotation is HolyPriestRaid) return (RotationType.Party, RotationRole.Healer);
             // ROGUE
             if (rotation is Combat) return (RotationType.Solo, RotationRole.DPS);
             if (rotation is RogueCombatParty) return (RotationType.Party, RotationRole.DPS);
@@ -415,6 +415,22 @@ namespace WholesomeTBCAIO.Helpers
             }
 
             return null;
+        }
+
+        // Returns the unit in the middle of the pack
+        public static WoWUnit GetBestAoETarget(float range, IEnumerable<WoWUnit> units)
+        {
+            WoWUnit[] unitArray = units as WoWUnit[] ?? units.ToArray();
+            List<WoWUnit> unitsInRange = unitArray.Where(target => target.GetDistance < range).ToList();
+            if (unitsInRange.Count < 1)
+                return null;
+            Vector3 center = unitsInRange
+                .Select(unit => unit.Position)
+                .Aggregate(new Vector3(0, 0, 0), (s, v) => s + v) / (float)unitsInRange.Count;
+            WoWUnit unitClosestToCenter = unitsInRange
+                .OrderBy(unit => unit.Position.DistanceTo(center))
+                .First();
+            return unitClosestToCenter;
         }
 
         // Get Talent Rank
@@ -598,6 +614,12 @@ namespace WholesomeTBCAIO.Helpers
 
             Logger.Log("Couldn't find item");
             return 0;
+        }
+
+        public static void UseConsumableToSelfHeal()
+        {
+            List<string> consumables = new List<string>{"Master Healthstone"};
+            UseFirstMatchingItem(consumables);
         }
 
         // Uses the first item found in your bags that matches any element from the list
