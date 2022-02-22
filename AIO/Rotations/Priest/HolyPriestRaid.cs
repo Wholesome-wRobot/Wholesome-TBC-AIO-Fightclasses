@@ -42,14 +42,13 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 && cast.OnSelf(Fade))
                 return;
 
+            List<AIOPartyMember> needDispel = AIOParty.ClosePartyMembers
+                    .FindAll(m => m.IsAlive && ToolBox.HasMagicDebuff(m.Name));
 
             // PARTY Mass Dispel
             if (settings.PartyMassDispel && MassDispel.KnownSpell)
             {
-                // PARTY Mass Dispel
-                List<AIOPartyMember> needMassDispel = AIOParty.ClosePartyMembers
-                    .FindAll(m => m.IsAlive && ToolBox.HasMagicDebuff(m.Name));
-                Vector3 centerPosition = ToolBox.FindAggregatedCenter(needMassDispel.Select(u => u.Position).ToList(), 15, settings.PartyMassDispelCount);
+                Vector3 centerPosition = ToolBox.FindAggregatedCenter(needDispel.Select(u => u.Position).ToList(), 15, settings.PartyMassDispelCount);
                 if (centerPosition != null && cast.OnLocation(MassDispel, centerPosition))
                     return;
             }
@@ -83,8 +82,6 @@ namespace WholesomeTBCAIO.Rotations.Priest
             // Party Dispel Magic
             if (settings.PartyDispelMagic)
             {
-                List<AIOPartyMember> needDispel = AIOParty.ClosePartyMembers
-                    .FindAll(m => m.IsAlive && ToolBox.HasMagicDebuff(m.Name));
                 if (needDispel.Count > 0 && cast.OnFocusUnit(DispelMagic, needDispel[0]))
                     return;
             }
