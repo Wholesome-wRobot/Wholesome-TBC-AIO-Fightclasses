@@ -70,8 +70,17 @@ namespace WholesomeTBCAIO.Rotations.Priest
             }
 
             // ShadowFiend
-            if (Me.ManaPercentage < 50 && !ObjectManager.Pet.IsValid && cast.OnSelf(Shadowfiend))
-                return;
+            if (Me.ManaPercentage < 50 && !ObjectManager.Pet.IsValid)
+            {
+                WoWUnit target = AIOParty.EnemiesFighting.Find(u => u.IsValid);
+                if (target != null)
+                {
+                    ObjectManager.Me.Target = target.Guid;
+                    if (cast.OnTarget(Shadowfiend))
+                        return;
+                }
+            }
+           
 
             if (AoEHeal())
                 return;
