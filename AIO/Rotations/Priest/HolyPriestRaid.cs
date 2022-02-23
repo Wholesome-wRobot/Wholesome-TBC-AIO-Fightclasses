@@ -83,7 +83,6 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 }
             }
            
-
             if (AoEHeal())
                 return;
 
@@ -104,12 +103,26 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     return;
             }
 
-            if (membersByMissingHealth.Count > 0 && SingleTargetHeal(membersByMissingHealth[0]))
-                return;
+            string logMessage = "AlliesNeedHeal [";
+            membersByMissingHealth.ForEach(m => logMessage += m.Name + "(" + m.HealthPercent + ")-");
+            logMessage = logMessage.Remove(logMessage.Length - 1);
+            logMessage += "]";
+            Logger.LogDebug(logMessage);
+
+            foreach (var member in membersByMissingHealth)
+            {
+                if (SingleTargetHeal(member))
+                    return;
+            }
         }
 
         private bool SingleTargetHeal(WoWPlayer player, bool combat = true)
         {
+            if (combat && player.HealthPercent < 100)
+            {
+                Logger.LogDebug("SingleTargetHeal " + player.Name + " - " + player.HealthPercent + "%");
+            }
+            
             if (player.HealthPercent < 30 && cast.OnFocusUnit(FlashHeal, player))
                 return true;
             if (settings.UsePowerWordShield
@@ -192,17 +205,19 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     {
                         AIOPartyMember target = subGroupNeedCircleOfHealing
                             .Find(m => subGroupNeedCircleOfHealing.FindAll(pm => pm.Guid != m.Guid && pm.Position.DistanceTo(m.Position) < 18).Count >= 2);
-                        if (target != null && cast.OnFocusUnit(CircleOfHealing, target))
+                        if (target != null)
                         {
                             stopWatch.Stop();
-                            Logger.Log("CoH Target found in " + stopWatch.ElapsedMilliseconds + " ms");
-                            return true;
+                            Logger.LogDebug("OLD CoH Target found " + target.Name + " in" + stopWatch.ElapsedMilliseconds + " ms");
+                            if (cast.OnFocusUnit(CircleOfHealing, target))
+                            {
+                                return true;
+                            }
                         }
                     }
                 }
             }
             stopWatch.Stop();
-            Logger.Log("CoH Target NOT found in " + stopWatch.ElapsedMilliseconds + " ms");
             return false;
         }
 
@@ -235,23 +250,32 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     .Select(member => (member, count: group.FindAll(otherMember =>
                         otherMember.IsAlive
                         && otherMember.HealthPercent < healthThreshold
-                        && otherMember.Position.DistanceTo(member.Position) < CircleOfHealing.MaxRange)
+                        && otherMember.Position.DistanceTo(member.Position) < 20)
                         .Count))
                     .ToList()
                     // Removing those who would heal less members than `minimumCount`
-                    .FindAll(t => t.count > minimumCount)
+                    .FindAll(t => t.count >= minimumCount)
                     // Ordering them by count
                     .OrderByDescending(t => t.count)
                     .ToList();
-                if (alliesNeedCoH.Count > 0 && cast.OnFocusUnit(CircleOfHealing, alliesNeedCoH[0].member))
+
+                string logMessage = "AlliesNeedCoH [";
+                alliesNeedCoH.ForEach(m => logMessage += m.member.Name + "(" + m.count + ")-");
+                logMessage = logMessage.Remove(logMessage.Length - 1);
+                logMessage += "]";
+                Logger.LogDebug(logMessage);
+
+                if (alliesNeedCoH.Count > 0)
                 {
                     stopWatch.Stop();
-                    Logger.Log("CoH Target found in " + stopWatch.ElapsedMilliseconds + " ms");
-                    return true;
+                    Logger.LogDebug("NEW CoH Target found " + alliesNeedCoH[0].member.Name + ", allies in range " + alliesNeedCoH[0].count + ", under " + stopWatch.ElapsedMilliseconds + " ms");
+                    if (cast.OnFocusUnit(CircleOfHealing, alliesNeedCoH[0].member))
+                    {
+                        return true;
+                    }
                 }
             }
             stopWatch.Stop();
-            Logger.Log("CoH Target NOT found in " + stopWatch.ElapsedMilliseconds + " ms");
             return false;
         }
     }
