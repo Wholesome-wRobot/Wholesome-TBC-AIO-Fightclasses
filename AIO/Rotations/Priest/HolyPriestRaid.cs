@@ -22,8 +22,11 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     .OrderBy(m => m.HealthPercent)
                     .ToList();
 
-                if (membersByMissingHealth.Count > 0 && SingleTargetHeal(membersByMissingHealth[0], false))
-                    return;
+                foreach (var member in membersByMissingHealth)
+                {
+                    if (SingleTargetHeal(member))
+                        return;
+                }
 
                 // PARTY Drink
                 if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
@@ -81,7 +84,6 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 }
             }
            
-
             if (AoEHeal())
                 return;
 
@@ -102,8 +104,11 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     return;
             }
 
-            if (membersByMissingHealth.Count > 0 && SingleTargetHeal(membersByMissingHealth[0]))
-                return;
+            foreach (var member in membersByMissingHealth)
+            {
+                if (SingleTargetHeal(member))
+                    return;
+            }
         }
 
         private bool SingleTargetHeal(WoWPlayer player, bool combat = true)
@@ -135,38 +140,9 @@ namespace WholesomeTBCAIO.Rotations.Priest
         {
             if (CircleOfHealing.KnownSpell)
             {
-                List<AIOPartyMember> needCircleOfHealing = new List<AIOPartyMember>();
-                int treshold = (combat && Me.ManaPercentage < 80) ? settings.PartyCircleOfHealingThreshold : 95;
-                if (AIOParty.RaidGroups.Count == 0)
-                {
-                    // PARTY Circle of Healing
-                    needCircleOfHealing = AIOParty.ClosePartyMembers
-                        .FindAll(m => m.IsAlive && m.HealthPercent < treshold);
-                    if (needCircleOfHealing.Count > 2)
-                    {
-                        AIOPartyMember target = needCircleOfHealing
-                            .Find(m => needCircleOfHealing.FindAll(pm => pm.Guid != m.Guid && pm.Position.DistanceTo(m.Position) < 18).Count >= 2);
-                        if (target != null && cast.OnFocusUnit(CircleOfHealing, target))
-                            return true;
-                    }
-                }
-                else
-                {
-                    // RAID Circle of Healing
-                    foreach (var item in AIOParty.RaidGroups)
-                    {
-                        List<AIOPartyMember> subGroupNeedCircleOfHealing = item.Value
-                            .FindAll(m => m.IsAlive && m.GetDistance < 70 && m.HealthPercent < treshold);
-                        if (subGroupNeedCircleOfHealing.Count > 2)
-                        {
-                            AIOPartyMember target = subGroupNeedCircleOfHealing
-                                .Find(m => subGroupNeedCircleOfHealing.FindAll(pm => pm.Guid != m.Guid && pm.Position.DistanceTo(m.Position) < 18).Count >= 2);
-                            if (target != null && cast.OnFocusUnit(CircleOfHealing, target))
-                                return true;
-                        }
-                    }
-                }
-            }
+                if (CastCircleOfHealing(combat))
+                    return true;
+            } 
             else if (PrayerOfHealing.KnownSpell)
             {
                 // PARTY Prayer of Healing
@@ -177,6 +153,52 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     return true;
             }
 
+            return false;
+        }
+
+        private bool CastCircleOfHealing(bool combat = true)
+        {
+            List<List<AIOPartyMember>> groups = AIOParty.RaidGroups.Count == 0 
+                ? new List<List<AIOPartyMember>> { AIOParty.GroupAndRaid }
+                : AIOParty.RaidGroups.Values.ToList();
+            var minimumCount = 3;
+            int healthThreshold = (combat && Me.ManaPercentage < 80) ? settings.PartyCircleOfHealingThreshold : 95;
+
+            var groupsNeedCoH = groups
+                // Find all groups those need CoH
+                .FindAll(g => g.FindAll(m => m.IsAlive && m.GetDistance < 70 && m.HealthPercent < healthThreshold).Count >= minimumCount)
+                // Order groups by average health
+                .OrderBy(g =>
+                {
+                    var healableMembers = g.FindAll(m => m.IsAlive && m.GetDistance < 70);
+                    return healableMembers.Aggregate(0.0, (sum, m) => sum + m.HealthPercent) / (float)healableMembers.Count;
+                })
+                .ToList();
+
+            foreach (var group in groupsNeedCoH)
+            {
+                List<(AIOPartyMember member, int count)> alliesNeedCoH = group
+                    // Checking all group members how many healable allies are in range (count)
+                    .Select(member => (member, count: group.FindAll(otherMember =>
+                        otherMember.IsAlive
+                        && otherMember.HealthPercent < healthThreshold
+                        && otherMember.Position.DistanceTo(member.Position) < settings.PartyCircleofHealingRadius)
+                        .Count))
+                    .ToList()
+                    // Removing those who would heal less members than `minimumCount`
+                    .FindAll(t => t.count >= minimumCount)
+                    // Ordering them by count
+                    .OrderByDescending(t => t.count)
+                    .ToList();
+
+                if (alliesNeedCoH.Count > 0)
+                {
+                    if (cast.OnFocusUnit(CircleOfHealing, alliesNeedCoH[0].member))
+                    {
+                        return true;
+                    }
+                }
+            }
             return false;
         }
     }
