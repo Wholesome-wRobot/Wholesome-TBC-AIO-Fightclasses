@@ -30,6 +30,7 @@ namespace WholesomeTBCAIO.Settings
             PartySWDeathThreshold = 90;
             PartyMindBlastThreshold = 70;
             PartyCircleOfHealingThreshold = 90;
+            PartyCircleofHealingRadius = 18;
 
             Specialization = "Shadow";
         }
@@ -127,10 +128,16 @@ namespace WholesomeTBCAIO.Settings
 
         [Category("Holy")]
         [DefaultValue(90)]
-        [DisplayName("[Party] Circle of Healing")]
+        [DisplayName("[Party] Circle of Healing Threshold")]
         [Description("Use Circle of Healing on party members under this health threshold")]
         [Percentage(true)]
         public int PartyCircleOfHealingThreshold { get; set; }
+
+        [Category("Holy")]
+        [DefaultValue(18)]
+        [DisplayName("[Party] Circle of Healing Radius")]
+        [Description("Healing radius of Circle of Healing")]
+        public int PartyCircleofHealingRadius { get; set; }
 
         // PARTY
         [Category("Party")]

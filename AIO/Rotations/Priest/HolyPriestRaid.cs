@@ -1,7 +1,5 @@
 ﻿using robotManager.Helpful;
-﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
 using wManager.Wow.ObjectManager;
@@ -24,8 +22,11 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     .OrderBy(m => m.HealthPercent)
                     .ToList();
 
-                if (membersByMissingHealth.Count > 0 && SingleTargetHeal(membersByMissingHealth[0], false))
-                    return;
+                foreach (var member in membersByMissingHealth)
+                {
+                    if (SingleTargetHeal(member))
+                        return;
+                }
 
                 // PARTY Drink
                 if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
@@ -103,12 +104,6 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     return;
             }
 
-            string logMessage = "AlliesNeedHeal [";
-            membersByMissingHealth.ForEach(m => logMessage += m.Name + "(" + m.HealthPercent + ")-");
-            logMessage = logMessage.Remove(logMessage.Length - 1);
-            logMessage += "]";
-            Logger.LogDebug(logMessage);
-
             foreach (var member in membersByMissingHealth)
             {
                 if (SingleTargetHeal(member))
@@ -118,11 +113,6 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
         private bool SingleTargetHeal(WoWPlayer player, bool combat = true)
         {
-            if (combat && player.HealthPercent < 100)
-            {
-                Logger.LogDebug("SingleTargetHeal " + player.Name + " - " + player.HealthPercent + "%");
-            }
-            
             if (player.HealthPercent < 30 && cast.OnFocusUnit(FlashHeal, player))
                 return true;
             if (settings.UsePowerWordShield
@@ -150,16 +140,8 @@ namespace WholesomeTBCAIO.Rotations.Priest
         {
             if (CircleOfHealing.KnownSpell)
             {
-                if (settings.UseInnerFire)
-                {
-                    if (OriginalCoH(combat))
-                        return true;
-                }
-                else
-                {
-                    if (CastCircleOfHealing(combat))
-                        return true;
-                }
+                if (CastCircleOfHealing(combat))
+                    return true;
             } 
             else if (PrayerOfHealing.KnownSpell)
             {
@@ -174,58 +156,8 @@ namespace WholesomeTBCAIO.Rotations.Priest
             return false;
         }
 
-        private bool OriginalCoH(bool combat = true)
-        {
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
-
-            List<AIOPartyMember> needCircleOfHealing = new List<AIOPartyMember>();
-            int treshold = (combat && Me.ManaPercentage < 80) ? settings.PartyCircleOfHealingThreshold : 95;
-            if (AIOParty.RaidGroups.Count == 0)
-            {
-                // PARTY Circle of Healing
-                needCircleOfHealing = AIOParty.ClosePartyMembers
-                    .FindAll(m => m.IsAlive && m.HealthPercent < treshold);
-                if (needCircleOfHealing.Count > 2)
-                {
-                    AIOPartyMember target = needCircleOfHealing
-                        .Find(m => needCircleOfHealing.FindAll(pm => pm.Guid != m.Guid && pm.Position.DistanceTo(m.Position) < 18).Count >= 2);
-                    if (target != null && cast.OnFocusUnit(CircleOfHealing, target))
-                        return true;
-                }
-            }
-            else
-            {
-                // RAID Circle of Healing
-                foreach (var item in AIOParty.RaidGroups)
-                {
-                    List<AIOPartyMember> subGroupNeedCircleOfHealing = item.Value
-                        .FindAll(m => m.IsAlive && m.GetDistance < 70 && m.HealthPercent < treshold);
-                    if (subGroupNeedCircleOfHealing.Count > 2)
-                    {
-                        AIOPartyMember target = subGroupNeedCircleOfHealing
-                            .Find(m => subGroupNeedCircleOfHealing.FindAll(pm => pm.Guid != m.Guid && pm.Position.DistanceTo(m.Position) < 18).Count >= 2);
-                        if (target != null)
-                        {
-                            stopWatch.Stop();
-                            Logger.LogDebug("OLD CoH Target found " + target.Name + " in" + stopWatch.ElapsedMilliseconds + " ms");
-                            if (cast.OnFocusUnit(CircleOfHealing, target))
-                            {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-            stopWatch.Stop();
-            return false;
-        }
-
         private bool CastCircleOfHealing(bool combat = true)
         {
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
-
             List<List<AIOPartyMember>> groups = AIOParty.RaidGroups.Count == 0 
                 ? new List<List<AIOPartyMember>> { AIOParty.GroupAndRaid }
                 : AIOParty.RaidGroups.Values.ToList();
@@ -250,7 +182,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     .Select(member => (member, count: group.FindAll(otherMember =>
                         otherMember.IsAlive
                         && otherMember.HealthPercent < healthThreshold
-                        && otherMember.Position.DistanceTo(member.Position) < 20)
+                        && otherMember.Position.DistanceTo(member.Position) < settings.PartyCircleofHealingRadius)
                         .Count))
                     .ToList()
                     // Removing those who would heal less members than `minimumCount`
@@ -259,23 +191,14 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     .OrderByDescending(t => t.count)
                     .ToList();
 
-                string logMessage = "AlliesNeedCoH [";
-                alliesNeedCoH.ForEach(m => logMessage += m.member.Name + "(" + m.count + ")-");
-                logMessage = logMessage.Remove(logMessage.Length - 1);
-                logMessage += "]";
-                Logger.LogDebug(logMessage);
-
                 if (alliesNeedCoH.Count > 0)
                 {
-                    stopWatch.Stop();
-                    Logger.LogDebug("NEW CoH Target found " + alliesNeedCoH[0].member.Name + ", allies in range " + alliesNeedCoH[0].count + ", under " + stopWatch.ElapsedMilliseconds + " ms");
                     if (cast.OnFocusUnit(CircleOfHealing, alliesNeedCoH[0].member))
                     {
                         return true;
                     }
                 }
             }
-            stopWatch.Stop();
             return false;
         }
     }
