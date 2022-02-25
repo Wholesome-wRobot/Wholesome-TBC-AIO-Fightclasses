@@ -55,34 +55,21 @@ namespace WholesomeTBCAIO.Helpers
             {
                 lock (_groupLock)
                 {
-                    if (_groupAndRaid.Exists(p => p.Name == ""))
-                        _groupAndRaid.Clear();
+                    _groupAndRaid.Clear();
 
                     List<WoWPlayer> allMembersList = new List<WoWPlayer>();
                     allMembersList.AddRange(Party.GetRaidMembers());
                     allMembersList.AddRange(Party.GetParty());
 
-                    // Add players to my own group list
+                    // Add me
+                    _groupAndRaid.Add(new AIOPartyMember(ObjectManager.Me.GetBaseAddress));
+
+                    // Add party/raid players
                     foreach (WoWPlayer player in allMembersList)
                     {
-                        if (!_groupAndRaid.Exists(m => m.Guid == player.Guid))
+                        if (!_groupAndRaid.Exists(m => m.GetBaseAddress == player.GetBaseAddress))
                         {
                             _groupAndRaid.Add(new AIOPartyMember(player.GetBaseAddress));
-                        }
-                    }
-
-                    // Add me
-                    if (!_groupAndRaid.Exists(m => m.Guid == ObjectManager.Me.Guid))
-                    {
-                        _groupAndRaid.Add(new AIOPartyMember(ObjectManager.Me.GetBaseAddress));
-                    }
-
-                    // Remove players
-                    for (int i = _groupAndRaid.Count - 1; i >= 0; i--)
-                    {
-                        if (_groupAndRaid[i].Guid != ObjectManager.Me.Guid && !allMembersList.Exists(m => m.Guid == _groupAndRaid[i].Guid))
-                        {
-                            _groupAndRaid.Remove(_groupAndRaid[i]);
                         }
                     }
 
