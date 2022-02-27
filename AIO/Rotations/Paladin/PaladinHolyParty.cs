@@ -41,6 +41,12 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 && cast.OnSelf(DivineIllumination))
                 return;
 
+            // Using consumables such as Healthstone
+            if (Me.HealthPercent < 50)
+            {
+                ToolBox.UseConsumableToSelfHeal();
+            }
+
             // Divine Shield
             if (Me.HealthPercent < 30
                 && cast.OnSelf(DivineShield))
