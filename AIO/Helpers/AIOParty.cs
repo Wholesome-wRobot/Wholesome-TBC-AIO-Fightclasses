@@ -145,11 +145,19 @@ namespace WholesomeTBCAIO.Helpers
             }
         }
 
-        public static List<WoWUnit> Tanks => EnemiesFighting
-            .Select(a => a.TargetObject)
-            .Distinct()
-            .OrderBy(a => a.HealthPercent)
-            .ToList();
+        public static List<WoWUnit> TargetedByEnemies
+        {
+            get
+            {
+                return EnemiesFighting
+                    .Select(u => u.TargetObject)
+                    .Distinct()
+                    .ToList()
+                    .FindAll(u => GroupAndRaid.Exists(m => m.Guid == u.Guid))
+                    .OrderBy(a => a.HealthPercent)
+                    .ToList();
+            }
+        }
 
         public static void SwitchTarget(Cast cast, AIOSpell spell)
         {

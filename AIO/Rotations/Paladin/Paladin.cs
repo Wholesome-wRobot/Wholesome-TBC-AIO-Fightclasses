@@ -139,7 +139,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
                     // PARTY Flash of Light
                     List<AIOPartyMember> needFoL = AIOParty.GroupAndRaid
-                        .FindAll(m => m.HealthPercent < 85)
+                        .FindAll(m => m.HealthPercent < 95)
                         .OrderBy(m => m.HealthPercent)
                         .ToList();
                     if (needFoL.Count > 0 && cast.OnFocusUnit(FlashOfLight, needFoL[0]))
@@ -154,7 +154,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
                 // Party Cleanse
                 WoWPlayer needsCleanse = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasMagicDebuff(m.Name));
+                    .Find(m => UnitHasCleansableDebuff(m.Name));
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;
 

@@ -32,16 +32,10 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 .ToList();
             double groupHealthAverage = aliveMembers
                 .Aggregate(0.0, (s, a) => s + a.HealthPercent) / (double)aliveMembers.Count;
-            var tanks = AIOParty.Tanks
+            var tanks = AIOParty.TargetedByEnemies
                 .FindAll(a => a.IsAlive && a.GetDistance < 60)
                 .ToList();
-
-            string logMessage = "TANKS detected [";
-            tanks.ForEach(m => logMessage += m.Name + "-");
-            logMessage = logMessage.Remove(logMessage.Length - 1);
-            logMessage += "]";
-            Logger.Log(logMessage);
-
+ 
             // Divine Illumination
             if (groupHealthAverage < 70
                 && cast.OnSelf(DivineIllumination))
@@ -65,12 +59,12 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             bool isCleanseHighPriority = settings.PartyCleansePriority != "Low"
                 && (settings.PartyCleansePriority == "High" || rng.NextDouble() >= 0.5);
-            WoWPlayer needsCleanse = AIOParty.GroupAndRaid
-                    .Find(m => UnitHasCleansableDebuff(m.Name));
 
             // High priority Cleanse
             if (settings.PartyCleanse && isCleanseHighPriority)
             {
+                WoWPlayer needsCleanse = AIOParty.GroupAndRaid
+                    .Find(m => UnitHasCleansableDebuff(m.Name));
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;
             }
@@ -82,7 +76,6 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 var virtualHP = 100 - (100.0 - lowestTankHealth) * (1.0 + ((float)settings.PartyTankHealingPriority) / 100);
                 if (virtualHP < aliveMembers[0].HealthPercent)
                 {
-                    Logger.Log("Healing " + tanks[0].Name + " virtual HP:" + virtualHP + " real HP:" + tanks[0].HealthPercent);
                     if (SingleTargetHeal(tanks[0]))
                         return;
                 }
@@ -95,6 +88,8 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // Low priority Cleanse
             if (settings.PartyCleanse && !isCleanseHighPriority)
             {
+                WoWPlayer needsCleanse = AIOParty.GroupAndRaid
+                    .Find(m => UnitHasCleansableDebuff(m.Name));
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;
             }

@@ -24,7 +24,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
                 foreach (var member in membersByMissingHealth)
                 {
-                    if (SingleTargetHeal(member))
+                    if (SingleTargetHeal(member, false))
                         return;
                 }
 
