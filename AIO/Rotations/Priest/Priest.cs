@@ -27,6 +27,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
         protected bool _iCanUseWand = ToolBox.HaveRangedWeaponEquipped();
         protected int _innerManaSaveThreshold = 20;
         protected int _wandThreshold;
+        private float _defaultRange = 30;
 
         protected Priest specialization;
 
@@ -42,7 +43,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             TalentsManager.InitTalents(settings);
 
             _wandThreshold = settings.WandThreshold > 100 ? 50 : settings.WandThreshold;
-            RangeManager.SetRange(28f);
+            RangeManager.SetRange(_defaultRange);
 
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightStart += FightStartHandler;
@@ -236,7 +237,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
         {
             _dispelTimer.Reset();
             _iCanUseWand = false;
-            RangeManager.SetRange(28f);
+            RangeManager.SetRange(_defaultRange);
         }
 
         private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)

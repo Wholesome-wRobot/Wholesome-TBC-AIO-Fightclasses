@@ -34,7 +34,7 @@ public class Main : ICustomClass
     public static string wowClass = ObjectManager.Me.WowClass.ToString();
     public static int humanReflexTime = 500;
     public static bool isLaunched;
-    public static string version = "3.1.01"; // Must match version in Version.txt
+    public static string version = "3.1.02"; // Must match version in Version.txt
     public static bool HMPrunningAway = false;
 
     private IClassRotation selectedRotation;
@@ -78,7 +78,7 @@ public class Main : ICustomClass
                 _racialsThread.DoWork += _racials.DoRacialsPulse;
                 _racialsThread.RunWorkerAsync();
             }
-            
+
             if (!AIORadar._isRunning)
             {
                 _partyThread.DoWork += AIORadar.Pulse;
@@ -107,11 +107,11 @@ public class Main : ICustomClass
             _racialsThread.Dispose();
             _racials._isRunning = false;
         }
-        
+
         _partyThread.DoWork -= AIORadar.Pulse;
         _partyThread.Dispose();
         AIORadar._isRunning = false;
-        
+
         FightEvents.OnFightLoop -= FightLoopHandler;
         FightEvents.OnFightStart -= FightStartHandler;
         FightEvents.OnFightEnd -= FightEndHandler;
@@ -275,5 +275,11 @@ public class Main : ICustomClass
             && id == "COMBAT_LOG_EVENT_UNFILTERED"
             && (args[9] == "Blessing of Might" || args[9] == "Blessing of Kings" || args[9] == "Blessing of Wisdom"))
             Paladin.RecordBlessingCast(args[3], args[9], args[6]);
+
+        if (id == "UI_ERROR_MESSAGE")
+        {
+            if ((args[0] == "Your pet is dead." || args[0] == "You already control a summoned creature"))
+                Hunter.PetIsDead = true;
+        }
     }
 }
