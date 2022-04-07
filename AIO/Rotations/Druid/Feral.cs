@@ -117,9 +117,15 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
                 // Prowl approach
                 if (Me.HaveBuff("Prowl")
-                    && ObjectManager.Target.GetDistance > 3f
                     && !_isStealthApproching)
+                {
                     StealthApproach();
+                }
+                else
+                {
+                    RangeManager.SetRangeToMelee();
+                    cast.OnTarget(Claw);
+                }
 
                 return;
             }

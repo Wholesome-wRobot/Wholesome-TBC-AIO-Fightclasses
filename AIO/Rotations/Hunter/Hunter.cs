@@ -20,6 +20,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         public static DateTime LastAuto { get; set; }
 
         public static HunterSettings settings;
+        public static bool PetIsDead { get; set; }
 
         protected WoWLocalPlayer Me = ObjectManager.Me;
         protected HunterFoodManager _foodManager = new HunterFoodManager();
@@ -109,14 +110,15 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
                         // In fight
                         if ((Fight.InFight || Me.InCombatFlagOnly)
-                            && !ObjectManager.Pet.HaveBuff("Feed Pet Effect")
-                            && Me.Target > 0UL)
+                            && Me.Target > 0UL
+                            && Me.TargetObject.IsAlive
+                            && !ObjectManager.Pet.HaveBuff("Feed Pet Effect"))
                         {
                             bool multiAggroImTargeted = false;
 
                             // Pet Switch target on multi aggro
                             if (Me.InCombatFlagOnly
-                                && !(specialization is BeastMasteryParty)
+                                && RotationType != Enums.RotationType.Party
                                 && ObjectManager.GetNumberAttackPlayer() > 1)
                             {
                                 Lua.LuaDoString("PetDefensiveMode();");
@@ -144,13 +146,14 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                             // Pet attack on single aggro
                             if ((Me.InCombatFlagOnly || Fight.InFight)
                                 && Me.Target > 0
+                                && Me.TargetObject.IsAlive
                                 && !multiAggroImTargeted)
                                 Lua.LuaDoString("PetAttack();", false);
 
                             // Pet Growl
                             if ((ObjectManager.Target.Target == Me.Guid || ObjectManager.Pet.Target != Me.Target) 
                                 && !settings.AutoGrowl
-                                && !(specialization is BeastMasteryParty))
+                                && RotationType != Enums.RotationType.Party)
                                 if (cast.PetSpell("Growl"))
                                     continue;
 
@@ -260,12 +263,16 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             if (!Me.HaveBuff("Drink")
                 && !Me.HaveBuff("Food"))
             {
+                // Set pet dead flag
+                if (ObjectManager.Pet.IsAlive)
+                    PetIsDead = false;
+
                 // Call Pet
-                if (!ObjectManager.Pet.IsValid)
+                if (!ObjectManager.Pet.IsValid && !PetIsDead)
                     cast.OnSelf(CallPet);
 
                 // Make sure we have mana to revive
-                if ((!ObjectManager.Pet.IsAlive || !ObjectManager.Pet.IsValid)
+                if ((PetIsDead || ObjectManager.Pet.IsDead)
                     && !Me.InCombatFlagOnly
                     && RevivePet.KnownSpell
                     && !Me.HaveBuff("Drink")
@@ -280,9 +287,9 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
 
                 // Revive Pet
-                if ((!ObjectManager.Pet.IsAlive || !ObjectManager.Pet.IsValid)
+                if ((PetIsDead || ObjectManager.Pet.IsDead)
                     && !Me.HaveBuff("Drink")
-                    && (!Me.InCombatFlagOnly || specialization.RotationType == Enums.RotationType.Solo)
+                    && (!Me.InCombatFlagOnly || settings.RevivePetInCombat)
                     && cast.OnSelf(RevivePet))
                     return;
 
@@ -336,6 +343,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         protected AIOSpell KillCommand = new AIOSpell("Kill Command");
         protected AIOSpell Disengage = new AIOSpell("Disengage");
         protected AIOSpell Attack = new AIOSpell("Attack");
+        protected AIOSpell MultiShot = new AIOSpell("Multi-Shot");
 
         // EVENT HANDLERS
         private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)
@@ -399,7 +407,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
                     && ObjectManager.Me.IsAlive
                     && !ObjectManager.Target.IsTargetingMe
-                    && ObjectManager.Target.GetDistance < minDistance
+                    && ObjectManager.Target.GetDistance < minDistance + 1
                     && !timer.IsReady)
                     Thread.Sleep(100);
                 }
@@ -409,7 +417,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
                     && ObjectManager.Me.IsAlive
                     && !ObjectManager.Target.IsTargetingMe
-                    && ObjectManager.Target.GetDistance < minDistance
+                    && ObjectManager.Target.GetDistance < minDistance + 1
                     && !timer.IsReady)
                     {
                         Move.Backward(Move.MoveAction.PressKey, 500);

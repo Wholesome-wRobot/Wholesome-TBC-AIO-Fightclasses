@@ -21,6 +21,8 @@ namespace WholesomeTBCAIO.Settings
             UseDisengage = false;
             UseRaptorStrike = true;
             BackupDistance = 6;
+            MultishotCount = 2;
+            RevivePetInCombat = true;
 
             BestialWrathOnMulti = false;
             IntimidationInterrupt = true;
@@ -100,6 +102,19 @@ namespace WholesomeTBCAIO.Settings
         [DisplayName("Disengage")]
         [Description("Use Disengage")]
         public bool UseDisengage { get; set; }
+
+        [Category("Common")]
+        [DefaultValue(true)]
+        [DisplayName("Revive pet in combat")]
+        [Description("Revive your pet during combat")]
+        public bool RevivePetInCombat { get; set; }
+
+        // PARTY
+        [Category("Party")]
+        [DefaultValue(2)]
+        [DisplayName("[PARTY] MultiShot Count")]
+        [Description("Minimum amount of enemies around the target to use Multi-Shot")]
+        public int MultishotCount { get; set; }
 
         // BEAST MASTERY
         [Category("BeastMastery")]

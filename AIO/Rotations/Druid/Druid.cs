@@ -1,14 +1,15 @@
-﻿using System;
-using System.Threading;
-using robotManager.Helpful;
-using wManager.Events;
-using wManager.Wow.Helpers;
-using wManager.Wow.ObjectManager;
+﻿using robotManager.Helpful;
+using System;
 using System.Collections.Generic;
-using WholesomeTBCAIO.Settings;
-using WholesomeTBCAIO.Helpers;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading;
+using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
+using wManager.Events;
+using wManager.Wow.Enums;
+using wManager.Wow.Helpers;
+using wManager.Wow.ObjectManager;
 using Timer = robotManager.Helpful.Timer;
 
 namespace WholesomeTBCAIO.Rotations.Druid
@@ -185,17 +186,33 @@ namespace WholesomeTBCAIO.Rotations.Druid
             if (ObjectManager.Me.IsAlive && ObjectManager.Target.IsAlive)
             {
                 while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                    && (ObjectManager.Target.GetDistance > 2.5f || !Claw.IsSpellUsable)
+                    && (ObjectManager.Target.GetDistance > 3f || !Claw.IsSpellUsable)
                     && (specialization.RotationType == Enums.RotationType.Party || ToolBox.GetClosestHostileFrom(ObjectManager.Target, 20f) == null)
                     && Fight.InFight
                     && !stealthApproachTimer.IsReady
+                    && !TraceLine.TraceLineGo(ObjectManager.Me.Position, ObjectManager.Target.Position, CGWorldFrameHitFlags.HitTestSpellLoS | CGWorldFrameHitFlags.HitTestLOS)
                     && Me.HaveBuff("Prowl"))
                 {
-                    Vector3 position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f);
+                    float distanceToTarget = ObjectManager.Target.Position.DistanceTo(ObjectManager.Me.Position);
+                    Vector3 position;
+                    if (distanceToTarget > 5)
+                        position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f);
+                    else
+                        position = ObjectManager.Target.Position;
+
                     MovementManager.MoveTo(position);
                     Thread.Sleep(50);
                     CastOpener();
                 }
+
+                if (TraceLine.TraceLineGo(ObjectManager.Me.Position, ObjectManager.Target.Position, CGWorldFrameHitFlags.HitTestSpellLoS | CGWorldFrameHitFlags.HitTestLOS))
+                {
+                    cast.OnSelf(Prowl);
+                    _isStealthApproching = false;
+                    return;
+                }
+
+                CastOpener();
 
                 if (stealthApproachTimer.IsReady
                     && ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { FaerieFireFeral, MoonfireRank1, Wrath }))
@@ -204,7 +221,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     return;
                 }
 
-                //ToolBox.CheckAutoAttack(Attack);
+                ToolBox.CheckAutoAttack(Attack);
 
                 _isStealthApproching = false;
             }
@@ -219,16 +236,16 @@ namespace WholesomeTBCAIO.Rotations.Druid
             // Opener
             if (ToolBox.MeBehindTarget())
             {
-                if (cast.OnTarget(Ravage))
-                    return;
-                if (cast.OnTarget(Shred))
-                    return;
+                cast.OnTarget(Ravage);
+                cast.OnTarget(Shred);
+                cast.OnTarget(Rake);
+                cast.OnTarget(Claw);
             }
-
-            if (cast.OnTarget(Rake))
-                return;
-            if (cast.OnTarget(Claw))
-                return;
+            else
+            {
+                cast.OnTarget(Rake);
+                cast.OnTarget(Claw);
+            }
         }
 
         // EVENT HANDLERS
@@ -267,15 +284,15 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
             if (specialization is Feral
                 && (ObjectManager.Target.HaveBuff("Pounce") || ObjectManager.Target.HaveBuff("Maim"))
-                && !MovementManager.InMovement 
-                && Me.IsAlive 
-                && !Me.IsCast 
+                && !MovementManager.InMovement
+                && Me.IsAlive
+                && !Me.IsCast
                 && ObjectManager.Target.IsAlive)
             {
                 Vector3 position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f);
                 MovementManager.Go(PathFinder.FindPath(position), false);
 
-                while (MovementManager.InMovement 
+                while (MovementManager.InMovement
                     && Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
                     && (ObjectManager.Target.HaveBuff("Pounce") || ObjectManager.Target.HaveBuff("Maim")))
                 {

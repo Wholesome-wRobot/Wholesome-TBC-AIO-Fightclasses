@@ -55,7 +55,10 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         {
             WoWUnit Target = ObjectManager.Target;
             float minRange = RangeManager.GetMeleeRangeWithTarget() + settings.BackupDistance;
-
+            /*
+            Logger.LogError($"Current range is {RangeManager.GetRange()}");
+            Logger.LogError($"Target is {ObjectManager.Target.GetDistance} yards away");
+            */
             if (Target.GetDistance < minRange
                 && !cast.IsBackingUp)
                 ToolBox.CheckAutoAttack(Attack);
@@ -70,6 +73,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
             // Mend Pet
             if (ObjectManager.Pet.IsAlive
+                && ObjectManager.Pet.IsValid
                 && ObjectManager.Pet.HealthPercent <= 50
                 && !ObjectManager.Pet.HaveBuff("Mend Pet")
                 && cast.OnFocusUnit(MendPet, ObjectManager.Pet))
@@ -107,6 +111,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             if (Target.GetDistance < AutoShot.MaxRange
                 && Target.HealthPercent < 100
                 && ObjectManager.Pet.IsAlive
+                && ObjectManager.Pet.IsValid
                 && Me.ManaPercentage > 10
                 && cast.OnSelf(BestialWrath))
                 return;
@@ -118,7 +123,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 return;
 
             // Kill Command
-            if (ObjectManager.Pet.IsAlive)
+            if (ObjectManager.Pet.IsAlive
+                && ObjectManager.Pet.IsValid)
                 cast.OnTarget(KillCommand);
 
             // Raptor Strike
@@ -154,6 +160,13 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && cast.OnTarget(HuntersMark))
                 return;
 
+            // Multi-Shot
+            if (Target.GetDistance > minRange
+                && AIOParty.EnemiesFighting.FindAll(e => e.Position.DistanceTo(Target.Position) < 15).Count > settings.MultishotCount
+                && cast.OnTarget(MultiShot))
+                return;
+
+            // Steady Shot
             double lastAutoInMilliseconds = (DateTime.Now - LastAuto).TotalMilliseconds;
             if (lastAutoInMilliseconds > 0
                 && lastAutoInMilliseconds < 500
@@ -172,9 +185,11 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
             // Intimidation interrupt
             if (Target.GetDistance < AutoShot.MaxRange
+                && ObjectManager.Pet.IsValid
+                && ObjectManager.Pet.IsAlive
                 && ToolBox.TargetIsCasting()
                 && settings.IntimidationInterrupt
-                && cast.OnSelf(Intimidation))
+                && cast.OnTarget(Intimidation))
                 return;
 
             // Arcane Shot
