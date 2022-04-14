@@ -1,7 +1,5 @@
-﻿using System.Threading;
-using WholesomeTBCAIO.Helpers;
-using wManager.Wow.Bot.Tasks;
-using wManager.Wow.Class;
+﻿using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Warrior
@@ -36,7 +34,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         {
             base.CombatRotation();
             WoWUnit Target = ObjectManager.Target;
-            bool _shouldBeInterrupted = ToolBox.TargetIsCasting();
+            bool _shouldBeInterrupted = WTCombat.TargetIsCasting();
             bool _inMeleeRange = Target.GetDistance < RangeManager.GetMeleeRangeWithTarget();
             bool _saveRage = Cleave.KnownSpell
                 && ObjectManager.GetNumberAttackPlayer() > 1
@@ -78,7 +76,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 return;
 
             // Rampage
-            if (!Me.HaveBuff("Rampage") || Me.HaveBuff("Rampage") && ToolBox.BuffTimeLeft("Rampage") < 10)
+            if (!Me.HaveBuff("Rampage") || Me.HaveBuff("Rampage") && WTEffects.BuffTimeLeft("Rampage") < 10)
                 if (cast.OnTarget(Rampage))
                     return;
 
@@ -109,8 +107,8 @@ namespace WholesomeTBCAIO.Rotations.Warrior
 
             // Cleave
             if (_inMeleeRange
-                && ToolBox.GetNbEnemiesClose(15f) > 1 
-                && (!SweepingStrikes.IsSpellUsable || !SweepingStrikes.KnownSpell) 
+                && ToolBox.GetNbEnemiesClose(15f) > 1
+                && (!SweepingStrikes.IsSpellUsable || !SweepingStrikes.KnownSpell)
                 && ObjectManager.Me.Rage > 40
                 && settings.UseCleave
                 && cast.OnTarget(Cleave))
@@ -145,15 +143,15 @@ namespace WholesomeTBCAIO.Rotations.Warrior
 
             // Heroic Strike (after whirlwind)
             if (_inMeleeRange
-                && !HeroicStrikeOn()
-                &&  Me.Rage > 60
+                && !WTCombat.IsSpellActive("Heroic Strike")
+                && Me.Rage > 60
                 && cast.OnTarget(HeroicStrike))
                 return;
 
             // Heroic Strike (before whirlwind)
             if (_inMeleeRange
                 && !Whirlwind.KnownSpell
-                && !HeroicStrikeOn()
+                && !WTCombat.IsSpellActive("Heroic Strike")
                 && (!_saveRage || Me.Rage > 60)
                 && cast.OnTarget(HeroicStrike))
                 return;

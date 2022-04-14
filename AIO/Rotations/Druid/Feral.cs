@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 using Timer = robotManager.Helpful.Timer;
 
@@ -32,12 +33,12 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 return;
 
             // Remove Curse
-            if (ToolBox.HasCurseDebuff()
+            if (WTEffects.HasCurseDebuff()
                 && cast.OnSelf(RemoveCurse))
                 return;
 
             // Abolish Poison
-            if (ToolBox.HasPoisonDebuff()
+            if (WTEffects.HasPoisonDebuff()
                 && cast.OnSelf(AbolishPoison))
                 return;
 
@@ -66,11 +67,11 @@ namespace WholesomeTBCAIO.Rotations.Druid
             // Travel Form OOC
             if (TravelForm.KnownSpell
                 && (currentGroundMount == "" || currentGroundMount == CatForm.Name))
-                ToolBox.SetGroundMount(TravelForm.Name);
+                WTSettings.SetGroundMount(TravelForm.Name);
 
             // Disable Cat Form OOC
             if (currentGroundMount == CatForm.Name)
-                ToolBox.SetGroundMount("");
+                WTSettings.SetGroundMount("");
         }
 
         protected override void Pull()
@@ -135,7 +136,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
         {
             base.CombatRotation();
 
-            bool _shouldBeInterrupted = ToolBox.TargetIsCasting();
+            bool _shouldBeInterrupted = WTCombat.TargetIsCasting();
             WoWUnit Target = ObjectManager.Target;
 
             // Force melee
@@ -357,7 +358,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     return;
 
                 // Maul
-                if (!MaulOn() 
+                if (!WTCombat.IsSpellActive("Maul")
                     && (!_fightingACaster || Me.Rage > 30)
                     && cast.OnTarget(Maul))
                     return;

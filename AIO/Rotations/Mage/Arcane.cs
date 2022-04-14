@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 
@@ -49,14 +50,6 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             WoWUnit _target = ObjectManager.Target;
 
-            bool _shouldCastArcaneBlast =
-                ArcaneBlast.KnownSpell
-                && (Me.ManaPercentage > 70
-                || Me.HaveBuff("Clearcasting")
-                || (Me.ManaPercentage > 50 && ToolBox.CountDebuff("Arcane Blast") < 3)
-                || (Me.ManaPercentage > 35 && ToolBox.CountDebuff("Arcane Blast") < 2)
-                || (ToolBox.CountDebuff("Arcane Blast") < 1));
-
             // Slow
             if (settings.ACSlow
                 && !_target.HaveBuff("Slow")
@@ -104,7 +97,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 _iCanUseWand = false;
 
             // Remove Curse
-            if (ToolBox.HasCurseDebuff())
+            if (WTEffects.HasCurseDebuff())
             {
                 Thread.Sleep(Main.humanReflexTime);
                 if (cast.OnSelf(RemoveCurse))
@@ -164,12 +157,13 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 && cast.OnTarget(FireBlast))
                 return;
 
+            int nbArcaneBlastDebuffs = ArcaneBlast.KnownSpell ? WTEffects.CountDebuff("Arcane Blast") : -1;
             bool _shouldCastArcaneBlast =
-                ArcaneBlast.KnownSpell
+                nbArcaneBlastDebuffs > -1
                 && (Me.ManaPercentage > 70
                 || Me.HaveBuff("Clearcasting")
-                || (Me.ManaPercentage > 50 && ToolBox.CountDebuff("Arcane Blast") < 3)
-                || (Me.ManaPercentage > 35 && ToolBox.CountDebuff("Arcane Blast") < 2));
+                || (Me.ManaPercentage > 50 && nbArcaneBlastDebuffs < 3)
+                || (Me.ManaPercentage > 35 && nbArcaneBlastDebuffs < 2));
 
             // Arcane Blast
             if (_shouldCastArcaneBlast
@@ -203,7 +197,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 return;
 
             // Stop wand if banned
-            if (ToolBox.UsingWand()
+            if (WTCombat.IsSpellRepeating(5019)
                 && UnitImmunities.Contains(ObjectManager.Target, "Shoot")
                 && cast.OnTarget(UseWand))
                 return;
@@ -214,7 +208,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                     return;
 
             // Use Wand
-            if (!ToolBox.UsingWand()
+            if (!WTCombat.IsSpellRepeating(5019)
                 && _iCanUseWand
                 && !cast.IsBackingUp
                 && !MovementManager.InMovement
@@ -222,7 +216,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 return;
 
             // Go in melee because nothing else to do
-            if (!ToolBox.UsingWand()
+            if (!WTCombat.IsSpellRepeating(5019)
                 && !UseWand.IsSpellUsable
                 && !RangeManager.CurrentRangeIsMelee()
                 && !cast.IsBackingUp

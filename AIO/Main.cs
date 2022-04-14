@@ -18,6 +18,7 @@ using WholesomeTBCAIO.Rotations.Shaman;
 using WholesomeTBCAIO.Rotations.Warlock;
 using WholesomeTBCAIO.Rotations.Warrior;
 using WholesomeTBCAIO.Settings;
+using WholesomeToolbox;
 using wManager.Events;
 using wManager.Wow.Enums;
 using wManager.Wow.Helpers;
@@ -34,7 +35,7 @@ public class Main : ICustomClass
     public static string wowClass = ObjectManager.Me.WowClass.ToString();
     public static int humanReflexTime = 500;
     public static bool isLaunched;
-    public static string version = "3.1.02"; // Must match version in Version.txt
+    public static string version = "3.1.03"; // Must match version in Version.txt
     public static bool HMPrunningAway = false;
 
     private IClassRotation selectedRotation;
@@ -245,14 +246,14 @@ public class Main : ICustomClass
         string isReady = selectedRotation.AnswerReadyCheck() ? "true" : "false";
         Logger.Log($"Answering ReadyCheck ({isReady}), in {delay} ms");
         Thread.Sleep(delay);
-        // Test with static instead
+        // Test with static button instead
         Lua.LuaDoString($"ConfirmReadyCheck({isReady});");
         Lua.LuaDoString($"GetClickFrame('ReadyCheckFrame'):Hide();");
     }
 
     private void ResurrectionEventHandler(object context)
     {
-        ToolBox.AcceptResurrect();
+        WTCombat.AcceptResurrect();
     }
 
     private void PlayerDeadHandler(object context)

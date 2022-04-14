@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 
@@ -111,7 +112,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             // Raptor Strike
             if (settings.UseRaptorStrike
                 && Target.GetDistance < minRange
-                && !RaptorStrikeOn()
+                && !WTCombat.IsSpellActive("Raptor Strike")
                 && cast.OnTarget(RaptorStrike))
                 return;
 
@@ -179,7 +180,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
             // Intimidation interrupt
             if (Target.GetDistance < AutoShot.MaxRange
-                && ToolBox.TargetIsCasting()
+                && WTCombat.TargetIsCasting()
                 && settings.IntimidationInterrupt
                 && cast.OnSelf(Intimidation))
                 return;

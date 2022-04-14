@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 using Timer = robotManager.Helpful.Timer;
@@ -17,13 +18,13 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
                 // PARTY Remove Curse
                 WoWPlayer needRemoveCurse = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasCurseDebuff(m.Name));
+                    .Find(m => WTEffects.HasCurseDebuff(m.Name));
                 if (needRemoveCurse != null && cast.OnFocusUnit(RemoveCurse, needRemoveCurse))
                     return;
 
                 // PARTY Abolish Poison
                 WoWPlayer needAbolishPoison = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasPoisonDebuff(m.Name));
+                    .Find(m => WTEffects.HasPoisonDebuff(m.Name));
                 if (needAbolishPoison != null && cast.OnFocusUnit(AbolishPoison, needAbolishPoison))
                     return;
 
@@ -101,7 +102,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
         {
             base.CombatRotation();
 
-            bool _shouldBeInterrupted = ToolBox.TargetIsCasting();
+            bool _shouldBeInterrupted = WTCombat.TargetIsCasting();
             bool _inMeleeRange = ObjectManager.Target.GetDistance < 6f;
             WoWUnit Target = ObjectManager.Target;
 
@@ -160,7 +161,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             {
                 // PARTY Remove Curse
                 WoWPlayer needRemoveCurse = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasCurseDebuff(m.Name));
+                    .Find(m => WTEffects.HasCurseDebuff(m.Name));
                 if (needRemoveCurse != null && cast.OnFocusUnit(RemoveCurse, needRemoveCurse))
                     return;
             }
@@ -169,7 +170,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             {
                 // PARTY Abolish Poison
                 WoWPlayer needAbolishPoison = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasPoisonDebuff(m.Name));
+                    .Find(m => WTEffects.HasPoisonDebuff(m.Name));
                 if (needAbolishPoison != null && cast.OnFocusUnit(AbolishPoison, needAbolishPoison))
                     return;
             }
@@ -212,7 +213,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 return;
 
             // Maul
-            if (!MaulOn()
+            if (!WTCombat.IsSpellActive("Maul")
                 && Me.Rage > 70)
                 cast.OnTarget(Maul);
 
@@ -256,7 +257,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 return;
 
             // Lacerate
-            if (ToolBox.CountDebuff("Lacerate", "target") < 5
+            if (WTEffects.CountDebuff("Lacerate", "target") < 5
                 && cast.OnTarget(Lacerate))
                 return;
         }

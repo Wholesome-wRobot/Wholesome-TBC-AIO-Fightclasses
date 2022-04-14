@@ -15,6 +15,9 @@ namespace WholesomeTBCAIO.Settings
             UseShadowGuard = true;
             UsePowerWordShield = true;
             UseShadowWordDeath = true;
+            UseDispel = false;
+            CureDisease = false;
+            DevouringPlagueThreshold = 80;
 
             PartyCureDisease = false;
             PartyDispelMagic = false;
@@ -88,10 +91,29 @@ namespace WholesomeTBCAIO.Settings
 
         // SHADOW
         [Category("Shadow")]
+        [DefaultValue(80)]
+        [DisplayName("Devouring Plague")]
+        [Description("Enemy HP over which Devouring Plague should be used")]
+        [Percentage(true)]
+        public int DevouringPlagueThreshold { get; set; }
+
+        [Category("Shadow")]
         [DefaultValue(true)]
         [DisplayName("SW: Death")]
         [Description("Use Shadow Word: Death")]
         public bool UseShadowWordDeath { get; set; }
+
+        [Category("Shadow")]
+        [DefaultValue(false)]
+        [DisplayName("Dispel Magic")]
+        [Description("Use Dispel Magic")]
+        public bool UseDispel { get; set; }
+
+        [Category("Shadow")]
+        [DefaultValue(false)]
+        [DisplayName("Cure Disease")]
+        [Description("Use Cure Disease")]
+        public bool CureDisease { get; set; }
 
         [Category("Shadow")]
         [DefaultValue(false)]

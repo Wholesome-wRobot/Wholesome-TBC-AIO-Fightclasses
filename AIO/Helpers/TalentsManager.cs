@@ -2,10 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Drawing;
 using System.Linq;
 using System.Threading;
 using WholesomeTBCAIO.Settings;
+using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 
@@ -13,11 +13,11 @@ namespace WholesomeTBCAIO.Helpers
 {
     public class TalentsManager
     {
-        private static bool _isAssigning = false;
         private static bool _isInitialized = false;
         public static bool _isRunning = false;
         public static List<string> _talentsCodes = new List<string> { };
         private static int _talentPulseTimer = 60000 * 5; // 5 minutes
+        private static object _talentLock = new object();
 
         // Talent initialization
         public static void InitTalents(BaseSettings settings)
@@ -420,15 +420,15 @@ namespace WholesomeTBCAIO.Helpers
                 {
                     if (Conditions.InGameAndConnectedAndProductStartedNotInPause
                         && ObjectManager.Me.IsAlive 
-                        && Main.isLaunched 
-                        && !_isAssigning 
+                        && Main.isLaunched
                         && _isInitialized 
                         && _isRunning)
                     {
-                        Logger.LogDebug("Assigning Talents");
-                        _isAssigning = true;
-                        AssignTalents(_talentsCodes);
-                        _isAssigning = false;
+                        lock(_talentLock)
+                        {
+                            Logger.LogDebug("Assigning Talents");
+                            WTTalent.TBCAssignTalents(_talentsCodes);
+                        }
                     }
                 }
                 catch (Exception arg)
@@ -438,113 +438,6 @@ namespace WholesomeTBCAIO.Helpers
                 Thread.Sleep(_talentPulseTimer);
             }
             _isRunning = false;
-        }
-
-        // Talent assignation 
-        public static void AssignTalents(List<string> TalentCodes)
-        {
-            // Number of talents in each tree
-            List<int> NumTalentsInTrees = new List<int>()
-            {
-                Lua.LuaDoString<int>("return GetNumTalents(1)"),
-                Lua.LuaDoString<int>("return GetNumTalents(2)"),
-                Lua.LuaDoString<int>("return GetNumTalents(3)")
-            };
-
-            if (!_isInitialized)
-            {
-                Thread.Sleep(500);
-            }
-            else if (TalentCodes.Count() <= 0)
-            {
-                Logger.LogError("No talent code");
-            }
-            else if (Lua.LuaDoString<int>("local unspentTalentPoints, _ = UnitCharacterPoints('player'); return unspentTalentPoints;") <= 0)
-            {
-                Logger.LogDebug("No talent point to spend");
-            }
-            else
-            {
-                bool stop = false;
-
-                // Loop for each TalentCode in list
-                foreach (string talentsCode in TalentCodes)
-                {
-                    if (stop)
-                        break;
-
-                    // check if talent code length is correct
-                    if ((NumTalentsInTrees[0] + NumTalentsInTrees[1] + NumTalentsInTrees[2]) != talentsCode.Length)
-                    {
-                        Logger.LogError("WARNING: Your talents code length is incorrect. Please use " +
-                            "http://armory.twinstar.cz/talent-calc.php to generate valid codes.");
-                        Logger.LogError("Talents code : " + talentsCode);
-                        stop = true;
-                        break;
-                    }
-
-                    // TalentCode per tree
-                    List<string> TalentCodeTrees = new List<string>()
-                {
-                    talentsCode.Substring(0, NumTalentsInTrees[0]),
-                    talentsCode.Substring(NumTalentsInTrees[0], NumTalentsInTrees[1]),
-                    talentsCode.Substring(NumTalentsInTrees[0] + NumTalentsInTrees[1], NumTalentsInTrees[2])
-                };
-
-                    // loop in 3 trees
-                    for (int k = 1; k <= 3; k++)
-                    {
-                        if (stop)
-                            break;
-
-                        // loop for each talent
-                        for (int i = 0; i < NumTalentsInTrees[k - 1]; i++)
-                        {
-                            if (stop)
-                                break;
-
-                            int _talentNumber = i + 1;
-                            string _talentName = Lua.LuaDoString<string>("local name, _, _, _, _, _, _, _ = GetTalentInfo(" + k + ", " + _talentNumber + "); return name;");
-                            int _currentRank = Lua.LuaDoString<int>("_, _, _, _, currentRank, _, _, _ = GetTalentInfo(" + k + ", " + _talentNumber + "); return currentRank;");
-                            int _realMaxRank = Lua.LuaDoString<int>("_, _, _, _, _, maxRank, _, _ = GetTalentInfo(" + k + ", " + _talentNumber + "); return maxRank;");
-
-                            int _pointsToAssignInTalent = Convert.ToInt16(TalentCodeTrees[k - 1].Substring(i, 1));
-
-                            if (_currentRank > _pointsToAssignInTalent && TalentCodes.Last().Equals(talentsCode))
-                            {
-                                Logger.LogError("WARNING: Your assigned talent points don't match your talent code. Please reset your talents or review your talents code." +
-                                    " You have " + _currentRank + " point(s) in " + _talentName + " where you should have " + _pointsToAssignInTalent + " point(s)");
-                                Logger.LogError("Talents code : " + talentsCode);
-                                stop = true;
-                            }
-                            else if (_pointsToAssignInTalent > _realMaxRank)
-                            {
-                                Logger.LogError($"WARNING : You're trying to assign {_pointsToAssignInTalent} points into {_talentName}," +
-                                    $" maximum is {_realMaxRank} points for this talent. Please check your talent code.");
-                                Logger.LogError("Talents code : " + talentsCode);
-                                stop = true;
-                            }
-                            else if (_currentRank != _pointsToAssignInTalent)
-                            {
-                                // loop for individual talent rank
-                                for (int j = 0; j < _pointsToAssignInTalent - _currentRank; j++)
-                                {
-                                    if (!Main.isLaunched)
-                                        stop = true;
-                                    if (stop)
-                                        break;
-                                    Lua.LuaDoString("LearnTalent(" + k + ", " + _talentNumber + ")");
-                                    Thread.Sleep(500 + Usefuls.Latency);
-                                    int _newRank = Lua.LuaDoString<int>("_, _, _, _, currentRank, _, _, _ = GetTalentInfo(" + k + ", " + _talentNumber + "); return currentRank;");
-                                    Logger.Log("Assigned talent: " + _talentName + " : " + _newRank + "/" + _pointsToAssignInTalent, Color.SteelBlue);
-                                    if (Lua.LuaDoString<int>("local unspentTalentPoints, _ = UnitCharacterPoints('player'); return unspentTalentPoints;") <= 0)
-                                        stop = true;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 }

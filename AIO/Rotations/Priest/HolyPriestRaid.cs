@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Priest
@@ -54,12 +55,12 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return;
 
             List<AIOPartyMember> needDispel = AIOParty.ClosePartyMembers
-                    .FindAll(m => m.IsAlive && ToolBox.HasMagicDebuff(m.Name));
+                    .FindAll(m => m.IsAlive && WTEffects.HasMagicDebuff(m.Name));
 
             // PARTY Mass Dispel
             if (settings.PartyMassDispel && MassDispel.KnownSpell)
             {
-                Vector3 centerPosition = ToolBox.FindAggregatedCenter(needDispel.Select(u => u.Position).ToList(), 15, settings.PartyMassDispelCount);
+                Vector3 centerPosition = WTSpace.FindAggregatedCenter(needDispel.Select(u => u.Position).ToList(), 15, settings.PartyMassDispelCount);
                 if (centerPosition != null && cast.OnLocation(MassDispel, centerPosition))
                     return;
             }
@@ -83,7 +84,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                         return;
                 }
             }
-           
+
             if (AoEHeal())
                 return;
 
@@ -92,7 +93,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             {
                 // Party Cure Disease
                 WoWPlayer needCureDisease = membersByMissingHealth
-                    .Find(m => ToolBox.HasDiseaseDebuff(m.Name));
+                    .Find(m => WTEffects.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
             }
@@ -119,7 +120,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 && player.HealthPercent < 50
                 && player.RagePercentage <= 0
                 && player.HaveBuff("Power Word: Shield")
-                && !ToolBox.HasDebuff("Weakened Soul", player.Name)
+                && !WTEffects.HasDebuff("Weakened Soul", player.Name)
                 && cast.OnFocusUnit(PowerWordShield, player))
                 return true;
             if (player.HealthPercent < 60 && cast.OnFocusUnit(GreaterHeal, player))
@@ -142,7 +143,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             {
                 if (CastCircleOfHealing(combat))
                     return true;
-            } 
+            }
             else if (PrayerOfHealing.KnownSpell)
             {
                 // PARTY Prayer of Healing
@@ -158,7 +159,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
         private bool CastCircleOfHealing(bool combat = true)
         {
-            List<List<AIOPartyMember>> groups = AIOParty.RaidGroups.Count == 0 
+            List<List<AIOPartyMember>> groups = AIOParty.RaidGroups.Count == 0
                 ? new List<List<AIOPartyMember>> { AIOParty.GroupAndRaid }
                 : AIOParty.RaidGroups.Values.ToList();
             var minimumCount = 3;

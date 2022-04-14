@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Shaman
@@ -18,7 +19,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 if (settings.GhostWolfMount
                     && wManager.wManagerSetting.CurrentSetting.GroundMountName == ""
                     && GhostWolf.KnownSpell)
-                    ToolBox.SetGroundMount(GhostWolf.Name);
+                    WTSettings.SetGroundMount(GhostWolf.Name);
 
                 // PARTY Healing Wave
                 List<AIOPartyMember> alliesNeedingHealWave = AIOParty.GroupAndRaid
@@ -38,13 +39,13 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
                 // PARTY Cure poison
                 WoWPlayer needCurePoison = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasPoisonDebuff(m.Name));
+                    .Find(m => WTEffects.HasPoisonDebuff(m.Name));
                 if (needCurePoison != null && cast.OnFocusUnit(CurePoison, needCurePoison))
                     return;
 
                 // PARTY Cure Disease
                 WoWPlayer needCureDisease = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasDiseaseDebuff(m.Name));
+                    .Find(m => WTEffects.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
 
@@ -148,7 +149,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             if (settings.PartyCurePoison)
             {
                 WoWPlayer needCurePoison = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasPoisonDebuff(m.Name));
+                    .Find(m => WTEffects.HasPoisonDebuff(m.Name));
                 if (needCurePoison != null && cast.OnFocusUnit(CurePoison, needCurePoison))
                     return;
             }
@@ -157,7 +158,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             if (settings.PartyCureDisease)
             {
                 WoWPlayer needCureDisease = AIOParty.GroupAndRaid
-                    .Find(m => m.IsAlive && ToolBox.HasDiseaseDebuff(m.Name));
+                    .Find(m => m.IsAlive && WTEffects.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
             }

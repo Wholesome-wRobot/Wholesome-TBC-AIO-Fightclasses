@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 
@@ -74,7 +75,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             if (settings.PartyRemoveCurse)
             {
                 List<AIOPartyMember> needRemoveCurse = AIOParty.GroupAndRaid
-                    .FindAll(m => m.InCombatFlagOnly && ToolBox.HasCurseDebuff(m.Name))
+                    .FindAll(m => m.InCombatFlagOnly && WTEffects.HasCurseDebuff(m.Name))
                     .ToList();
                 if (needRemoveCurse.Count > 0 && cast.OnFocusUnit(RemoveCurse, needRemoveCurse[0]))
                     return;
@@ -137,7 +138,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Scorch first
             int wantedScorchCount = Target.IsBoss ? 5 : 2;
-            int nbScorchDebuffOnTarget = ToolBox.CountDebuff("Fire Vulnerability", "target");
+            int nbScorchDebuffOnTarget = WTEffects.CountDebuff("Fire Vulnerability", "target");
             if (_knowImprovedScorch
                 && (nbScorchDebuffOnTarget < wantedScorchCount)
                 && cast.OnTarget(Scorch))
@@ -145,7 +146,8 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Scorch renewal
             if (_knowImprovedScorch
-                && (nbScorchDebuffOnTarget >= wantedScorchCount && ToolBox.DeBuffTimeLeft("Fire Vulnerability", "target") < 10)
+                && nbScorchDebuffOnTarget >= wantedScorchCount 
+                && WTEffects.DeBuffTimeLeft("Fire Vulnerability", "target") < 10
                 && cast.OnTarget(Scorch))
             {
                 Thread.Sleep(1000);
@@ -155,8 +157,8 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // Combustion
             if (!Me.HaveBuff("Combustion")
                 && Combustion.GetCurrentCooldown <= 0
-                && ToolBox.DeBuffTimeLeft("Fire Vulnerability", "target") > 20
-                && ToolBox.CountDebuff("Fire Vulnerability", "target") >= wantedScorchCount
+                && WTEffects.DeBuffTimeLeft("Fire Vulnerability", "target") > 20
+                && WTEffects.CountDebuff("Fire Vulnerability", "target") >= wantedScorchCount
                 && cast.OnSelf(Combustion))
                 return;
 
@@ -171,7 +173,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
 
             // Stop wand if banned
-            if (ToolBox.UsingWand()
+            if (WTCombat.IsSpellRepeating(5019)
                 && UnitImmunities.Contains(ObjectManager.Target, "Shoot")
                 && cast.OnTarget(UseWand))
                 return;
@@ -182,7 +184,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                     return;
 
             // Use Wand
-            if (!ToolBox.UsingWand()
+            if (!WTCombat.IsSpellRepeating(5019)
                 && _iCanUseWand
                 && !cast.IsBackingUp
                 && !MovementManager.InMovement

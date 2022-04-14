@@ -1,5 +1,4 @@
 ﻿using robotManager.Helpful;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -13,7 +12,7 @@ using WholesomeTBCAIO.Rotations.Rogue;
 using WholesomeTBCAIO.Rotations.Shaman;
 using WholesomeTBCAIO.Rotations.Warlock;
 using WholesomeTBCAIO.Rotations.Warrior;
-using wManager;
+using WholesomeToolbox;
 using wManager.Wow.Bot.Tasks;
 using wManager.Wow.Class;
 using wManager.Wow.Helpers;
@@ -25,50 +24,6 @@ namespace WholesomeTBCAIO.Helpers
     public class ToolBox
     {
         #region Combat
-
-        // Returns the center of aggregated positions
-        // radius is the max radius, ex 15 for Circle of Healing
-        // minCount is the minimum wanted amount of positions aggregated together
-        public static Vector3 FindAggregatedCenter(List<Vector3> positions, int radius, int minCount)
-        {
-            Vector3 centerVector = GetCenterVector(positions);
-            int nbAttempts = 5;
-            for (int i = 0; i < nbAttempts; i++)
-            {
-                if (i >= nbAttempts - 1 || positions.Count < minCount)
-                {
-                    return null;
-                }
-
-                List<Vector3> positionsInRadius = positions
-                    .FindAll(pos => pos.DistanceTo(centerVector) < radius)
-                    .OrderBy(pos => pos.DistanceTo(centerVector))
-                    .ToList();
-
-                if (positionsInRadius.Count < minCount)
-                {
-                    positions.RemoveAt(positions.Count - 1);
-                    centerVector = GetCenterVector(positions);
-                }
-                else
-                {
-                    return GetCenterVector(positionsInRadius);
-                }
-            }
-
-            return null;
-        }
-
-        private static Vector3 GetCenterVector(List<Vector3> positions)
-        {
-            Vector3 centerVector = new Vector3(0, 0, 0);
-            foreach (Vector3 position in positions)
-            {
-                centerVector += position;
-            }
-            return centerVector /= positions.Count;
-        }
-
         // Pull
         public static bool Pull(Cast cast, bool alwaysPull, List<AIOSpell> spells)
         {
@@ -120,197 +75,14 @@ namespace WholesomeTBCAIO.Helpers
             return false;
         }
 
-        // Accepts resurrect
-        public static void AcceptResurrect()
-        {
-            int timer = new Random().Next(1000, 2000);
-            Logger.Log($"Accepting resurrection request in {timer} ms");
-            Thread.Sleep(timer);
-            Lua.RunMacroText("/script AcceptResurrect(); StaticPopup1Button1: Click(\"left\", true);");
-        }
-
-        // Get Corpse Position
-        public static Vector3 GetCorpsePosition(WoWCorpse corpse)
-        {
-            try
-            {
-                uint baseAddress = corpse.GetBaseAddress;
-                const ushort positionOffset = 0xE8;
-                float x = wManager.Wow.Memory.WowMemory.Memory.ReadFloat(baseAddress + positionOffset + 0x00);
-                float y = wManager.Wow.Memory.WowMemory.Memory.ReadFloat(baseAddress + positionOffset + 0x04);
-                float z = wManager.Wow.Memory.WowMemory.Memory.ReadFloat(baseAddress + positionOffset + 0x08);
-                return new Vector3(x, y, z);
-            }
-            catch (Exception e)
-            {
-                Logger.LogError("Failed to read corpse position: " + e.Message);
-            }
-            return new Vector3(0, 0, 0);
-        }
-
-        // Check if we're currently wanding
-        public static bool UsingWand()
-        {
-            return Lua.LuaDoString<bool>("isAutoRepeat = false; local name = GetSpellInfo(5019); " +
-                "if IsAutoRepeatSpell(name) then isAutoRepeat = true end", "isAutoRepeat");
-        }
-
         // Reactivates auto attack if it's off. Must pass the Attack spell as argument
         public static void CheckAutoAttack(AIOSpell attack)
         {
-            bool _autoAttacking = Lua.LuaDoString<bool>("isAutoRepeat = false; if IsCurrentSpell('Attack') then isAutoRepeat = true end", "isAutoRepeat");
-            if (!_autoAttacking && ObjectManager.Target.IsAlive)
+            if (!WTCombat.IsSpellActive("Attack") && ObjectManager.Target.IsAlive)
             {
                 Logger.LogDebug("Re-activating attack");
                 attack.Launch();
             }
-        }
-
-        // Cancels a player buff (TBC only)
-        public static void CancelPlayerBuff(string buffName)
-        {
-            Logger.Log($"Removing buff {buffName}");
-            Lua.LuaDoString($@"CancelPlayerBuff(""{buffName.Replace("\"", "\\\"")}"")");
-        }
-
-        // Returns whether the unit is poisoned
-        public static bool HasPoisonDebuff(string unit = "player")
-        {
-            return Lua.LuaDoString<bool>
-                (@$"for i=1,25 do 
-	                local _, _, _, _, d  = UnitDebuff('{unit}',i);
-	                if d == 'Poison' then
-                    return true
-                    end
-                end");
-        }
-
-        // Returns whether the unit has a disease
-        public static bool HasDiseaseDebuff(string unit = "player")
-        {
-            return Lua.LuaDoString<bool>
-                (@$"for i=1,25 do 
-	                local _, _, _, _, d  = UnitDebuff('{unit}',i);
-	                if d == 'Disease' then
-                    return true
-                    end
-                end");
-        }
-
-        // Returns whether the unit has a curse
-        public static bool HasCurseDebuff(string unit = "player")
-        {
-            return Lua.LuaDoString<bool>
-                (@$"for i=1,25 do 
-	                local _, _, _, _, d  = UnitDebuff('{unit}',i);
-	                if d == 'Curse' then
-                    return true
-                    end
-                end");
-        }
-
-        // Returns whether the unit has a magic debuff
-        public static bool HasMagicDebuff(string unit = "player")
-        {
-            return Lua.LuaDoString<bool>
-                (@$"for i=1,25 do 
-	            local _, _, _, _, d  = UnitDebuff('{unit}',i);
-	            if d == 'Magic' then
-                return true
-                end
-            end");
-        }
-
-        // Returns the type of debuff the unit has as a string
-        public static string GetDebuffType(string unit = "player")
-        {
-            return Lua.LuaDoString<string>
-                (@$"for i=1,25 do 
-	                local _, _, _, _, d  = UnitDebuff('{unit}',i);
-	                if (d == 'Poison' or d == 'Magic' or d == 'Curse' or d == 'Disease') then
-                    return d
-                    end
-                end");
-        }
-
-        // Returns whether the player has the debuff passed as a string (ex: Weakened Soul)
-        public static bool HasDebuff(string debuffName, string unitName = "player")
-        {
-            return Lua.LuaDoString<bool>
-                (@$"for i=1,25 do
-                    local n, _, _, _, _  = UnitDebuff('{unitName}',i);
-                    if n == '{debuffName}' then
-                    return true
-                    end
-                end");
-        }
-
-        // Returns the amount of stacks of a specific buff passed as a string (ex: Arcane Blast)
-        public static int CountBuff(string buffName, string unit = "player")
-        {
-            return Lua.LuaDoString<int>
-                (@$"for i=1,25 do
-                    local n, _, _, c, _  = UnitBuff('{unit}',i);
-                    if n == '{buffName}' then
-                    return c
-                    end
-                end");
-        }
-
-        // Returns the time left on a buff in seconds, buff name is passed as string
-        public static int BuffTimeLeft(string buffName, string unit = "player")
-        {
-            return Lua.LuaDoString<int>
-                (@$"for i=1,25 do
-                    local n, _, _, _, _, duration, _  = UnitBuff('{unit}',i);
-                    if n == ""{buffName}"" then
-                    return duration
-                    end
-                end");
-        }
-
-        // Returns the time left on a debuff in seconds, debuff name is passed as string
-        public static int DeBuffTimeLeft(string debuffName, string unit = "player")
-        {
-            return Lua.LuaDoString<int>
-                (@$"for i=1,25 do
-                    local n, _, _, _, _, _, expirationTime  = UnitDebuff('{unit}',i);
-                    if n == '{debuffName}' then
-                    return expirationTime
-                    end
-                end");
-        }
-
-        // Returns the amount of stacks of a specific debuff passed as a string (ex: Arcane Blast)
-        public static int CountDebuff(string debuffName, string unit = "player")
-        {
-            return Lua.LuaDoString<int>
-                (@$"for i=1,25 do
-                    local n, _, _, c, _  = UnitDebuff('{unit}',i);
-                    if n == '{debuffName}' then
-                    return c
-                    end
-                end");
-        }
-
-        // Returns true if the enemy is either casting or channeling (good for interrupts)
-        public static bool TargetIsCasting()
-        {
-            int channelTimeLeft = Lua.LuaDoString<int>($@"local spell, _, _, _, endTimeMS = UnitChannelInfo('target')
-                                    if spell then
-                                     local finish = endTimeMS - GetTime() * 1000
-                                     return finish
-                                    end");
-            return channelTimeLeft < 0 || ObjectManager.Target.CastingTimeLeft > Usefuls.Latency;
-        }
-
-        public static int GetChannelTimeLeft(string unit = "target")
-        {
-            return Lua.LuaDoString<int>($@"local spell, _, _, startTimeMS, endTimeMS = UnitChannelInfo('{unit}')
-                    if spell then
-                        local finish = endTimeMS - GetTime() * 1000
-                        return finish
-                    end");
         }
 
         // Waits for GlobalCooldown to be off, must pass the most basic spell avalailable at lvl1 (ex: Smite for priest)
@@ -384,21 +156,6 @@ namespace WholesomeTBCAIO.Helpers
             return (RotationType.Solo, RotationRole.DPS);
         }
 
-        public static void SetGroundMount(string mountName)
-        {
-            wManagerSetting.CurrentSetting.GroundMountName = mountName;
-            wManagerSetting.CurrentSetting.Save();
-            Logger.Log($"Setting mount to {mountName}");
-        }
-
-        public static List<WoWUnit> GetSuroundingEnemies()
-        {
-            return ObjectManager.GetObjectWoWUnit()
-                .Where(e => e.IsAlive && e.IsValid && !e.PlayerControlled && e.IsAttackable)
-                .OrderBy(e => e.GetDistance)
-                .ToList();
-        }
-
         public static int GetNumberEnemiesAround(float distance, WoWUnit unit)
         {
             List<WoWUnit> surroundingEnemies = ObjectManager.GetObjectWoWUnit();
@@ -453,35 +210,12 @@ namespace WholesomeTBCAIO.Helpers
                     && !unit.IsTaggedByOther
                     && !unit.PlayerControlled
                     && unit.IsAttackable
-                    && unit.Reaction.ToString().Equals("Hostile")
+                    && unit.Reaction == wManager.Wow.Enums.Reaction.Hostile
                     && unit.Guid != target.Guid)
                     return unit;
             }
 
             return null;
-        }
-        /*
-        // Returns the unit in the middle of the pack
-        public static WoWUnit GetBestAoETarget(float range, IEnumerable<WoWUnit> units)
-        {
-            WoWUnit[] unitArray = units as WoWUnit[] ?? units.ToArray();
-            List<WoWUnit> unitsInRange = unitArray.Where(target => target.GetDistance < range).ToList();
-            if (unitsInRange.Count < 1)
-                return null;
-            Vector3 center = unitsInRange
-                .Select(unit => unit.Position)
-                .Aggregate(new Vector3(0, 0, 0), (s, v) => s + v) / unitsInRange.Count;
-            WoWUnit unitClosestToCenter = unitsInRange
-                .OrderBy(unit => unit.Position.DistanceTo(center))
-                .First();
-            return unitClosestToCenter;
-        }
-        */
-        // Get Talent Rank
-        public static int GetTalentRank(int tabIndex, int talentIndex)
-        {
-            int rank = Lua.LuaDoString<int>($"local _, _, _, _, currentRank, _, _, _ = GetTalentInfo({tabIndex}, {talentIndex}); return currentRank;");
-            return rank;
         }
 
         // Gets Character's specialization (talents)
@@ -541,75 +275,6 @@ namespace WholesomeTBCAIO.Helpers
 
         #region Items
 
-        // Add to not sell  list
-        public static void AddToDoNotSellList(string itemName)
-        {
-            if (!wManagerSetting.CurrentSetting.DoNotSellList.Contains(itemName.Trim()))
-            {
-                Logger.LogDebug($"Adding item {itemName} to Do not Sell List");
-                wManagerSetting.CurrentSetting.DoNotSellList.Add(itemName.Trim());
-            }
-        }
-        public static void AddToDoNotSellList(List<string> items)
-        {
-            items.ForEach(item =>
-            {
-                if (!wManagerSetting.CurrentSetting.DoNotSellList.Contains(item.Trim()))
-                {
-                    Logger.LogDebug($"Adding item {item} to Do not Sell List");
-                    wManagerSetting.CurrentSetting.DoNotSellList.Add(item.Trim());
-                }
-            });
-        }
-
-        // Return Main hand weapon type as a string
-        public static string GetMHWeaponType()
-        {
-            return Lua.LuaDoString<string>(@"local _, _, _, _, _, _, weapontype = 
-                                            GetItemInfo(GetInventoryItemLink('player', 16)); return weapontype;");
-        }
-
-        // Check if range weapon (wand, bow, gun) equipped
-        public static bool HaveRangedWeaponEquipped()
-        {
-            return ObjectManager.Me.GetEquipedItemBySlot(wManager.Wow.Enums.InventorySlot.INVSLOT_RANGED) != 0;
-        }
-
-        // Deletes items passed as string
-        public static void LuaDeleteAllItems(string item)
-        {
-            Lua.LuaDoString("for bag = 0, 4, 1 do for slot = 1, 32, 1 do local name = GetContainerItemLink(bag, slot); " +
-                "if name and string.find(name, \"" + item + "\") then PickupContainerItem(bag, slot); " +
-                "DeleteCursorItem(); end; end; end", false);
-        }
-
-        // Deletes items passed as string
-        public static void LuaDeleteOneItem(string item)
-        {
-            Lua.LuaDoString("for bag = 0, 4, 1 do for slot = 1, 32, 1 do local name = GetContainerItemLink(bag, slot); " +
-                "if name and string.find(name, \"" + item + "\") then PickupContainerItem(bag, slot); " +
-                "DeleteCursorItem(); return; end; end; end", false);
-        }
-
-        // Count the amount of the specified item stacks in your bags
-        public static int CountItemStacks(string itemArg)
-        {
-            return Lua.LuaDoString<int>("local count = GetItemCount('" + itemArg + "'); return count");
-        }
-
-        // Checks if you have any of the listed items in your bags
-        public static bool HaveOneInList(List<string> list)
-        {
-            List<WoWItem> _bagItems = Bag.GetBagItem();
-            bool _haveItem = false;
-            foreach (WoWItem item in _bagItems)
-            {
-                if (list.Contains(item.Name))
-                    _haveItem = true;
-            }
-            return _haveItem;
-        }
-
         // Get item ID in bag from a list passed as argument (good to check CD)
         public static int GetItemEntry(List<string> list)
         {
@@ -617,32 +282,6 @@ namespace WholesomeTBCAIO.Helpers
             foreach (WoWItem item in _bagItems)
                 if (list.Contains(item.Name))
                     return item.Entry;
-
-            return 0;
-        }
-
-        // Get item ID in bag from a string passed as argument (good to check CD)
-        public static int GetItemEntry(string itemName)
-        {
-            List<WoWItem> _bagItems = Bag.GetBagItem();
-            foreach (WoWItem item in _bagItems)
-                if (itemName.Equals(item.Name))
-                    return item.Entry;
-
-            return 0;
-        }
-
-        // Get item Cooldown (must pass item string as arg)
-        public static int GetItemCooldown(string itemName)
-        {
-            int entry = GetItemEntry(itemName);
-            List<WoWItem> _bagItems = Bag.GetBagItem();
-            foreach (WoWItem item in _bagItems)
-                if (entry == item.Entry)
-                    return Lua.LuaDoString<int>("local startTime, duration, enable = GetItemCooldown(" + entry + "); " +
-                        "return duration - (GetTime() - startTime)");
-
-            Logger.Log("Couldn't find item " + itemName);
             return 0;
         }
 
@@ -702,119 +341,7 @@ namespace WholesomeTBCAIO.Helpers
 
         #endregion
 
-        #region Pet
-
-        // Returns wether your pet knows the skill
-        public static bool PetKnowsSpell(string spellName)
-        {
-            bool knowsSpell = false;
-            knowsSpell = Lua.LuaDoString<bool>
-                ($"for i=1,10 do " +
-                    "local name, _, _, _, _, _, _ = GetPetActionInfo(i); " +
-                    "if name == '" + spellName + "' then " +
-                    "return true " +
-                    "end " +
-                "end");
-
-            return knowsSpell;
-        }
-        /*
-        // Casts pet dmg spell if he has over X focus
-        public static void CastPetSpellIfEnoughForGrowl(string spellName, uint spellCost)
-        {
-            if (ObjectManager.Pet.Focus >= spellCost + 15
-                && ObjectManager.Pet.HasTarget
-                && ObjectManager.Me.InCombatFlagOnly
-                && PetKnowsSpell(spellName))
-                PetSpellCast(spellName);
-        }
-        */
-        // Returns the index of the pet spell passed as argument
-        public static int GetPetSpellIndex(string spellName)
-        {
-            int spellindex = Lua.LuaDoString<int>
-                ($"for i=1,10 do " +
-                    "local name, _, _, _, _, _, _ = GetPetActionInfo(i); " +
-                    "if name == '" + spellName + "' then " +
-                    "return i " +
-                    "end " +
-                "end");
-
-            return spellindex;
-        }
-
-        // Returns the cooldown of the pet spell passed as argument
-        public static int GetPetSpellCooldown(string spellName)
-        {
-            int _spellIndex = GetPetSpellIndex(spellName);
-            return Lua.LuaDoString<int>("local startTime, duration, enable = GetPetActionCooldown(" + _spellIndex + "); return duration - (GetTime() - startTime)");
-        }
-
-        // Returns whether a pet spell is available (off cooldown)
-        public static bool GetPetSpellReady(string spellName)
-        {
-            return GetPetSpellCooldown(spellName) < 0;
-        }
-        /*
-        // Casts the pet spell passed as argument
-        public static void PetSpellCast(string spellName)
-        {
-            int spellIndex = GetPetSpellIndex(spellName);
-            if (PetKnowsSpell(spellName)
-                && GetPetSpellReady(spellName))
-            {
-                Thread.Sleep(GetLatency() + 100);
-                Lua.LuaDoString("CastPetAction(" + spellIndex + ");");
-            }
-        }
-        */
-        // Toggles Pet spell autocast (pass true as second argument to toggle on, or false to toggle off)
-        public static void TogglePetSpellAuto(string spellName, bool toggle)
-        {
-            if (PetKnowsSpell(spellName))
-            {
-                string spellIndex = GetPetSpellIndex(spellName).ToString();
-
-                if (!spellIndex.Equals("0"))
-                {
-                    if ((toggle && !PetSpellIsAutocast(spellName)) || (!toggle && PetSpellIsAutocast(spellName)))
-                    {
-                        //Lua.LuaDoString("ToggleSpellAutocast(" + spellIndex + ", 'pet');");
-                        Lua.LuaDoString("ToggleSpellAutocast('" + spellName + "', 'pet');");
-                    }
-                }
-            }
-        }
-
-        public static bool PetSpellIsAutocast(string spellName)
-        {
-            if (PetKnowsSpell(spellName))
-            {
-                string spellIndex = GetPetSpellIndex(spellName).ToString();
-
-                if (!spellIndex.Equals("0"))
-                {
-                    // Lua.LuaDoString<bool>("local _, autostate = GetSpellAutocast(" + spellIndex + ", 'pet'); return autostate == 1")
-                    return Lua.LuaDoString<bool>("local _, autostate = GetSpellAutocast('" + spellName + "', 'pet'); return autostate == 1");
-                }
-            }
-            return false;
-        }
-
-        #endregion
-
         #region Movement
-
-        // get the position behind the target
-        public static Vector3 BackofVector3(Vector3 from, WoWUnit targetObject, float radius)
-        {
-            if (from != null && from != Vector3.Empty)
-            {
-                float rotation = -robotManager.Helpful.Math.DegreeToRadian(robotManager.Helpful.Math.RadianToDegree(targetObject.Rotation) + 90);
-                return new Vector3((System.Math.Sin(rotation) * radius) + from.X, (System.Math.Cos(rotation) * radius) + from.Y, from.Z);
-            }
-            return new Vector3(0, 0, 0);
-        }
 
         // Determines if me is behind the Target
         public static bool MeBehindTarget()
@@ -847,12 +374,12 @@ namespace WholesomeTBCAIO.Helpers
                 && !MovementManager.InMovement)
             {
                 int limit = 5;
-                Vector3 position = BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2f);
+                Vector3 position = WTSpace.BackOfUnit(ObjectManager.Target, 2f);
                 while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
                     && ObjectManager.Me.Position.DistanceTo(position) > 1
                     && limit >= 0)
                 {
-                    position = BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2f);
+                    position = WTSpace.BackOfUnit(ObjectManager.Target, 2f);
                     MovementManager.Go(PathFinder.FindPath(position), false);
                     // Wait follow path
                     Thread.Sleep(500);

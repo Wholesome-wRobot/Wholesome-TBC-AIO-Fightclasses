@@ -1,62 +1,58 @@
 ﻿using System.Collections.Generic;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.Helpers;
 
 namespace WholesomeTBCAIO.Rotations.Warlock
 {
     public static class WarlockPetAndConsumables
     {
-        // Healthstones list
-        public static List<string> HealthStones()
-        {
-            return new List<string>
-            {
-                "Minor Healthstone",
-                "Lesser Healthstone",
-                "Healthstone",
-                "Greater Healthstone",
-                "Major Healthstone",
-                "Master Healthstone"
-            };
-        }
 
         // Checks if we have a Healthstone
         public static bool HaveHealthstone()
         {
-            return ToolBox.HaveOneInList(HealthStones());
+            return WTItem.HaveOneInList(HEALTHSTONES);
         }
 
         // Use Healthstone
         public static void UseHealthstone()
         {
-            ToolBox.UseFirstMatchingItem(HealthStones());
+            ToolBox.UseFirstMatchingItem(HEALTHSTONES);
         }
 
         // Soulstones list
-        public static List<string> SoulStones()
+        public static readonly List<string> SOULSTONES = new List<string>
         {
-            return new List<string>
-            {
-                "Minor Soulstone",
-                "Lesser Soulstone",
-                "Soulstone",
-                "Major Soulstone",
-                "Greater Soulstone",
-                "Master Soulstone"
-            };
-        }
+            "Minor Soulstone",
+            "Lesser Soulstone",
+            "Soulstone",
+            "Major Soulstone",
+            "Greater Soulstone",
+            "Master Soulstone"
+        };
+
+        // Healthstones list
+        public static readonly List<string> HEALTHSTONES = new List<string>
+        {
+            "Minor Healthstone",
+            "Lesser Healthstone",
+            "Healthstone",
+            "Greater Healthstone",
+            "Major Healthstone",
+            "Master Healthstone"
+        };
 
         public static void Setup()
         {
-            ToolBox.AddToDoNotSellList("Soul Shard");
-            ToolBox.AddToDoNotSellList(SoulStones());
-            ToolBox.AddToDoNotSellList(HealthStones());
+            WTSettings.AddToDoNotSellList("Soul Shard");
+            WTSettings.AddToDoNotSellList(SOULSTONES);
+            WTSettings.AddToDoNotSellList(HEALTHSTONES);
         }
 
         // Checks if we have a Soulstone
         public static bool HaveSoulstone()
         {
-            return ToolBox.HaveOneInList(SoulStones());
+            return WTItem.HaveOneInList(SOULSTONES);
         }
 
         // Returns which pet the warlock has summoned

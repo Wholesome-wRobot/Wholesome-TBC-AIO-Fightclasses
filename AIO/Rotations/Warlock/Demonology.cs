@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 
@@ -87,13 +88,13 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             // Use Soul Stone
             if (!Me.HaveBuff("Soulstone Resurrection")
                 && CreateSoulstone.KnownSpell
-                && ToolBox.HaveOneInList(WarlockPetAndConsumables.SoulStones())
-                && ToolBox.GetItemCooldown(WarlockPetAndConsumables.SoulStones()) <= 0)
+                && WTItem.HaveOneInList(WarlockPetAndConsumables.SOULSTONES)
+                && ToolBox.GetItemCooldown(WarlockPetAndConsumables.SOULSTONES) <= 0)
             {
                 MovementManager.StopMoveNewThread();
                 MovementManager.StopMoveToNewThread();
                 Lua.RunMacroText("/target player");
-                ToolBox.UseFirstMatchingItem(WarlockPetAndConsumables.SoulStones());
+                ToolBox.UseFirstMatchingItem(WarlockPetAndConsumables.SOULSTONES);
                 Usefuls.WaitIsCasting();
                 Lua.RunMacroText("/cleartarget");
             }
@@ -164,7 +165,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             bool _overLowManaThreshold = _myManaPC > _innerManaSaveThreshold;
 
             // Drain Soul
-            bool _shouldDrainSoul = ToolBox.CountItemStacks("Soul Shard") < settings.NumberOfSoulShards || settings.AlwaysDrainSoul;
+            bool _shouldDrainSoul = WTItem.CountItemStacks("Soul Shard") < settings.NumberOfSoulShards || settings.AlwaysDrainSoul;
             if (_shouldDrainSoul
                 && ObjectManager.Target.HealthPercent < settings.DrainSoulHP
                 && ObjectManager.Target.Level >= Me.Level - 8
@@ -298,7 +299,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 return;
 
             // Stop wand if banned
-            if (ToolBox.UsingWand()
+            if (WTCombat.IsSpellRepeating(5019)
                 && UnitImmunities.Contains(ObjectManager.Target, "Shoot")
                 && cast.OnTarget(UseWand))
                 return;
@@ -309,13 +310,13 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 return;
 
             // Use Wand
-            if (!ToolBox.UsingWand()
+            if (!WTCombat.IsSpellRepeating(5019)
                 && _iCanUseWand
                 && cast.OnTarget(UseWand, false))
                 return;
 
             // Go in melee because nothing else to do
-            if (!ToolBox.UsingWand()
+            if (!WTCombat.IsSpellRepeating(5019)
                 && !UseWand.IsSpellUsable
                 && !RangeManager.CurrentRangeIsMelee()
                 && Target.IsAlive)

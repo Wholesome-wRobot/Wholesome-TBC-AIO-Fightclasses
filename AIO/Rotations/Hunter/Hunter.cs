@@ -1,11 +1,12 @@
-﻿using System;
+﻿using robotManager.Helpful;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading;
-using robotManager.Helpful;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
+using WholesomeToolbox;
 using wManager.Events;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
@@ -41,7 +42,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         {
             settings = HunterSettings.Current;
             if (settings.PartyDrinkName != "")
-                ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
+                WTSettings.AddToDoNotSellList(settings.PartyDrinkName);
 
             AIOSpell baseSpell = SerpentSting.KnownSpell ? SerpentSting : RaptorStrike;
             cast = new Cast(baseSpell, null, settings);
@@ -57,7 +58,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightLoop += FightLoopHandler;
             MovementEvents.OnMovementPulse += MovementEventsOnMovementPulse;
-            
+
             Rotation();
         }
 
@@ -86,26 +87,25 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 try
                 {
                     if (StatusChecker.BasicConditions()
-                        && !Me.IsOnTaxi 
+                        && !Me.IsOnTaxi
                         && ObjectManager.Pet.IsValid
                         && ObjectManager.Pet.IsAlive
                         && !Me.IsMounted)
                     {
                         // OOC
-                        if (!Fight.InFight
-                            && !Me.InCombatFlagOnly)
+                        if (!Fight.InFight && !Me.InCombatFlagOnly)
                         {
                             // Feed
-                            if (Lua.LuaDoString<int>("happiness, damagePercentage, loyaltyRate = GetPetHappiness() return happiness", "") < 3
+                            if (WTPet.PetHappiness < 3
                                 && settings.FeedPet)
                                 Feed();
 
                             // Switch Auto Growl
-                            if (ObjectManager.Pet.IsValid
-                                && ToolBox.PetSpellIsAutocast("Growl") != settings.AutoGrowl)
-                                ToolBox.TogglePetSpellAuto("Growl", settings.AutoGrowl);
+                            int growlIndex = WTPet.GetPetSpellIndex("Growl");
+                            WTPet.TogglePetSpellAuto(growlIndex, settings.AutoGrowl);
 
-                            ToolBox.TogglePetSpellAuto("Charge", true);
+                            int chargeIndex = WTPet.GetPetSpellIndex("Charge");
+                            WTPet.TogglePetSpellAuto(chargeIndex, true);
                         }
 
                         // In fight
@@ -151,7 +151,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                                 Lua.LuaDoString("PetAttack();", false);
 
                             // Pet Growl
-                            if ((ObjectManager.Target.Target == Me.Guid || ObjectManager.Pet.Target != Me.Target) 
+                            if ((ObjectManager.Target.Target == Me.Guid || ObjectManager.Pet.Target != Me.Target)
                                 && !settings.AutoGrowl
                                 && RotationType != Enums.RotationType.Party)
                                 if (cast.PetSpell("Growl"))
@@ -211,7 +211,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
                     if (StatusChecker.OutOfCombat(RotationRole))
                         specialization.BuffRotation();
-                    
+
                     if (StatusChecker.InPull())
                         specialization.Pull();
 
@@ -241,11 +241,11 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         protected void Feed()
         {
-            if (ObjectManager.Pet.IsAlive 
-                && !Me.IsCast 
+            if (ObjectManager.Pet.IsAlive
+                && !Me.IsCast
                 && !ObjectManager.Pet.HaveBuff("Feed Pet Effect"))
             {
-                if (!ToolBox.HasPoisonDebuff("pet"))
+                if (!WTEffects.HasPoisonDebuff("pet"))
                 {
                     _foodManager.FeedPet();
                     Thread.Sleep(400);
@@ -305,18 +305,13 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             }
         }
 
-        protected bool RaptorStrikeOn()
-        {
-            return Lua.LuaDoString<bool>("isAutoRepeat = false; if IsCurrentSpell('Raptor Strike') then isAutoRepeat = true end", "isAutoRepeat");
-        }
-
         protected void ReenableAutoshot()
         {
             _autoshotRepeating = Lua.LuaDoString<bool>("isAutoRepeat = false; local name = GetSpellInfo(75); " +
                    "if IsAutoRepeatSpell(name) then isAutoRepeat = true end", "isAutoRepeat");
             if (!_autoshotRepeating
                 && cast.OnTarget(AutoShot))
-                Logger.LogDebug("Re-enabling auto shot");;
+                Logger.LogDebug("Re-enabling auto shot"); ;
         }
 
         protected AIOSpell RevivePet = new AIOSpell("Revive Pet");
@@ -356,8 +351,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && !ObjectManager.Me.InCombatFlagOnly)
                 Thread.Sleep(500);
 
-            if (ObjectManager.Target.GetDistance >= 13f 
-                && !AutoShot.IsSpellUsable 
+            if (ObjectManager.Target.GetDistance >= 13f
+                && !AutoShot.IsSpellUsable
                 && !cast.IsBackingUp)
                 _canOnlyMelee = true;
             else
@@ -382,7 +377,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && !ObjectManager.Pet.IsStunned
                 && !Me.IsCast
                 && settings.BackupFromMelee
-                && (!RaptorStrikeOn() || ObjectManager.Target.GetDistance > RangeManager.GetMeleeRangeWithTarget()))
+                && (!WTCombat.IsSpellActive("Raptor Strike") || ObjectManager.Target.GetDistance > RangeManager.GetMeleeRangeWithTarget()))
             {
                 // Stop trying if we reached the max amount of attempts
                 if (_backupAttempts >= settings.MaxBackupAttempts)
@@ -399,7 +394,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 // Using CTM
                 if (settings.BackupUsingCTM)
                 {
-                    Vector3 position = ToolBox.BackofVector3(Me.Position, Me, 12f);
+                    Vector3 position = WTSpace.BackOfUnit(Me, 12f);
                     MovementManager.Go(PathFinder.FindPath(position), false);
                     Thread.Sleep(500);
 
@@ -409,7 +404,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     && !ObjectManager.Target.IsTargetingMe
                     && ObjectManager.Target.GetDistance < minDistance + 1
                     && !timer.IsReady)
-                    Thread.Sleep(100);
+                        Thread.Sleep(100);
                 }
                 // Using Keyboard
                 else
@@ -429,7 +424,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 //Logger.Log($"FINAL We are {ObjectManager.Target.GetDistance}/{minDistance} away from target");
                 cast.IsBackingUp = false;
 
-                if (RaptorStrikeOn())
+                if (WTCombat.IsSpellActive("Raptor Strike"))
                     cast.OnTarget(RaptorStrike);
                 ReenableAutoshot();
             }

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Priest
@@ -70,13 +70,13 @@ namespace WholesomeTBCAIO.Rotations.Priest
             // Power Word Shield
             if (Me.HealthPercent < 50
                 && !Me.HaveBuff("Power Word: Shield")
-                && !ToolBox.HasDebuff("Weakened Soul")
+                && !WTEffects.HasDebuff("Weakened Soul")
                 && settings.UsePowerWordShield
                 && cast.OnSelf(PowerWordShield))
                 return;
 
             // Silence
-            if (ToolBox.TargetIsCasting()
+            if (WTCombat.TargetIsCasting()
                 && cast.OnTarget(Silence))
                 return;
 
@@ -85,7 +85,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             {
                 // PARTY Cure Disease
                 WoWPlayer needCureDisease = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasDiseaseDebuff(m.Name));
+                    .Find(m => WTEffects.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
             }
@@ -94,7 +94,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             if (settings.PartyDispelMagic)
             {
                 WoWPlayer needDispelMagic = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasMagicDebuff(m.Name));
+                    .Find(m => WTEffects.HasMagicDebuff(m.Name));
                 if (needDispelMagic != null && cast.OnFocusUnit(DispelMagic, needDispelMagic))
                     return;
             }
@@ -160,7 +160,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return;
 
             // Stop wand if banned
-            if (ToolBox.UsingWand()
+            if (WTCombat.IsSpellRepeating(5019)
                 && UnitImmunities.Contains(ObjectManager.Target, "Shoot")
                 && cast.OnTarget(UseWand))
                 return;
@@ -171,7 +171,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     return;
 
             // Use Wand
-            if (!ToolBox.UsingWand()
+            if (!WTCombat.IsSpellRepeating(5019)
                 && _iCanUseWand
                 && cast.OnTarget(UseWand, false))
                 return;

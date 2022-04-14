@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 
@@ -73,7 +74,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 _iCanUseWand = false;
 
             // Remove Curse
-            if (ToolBox.HasCurseDebuff())
+            if (WTEffects.HasCurseDebuff())
             {
                 Thread.Sleep(Main.humanReflexTime);
                 if (cast.OnSelf(RemoveCurse))
@@ -165,7 +166,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 return;
 
             // Stop wand if banned
-            if (ToolBox.UsingWand()
+            if (WTCombat.IsSpellRepeating(5019)
                 && UnitImmunities.Contains(ObjectManager.Target, "Shoot")
                 && cast.OnTarget(UseWand))
                 return;
@@ -176,7 +177,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                     return;
 
             // Use Wand
-            if (!ToolBox.UsingWand()
+            if (!WTCombat.IsSpellRepeating(5019)
                 && _iCanUseWand
                 && !cast.IsBackingUp
                 && !MovementManager.InMovement)
@@ -186,7 +187,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             }
 
             // Go in melee because nothing else to do
-            if (!ToolBox.UsingWand()
+            if (!WTCombat.IsSpellRepeating(5019)
                 && !UseWand.IsSpellUsable
                 && !RangeManager.CurrentRangeIsMelee()
                 && !cast.IsBackingUp

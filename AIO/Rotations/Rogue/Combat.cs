@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 using Timer = robotManager.Helpful.Timer;
@@ -23,7 +24,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 _fightingACaster = true;
 
             // Pull logic
-            if (ToolBox.Pull(cast, settings.AlwaysPull || ToolBox.HasPoisonDebuff(), new List<AIOSpell> { Shoot, Throw }))
+            if (ToolBox.Pull(cast, settings.AlwaysPull || WTEffects.HasPoisonDebuff(), new List<AIOSpell> { Shoot, Throw }))
             {
                 _combatMeleeTimer = new Timer(2000);
                 return;
@@ -36,7 +37,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 && ToolBox.GetClosestHostileFrom(ObjectManager.Target, 20) == null
                 && settings.StealthApproach 
                 && Backstab.KnownSpell
-                && (!ToolBox.HasPoisonDebuff() || settings.StealthWhenPoisoned)
+                && (!WTEffects.HasPoisonDebuff() || settings.StealthWhenPoisoned)
                 && cast.OnSelf(Stealth))
                 return;
 
@@ -55,7 +56,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
         {
             base.CombatRotation();
 
-            bool _shouldBeInterrupted = ToolBox.TargetIsCasting();
+            bool _shouldBeInterrupted = WTCombat.TargetIsCasting();
             WoWUnit Target = ObjectManager.Target;
 
             // Force melee
@@ -108,7 +109,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             }
 
             // Blind
-            if (Me.HealthPercent < 40 && !ToolBox.HasDebuff("Recently Bandaged") && _myBestBandage != null
+            if (Me.HealthPercent < 40 && !WTEffects.HasDebuff("Recently Bandaged") && _myBestBandage != null
                 && settings.UseBlindBandage)
                 if (cast.OnTarget(Blind))
                     return;
@@ -124,7 +125,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                     return;
 
             // Backstab in combat
-            if (IsTargetStunned() && ToolBox.GetMHWeaponType().Equals("Daggers"))
+            if (IsTargetStunned() && WTGear.GetMainHandWeaponType().Equals("Daggers"))
                 if (cast.OnTarget(Backstab))
                     return;
 

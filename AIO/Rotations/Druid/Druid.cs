@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
+using WholesomeToolbox;
 using wManager.Events;
 using wManager.Wow.Enums;
 using wManager.Wow.Helpers;
@@ -40,7 +41,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             RangeManager.SetRange(28);
             settings = DruidSettings.Current;
             if (settings.PartyDrinkName != "")
-                ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
+                WTSettings.AddToDoNotSellList(settings.PartyDrinkName);
             cast = new Cast(Wrath, null, settings);
 
             this.specialization = specialization as Druid;
@@ -173,11 +174,6 @@ namespace WholesomeTBCAIO.Rotations.Druid
         protected AIOSpell InsectSwarm = new AIOSpell("Insect Swarm");
         protected AIOSpell MoonfireRank1 = new AIOSpell("Moonfire", 1);
 
-        protected bool MaulOn()
-        {
-            return Lua.LuaDoString<bool>("maulon = false; if IsCurrentSpell('Maul') then maulon = true end", "maulon");
-        }
-
         protected void StealthApproach()
         {
             Timer stealthApproachTimer = new Timer(7000);
@@ -196,7 +192,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     float distanceToTarget = ObjectManager.Target.Position.DistanceTo(ObjectManager.Me.Position);
                     Vector3 position;
                     if (distanceToTarget > 5)
-                        position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f);
+                        position = WTSpace.BackOfUnit(ObjectManager.Target, 2.5f);
                     else
                         position = ObjectManager.Target.Position;
 
@@ -289,7 +285,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 && !Me.IsCast
                 && ObjectManager.Target.IsAlive)
             {
-                Vector3 position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f);
+                Vector3 position = WTSpace.BackOfUnit(ObjectManager.Target, 2.5f);
                 MovementManager.Go(PathFinder.FindPath(position), false);
 
                 while (MovementManager.InMovement
@@ -305,7 +301,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
         private void MoveToPulseHandler(Vector3 point, CancelEventArgs cancelable)
         {
             if (_isStealthApproching &&
-            !point.ToString().Equals(ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f).ToString()))
+            !point.ToString().Equals(WTSpace.BackOfUnit(ObjectManager.Target, 2.5f).ToString()))
                 cancelable.Cancel = true;
         }
     }

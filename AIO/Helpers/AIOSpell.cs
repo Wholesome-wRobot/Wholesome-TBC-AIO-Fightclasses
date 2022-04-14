@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using WholesomeToolbox;
 using wManager.Wow.Class;
 using wManager.Wow.Helpers;
 using Timer = robotManager.Helpful.Timer;
@@ -77,18 +78,18 @@ namespace WholesomeTBCAIO.Helpers
             //LogSpellInfos();
         }
 
-        public new void Launch(bool stopMove, bool waitIsCast = true, bool ignoreIfCast = false, string luaUnitId = "target")
+        public new void Launch(bool stopMove, bool waitIsCast = true, bool ignoreIfCast = false, string unit = "target")
         {
             if (!ForceLua)
-                base.Launch(stopMove, waitIsCast, ignoreIfCast, luaUnitId);
+                base.Launch(stopMove, waitIsCast, ignoreIfCast, unit);
             else
             {
                 if (stopMove)
                     MovementManager.StopMoveNewThread();
 
                 string rankString = Rank > 0 ? $"(Rank {Rank})" : "()";
-                Logger.LogFight($"[Spell-LUA] Cast (on {luaUnitId}) {Name.Replace("()", "")} {rankString}");
-                Lua.RunMacroText($"/cast [target={luaUnitId}] {Name.Replace("()", "")}{rankString}");
+                Logger.LogFight($"[Spell-LUA] Cast (on {unit}) {Name.Replace("()", "")} {rankString}");
+                Lua.RunMacroText($"/cast [target={unit}] {Name.Replace("()", "")}{rankString}");
             }
         }
 
@@ -112,11 +113,7 @@ namespace WholesomeTBCAIO.Helpers
         }
         public bool IsForcedCooldownReady => ForcedCooldownTimer.IsReady;
 
-        public float GetCurrentCooldown => Lua.LuaDoString<float>($@"
-            local startTime, duration, _ = GetSpellCooldown(""{Name.Replace("\"", "\\\"")}"");
-            if (startTime == nil) then return 0 end;
-            return (duration - (GetTime() - startTime)) * 1000;");
-
+        public float GetCurrentCooldown => WTCombat.GetSpellCooldown(Name);
 
         private int ParseInt(string stringToParse)
         {
@@ -210,10 +207,10 @@ namespace WholesomeTBCAIO.Helpers
 
         private Dictionary<string, int> ForcedCoolDowns = new Dictionary<string, int>()
         {
-            {"Redemption", 4000 },
-            {"Resurrection", 4000 },
-            {"Ancestral Spirit", 4000 },
-            {"Call Pet", 5000 },
+            { "Redemption", 4000 },
+            { "Resurrection", 4000 },
+            { "Ancestral Spirit", 4000 },
+            { "Call Pet", 5000 },
         };
     }
 }

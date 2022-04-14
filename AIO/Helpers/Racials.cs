@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Linq;
 using System.Threading;
+using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 using static WholesomeTBCAIO.Helpers.Enums;
@@ -89,7 +90,7 @@ namespace WholesomeTBCAIO.Helpers
         {
             if (Stoneform.KnownSpell
                 && Stoneform.IsSpellUsable
-                && (ToolBox.HasPoisonDebuff() || ToolBox.HasDiseaseDebuff() || Me.HaveBuff("Bleed")))
+                && (WTEffects.HasPoisonDebuff() || WTEffects.HasDiseaseDebuff() || Me.HaveBuff("Bleed")))
             {
                 Stoneform.Launch();
                 Usefuls.WaitIsCasting();

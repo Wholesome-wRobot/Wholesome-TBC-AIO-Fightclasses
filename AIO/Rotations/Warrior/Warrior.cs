@@ -9,6 +9,7 @@ using WholesomeTBCAIO.Settings;
 using WholesomeTBCAIO.Helpers;
 using System.ComponentModel;
 using Timer = robotManager.Helpful.Timer;
+using WholesomeToolbox;
 
 namespace WholesomeTBCAIO.Rotations.Warrior
 {
@@ -35,7 +36,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         {
             settings = WarriorSettings.Current;
             if (settings.PartyDrinkName != "")
-                ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
+                WTSettings.AddToDoNotSellList(settings.PartyDrinkName);
             cast = new Cast(BattleShout, null, settings);
 
             this.specialization = specialization as Warrior;
@@ -168,11 +169,6 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         protected AIOSpell LastStand = new AIOSpell("Last Stand");
         protected AIOSpell Intervene = new AIOSpell("Intervene");
         protected AIOSpell SunderArmor = new AIOSpell("Sunder Armor");
-
-        protected bool HeroicStrikeOn()
-        {
-            return Lua.LuaDoString<bool>("hson = false; if IsCurrentSpell('Heroic Strike') then hson = true end", "hson");
-        }
 
         protected bool InBattleStance()
         {

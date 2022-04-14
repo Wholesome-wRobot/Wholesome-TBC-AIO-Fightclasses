@@ -7,6 +7,7 @@ using System.Threading;
 using robotManager.Helpful;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
+using WholesomeToolbox;
 using wManager.Events;
 using wManager.Wow.Enums;
 using wManager.Wow.ObjectManager;
@@ -39,7 +40,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
         {
             settings = PaladinSettings.Current;
             if (settings.PartyDrinkName != "")
-                ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
+                WTSettings.AddToDoNotSellList(settings.PartyDrinkName);
             cast = new Cast(HolyLight, null, settings);
             
             this.specialization = specialization as Paladin;
@@ -147,13 +148,13 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
                 // PARTY Purifiy
                 WoWPlayer needsPurify = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasDiseaseDebuff(m.Name) || ToolBox.HasPoisonDebuff(m.Name));
+                    .Find(m => WTEffects.HasDiseaseDebuff(m.Name) || WTEffects.HasPoisonDebuff(m.Name));
                 if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
 
                 // Party Cleanse
                 WoWPlayer needsCleanse = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasMagicDebuff(m.Name));
+                    .Find(m => WTEffects.HasMagicDebuff(m.Name));
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;
 
@@ -300,7 +301,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if (!RecordedBlessingBuffs.Exists(b => b.CasterName == Me.Name && b.TargetName == Me.Name))
             {
                 if (Me.HaveBuff(myBuffSpell.Name))
-                    ToolBox.CancelPlayerBuff(myBuffSpell.Name);
+                    WTEffects.TBCCancelPlayerBuff(myBuffSpell.Name);
                 if (cast.OnSelf(myBuffSpell))
                     return true;
             }

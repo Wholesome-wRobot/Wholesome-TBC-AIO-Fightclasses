@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Priest
@@ -61,7 +62,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             {
                 // Party Cure Disease
                 WoWPlayer needCureDisease = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasDiseaseDebuff(m.Name));
+                    .Find(m => WTEffects.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
             }
@@ -80,7 +81,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             if (settings.PartyDispelMagic)
             {
                 WoWPlayer needDispelMagic = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasMagicDebuff(m.Name));
+                    .Find(m => WTEffects.HasMagicDebuff(m.Name));
                 if (needDispelMagic != null && cast.OnFocusUnit(DispelMagic, needDispelMagic))
                     return;
             }
@@ -125,7 +126,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
             // PARTY Shield
             List<AIOPartyMember> neeedShield = AIOParty.GroupAndRaid
-                .FindAll(m => m.HealthPercent < 60 && !m.HaveBuff("Power Word: Shield") && !ToolBox.HasDebuff("Weakened Soul", m.Name))
+                .FindAll(m => m.HealthPercent < 60 && !m.HaveBuff("Power Word: Shield") && !WTEffects.HasDebuff("Weakened Soul", m.Name))
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
             if (neeedShield.Count > 0 && cast.OnFocusUnit(PowerWordShield, neeedShield[0]))
