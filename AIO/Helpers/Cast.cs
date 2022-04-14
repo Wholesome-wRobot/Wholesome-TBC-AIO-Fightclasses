@@ -205,7 +205,7 @@ namespace WholesomeTBCAIO.Helpers
             if (_spellCD >= 500)
             {
                 CombatDebug("Didn't cast because cd is too long");
-                return false;
+                return _spellCD < 1500 && WandSpell != null; // recycle if it's just global CD (avoid wand weave)
             }
 
             // STOP WAND FOR CAST
