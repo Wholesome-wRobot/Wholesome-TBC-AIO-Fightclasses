@@ -439,8 +439,12 @@ namespace WholesomeTBCAIO.Rotations.Rogue
 
         private void EventsWithArgsHandler(string id, List<string> args)
         {
-            if (_behindTargetTimer.IsReady && args[11].Contains("You must be behind"))
-                _behindTargetTimer = new Timer(10000);
+
+            if (id == "UI_ERROR_MESSAGE")
+            {
+                if (_behindTargetTimer.IsReady && args[0].Contains("You must be behind"))
+                    _behindTargetTimer = new Timer(10000);
+            }
         }
     }
 }
