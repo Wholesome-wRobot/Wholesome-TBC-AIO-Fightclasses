@@ -64,7 +64,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
         protected override void CombatRotation()
         {
             base.CombatRotation();
-            Lua.LuaDoString("PetAttack();", false);
+            Lua.LuaDoString("PetAttack();");
             WoWUnit Target = ObjectManager.Target;
 
             // PARTY Remove Curse

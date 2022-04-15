@@ -120,7 +120,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             // Pet attack
             if (ObjectManager.Pet.Target != ObjectManager.Me.Target)
-                Lua.LuaDoString("PetAttack();", false);
+                Lua.LuaDoString("PetAttack();");
 
             // PARTY Seed of Corruption
             if (AIOParty.EnemiesFighting.Count >= settings.PartySeedOfCorruptionAmount

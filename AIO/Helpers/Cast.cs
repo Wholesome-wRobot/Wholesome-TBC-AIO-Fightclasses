@@ -50,11 +50,14 @@ namespace WholesomeTBCAIO.Helpers
             {
                 Thread.Sleep(ToolBox.GetLatency() + 100);
                 Logger.Combat($"Cast (Pet) {spellName}");
+                Lua.LuaDoString($"CastSpell({spellIndex}, 'pet');");
                 if (!onFocus)
-                    Lua.LuaDoString($"CastPetAction({spellIndex});");
+                    Lua.LuaDoString($"CastSpell({spellIndex}, 'pet');");
                 else
-                    Lua.LuaDoString($"CastPetAction({spellIndex}, \'focus\');");
-
+                {
+                    Lua.LuaDoString($"PetAttack('focus');");
+                    Lua.LuaDoString($"CastSpell({spellIndex}, 'pet');");
+                }
                 return true;
             }
             return false;

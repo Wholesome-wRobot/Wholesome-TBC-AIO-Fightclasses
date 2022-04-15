@@ -215,8 +215,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
 
         protected void ToggleAutoAttack(bool activate)
         {
-            bool _autoAttacking = Lua.LuaDoString<bool>("isAutoRepeat = false; if IsCurrentSpell('Attack') " +
-                "then isAutoRepeat = true end", "isAutoRepeat");
+            bool _autoAttacking = WTCombat.IsSpellActive("Attack");
 
             if (!_autoAttacking && activate && !ObjectManager.Target.HaveBuff("Gouge")
                 && (!ObjectManager.Target.HaveBuff("Blind") || WTEffects.HasDebuff("Recently Bandaged")))
@@ -246,24 +245,9 @@ namespace WholesomeTBCAIO.Rotations.Rogue
 
         protected void PoisonWeapon()
         {
-            bool hasMainHandEnchant = Lua.LuaDoString<bool>
-                (@"local hasMainHandEnchant, _, _, _, _, _, _, _, _ = GetWeaponEnchantInfo()
-            if (hasMainHandEnchant) then 
-               return '1'
-            else
-               return '0'
-            end");
-
-            bool hasOffHandEnchant = Lua.LuaDoString<bool>
-                (@"local _, _, _, _, hasOffHandEnchant, _, _, _, _ = GetWeaponEnchantInfo()
-            if (hasOffHandEnchant) then 
-               return '1'
-            else
-               return '0'
-            end");
-
-            bool hasoffHandWeapon = Lua.LuaDoString<bool>(@"local hasWeapon = OffhandHasWeapon()
-            return hasWeapon");
+            bool hasMainHandEnchant = WTGear.HaveMainHandEnchant();
+            bool hasOffHandEnchant = WTGear.HaveOffHandEnchant();
+            bool hasoffHandWeapon = WTGear.HaveOffHandWeaponEquipped;
 
             if (!hasMainHandEnchant)
             {
@@ -442,7 +426,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
 
             if (id == "UI_ERROR_MESSAGE")
             {
-                if (_behindTargetTimer.IsReady && args[0].Contains("You must be behind"))
+                if (_behindTargetTimer.IsReady && args[0].StartsWith("You must be behind"))
                     _behindTargetTimer = new Timer(10000);
             }
         }

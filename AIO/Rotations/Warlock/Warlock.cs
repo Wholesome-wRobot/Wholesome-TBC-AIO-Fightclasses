@@ -128,7 +128,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                         if ((Me.InCombatFlagOnly || Fight.InFight)
                             && Me.Target > 0
                             && !multiAggroImTargeted)
-                            Lua.LuaDoString("PetAttack();", false);
+                            Lua.LuaDoString("PetAttack();");
 
                         // Voidwalker Torment + Felguard Anguish
                         if ((!settings.AutoTorment || !settings.AutoAnguish)

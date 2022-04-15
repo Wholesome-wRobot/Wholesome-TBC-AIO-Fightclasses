@@ -100,7 +100,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             // Pet attack
             if (ObjectManager.Pet.Target != ObjectManager.Me.Target)
-                Lua.LuaDoString("PetAttack();", false);
+                Lua.LuaDoString("PetAttack();");
 
             // Life Tap
             if (Me.HealthPercent > Me.ManaPercentage

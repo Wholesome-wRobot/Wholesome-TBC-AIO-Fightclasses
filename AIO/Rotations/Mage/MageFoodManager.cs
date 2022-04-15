@@ -86,10 +86,10 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 foreach (WoWItem item in _bagItems)
                 {
                     if (DRINKS.Contains(item.Name))
-                        stacksWater += Lua.LuaDoString<int>("return GetItemCount(\"" + item.Name + "\");");
+                        stacksWater += WTItem.GetNbItems(item.Name);
 
                     if (FOODS.Contains(item.Name))
-                        stacksFood += Lua.LuaDoString<int>("return GetItemCount(\"" + item.Name + "\");");
+                        stacksFood += WTItem.GetNbItems(item.Name);
                 }
 
                 if (stacksWater < 10

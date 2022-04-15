@@ -172,12 +172,12 @@ namespace WholesomeTBCAIO.Rotations.Warrior
 
         protected bool InBattleStance()
         {
-            return Lua.LuaDoString<bool>("bs = false; if GetShapeshiftForm() == 1 then bs = true end", "bs");
+            return Lua.LuaDoString<bool>("return GetShapeshiftForm() == 1;");
         }
 
         protected bool InBerserkStance()
         {
-            return Lua.LuaDoString<bool>("bs = false; if GetShapeshiftForm() == 3 or GetShapeshiftForm() == 2 then bs = true end", "bs");
+            return Lua.LuaDoString<bool>("return (GetShapeshiftForm() == 3 or GetShapeshiftForm() == 2);");
         }
 
         // EVENT HANDLERS

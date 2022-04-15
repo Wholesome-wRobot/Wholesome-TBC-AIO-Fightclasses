@@ -132,7 +132,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
         protected virtual void CombatRotation()
         {
             if (ObjectManager.Pet.IsValid && !ObjectManager.Pet.HasTarget)
-                Lua.LuaDoString("PetAttack();", false);
+                Lua.LuaDoString("PetAttack();");
 
             if (specialization.RotationType == Enums.RotationType.Party)
             {
