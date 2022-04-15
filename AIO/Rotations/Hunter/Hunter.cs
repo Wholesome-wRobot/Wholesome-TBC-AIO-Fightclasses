@@ -307,9 +307,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         protected void ReenableAutoshot()
         {
-            _autoshotRepeating = Lua.LuaDoString<bool>("isAutoRepeat = false; local name = GetSpellInfo(75); " +
-                   "if IsAutoRepeatSpell(name) then isAutoRepeat = true end", "isAutoRepeat");
-            if (!_autoshotRepeating
+            if (!WTCombat.IsSpellRepeating("Auto Shot")
                 && cast.OnTarget(AutoShot))
                 Logger.LogDebug("Re-enabling auto shot"); ;
         }

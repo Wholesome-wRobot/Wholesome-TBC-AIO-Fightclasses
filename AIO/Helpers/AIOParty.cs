@@ -86,7 +86,7 @@ namespace WholesomeTBCAIO.Helpers
         {
             string raidString = Lua.LuaDoString<string>
                 (@$"raidCount = GetNumRaidMembers()
-                    result = raidCount
+                    local result = raidCount
                     for i = 1 , raidCount do
                         name, _, subgroup = GetRaidRosterInfo(i);
                         result = result .. '|' .. name .. ':' .. subgroup

@@ -1,19 +1,13 @@
 ﻿using System.Collections.Generic;
-using wManager.Wow.Helpers;
 using System.Threading;
+using WholesomeToolbox;
+using wManager.Wow.Helpers;
 
 namespace WholesomeTBCAIO.Rotations.Hunter
 {
     public class HunterFoodManager
     {
-        private string PetFoodType()
-        {
-            return Lua.LuaDoString<string>("return GetPetFoodTypes();", "");
-        }
-
-        private List<string> FoodList()
-        {
-            return new List<string>
+        private readonly List<string> MeatList = new List<string>
         {
             "Tough Jerky",
             "Haunch of Meat",
@@ -28,19 +22,13 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             "Mystery Meat",
             "R﻿ed Wolf Mea﻿﻿t"
         };
-        }
 
-        private List<string> Fungus()
-        {
-            return new List<string>
+        private readonly List<string> Fungus = new List<string>
         {
             "Raw Black Truffle"
         };
-        }
 
-        private List<string> FishList()
-        {
-            return new List<string>
+        private readonly List<string> FishList = new List<string>
         {
             "Slitherskin Mackerel",
             "Longjaw Mud Snapper",
@@ -53,14 +41,11 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             "Fillet of Icefin",
             "Poached Emperor Salmon"
         };
-        }
 
-        private List<string> FruitList()
-        {
-            return new List<string>
+        private List<string> FruitList = new List<string>
         {
             "Shiny Red Apple",
-            "Tel\'Abim Banana",
+            "Tel'Abim Banana",
             "Snapvine Watermelon",
             "Goldenbark Apple",
             "Heaven Peach",
@@ -71,11 +56,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             "Tundra Berries",
             "Savory Snowplum"
         };
-        }
 
-        private List<string> BreadList()
-        {
-            return new List<string>
+        private List<string> BreadList = new List<string>
         {
             "Tough Hunk of Bread",
             "Freshly Baked Bread",
@@ -83,20 +65,18 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             "Mulgore Spice Bread",
             "Soft Banana Bread",
             "Homemade Cherry Pie",
-            "Mag\'har Grainbread",
+            "Mag'har Grainbread",
             "Crusty Flatbread",
             "Bladespire Bagel"
         };
-        }
 
-        private void FeedByType(List<string> list)
+        private void FeedByType(List<string> foodList)
         {
-            foreach (string text in list)
+            foreach (string food in foodList)
             {
-                if (ItemsManager.GetItemCountByNameLUA(text) > 0)
+                if (ItemsManager.GetItemCountByNameLUA(food) > 0)
                 {
-                    Lua.LuaDoString("CastSpellByName('Feed Pet')", false);
-                    Lua.LuaDoString("UseItemByName(\"" + text + "\")", false);
+                    WTPet.TBCFeedPet(food);
                     Thread.Sleep(5000);
                 }
             }
@@ -104,25 +84,26 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         public void FeedPet()
         {
-            if (PetFoodType().Contains("Meat"))
+            string food = Lua.LuaDoString<string>("return GetPetFoodTypes();");
+            if (food.Contains("Meat"))
             {
-                FeedByType(FoodList());
+                FeedByType(MeatList);
             }
-            if (PetFoodType().Contains("Fungus"))
+            if (food.Contains("Fungus"))
             {
-                FeedByType(Fungus());
+                FeedByType(Fungus);
             }
-            if (PetFoodType().Contains("Fish"))
+            if (food.Contains("Fish"))
             {
-                FeedByType(FishList());
+                FeedByType(FishList);
             }
-            if (PetFoodType().Contains("Fruit"))
+            if (food.Contains("Fruit"))
             {
-                FeedByType(FruitList());
+                FeedByType(FruitList);
             }
-            if (PetFoodType().Contains("Bread"))
+            if (food.Contains("Bread"))
             {
-                FeedByType(BreadList());
+                FeedByType(BreadList);
             }
         }
     }
