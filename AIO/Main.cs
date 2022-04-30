@@ -65,6 +65,7 @@ public class Main : ICustomClass
             EventsLua.AttachEventLua("PARTY_MEMBERS_CHANGED", e => AIOParty.GroupRosterChangedHandler());
             EventsLua.AttachEventLua("PARTY_MEMBER_DISABLE", e => AIOParty.GroupRosterChangedHandler());
             EventsLua.AttachEventLua("PARTY_MEMBER_ENABLE", e => AIOParty.GroupRosterChangedHandler());
+            EventsLua.AttachEventLua("RAID_ROSTER_UPDATE", e => AIOParty.GroupRosterChangedHandler());
             EventsLuaWithArgs.OnEventsLuaStringWithArgs += EventsWithArgsHandler;
             AIOParty.UpdateParty();
 
@@ -158,6 +159,7 @@ public class Main : ICustomClass
             // Paladin
             case Specs.PaladinRetribution: return new Retribution();
             case Specs.PaladinHolyParty: return new PaladinHolyParty();
+            case Specs.PaladinHolyRaid: return new PaladinHolyRaid();
             case Specs.PaladinRetributionParty: return new RetributionParty();
             case Specs.PaladinProtectionParty: return new PaladinProtectionParty();
             // Priest
@@ -272,6 +274,7 @@ public class Main : ICustomClass
             Hunter.LastAuto = DateTime.Now;
 
         if (selectedRotation is Paladin
+            && args.Count >= 10
             && args[1] == "SPELL_CAST_SUCCESS"
             && id == "COMBAT_LOG_EVENT_UNFILTERED"
             && (args[9] == "Blessing of Might" || args[9] == "Blessing of Kings" || args[9] == "Blessing of Wisdom"))

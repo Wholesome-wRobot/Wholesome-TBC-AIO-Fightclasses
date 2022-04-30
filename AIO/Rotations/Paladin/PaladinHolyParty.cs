@@ -69,7 +69,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             // PARTY Holy Light
             List<AIOPartyMember> allyNeedMediumHeal = AIOParty.GroupAndRaid
-                .FindAll(a => a.IsAlive && a.HealthPercent < settings.PartyHolyLightThreshold)
+                .FindAll(a => a.IsAlive && a.HealthPercent < settings.PartyHolyLightPercentThreshold)
                 .OrderBy(a => a.HealthPercent)
                 .ToList();
             if (allyNeedMediumHeal.Count > 0

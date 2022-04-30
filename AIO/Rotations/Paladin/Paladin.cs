@@ -10,6 +10,7 @@ using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Events;
 using wManager.Wow.Enums;
+using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 using Timer = robotManager.Helpful.Timer;
 
@@ -61,7 +62,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
         public bool AnswerReadyCheck()
         {
-            return true;
+            return Me.ManaPercentage > settings.PartyDrinkThreshold;
         }
 
         public void Dispose()
@@ -127,7 +128,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 if (needRes.Count > 0 && cast.OnFocusUnit(Redemption, needRes[0]))
                     return;
 
-                if (settings.PartyHealOOC || specialization is PaladinHolyParty)
+                if (settings.PartyHealOOC || specialization is PaladinHolyParty || specialization is PaladinHolyRaid)
                 {
                     // PARTY Heal
                     List<AIOPartyMember> needHeal = AIOParty.GroupAndRaid
@@ -139,7 +140,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
                     // PARTY Flash of Light
                     List<AIOPartyMember> needFoL = AIOParty.GroupAndRaid
-                        .FindAll(m => m.HealthPercent < 85)
+                        .FindAll(m => m.HealthPercent < 95)
                         .OrderBy(m => m.HealthPercent)
                         .ToList();
                     if (needFoL.Count > 0 && cast.OnFocusUnit(FlashOfLight, needFoL[0]))
@@ -154,12 +155,12 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
                 // Party Cleanse
                 WoWPlayer needsCleanse = AIOParty.GroupAndRaid
-                    .Find(m => WTEffects.HasMagicDebuff(m.Name));
+                    .Find(m => UnitHasCleansableDebuff(m.Name));
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;
 
                 // Blessings
-                if (PartyBlessingBuffs())
+                if (settings.PartyBlessings && PartyBlessingBuffs())
                     return;
 
                 // PARTY Drink
@@ -427,6 +428,18 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 return new List<AIOSpell>() { BlessingOfWisdom, BlessingOfKings, BlessingOfMight };
 
             return null;
+        }
+
+        // Returns whether the player has a debuff that is one of the following: 'Poison', 'Magic', 'Disease'
+        protected bool UnitHasCleansableDebuff(string unit = "player")
+        {
+            return Lua.LuaDoString<bool>
+                (@$"for i=1,25 do 
+	                local _, _, _, _, d  = UnitDebuff('{unit}',i);
+	                if (d == 'Poison' or d == 'Magic' or d == 'Disease') then
+                    return true
+                    end
+                end");
         }
     }
 }

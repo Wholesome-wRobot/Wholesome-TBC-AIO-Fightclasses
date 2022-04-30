@@ -118,6 +118,7 @@
     <Compile Include="Rotations\Mage\Arcane.cs" />
     <Compile Include="Rotations\Mage\Frost.cs" />
     <Compile Include="Rotations\Paladin\PaladinHolyParty.cs" />
+    <Compile Include="Rotations\Paladin\PaladinHolyRaid.cs" />
     <Compile Include="Rotations\Paladin\PaladinProtectionParty.cs" />
     <Compile Include="Rotations\Paladin\RetributionParty.cs" />
     <Compile Include="Rotations\Paladin\Retribution.cs" />

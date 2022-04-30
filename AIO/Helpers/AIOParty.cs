@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using WholesomeToolbox;
 using wManager.Wow.Helpers;
@@ -145,6 +146,19 @@ namespace WholesomeTBCAIO.Helpers
             }
         }
 
+        public static List<WoWUnit> TargetedByEnemies
+        {
+            get
+            {
+                return EnemiesFighting
+                    .Select(u => u.TargetObject)
+                    .Distinct()
+                    .ToList()
+                    .FindAll(u => GroupAndRaid.Exists(m => m.Guid == u.Guid))
+                    .OrderBy(a => a.HealthPercent)
+                    .ToList();
+            }
+        }
 
         public static void SwitchTarget(Cast cast, AIOSpell spell)
         {
