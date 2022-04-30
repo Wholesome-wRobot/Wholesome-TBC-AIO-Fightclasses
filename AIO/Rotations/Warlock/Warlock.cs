@@ -7,6 +7,7 @@ using System.Threading;
 using robotManager.Helpful;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
+using WholesomeToolbox;
 using wManager.Events;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
@@ -27,7 +28,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         protected WoWLocalPlayer Me = ObjectManager.Me;
 
         protected int _innerManaSaveThreshold = 20;
-        protected bool _iCanUseWand = ToolBox.HaveRangedWeaponEquipped();
+        protected bool _iCanUseWand = WTGear.HaveRangedWeaponEquipped;
         protected int _saveDrinkPercent = wManager.wManagerSetting.CurrentSetting.DrinkPercent;
 
         protected Warlock specialization;
@@ -36,7 +37,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         {
             settings = WarlockSettings.Current;
             if (settings.PartyDrinkName != "")
-                ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
+                WTSettings.AddToDoNotSellList(settings.PartyDrinkName);
             cast = new Cast(ShadowBolt, UseWand, settings);
 
             this.specialization = specialization as Warlock;
@@ -127,7 +128,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                         if ((Me.InCombatFlagOnly || Fight.InFight)
                             && Me.Target > 0
                             && !multiAggroImTargeted)
-                            Lua.LuaDoString("PetAttack();", false);
+                            Lua.LuaDoString("PetAttack();");
 
                         // Voidwalker Torment + Felguard Anguish
                         if ((!settings.AutoTorment || !settings.AutoAnguish)
@@ -145,15 +146,19 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                         // Switch Auto Torment & Suffering off
                         if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
                         {
-                            ToolBox.TogglePetSpellAuto("Torment", settings.AutoTorment);
-                            ToolBox.TogglePetSpellAuto("Suffering", false);
+                            int tormentIndex = WTPet.GetPetSpellIndex("Torment");
+                            WTPet.TogglePetSpellAuto(tormentIndex, settings.AutoTorment);
+                            int sufferingIndex = WTPet.GetPetSpellIndex("Suffering");
+                            WTPet.TogglePetSpellAuto(sufferingIndex, false);
                         }
 
                         // Switch Felguard Auto Cleave/Anguish
                         if (WarlockPetAndConsumables.MyWarlockPet().Equals("Felguard") && specialization.RotationType == Enums.RotationType.Solo)
                         {
-                            ToolBox.TogglePetSpellAuto("Cleave", settings.FelguardCleave);
-                            ToolBox.TogglePetSpellAuto("Anguish", settings.AutoAnguish);
+                            int cleaveIndex = WTPet.GetPetSpellIndex("Cleave");
+                            WTPet.TogglePetSpellAuto(cleaveIndex, settings.FelguardCleave);
+                            int anguishIndex = WTPet.GetPetSpellIndex("Anguish");
+                            WTPet.TogglePetSpellAuto(anguishIndex, settings.AutoAnguish);
                         }
                     }
                 }
@@ -193,10 +198,10 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         {
             
             // Delete additional Soul Shards
-            if (ToolBox.CountItemStacks("Soul Shard") > settings.NumberOfSoulShards)
+            if (WTItem.CountItemStacks("Soul Shard") > settings.NumberOfSoulShards)
             {
                 Logger.Log("Deleting excess Soul Shard");
-                ToolBox.LuaDeleteOneItem("Soul Shard");
+                WTItem.DeleteItemByName("Soul Shard");
             }
 
             // Define the demon to summon
@@ -204,7 +209,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             bool shouldSummon = false;
             if (SummonImp.KnownSpell)
             {
-                if (ToolBox.CountItemStacks("Soul Shard") < 1 || !SummonVoidwalker.KnownSpell && !SummonFelguard.KnownSpell)
+                if (WTItem.CountItemStacks("Soul Shard") < 1 || !SummonVoidwalker.KnownSpell && !SummonFelguard.KnownSpell)
                     SummonSpell = SummonImp;
 
                 if (SummonVoidwalker.KnownSpell && !SummonFelguard.KnownSpell)
@@ -316,11 +321,12 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             // Imp Firebolt
             if (WarlockPetAndConsumables.MyWarlockPet().Equals("Imp"))
-                ToolBox.TogglePetSpellAuto("Firebolt", true);
-
-            // Imp BloodPact
-            if (WarlockPetAndConsumables.MyWarlockPet().Equals("Imp"))
-                ToolBox.TogglePetSpellAuto("Blood Pact", true);
+            {
+                int fireboltIndex = WTPet.GetPetSpellIndex("Firebolt");
+                WTPet.TogglePetSpellAuto(fireboltIndex, true);
+                int bloodPactIndex = WTPet.GetPetSpellIndex("Blood Pact");
+                WTPet.TogglePetSpellAuto(bloodPactIndex, true);
+            }
         }
     }
 }

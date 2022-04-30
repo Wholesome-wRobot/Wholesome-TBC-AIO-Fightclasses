@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Paladin
@@ -78,7 +79,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Holy Light rank 5 (for the buff)
             if (allyNeedSmallHeal.Count == 1
                 && HolyLight.Cost == 840
-                && ToolBox.BuffTimeLeft("Light's Grace") < 5
+                && WTEffects.BuffTimeLeft("Light's Grace") < 5
                 && cast.OnFocusUnit(HolyLightRank5, allyNeedSmallHeal[0]))
                 return;
 
@@ -103,7 +104,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if (settings.PartyPurify)
             {
                 WoWPlayer needsPurify = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasDiseaseDebuff(m.Name) || ToolBox.HasPoisonDebuff(m.Name));
+                    .Find(m => WTEffects.HasDiseaseDebuff(m.Name) || WTEffects.HasPoisonDebuff(m.Name));
                 if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
             }
@@ -112,7 +113,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if (settings.PartyCleanse)
             {
                 WoWPlayer needsCleanse = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasMagicDebuff(m.Name));
+                    .Find(m => WTEffects.HasMagicDebuff(m.Name));
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;
             }

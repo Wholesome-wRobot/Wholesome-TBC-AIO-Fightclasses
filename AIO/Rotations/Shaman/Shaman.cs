@@ -10,6 +10,7 @@ using WholesomeTBCAIO.Helpers;
 using System.ComponentModel;
 using Timer = robotManager.Helpful.Timer;
 using System.Linq;
+using WholesomeToolbox;
 
 namespace WholesomeTBCAIO.Rotations.Shaman
 {
@@ -40,7 +41,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         {
             settings = ShamanSettings.Current;
             if (settings.PartyDrinkName != "")
-                ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
+                WTSettings.AddToDoNotSellList(settings.PartyDrinkName);
             cast = new Cast(LightningBolt, null, settings);
             _totemManager = new TotemManager(cast);
 
@@ -48,10 +49,13 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);
             TalentsManager.InitTalents(settings);
 
-            ToolBox.AddToDoNotSellList("Air Totem");
-            ToolBox.AddToDoNotSellList("Earth Totem");
-            ToolBox.AddToDoNotSellList("Water Totem");
-            ToolBox.AddToDoNotSellList("Fire Totem");
+            WTSettings.AddToDoNotSellList(new List<string>
+            {
+                "Air Totem",
+                "Earth Totem",
+                "Water Totem",
+                "Fire Totem"
+            });
 
             RangeManager.SetRange(_pullRange);
 
@@ -173,24 +177,9 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             }
         }
 
-        protected bool HaveMainHandEnchant => Lua.LuaDoString<bool>
-                (@"local hasMainHandEnchant, _, _, _, _, _, _, _, _ = GetWeaponEnchantInfo()
-                    if (hasMainHandEnchant) then 
-                       return '1'
-                    else
-                       return '0'
-                    end");
-
-        protected bool HaveOffHandEnchant => Lua.LuaDoString<bool>
-                (@"local _, _, _, _, hasOffHandEnchant, _, _, _, _ = GetWeaponEnchantInfo()
-                    if (hasOffHandEnchant) then 
-                       return '1'
-                    else
-                       return '0'
-                    end");
-
-        protected bool HaveOffHandWheapon => Lua.LuaDoString<bool>(@"local hasWeapon = OffhandHasWeapon()
-                return hasWeapon");
+        protected bool HaveMainHandEnchant => WTGear.HaveMainHandEnchant();
+        protected bool HaveOffHandEnchant => WTGear.HaveOffHandEnchant();
+        protected bool HaveOffHandWheapon => WTGear.HaveOffHandWeaponEquipped;
 
         // EVENT HANDLERS
         private void FightEndHandler(ulong guid)

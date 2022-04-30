@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 
@@ -10,7 +11,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
         protected override void BuffRotation()
         {
             // OOC Cure Disease
-            if (ToolBox.HasDiseaseDebuff()
+            if (WTEffects.HasDiseaseDebuff()
                 && cast.OnSelf(CureDisease))
                 return;
 
@@ -23,7 +24,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             // OOC Power Word Shield
             if (Me.HealthPercent < 50
                 && !Me.HaveBuff("Power Word: Shield")
-                && !ToolBox.HasDebuff("Weakened Soul")
+                && !WTEffects.HasDebuff("Weakened Soul")
                 && ObjectManager.GetNumberAttackPlayer() > 0
                 && settings.UsePowerWordShield
                 && cast.OnSelf(PowerWordShield))
@@ -79,7 +80,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return;
 
             // Power Word Shield
-            if (!ToolBox.HasDebuff("Weakened Soul")
+            if (!WTEffects.HasDebuff("Weakened Soul")
                 && settings.UseShieldOnPull
                 && !Me.HaveBuff("Power Word: Shield")
                 && settings.UsePowerWordShield
@@ -119,14 +120,14 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
         protected override void CombatRotation()
         {
-            bool _hasMagicDebuff = ToolBox.HasMagicDebuff();
-            bool _hasDisease = ToolBox.HasDiseaseDebuff();
-            bool _hasWeakenedSoul = ToolBox.HasDebuff("Weakened Soul");
+            bool _hasMagicDebuff = settings.UseDispel ? WTEffects.HasMagicDebuff() : false;
+            bool _hasDisease = settings.CureDisease ? WTEffects.HasDiseaseDebuff() : false;
+            bool _hasWeakenedSoul = WTEffects.HasDebuff("Weakened Soul");
             double _myManaPC = Me.ManaPercentage;
             bool _inShadowForm = Me.HaveBuff("ShadowForm");
-            int _mindBlastCD = Lua.LuaDoString<int>("local start, duration, enabled = GetSpellCooldown(\"Mind Blast\"); return start + duration - GetTime();");
-            int _innerFocusCD = Lua.LuaDoString<int>("local start, duration, enabled = GetSpellCooldown(\"Inner Focus\"); return start + duration - GetTime();");
-            bool _shoulBeInterrupted = ToolBox.TargetIsCasting();
+            int _mindBlastCD = WTCombat.GetSpellCooldown(MindBlast.Name);
+            int _innerFocusCD = WTCombat.GetSpellCooldown(InnerFocus.Name);
+            bool _shoulBeInterrupted = WTCombat.TargetIsCasting();
             WoWUnit Target = ObjectManager.Target;
 
             // Power Word Shield on multi aggro
@@ -214,7 +215,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return;
 
             // Vampiric Embrace
-            if (!Target.HaveBuff("Vampiric Embrace")
+            if (!Target.HaveBuff("Vampiric Embrace") && !Me.HaveBuff("Vampiric Embrace")
                 && _myManaPC > _innerManaSaveThreshold
                 && cast.OnTarget(VampiricEmbrace))
                 return;
@@ -257,7 +258,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
             // Devouring Plague
             if (!Target.HaveBuff("Devouring Plague")
-                && Target.HealthPercent > 80
+                && Target.HealthPercent > settings.DevouringPlagueThreshold
                 && cast.OnTarget(DevouringPlague))
                 return;
 
@@ -297,7 +298,6 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
             // Mind FLay
             if ((Me.HaveBuff("Power Word: Shield") || !settings.UsePowerWordShield)
-                && _inShadowForm
                 && _myManaPC > _innerManaSaveThreshold
                 && Target.HealthPercent > _wandThreshold
                 && cast.OnTarget(MindFlay))
@@ -319,7 +319,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return;
 
             // Stop wand if banned
-            if (ToolBox.UsingWand()
+            if (WTCombat.IsSpellRepeating(5019)
                 && UnitImmunities.Contains(ObjectManager.Target, "Shoot")
                 && cast.OnTarget(UseWand))
                 return;
@@ -330,13 +330,13 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     return;
 
             // Use Wand
-            if (!ToolBox.UsingWand()
+            if (!WTCombat.IsSpellRepeating(5019)
                 && _iCanUseWand
                 && cast.OnTarget(UseWand, false))
                 return;
 
             // Go in melee because nothing else to do
-            if (!ToolBox.UsingWand()
+            if (!WTCombat.IsSpellRepeating(5019)
                 && !_iCanUseWand
                 && !RangeManager.CurrentRangeIsMelee()
                 && Target.IsAlive)

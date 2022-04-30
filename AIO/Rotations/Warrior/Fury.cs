@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 using Timer = robotManager.Helpful.Timer;
 
@@ -56,7 +57,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         {
             base.CombatRotation();
             WoWUnit Target = ObjectManager.Target;
-            bool _shouldBeInterrupted = ToolBox.TargetIsCasting();
+            bool _shouldBeInterrupted = WTCombat.TargetIsCasting();
             bool _inMeleeRange = Target.GetDistance < 6f;
             bool _saveRage = Cleave.KnownSpell
                 && ObjectManager.GetNumberAttackPlayer() > 1
@@ -91,7 +92,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             // Battle stance
             if (InBerserkStance()
                 && Me.Rage < 10
-                && !settings.PrioritizeBerserkStance 
+                && !settings.PrioritizeBerserkStance
                 && ObjectManager.GetNumberAttackPlayer() > 1
                 && !_fightingACaster
                 && cast.OnSelf(BattleStance))
@@ -113,7 +114,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 return;
 
             // Interrupt
-            if (_shouldBeInterrupted 
+            if (_shouldBeInterrupted
                 && InBerserkStance())
             {
                 Thread.Sleep(Main.humanReflexTime);
@@ -126,7 +127,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 return;
 
             // Rampage
-            if ((!Me.HaveBuff("Rampage") || Me.HaveBuff("Rampage") && ToolBox.BuffTimeLeft("Rampage") < 10)
+            if ((!Me.HaveBuff("Rampage") || Me.HaveBuff("Rampage") && WTEffects.BuffTimeLeft("Rampage") < 10)
                 && cast.OnTarget(Rampage))
                 return;
 
@@ -176,9 +177,9 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             // Cleave
             if (_inMeleeRange
                 && ObjectManager.GetNumberAttackPlayer() > 1
-                && ToolBox.GetNbEnemiesClose(15f) > 1 
-                && (!SweepingStrikes.IsSpellUsable || !SweepingStrikes.KnownSpell) 
-                && ObjectManager.Me.Rage > 40 
+                && ToolBox.GetNbEnemiesClose(15f) > 1
+                && (!SweepingStrikes.IsSpellUsable || !SweepingStrikes.KnownSpell)
+                && ObjectManager.Me.Rage > 40
                 && settings.UseCleave
                 && cast.OnTarget(Cleave))
                 return;
@@ -222,7 +223,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             if (settings.UseDemoralizingShout
                 && !Target.HaveBuff("Demoralizing Shout")
                 && !Target.HaveBuff("Demoralizing Roar")
-                && (ObjectManager.GetNumberAttackPlayer() > 1 || ToolBox.GetNbEnemiesClose(15f) <= 0) 
+                && (ObjectManager.GetNumberAttackPlayer() > 1 || ToolBox.GetNbEnemiesClose(15f) <= 0)
                 && _inMeleeRange
                 && cast.OnSelf(DemoralizingShout))
                 return;
@@ -230,15 +231,15 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             // Heroic Strike (after whirlwind)
             if (_inMeleeRange
                 && Whirlwind.KnownSpell
-                && !HeroicStrikeOn()
-                &&  Me.Rage > 60
+                && !WTCombat.IsSpellActive("Heroic Strike")
+                && Me.Rage > 60
                 && cast.OnTarget(HeroicStrike))
                 return;
 
             // Heroic Strike (before whirlwind)
             if (_inMeleeRange
                 && !Whirlwind.KnownSpell
-                && !HeroicStrikeOn()
+                && !WTCombat.IsSpellActive("Heroic Strike")
                 && (!_saveRage || Me.Rage > 60)
                 && cast.OnTarget(HeroicStrike))
                 return;

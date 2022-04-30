@@ -1,6 +1,5 @@
-﻿using robotManager.Helpful;
-using System.Threading;
-using WholesomeTBCAIO.Helpers;
+﻿using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 
@@ -29,7 +28,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 && ObjectManager.Target.GetDistance < 25f 
                 && settings.StealthApproach 
                 && Backstab.KnownSpell
-                && (!ToolBox.HasPoisonDebuff() || settings.StealthWhenPoisoned)
+                && (!WTEffects.HasPoisonDebuff() || settings.StealthWhenPoisoned)
                 && cast.OnSelf(Stealth))
                 return;
 
@@ -48,7 +47,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
         {
             base.CombatRotation();
 
-            bool _shouldBeInterrupted = ToolBox.TargetIsCasting();
+            bool _shouldBeInterrupted = WTCombat.TargetIsCasting();
 
             WoWUnit Target = ObjectManager.Target;
 
@@ -103,7 +102,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             // Blind
             if (Me.HealthPercent < 40 
                 && Target.IsTargetingMe
-                && !ToolBox.HasDebuff("Recently Bandaged") 
+                && !WTEffects.HasDebuff("Recently Bandaged") 
                 && _myBestBandage != null
                 && settings.UseBlindBandage
                 && cast.OnTarget(Blind))
@@ -125,14 +124,14 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             // DPS ROTATION
 
             // Slice and Dice
-            if ((!Me.HaveBuff("Slice and Dice") || ToolBox.BuffTimeLeft("Slice and Dice") < 4)
+            if ((!Me.HaveBuff("Slice and Dice") || WTEffects.BuffTimeLeft("Slice and Dice") < 4)
                 && Me.ComboPoint > 0
                 && cast.OnTarget(SliceAndDice))
                 return;
 
             // Shiv
             if (Target.HaveBuff("Deadly Poison")
-                && ToolBox.DeBuffTimeLeft("Deadly Poison", "target") < 3
+                && WTEffects.DeBuffTimeLeft("Deadly Poison", "target") < 3
                 && cast.OnTarget(Shiv))
                 return;
 
@@ -143,7 +142,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 return;
 
             // Eviscerate
-            if (ToolBox.DeBuffTimeLeft("Rupture", "target") > 5
+            if (WTEffects.DeBuffTimeLeft("Rupture", "target") > 5
                 && Me.ComboPoint > 3
                 && cast.OnTarget(Eviscerate))
                 return;

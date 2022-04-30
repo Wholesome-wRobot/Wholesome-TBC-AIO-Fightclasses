@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 using Timer = robotManager.Helpful.Timer;
@@ -86,7 +87,7 @@ namespace WholesomeTBCAIO.Helpers
         {
             string raidString = Lua.LuaDoString<string>
                 (@$"raidCount = GetNumRaidMembers()
-                    result = raidCount
+                    local result = raidCount
                     for i = 1 , raidCount do
                         name, _, subgroup = GetRaidRosterInfo(i);
                         result = result .. '|' .. name .. ':' .. subgroup
@@ -165,8 +166,8 @@ namespace WholesomeTBCAIO.Helpers
                 || !ObjectManager.Target.IsAlive
                 || !ObjectManager.Target.HasTarget
                 || !ObjectManager.Me.HasTarget)
-                && !ToolBox.HasDebuff("Taunt", "target")
-                && !ToolBox.HasDebuff("Growl", "target"))
+                && !WTEffects.HasDebuff("Taunt", "target")
+                && !WTEffects.HasDebuff("Growl", "target"))
             {
                 lock (_groupLock)
                 {
@@ -249,8 +250,8 @@ namespace WholesomeTBCAIO.Helpers
                 && !MovementManager.InMoveTo
                 && drinkName.Trim().Length > 0)
             {
-                ToolBox.AddToDoNotSellList(drinkName.Trim());
-                if (ToolBox.CountItemStacks(drinkName) > 0)
+                WTSettings.AddToDoNotSellList(drinkName.Trim());
+                if (WTItem.CountItemStacks(drinkName) > 0)
                 {
                     ItemsManager.UseItemByNameOrId(drinkName);
                     Logger.Log($"[Party drink] Using {drinkName}");

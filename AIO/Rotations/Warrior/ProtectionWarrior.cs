@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 using Timer = robotManager.Helpful.Timer;
 
@@ -49,15 +50,15 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         {
             base.CombatRotation();
             WoWUnit Target = ObjectManager.Target;
-            bool _shouldBeInterrupted = ToolBox.TargetIsCasting();
-            bool _inMeleeRange = Target.GetDistance < RangeManager.GetMeleeRangeWithTarget();
+            bool shouldBeInterrupted = WTCombat.TargetIsCasting();
+            bool inMeleeRange = Target.GetDistance < RangeManager.GetMeleeRangeWithTarget();
 
             // Force melee
             if (_combatMeleeTimer.IsReady)
                 RangeManager.SetRangeToMelee();
 
             // Check if we need to interrupt
-            if (_shouldBeInterrupted)
+            if (shouldBeInterrupted)
             {
                 _fightingACaster = true;
                 RangeManager.SetRangeToMelee();
@@ -76,7 +77,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             ToolBox.CheckAutoAttack(Attack);
 
             // Taunt
-            if (_inMeleeRange
+            if (inMeleeRange
                 && !Target.IsTargetingMe
                 && Target.Target > 0
                 && cast.OnTarget(Taunt))
@@ -85,14 +86,14 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             // Cleave
             List<WoWUnit> closeEnemies = AIOParty.EnemiesFighting
                 .FindAll(e => e.GetDistance < 10);
-            if (_inMeleeRange
+            if (inMeleeRange
                 && closeEnemies.Count > 1
                 && ObjectManager.Me.Rage > 70)
                 cast.OnTarget(Cleave);
 
             // Heroic Strike
-            if (_inMeleeRange
-                && !HeroicStrikeOn()
+            if (inMeleeRange
+                && !WTCombat.IsSpellActive("Heroic Strike")
                 && Me.Rage > 90)
                 cast.OnTarget(HeroicStrike);
 
@@ -102,7 +103,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 return;
 
             // Shied Bash
-            if (ToolBox.TargetIsCasting()
+            if (shouldBeInterrupted
                 && cast.OnTarget(ShieldBash))
                 return;
 
@@ -110,36 +111,35 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             if (settings.UseDemoralizingShout
                 && !Target.HaveBuff("Demoralizing Shout")
                 && !Target.HaveBuff("Demoralizing Roar")
-                && _inMeleeRange
+                && inMeleeRange
                 && cast.OnSelf(DemoralizingShout))
                 return;
 
             // Thunderclap
-            if (_inMeleeRange
+            if (inMeleeRange
                 && !ObjectManager.Target.HaveBuff(ThunderClap.Name)
                 && cast.OnSelf(ThunderClap))
                 return;
 
             // Shield Slam
-            if (_inMeleeRange
+            if (inMeleeRange
                 && Me.Rage > 70
                 && ShieldSlam.IsSpellUsable
                 && cast.OnTarget(ShieldSlam))
                 return;
 
             // Revenge
-            if (_inMeleeRange
-                && ToolBox.GetPetSpellCooldown(Revenge.Name) <= 0
+            if (inMeleeRange
                 && cast.OnTarget(Revenge))
                 return;
 
             // Devastate
-            if (_inMeleeRange
+            if (inMeleeRange
                 && cast.OnTarget(Devastate))
                 return;
 
             // Sunder Armor
-            if (_inMeleeRange
+            if (inMeleeRange
                 && cast.OnTarget(SunderArmor))
                 return;
 
@@ -149,7 +149,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 return;
 
             // Spell Reflection
-            if (ToolBox.TargetIsCasting()
+            if (shouldBeInterrupted
                 && cast.OnSelf(SpellReflection))
                 return;
 

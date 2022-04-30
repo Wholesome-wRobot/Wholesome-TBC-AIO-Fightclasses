@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Paladin
@@ -235,7 +236,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 return;
 
             // Purify
-            if ((ToolBox.HasPoisonDebuff() || ToolBox.HasDiseaseDebuff()) && Purify.IsSpellUsable &&
+            if ((WTEffects.HasPoisonDebuff() || WTEffects.HasDiseaseDebuff()) && Purify.IsSpellUsable &&
                 (_purifyTimer.ElapsedMilliseconds > 10000 || _purifyTimer.ElapsedMilliseconds <= 0))
             {
                 _purifyTimer.Restart();
@@ -245,7 +246,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             }
 
             // Cleanse
-            if (ToolBox.HasMagicDebuff() && (_cleanseTimer.ElapsedMilliseconds > 10000 || _cleanseTimer.ElapsedMilliseconds <= 0)
+            if (WTEffects.HasMagicDebuff() && (_cleanseTimer.ElapsedMilliseconds > 10000 || _cleanseTimer.ElapsedMilliseconds <= 0)
                 && Cleanse.IsSpellUsable)
             {
                 _cleanseTimer.Restart();

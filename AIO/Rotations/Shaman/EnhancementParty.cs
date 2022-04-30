@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
+﻿using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Shaman
@@ -18,7 +17,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 if (settings.GhostWolfMount
                     && wManager.wManagerSetting.CurrentSetting.GroundMountName == ""
                     && GhostWolf.KnownSpell)
-                    ToolBox.SetGroundMount(GhostWolf.Name);
+                    WTSettings.SetGroundMount(GhostWolf.Name);
 
                 // Lesser Healing Wave OOC
                 if (Me.HealthPercent < settings.OOCHealThreshold
@@ -39,13 +38,13 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
                 // PARTY Cure poison
                 WoWPlayer needCurePoison = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasPoisonDebuff(m.Name));
+                    .Find(m => WTEffects.HasPoisonDebuff(m.Name));
                 if (needCurePoison != null && cast.OnFocusUnit(CurePoison, needCurePoison))
                     return;
 
                 // PARTY Cure Disease
                 WoWPlayer needCureDisease = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasDiseaseDebuff(m.Name));
+                    .Find(m => WTEffects.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
 
@@ -94,9 +93,9 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             RangeManager.SetRangeToMelee();
 
             WoWUnit Target = ObjectManager.Target;
-            bool _isPoisoned = ToolBox.HasPoisonDebuff();
-            bool _hasDisease = ToolBox.HasDiseaseDebuff();
-            bool _shouldBeInterrupted = ToolBox.TargetIsCasting();
+            bool _isPoisoned = WTEffects.HasPoisonDebuff();
+            bool _hasDisease = WTEffects.HasDiseaseDebuff();
+            bool _shouldBeInterrupted = WTCombat.TargetIsCasting();
 
             // Check Auto-Attacking
             ToolBox.CheckAutoAttack(Attack);
@@ -114,7 +113,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             if (settings.PartyCurePoison)
             {
                 WoWPlayer needCurePoison = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasPoisonDebuff(m.Name));
+                    .Find(m => WTEffects.HasPoisonDebuff(m.Name));
                 if (needCurePoison != null && cast.OnFocusUnit(CurePoison, needCurePoison))
                     return;
             }
@@ -123,7 +122,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             if (settings.CureDisease)
             {
                 WoWPlayer needCureDisease = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasDiseaseDebuff(m.Name));
+                    .Find(m => WTEffects.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
             }

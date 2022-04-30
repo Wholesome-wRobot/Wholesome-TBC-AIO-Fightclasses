@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 
@@ -56,7 +57,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             if (settings.PartyRemoveCurse)
             {
                 List<AIOPartyMember> needRemoveCurse = AIOParty.GroupAndRaid
-                    .FindAll(m => ToolBox.HasCurseDebuff(m.Name))
+                    .FindAll(m => WTEffects.HasCurseDebuff(m.Name))
                     .ToList();
                 if (needRemoveCurse.Count > 0 && cast.OnFocusUnit(RemoveCurse, needRemoveCurse[0]))
                     return;
@@ -133,7 +134,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 return;
 
             // Stop wand if banned
-            if (ToolBox.UsingWand()
+            if (WTCombat.IsSpellRepeating(5019)
                 && UnitImmunities.Contains(ObjectManager.Target, "Shoot")
                 && cast.OnTarget(UseWand))
                 return;
@@ -144,7 +145,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                     return;
 
             // Use Wand
-            if (!ToolBox.UsingWand()
+            if (!WTCombat.IsSpellRepeating(5019)
                 && _iCanUseWand
                 && !cast.IsBackingUp
                 && !MovementManager.InMovement)

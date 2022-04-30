@@ -1,6 +1,6 @@
 ﻿using System.Threading;
 using WholesomeTBCAIO.Helpers;
-using wManager.Wow.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Shaman
@@ -17,7 +17,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 if (settings.GhostWolfMount
                     && wManager.wManagerSetting.CurrentSetting.GroundMountName == ""
                     && GhostWolf.KnownSpell)
-                    ToolBox.SetGroundMount(GhostWolf.Name);
+                    WTSettings.SetGroundMount(GhostWolf.Name);
 
                 // Lesser Healing Wave OOC
                 if (Me.HealthPercent < settings.OOCHealThreshold
@@ -88,9 +88,8 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             base.CombatRotation();
 
             WoWUnit Target = ObjectManager.Target;
-            bool _isPoisoned = ToolBox.HasPoisonDebuff();
-            bool _hasDisease = ToolBox.HasDiseaseDebuff();
-            bool _shouldBeInterrupted = false;
+            bool _isPoisoned = WTEffects.HasPoisonDebuff();
+            bool _hasDisease = WTEffects.HasDiseaseDebuff();
 
             // Remove Ghost Wolf
             if (Me.HaveBuff("Ghost Wolf")
@@ -147,17 +146,8 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 && cast.OnTarget(LightningShield))
                 return;
 
-            // Check if we need to interrupt
-            int channelTimeLeft = Lua.LuaDoString<int>(@"local spell, _, _, _, endTimeMS = UnitChannelInfo('target')
-                                    if spell then
-                                     local finish = endTimeMS / 1000 - GetTime()
-                                     return finish
-                                    end");
-            if (channelTimeLeft < 0 || Target.CastingTimeLeft > ToolBox.GetLatency())
-                _shouldBeInterrupted = true;
-
             // Earth Shock Interupt
-            if (_shouldBeInterrupted)
+            if (WTCombat.TargetIsCasting())
             {
                 if (!_casterEnemies.Contains(Target.Name))
                     _casterEnemies.Add(Target.Name);

@@ -7,6 +7,7 @@ using System.Threading;
 using robotManager.Helpful;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
+using WholesomeToolbox;
 using wManager.Events;
 using wManager.Wow.ObjectManager;
 
@@ -24,10 +25,10 @@ namespace WholesomeTBCAIO.Rotations.Priest
         protected WoWLocalPlayer Me = ObjectManager.Me;
         protected Stopwatch _dispelTimer = new Stopwatch();
 
-        protected bool _iCanUseWand = ToolBox.HaveRangedWeaponEquipped();
+        protected bool _iCanUseWand = WTGear.HaveRangedWeaponEquipped;
         protected int _innerManaSaveThreshold = 20;
         protected int _wandThreshold;
-        private float _defaultRange = 30;
+        private float _defaultRange = 28;
 
         protected Priest specialization;
 
@@ -35,7 +36,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
         {
             settings = PriestSettings.Current;
             if (settings.PartyDrinkName != "")
-                ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
+                WTSettings.AddToDoNotSellList(settings.PartyDrinkName);
             cast = new Cast(Smite, UseWand, settings);
 
             this.specialization = specialization as Priest;
@@ -127,13 +128,13 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
                 // Party Cure Disease
                 WoWPlayer needCureDisease = closeMembers
-                    .Find(m => ToolBox.HasDiseaseDebuff(m.Name));
+                    .Find(m => WTEffects.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
 
                 // Party Dispel Magic
                 WoWPlayer needDispelMagic = closeMembers
-                    .Find(m => ToolBox.HasMagicDebuff(m.Name));
+                    .Find(m => WTEffects.HasMagicDebuff(m.Name));
                 if (needDispelMagic != null && cast.OnFocusUnit(DispelMagic, needDispelMagic))
                     return;
 
@@ -242,7 +243,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
         private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)
         {
-            _iCanUseWand = ToolBox.HaveRangedWeaponEquipped();
+            _iCanUseWand = WTGear.HaveRangedWeaponEquipped;
         }
     }
 }

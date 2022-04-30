@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using WholesomeTBCAIO.Settings;
+using WholesomeToolbox;
 using wManager.Events;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
@@ -41,19 +42,22 @@ namespace WholesomeTBCAIO.Helpers
 
         public bool PetSpell(string spellName, bool onFocus = false, bool noTargetNeeded = false)
         {
-            int spellIndex = ToolBox.GetPetSpellIndex(spellName);
-            if (ToolBox.PetKnowsSpell(spellName)
-                && ToolBox.GetPetSpellReady(spellName)
+            int spellIndex = WTPet.GetPetSpellIndex(spellName);
+            if (WTPet.PetKnowsSpell(spellName)
+                && WTPet.PetSpellReady(spellIndex)
                 && !UnitImmunities.Contains(ObjectManager.Target, spellName)
                 && (ObjectManager.Pet.HasTarget || noTargetNeeded))
             {
                 Thread.Sleep(ToolBox.GetLatency() + 100);
                 Logger.Combat($"Cast (Pet) {spellName}");
+                Lua.LuaDoString($"CastSpell({spellIndex}, 'pet');");
                 if (!onFocus)
-                    Lua.LuaDoString($"CastPetAction({spellIndex});");
+                    Lua.LuaDoString($"CastSpell({spellIndex}, 'pet');");
                 else
-                    Lua.LuaDoString($"CastPetAction({spellIndex}, \'focus\');");
-
+                {
+                    Lua.LuaDoString($"PetAttack('focus');");
+                    Lua.LuaDoString($"CastSpell({spellIndex}, 'pet');");
+                }
                 return true;
             }
             return false;
@@ -69,7 +73,7 @@ namespace WholesomeTBCAIO.Helpers
         {
             if (ObjectManager.Pet.Focus >= spellCost + 15
                 && ObjectManager.Me.InCombatFlagOnly
-                && ToolBox.PetKnowsSpell(spellName))
+                && WTPet.PetKnowsSpell(spellName))
                 if (PetSpell(spellName))
                     return true;
             return false;
@@ -190,7 +194,7 @@ namespace WholesomeTBCAIO.Helpers
 
             // DON'T CAST BECAUSE WANDING
             if (WandSpell != null
-                && ToolBox.UsingWand()
+                && WTCombat.IsSpellRepeating(5019)
                 && !stopWandAndCast)
             {
                 CombatDebug("Didn't cast because we were wanding");
@@ -204,12 +208,12 @@ namespace WholesomeTBCAIO.Helpers
             if (_spellCD >= 500)
             {
                 CombatDebug("Didn't cast because cd is too long");
-                return false;
+                return _spellCD < 1500 && WandSpell != null; // recycle if it's just global CD (avoid wand weave)
             }
 
             // STOP WAND FOR CAST
             if (WandSpell != null
-                && ToolBox.UsingWand()
+                && WTCombat.IsSpellRepeating(5019)
                 && stopWandAndCast)
                 StopWandWaitGCD(WandSpell);
 
@@ -277,7 +281,7 @@ namespace WholesomeTBCAIO.Helpers
                 ClickOnTerrain.Pulse(CurrentSpellLocation);
             }
 
-            Thread.Sleep(50);
+            Thread.Sleep(100);
 
             ToolBox.ClearCursor();
 
@@ -285,7 +289,7 @@ namespace WholesomeTBCAIO.Helpers
             if (CurrentSpell.IsChannel)
             {
                 CombatDebug($"{CurrentSpell.Name} is channel, wait cast");
-                while (ToolBox.GetChannelTimeLeft("player") < 0)
+                while (WTCombat.GetChannelTimeLeft("player") > 0)
                     Thread.Sleep(50);
 
                 CurrentSpell.StartForcedCooldown();

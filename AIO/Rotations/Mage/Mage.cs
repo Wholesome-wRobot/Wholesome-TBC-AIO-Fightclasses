@@ -8,6 +8,7 @@ using WholesomeTBCAIO.Settings;
 using WholesomeTBCAIO.Helpers;
 using System.ComponentModel;
 using Timer = robotManager.Helpful.Timer;
+using WholesomeToolbox;
 
 namespace WholesomeTBCAIO.Rotations.Mage
 {
@@ -25,10 +26,10 @@ namespace WholesomeTBCAIO.Rotations.Mage
         protected WoWLocalPlayer Me = ObjectManager.Me;
         protected WoWUnit _polymorphedEnemy = null;
 
-        protected bool _iCanUseWand = ToolBox.HaveRangedWeaponEquipped();
+        protected bool _iCanUseWand = WTGear.HaveRangedWeaponEquipped;
         protected bool _isPolymorphing;
         protected bool _polymorphableEnemyInThisFight = true;
-        protected bool _knowImprovedScorch = ToolBox.GetTalentRank(2, 9) > 0;
+        protected bool _knowImprovedScorch = WTTalent.GetTalentRank(2, 9) > 0;
 
         protected Mage specialization;
 
@@ -36,7 +37,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
         {
             settings = MageSettings.Current;
             if (settings.PartyDrinkName != "")
-                ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
+                WTSettings.AddToDoNotSellList(settings.PartyDrinkName);
             cast = new Cast(Fireball, UseWand, settings);
             _foodManager = new MageFoodManager(cast);
 
@@ -131,7 +132,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
         protected virtual void CombatRotation()
         {
             if (ObjectManager.Pet.IsValid && !ObjectManager.Pet.HasTarget)
-                Lua.LuaDoString("PetAttack();", false);
+                Lua.LuaDoString("PetAttack();");
 
             if (specialization.RotationType == Enums.RotationType.Party)
             {
@@ -146,14 +147,14 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 if (Me.HaveBuff("Ice Block")
                     && Me.HealthPercent > 50)
                 {
-                    ToolBox.CancelPlayerBuff("Ice Block");
+                    WTEffects.TBCCancelPlayerBuff("Ice Block");
                     return;
                 }
             }
 
             // CounterSpell
             if (settings.UseCounterspell
-                && ToolBox.TargetIsCasting()
+                && WTCombat.TargetIsCasting()
                 && cast.OnTarget(CounterSpell))
                 return;
         }
@@ -225,7 +226,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
         private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)
         {
-            _iCanUseWand = ToolBox.HaveRangedWeaponEquipped();
+            _iCanUseWand = WTGear.HaveRangedWeaponEquipped;
         }
 
         private void FightLoopHandler(WoWUnit unit, CancelEventArgs cancelable)
@@ -249,7 +250,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 // Using CTM
                 if (settings.BackupUsingCTM)
                 {
-                    Vector3 position = ToolBox.BackofVector3(Me.Position, Me, 15f);
+                    Vector3 position = WTSpace.BackOfUnit(Me, 15f);
                     MovementManager.Go(PathFinder.FindPath(position), false);
                     Thread.Sleep(500);
 

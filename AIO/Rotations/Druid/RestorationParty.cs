@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 
@@ -16,13 +17,13 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
                 // PARTY Remove Curse
                 WoWPlayer needRemoveCurse = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasCurseDebuff(m.Name));
+                    .Find(m => WTEffects.HasCurseDebuff(m.Name));
                 if (needRemoveCurse != null && cast.OnFocusUnit(RemoveCurse, needRemoveCurse))
                     return;
 
                 // PARTY Abolish Poison
                 WoWPlayer needAbolishPoison = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasPoisonDebuff(m.Name));
+                    .Find(m => WTEffects.HasPoisonDebuff(m.Name));
                 if (needAbolishPoison != null && cast.OnFocusUnit(AbolishPoison, needAbolishPoison))
                     return;
 
@@ -114,7 +115,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             {
                 // PARTY Remove Curse
                 WoWPlayer needRemoveCurse = lisPartyOrdered
-                    .Find(m => ToolBox.HasCurseDebuff(m.Name));
+                    .Find(m => WTEffects.HasCurseDebuff(m.Name));
                 if (needRemoveCurse != null && cast.OnFocusUnit(RemoveCurse, needRemoveCurse))
                     return;
             }
@@ -123,7 +124,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             {
                 // PARTY Abolish Poison
                 WoWPlayer needAbolishPoison = lisPartyOrdered
-                    .Find(m => ToolBox.HasPoisonDebuff(m.Name));
+                    .Find(m => WTEffects.HasPoisonDebuff(m.Name));
                 if (needAbolishPoison != null && cast.OnFocusUnit(AbolishPoison, needAbolishPoison))
                     return;
             }
@@ -179,21 +180,21 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
             // Lifebloom 1
             WoWPlayer needLifeBloom1 = lisPartyOrdered
-                .Find(m => m.HealthPercent < 90 && ToolBox.CountBuff("Lifebloom", m.Name) < 1);
+                .Find(m => m.HealthPercent < 90 && WTEffects.CountBuffStacks("Lifebloom", m.Name) < 1);
             if (needLifeBloom1 != null
                 && cast.OnFocusUnit(Lifebloom, needLifeBloom1))
                 return;
 
             // Lifebloom 2
             WoWPlayer needLifeBloom2 = lisPartyOrdered
-                .Find(m => m.HealthPercent < 85 && ToolBox.CountBuff("Lifebloom", m.Name) < 2);
+                .Find(m => m.HealthPercent < 85 && WTEffects.CountBuffStacks("Lifebloom", m.Name) < 2);
             if (needLifeBloom2 != null
                 && cast.OnFocusUnit(Lifebloom, needLifeBloom2))
                 return;
 
             // Lifebloom 3
             WoWPlayer needLifeBloom3 = lisPartyOrdered
-                .Find(m => m.HealthPercent < 80 && ToolBox.CountBuff("Lifebloom", m.Name) < 3);
+                .Find(m => m.HealthPercent < 80 && WTEffects.CountBuffStacks("Lifebloom", m.Name) < 3);
             if (needLifeBloom3 != null
                 && cast.OnFocusUnit(Lifebloom, needLifeBloom3))
                 return;

@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
+using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
-using WholesomeTBCAIO.Helpers;
-using System.Threading;
 
 namespace WholesomeTBCAIO.Rotations.Mage
 {
@@ -23,9 +24,9 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
         public MageFoodManager(Cast cast)
         {
-            Drink().ForEach(d => ToolBox.AddToDoNotSellList(d));
-            Food().ForEach(f => ToolBox.AddToDoNotSellList(f));
-            ManaStones().ForEach(m => ToolBox.AddToDoNotSellList(m));
+            WTSettings.AddToDoNotSellList(DRINKS);
+            WTSettings.AddToDoNotSellList(FOODS);
+            WTSettings.AddToDoNotSellList(MANASTONES);
             _cast = cast;
 
             List<AIOSpell> conjureManaStoneSpells = new List<AIOSpell>()
@@ -40,48 +41,39 @@ namespace WholesomeTBCAIO.Rotations.Mage
             _bestConjureManaStone = conjureManaStoneSpells.Find(s => s.KnownSpell);
         }
 
-        private List<string> Drink()
+        private readonly List<string> DRINKS = new List<string>
         {
-            return new List<string>
-            {
-                "Conjured Water",
-                "Conjured Fresh Water",
-                "Conjured Purified Water",
-                "Conjured Spring Water",
-                "Conjured Mineral Water",
-                "Conjured Sparkling Water",
-                "Conjured Crystal Water",
-                "Conjured Mountain Spring Water",
-                "Conjured Glacier Water"
-            };
-        }
+            "Conjured Water",
+            "Conjured Fresh Water",
+            "Conjured Purified Water",
+            "Conjured Spring Water",
+            "Conjured Mineral Water",
+            "Conjured Sparkling Water",
+            "Conjured Crystal Water",
+            "Conjured Mountain Spring Water",
+            "Conjured Glacier Water"
+        };
 
-        private List<string> Food()
+        private readonly List<string> FOODS = new List<string>
         {
-            return new List<string>
-            {
-                "Conjured Muffin",
-                "Conjured Bread",
-                "Conjured Rye",
-                "Conjured Pumpernickel",
-                "Conjured Sourdough",
-                "Conjured Sweet Roll",
-                "Conjured Cinnamon Roll",
-                "Conjured Croissant"
-            };
-        }
+            "Conjured Muffin",
+            "Conjured Bread",
+            "Conjured Rye",
+            "Conjured Pumpernickel",
+            "Conjured Sourdough",
+            "Conjured Sweet Roll",
+            "Conjured Cinnamon Roll",
+            "Conjured Croissant"
+        };
 
-        private List<string> ManaStones()
+        private readonly List<string> MANASTONES = new List<string>
         {
-            return new List<string>
-            {
-                "Mana Agate",
-                "Mana Jade",
-                "Mana Citrine",
-                "Mana Ruby",
-                "Mana Emerald"
-            };
-        }
+            "Mana Agate",
+            "Mana Jade",
+            "Mana Citrine",
+            "Mana Ruby",
+            "Mana Emerald"
+        };
 
         public void CheckIfEnoughFoodAndDrinks()
         {
@@ -93,11 +85,11 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
                 foreach (WoWItem item in _bagItems)
                 {
-                    if (Drink().Contains(item.Name))
-                        stacksWater += Lua.LuaDoString<int>("return GetItemCount(\"" + item.Name + "\");");
+                    if (DRINKS.Contains(item.Name))
+                        stacksWater += WTItem.GetNbItems(item.Name);
 
-                    if (Food().Contains(item.Name))
-                        stacksFood += Lua.LuaDoString<int>("return GetItemCount(\"" + item.Name + "\");");
+                    if (FOODS.Contains(item.Name))
+                        stacksFood += WTItem.GetNbItems(item.Name);
                 }
 
                 if (stacksWater < 10
@@ -121,19 +113,19 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 int bestFood = 0;
                 foreach (WoWItem item in _bagItems)
                 {
-                    if (Drink().Contains(item.Name))
-                        bestDrink = Drink().IndexOf(item.Name) > bestDrink ? Drink().IndexOf(item.Name) : bestDrink;
+                    if (DRINKS.Contains(item.Name))
+                        bestDrink = DRINKS.IndexOf(item.Name) > bestDrink ? DRINKS.IndexOf(item.Name) : bestDrink;
 
-                    if (Food().Contains(item.Name))
-                        bestFood = Food().IndexOf(item.Name) > bestFood ? Food().IndexOf(item.Name) : bestFood;
+                    if (FOODS.Contains(item.Name))
+                        bestFood = FOODS.IndexOf(item.Name) > bestFood ? FOODS.IndexOf(item.Name) : bestFood;
                 }
                 foreach (WoWItem item in _bagItems)
                 {
-                    if (Drink().Contains(item.Name) && Drink().IndexOf(item.Name) < bestDrink)
-                        ToolBox.LuaDeleteAllItems(item.Name);
+                    if (DRINKS.Contains(item.Name) && DRINKS.IndexOf(item.Name) < bestDrink)
+                        WTItem.DeleteAllItemsByName(item.Name);
 
-                    if (Food().Contains(item.Name) && Food().IndexOf(item.Name) < bestFood)
-                        ToolBox.LuaDeleteAllItems(item.Name);
+                    if (FOODS.Contains(item.Name) && FOODS.IndexOf(item.Name) < bestFood)
+                        WTItem.DeleteAllItemsByName(item.Name);
                 }
             }
         }
@@ -145,7 +137,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             foreach (WoWItem item in _bagItems)
             {
-                if (ManaStones().Contains(item.Name))
+                if (MANASTONES.Contains(item.Name))
                     _manaStone = item.Name;
             }
 
@@ -159,11 +151,11 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
         public bool UseManaStone()
         {
-            if (_manaStone == null || ToolBox.GetItemCooldown(_manaStone) >= 2)
+            if (_manaStone == null || WTItem.GetItemCooldown(_manaStone) >= 2)
                 return false;
 
             Logger.LogFight($"Using {_manaStone}");
-            while (ToolBox.GetItemCooldown(_manaStone) < 2 && ToolBox.GetItemCooldown(_manaStone) >= 0)
+            while (WTItem.GetItemCooldown(_manaStone) < 2 && WTItem.GetItemCooldown(_manaStone) >= 0)
                 Thread.Sleep(100);
             ItemsManager.UseItemByNameOrId(_manaStone);
             return true;

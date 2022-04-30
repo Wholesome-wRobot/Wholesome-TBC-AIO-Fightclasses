@@ -10,6 +10,7 @@ using System.Linq;
 using WholesomeTBCAIO.Settings;
 using WholesomeTBCAIO.Helpers;
 using Timer = robotManager.Helpful.Timer;
+using WholesomeToolbox;
 
 namespace WholesomeTBCAIO.Rotations.Rogue
 {
@@ -42,7 +43,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
         {
             settings = RogueSettings.Current;
             if (settings.PartyDrinkName != "")
-                ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
+                WTSettings.AddToDoNotSellList(settings.PartyDrinkName);
             cast = new Cast(SinisterStrike, null, settings);
 
             this.specialization = specialization as Rogue;
@@ -50,7 +51,23 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             TalentsManager.InitTalents(settings);
 
             RangeManager.SetRangeToMelee();
-            AddPoisonsToNoSellList();
+            WTSettings.AddToDoNotSellList(new List<string>
+            {
+                "Instant Poison",
+                "Instant Poison II",
+                "Instant Poison III",
+                "Instant Poison IV",
+                "Instant Poison V",
+                "Instant Poison VI",
+                "Instant Poison VII",
+                "Deadly Poison",
+                "Deadly Poison II",
+                "Deadly Poison III",
+                "Deadly Poison IV",
+                "Deadly Poison V",
+                "Deadly Poison VI",
+                "Deadly Poison VII"
+            });
 
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightStart += FightStartHandler;
@@ -198,11 +215,10 @@ namespace WholesomeTBCAIO.Rotations.Rogue
 
         protected void ToggleAutoAttack(bool activate)
         {
-            bool _autoAttacking = Lua.LuaDoString<bool>("isAutoRepeat = false; if IsCurrentSpell('Attack') " +
-                "then isAutoRepeat = true end", "isAutoRepeat");
+            bool _autoAttacking = WTCombat.IsSpellActive("Attack");
 
             if (!_autoAttacking && activate && !ObjectManager.Target.HaveBuff("Gouge")
-                && (!ObjectManager.Target.HaveBuff("Blind") || ToolBox.HasDebuff("Recently Bandaged")))
+                && (!ObjectManager.Target.HaveBuff("Blind") || WTEffects.HasDebuff("Recently Bandaged")))
             {
                 Logger.Log("Turning auto attack ON");
                 ToolBox.CheckAutoAttack(Attack);
@@ -224,29 +240,14 @@ namespace WholesomeTBCAIO.Rotations.Rogue
 
         protected bool HaveDaggerInMH()
         {
-            return ToolBox.GetMHWeaponType().Equals("Daggers");
+            return WTGear.GetMainHandWeaponType().Equals("Daggers");
         }
 
         protected void PoisonWeapon()
         {
-            bool hasMainHandEnchant = Lua.LuaDoString<bool>
-                (@"local hasMainHandEnchant, _, _, _, _, _, _, _, _ = GetWeaponEnchantInfo()
-            if (hasMainHandEnchant) then 
-               return '1'
-            else
-               return '0'
-            end");
-
-            bool hasOffHandEnchant = Lua.LuaDoString<bool>
-                (@"local _, _, _, _, hasOffHandEnchant, _, _, _, _ = GetWeaponEnchantInfo()
-            if (hasOffHandEnchant) then 
-               return '1'
-            else
-               return '0'
-            end");
-
-            bool hasoffHandWeapon = Lua.LuaDoString<bool>(@"local hasWeapon = OffhandHasWeapon()
-            return hasWeapon");
+            bool hasMainHandEnchant = WTGear.HaveMainHandEnchant();
+            bool hasOffHandEnchant = WTGear.HaveOffHandEnchant();
+            bool hasoffHandWeapon = WTGear.HaveOffHandWeaponEquipped;
 
             if (!hasMainHandEnchant)
             {
@@ -321,25 +322,6 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             { 80, 43233 },
         };
 
-        private void AddPoisonsToNoSellList()
-        {
-            ToolBox.AddToDoNotSellList("Instant Poison");
-            ToolBox.AddToDoNotSellList("Instant Poison II");
-            ToolBox.AddToDoNotSellList("Instant Poison III");
-            ToolBox.AddToDoNotSellList("Instant Poison IV");
-            ToolBox.AddToDoNotSellList("Instant Poison V");
-            ToolBox.AddToDoNotSellList("Instant Poison VI");
-            ToolBox.AddToDoNotSellList("Instant Poison VII");
-
-            ToolBox.AddToDoNotSellList("Deadly Poison");
-            ToolBox.AddToDoNotSellList("Deadly Poison II");
-            ToolBox.AddToDoNotSellList("Deadly Poison III");
-            ToolBox.AddToDoNotSellList("Deadly Poison IV");
-            ToolBox.AddToDoNotSellList("Deadly Poison V");
-            ToolBox.AddToDoNotSellList("Deadly Poison VI");
-            ToolBox.AddToDoNotSellList("Deadly Poison VII");
-        }
-
         protected void StealthApproach()
         {
             RangeManager.SetRangeToMelee();
@@ -357,7 +339,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 {
                     ToggleAutoAttack(false);
 
-                    Vector3 position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f);
+                    Vector3 position = WTSpace.BackOfUnit(ObjectManager.Target, 2.5f);
                     MovementManager.MoveTo(position);
                     Thread.Sleep(50);
                     CastOpener();
@@ -418,7 +400,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 && !Me.IsCast
                 && ObjectManager.Target.IsAlive)
                 {
-                    Vector3 position = ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f);
+                    Vector3 position = WTSpace.BackOfUnit(ObjectManager.Target, 2.5f);
                     MovementManager.Go(PathFinder.FindPath(position), false);
 
                     while (MovementManager.InMovement
@@ -435,14 +417,18 @@ namespace WholesomeTBCAIO.Rotations.Rogue
         private void MoveToPulseHandler(Vector3 point, CancelEventArgs cancelable)
         {
             if (_isStealthApproching &&
-            !point.ToString().Equals(ToolBox.BackofVector3(ObjectManager.Target.Position, ObjectManager.Target, 2.5f).ToString()))
+            !point.ToString().Equals(WTSpace.BackOfUnit(ObjectManager.Target, 2.5f).ToString()))
                 cancelable.Cancel = true;
         }
 
         private void EventsWithArgsHandler(string id, List<string> args)
         {
-            if (_behindTargetTimer.IsReady && args[11].Contains("You must be behind"))
-                _behindTargetTimer = new Timer(10000);
+
+            if (id == "UI_ERROR_MESSAGE")
+            {
+                if (_behindTargetTimer.IsReady && args[0].StartsWith("You must be behind"))
+                    _behindTargetTimer = new Timer(10000);
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 using Timer = robotManager.Helpful.Timer;
 
@@ -18,7 +19,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 if (settings.GhostWolfMount
                     && wManager.wManagerSetting.CurrentSetting.GroundMountName == ""
                     && GhostWolf.KnownSpell)
-                    ToolBox.SetGroundMount(GhostWolf.Name);
+                    WTSettings.SetGroundMount(GhostWolf.Name);
 
                 // Lesser Healing Wave OOC
                 if (Me.HealthPercent < settings.OOCHealThreshold
@@ -81,9 +82,9 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             base.CombatRotation();
 
             WoWUnit Target = ObjectManager.Target;
-            bool _isPoisoned = ToolBox.HasPoisonDebuff();
-            bool _hasDisease = ToolBox.HasDiseaseDebuff();
-            bool _shouldBeInterrupted = ToolBox.TargetIsCasting();
+            bool _isPoisoned = WTEffects.HasPoisonDebuff();
+            bool _hasDisease = WTEffects.HasDiseaseDebuff();
+            bool _shouldBeInterrupted = WTCombat.TargetIsCasting();
 
             // Force melee
             if (_combatMeleeTimer.IsReady)

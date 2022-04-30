@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.Enums;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
@@ -76,8 +77,8 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
                 // PARTY Soul Stone
                 if (CreateSoulstone.KnownSpell
-                    && ToolBox.HaveOneInList(WarlockPetAndConsumables.SoulStones())
-                    && ToolBox.GetItemCooldown(WarlockPetAndConsumables.SoulStones()) <= 0)
+                    && WTItem.HaveOneInList(WarlockPetAndConsumables.SOULSTONES)
+                    && ToolBox.GetItemCooldown(WarlockPetAndConsumables.SOULSTONES) <= 0)
                 {
                     WoWPlayer noSoulstone = AIOParty.GroupAndRaid
                         .Find(m => !m.HaveBuff("Soulstone Resurrection")
@@ -93,7 +94,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                         Lua.RunMacroText($"/target {noSoulstone.Name}");
                         if (ObjectManager.Target.Name == noSoulstone.Name)
                         {
-                            ToolBox.UseFirstMatchingItem(WarlockPetAndConsumables.SoulStones());
+                            ToolBox.UseFirstMatchingItem(WarlockPetAndConsumables.SOULSTONES);
                             Usefuls.WaitIsCasting();
                             Lua.RunMacroText("/cleartarget");
                             ToolBox.ClearCursor();
@@ -119,7 +120,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             // Pet attack
             if (ObjectManager.Pet.Target != ObjectManager.Me.Target)
-                Lua.LuaDoString("PetAttack();", false);
+                Lua.LuaDoString("PetAttack();");
 
             // PARTY Seed of Corruption
             if (AIOParty.EnemiesFighting.Count >= settings.PartySeedOfCorruptionAmount
@@ -188,7 +189,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             if (SoulShatter.IsSpellUsable
                 && settings.UseSoulShatter
                 && AIORadar.CloseUnitsTargetingMe.Count > 0
-                && ToolBox.CountItemStacks("Soul Shard") > 0
+                && WTItem.CountItemStacks("Soul Shard") > 0
                 && cast.OnSelf(SoulShatter))
                 return;
 
@@ -287,7 +288,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 return;
 
             // Drain Soul
-            bool _shouldDrainSoul = ToolBox.CountItemStacks("Soul Shard") < settings.NumberOfSoulShards || settings.AlwaysDrainSoul;
+            bool _shouldDrainSoul = WTItem.CountItemStacks("Soul Shard") < settings.NumberOfSoulShards || settings.AlwaysDrainSoul;
             if (_shouldDrainSoul
                 && ObjectManager.Target.HealthPercent < settings.DrainSoulHP
                 && ObjectManager.Target.Level >= Me.Level - 8
@@ -305,7 +306,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 return;
 
             // Stop wand if banned
-            if (ToolBox.UsingWand()
+            if (WTCombat.IsSpellRepeating(5019)
                 && UnitImmunities.Contains(ObjectManager.Target, "Shoot")
                 && cast.OnTarget(UseWand))
                 return;
@@ -316,7 +317,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                     return;
 
             // Use Wand
-            if (!ToolBox.UsingWand()
+            if (!WTCombat.IsSpellRepeating(5019)
                 && _iCanUseWand
                 && cast.OnTarget(UseWand, false))
                 return;

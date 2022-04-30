@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Paladin
@@ -35,7 +36,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if (settings.PartyPurify)
             {
                 WoWPlayer needsPurify = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasDiseaseDebuff(m.Name) || ToolBox.HasPoisonDebuff(m.Name));
+                    .Find(m => WTEffects.HasDiseaseDebuff(m.Name) || WTEffects.HasPoisonDebuff(m.Name));
                 if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
             }
@@ -44,7 +45,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if (settings.PartyCleanse)
             {
                 WoWPlayer needsCleanse = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasMagicDebuff(m.Name));
+                    .Find(m => WTEffects.HasMagicDebuff(m.Name));
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;
             }
@@ -113,7 +114,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if (settings.PartyPurify)
             {
                 WoWPlayer needsPurify = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasDiseaseDebuff(m.Name) || ToolBox.HasPoisonDebuff(m.Name));
+                    .Find(m => WTEffects.HasDiseaseDebuff(m.Name) || WTEffects.HasPoisonDebuff(m.Name));
                 if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
             }
@@ -122,13 +123,13 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if (settings.PartyCleanse)
             {
                 WoWPlayer needsCleanse = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasMagicDebuff(m.Name));
+                    .Find(m => WTEffects.HasMagicDebuff(m.Name));
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;
             }
 
             // Hammer of Justice
-            if (ToolBox.TargetIsCasting()
+            if (WTCombat.TargetIsCasting()
                 && cast.OnTarget(HammerOfJustice))
                 return;
 

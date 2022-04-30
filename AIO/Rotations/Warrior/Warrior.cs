@@ -9,6 +9,7 @@ using WholesomeTBCAIO.Settings;
 using WholesomeTBCAIO.Helpers;
 using System.ComponentModel;
 using Timer = robotManager.Helpful.Timer;
+using WholesomeToolbox;
 
 namespace WholesomeTBCAIO.Rotations.Warrior
 {
@@ -35,7 +36,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         {
             settings = WarriorSettings.Current;
             if (settings.PartyDrinkName != "")
-                ToolBox.AddToDoNotSellList(settings.PartyDrinkName);
+                WTSettings.AddToDoNotSellList(settings.PartyDrinkName);
             cast = new Cast(BattleShout, null, settings);
 
             this.specialization = specialization as Warrior;
@@ -169,19 +170,14 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         protected AIOSpell Intervene = new AIOSpell("Intervene");
         protected AIOSpell SunderArmor = new AIOSpell("Sunder Armor");
 
-        protected bool HeroicStrikeOn()
-        {
-            return Lua.LuaDoString<bool>("hson = false; if IsCurrentSpell('Heroic Strike') then hson = true end", "hson");
-        }
-
         protected bool InBattleStance()
         {
-            return Lua.LuaDoString<bool>("bs = false; if GetShapeshiftForm() == 1 then bs = true end", "bs");
+            return Lua.LuaDoString<bool>("return GetShapeshiftForm() == 1;");
         }
 
         protected bool InBerserkStance()
         {
-            return Lua.LuaDoString<bool>("bs = false; if GetShapeshiftForm() == 3 or GetShapeshiftForm() == 2 then bs = true end", "bs");
+            return Lua.LuaDoString<bool>("return (GetShapeshiftForm() == 3 or GetShapeshiftForm() == 2);");
         }
 
         // EVENT HANDLERS
