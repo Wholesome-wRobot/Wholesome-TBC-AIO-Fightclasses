@@ -129,6 +129,7 @@ namespace WholesomeTBCAIO.Helpers
             if (rotation is Retribution) return (RotationType.Solo, RotationRole.DPS);
             if (rotation is RetributionParty) return (RotationType.Party, RotationRole.DPS);
             if (rotation is PaladinHolyParty) return (RotationType.Party, RotationRole.Healer);
+            if (rotation is PaladinHolyRaid) return (RotationType.Party, RotationRole.Healer);
             if (rotation is PaladinProtectionParty) return (RotationType.Party, RotationRole.Tank);
             // PRIEST
             if (rotation is Shadow) return (RotationType.Solo, RotationRole.DPS);
