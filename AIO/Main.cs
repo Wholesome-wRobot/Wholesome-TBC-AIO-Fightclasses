@@ -159,6 +159,7 @@ public class Main : ICustomClass
             // Paladin
             case Specs.PaladinRetribution: return new Retribution();
             case Specs.PaladinHolyParty: return new PaladinHolyParty();
+            case Specs.PaladinHolyRaid: return new PaladinHolyRaid();
             case Specs.PaladinRetributionParty: return new RetributionParty();
             case Specs.PaladinProtectionParty: return new PaladinProtectionParty();
             // Priest

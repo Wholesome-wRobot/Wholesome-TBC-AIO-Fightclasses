@@ -46,7 +46,7 @@ namespace WholesomeTBCAIO.Helpers
         {
             { "Retribution", Specs.PaladinRetribution },
             { "Party Holy", Specs.PaladinHolyParty },
-            { "Raid Holy", Specs.PaladinHolyParty },
+            { "Raid Holy", Specs.PaladinHolyRaid },
             { "Party Protection", Specs.PaladinProtectionParty },
             { "Party Retribution", Specs.PaladinRetributionParty },
         };

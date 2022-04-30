@@ -250,7 +250,7 @@ namespace WholesomeTBCAIO.Settings
         public int PartyRetExorcismThreshold { get; set; }
 
         // TALENT
-        [DropdownList(new string[] { "Retribution", "Party Retribution", "Party Protection", "Party Holy" })]
+        [DropdownList(new string[] { "Retribution", "Party Retribution", "Party Protection", "Party Holy", "Raid Holy" })]
         public override string Specialization { get; set; }
     }
 }

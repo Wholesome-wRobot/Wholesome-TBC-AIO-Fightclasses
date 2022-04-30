@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Paladin
@@ -116,7 +117,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if (settings.PartyPurify)
             {
                 WoWPlayer needsPurify = AIOParty.GroupAndRaid
-                    .Find(m => ToolBox.HasDiseaseDebuff(m.Name) || ToolBox.HasPoisonDebuff(m.Name));
+                    .Find(m => WTEffects.HasDiseaseDebuff(m.Name) || WTEffects.HasPoisonDebuff(m.Name));
                 if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
             }
@@ -155,7 +156,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if (unit.HealthPercent < settings.PartyFlashOfLightThreshold)
             {
                 if (HolyLight.Cost == 840
-                    && ToolBox.BuffTimeLeft("Light\'s Grace") < 5
+                    && WTEffects.BuffTimeLeft("Light\'s Grace") < 5
                     && cast.OnFocusUnit(HolyLightRank5, unit))
                     return true;
                 if (cast.OnFocusUnit(FlashOfLight, unit))
