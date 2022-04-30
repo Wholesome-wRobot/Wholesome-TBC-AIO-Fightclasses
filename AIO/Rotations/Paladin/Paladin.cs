@@ -128,7 +128,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 if (needRes.Count > 0 && cast.OnFocusUnit(Redemption, needRes[0]))
                     return;
 
-                if (settings.PartyHealOOC || specialization is PaladinHolyParty)
+                if (settings.PartyHealOOC || specialization is PaladinHolyParty || specialization is PaladinHolyRaid)
                 {
                     // PARTY Heal
                     List<AIOPartyMember> needHeal = AIOParty.GroupAndRaid
