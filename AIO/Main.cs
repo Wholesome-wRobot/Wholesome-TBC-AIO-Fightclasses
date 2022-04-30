@@ -65,6 +65,7 @@ public class Main : ICustomClass
             EventsLua.AttachEventLua("PARTY_MEMBERS_CHANGED", e => AIOParty.GroupRosterChangedHandler());
             EventsLua.AttachEventLua("PARTY_MEMBER_DISABLE", e => AIOParty.GroupRosterChangedHandler());
             EventsLua.AttachEventLua("PARTY_MEMBER_ENABLE", e => AIOParty.GroupRosterChangedHandler());
+            EventsLua.AttachEventLua("RAID_ROSTER_UPDATE", e => AIOParty.GroupRosterChangedHandler());
             EventsLuaWithArgs.OnEventsLuaStringWithArgs += EventsWithArgsHandler;
             AIOParty.UpdateParty();
 
