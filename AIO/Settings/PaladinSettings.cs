@@ -32,7 +32,8 @@ namespace WholesomeTBCAIO.Settings
             PartyRetConsecrationThreshold = 70;
             PartyRetExorcismThreshold = 70;
             PartyFlashOfLightThreshold = 80;
-            PartyHolyLightThreshold = 65;
+            PartyHolyLightPercentThreshold = 65;
+            PartyHolyLightValueThreshold = 4000;
             PartyHolySealOfLight = false;
             PartyDetectSpecs = false;
             PartyAvengersShieldnRank1 = false;
@@ -128,10 +129,16 @@ namespace WholesomeTBCAIO.Settings
 
         [Category("Holy")]
         [DefaultValue(65)]
-        [DisplayName("[Party] Holy Light")]
-        [Description("Use Holy Light on party members under this health threshold")]
+        [DisplayName("[Party] Holy Light Percentage")]
+        [Description("Use Holy Light on party members under this health percentage")]
         [Percentage(true)]
-        public int PartyHolyLightThreshold { get; set; }
+        public int PartyHolyLightPercentThreshold { get; set; }
+
+        [Category("Holy")]
+        [DefaultValue(4000)]
+        [DisplayName("[Party] Holy Light Value")]
+        [Description("Use Holy Light on party members under this amount of missing health")]
+        public int PartyHolyLightValueThreshold { get; set; }
 
         [Category("Holy")]
         [DefaultValue("Random")]

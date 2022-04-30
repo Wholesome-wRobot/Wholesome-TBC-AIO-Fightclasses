@@ -224,6 +224,12 @@ namespace WholesomeTBCAIO.Helpers
                         "0550312152013253105150320100000000000000005000000000000000000000"
                     };
                     break;
+                case Enums.Specs.PaladinHolyRaid:
+                    _talentsCodes = new List<string>
+                    {
+                        "0550311252013253105150023100000000000000005000000000000000000000"
+                    };
+                    break;
                 // PRIEST
                 case Enums.Specs.PriestShadow:
                     _talentsCodes = new List<string>
