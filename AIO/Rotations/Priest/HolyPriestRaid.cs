@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 
@@ -9,6 +10,12 @@ namespace WholesomeTBCAIO.Rotations.Priest
 {
     public class HolyPriestRaid : Priest
     {
+        public HolyPriestRaid(BaseSettings settings) : base(settings)
+        {
+            RotationType = Enums.RotationType.Party;
+            RotationRole = Enums.RotationRole.Healer;
+        }
+
         protected override void BuffRotation()
         {
             if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
@@ -19,7 +26,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 if (AoEHeal(false))
                     return;
 
-                List<AIOPartyMember> membersByMissingHealth = AIOParty.ClosePartyMembers
+                List<AIOPartyMember> membersByMissingHealth = partyManager.ClosePartyMembers
                     .OrderBy(m => m.HealthPercent)
                     .ToList();
 
@@ -30,7 +37,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 }
 
                 // PARTY Drink
-                if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
+                if (partyManager.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
                     return;
             }
         }
@@ -40,21 +47,21 @@ namespace WholesomeTBCAIO.Rotations.Priest
             // Target an enemy if we have a shadowfiend
             if (ObjectManager.Pet.IsValid && !ObjectManager.Me.HasTarget)
             {
-                WoWUnit target = AIOParty.EnemiesFighting.Find(u => u.IsValid);
+                WoWUnit target = partyManager.EnemiesFighting.Find(u => u.IsValid);
                 if (target != null)
                     ObjectManager.Me.Target = target.Guid;
             }
 
-            List<AIOPartyMember> membersByMissingHealth = AIOParty.ClosePartyMembers
+            List<AIOPartyMember> membersByMissingHealth = partyManager.ClosePartyMembers
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
 
             // Fade
-            if (AIORadar.CloseUnitsTargetingMe.Count > 0
+            if (unitCache.CloseUnitsTargetingMe.Count > 0
                 && cast.OnSelf(Fade))
                 return;
 
-            List<AIOPartyMember> needDispel = AIOParty.ClosePartyMembers
+            List<AIOPartyMember> needDispel = partyManager.ClosePartyMembers
                     .FindAll(m => m.IsAlive && WTEffects.HasMagicDebuff(m.Name));
 
             // PARTY Mass Dispel
@@ -76,7 +83,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             // ShadowFiend
             if (Me.ManaPercentage < 50 && !ObjectManager.Pet.IsValid)
             {
-                WoWUnit target = AIOParty.EnemiesFighting.Find(u => u.IsValid);
+                WoWUnit target = partyManager.EnemiesFighting.Find(u => u.IsValid);
                 if (target != null)
                 {
                     ObjectManager.Me.Target = target.Guid;
@@ -147,7 +154,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             else if (PrayerOfHealing.KnownSpell)
             {
                 // PARTY Prayer of Healing
-                List<AIOPartyMember> needPrayerOfHealing = AIOParty.GroupAndRaid
+                List<AIOPartyMember> needPrayerOfHealing = partyManager.GroupAndRaid
                     .FindAll(m => m.IsAlive && m.GetDistance < 33 && m.HealthPercent < 75)
                     .ToList();
                 if (needPrayerOfHealing.Count > 2 && cast.OnSelf(PrayerOfHealing))
@@ -159,9 +166,9 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
         private bool CastCircleOfHealing(bool combat = true)
         {
-            List<List<AIOPartyMember>> groups = AIOParty.RaidGroups.Count == 0
-                ? new List<List<AIOPartyMember>> { AIOParty.GroupAndRaid }
-                : AIOParty.RaidGroups.Values.ToList();
+            List<List<AIOPartyMember>> groups = partyManager.RaidGroups.Count == 0
+                ? new List<List<AIOPartyMember>> { partyManager.GroupAndRaid }
+                : partyManager.RaidGroups.Values.ToList();
             var minimumCount = 3;
             int healthThreshold = (combat && Me.ManaPercentage < 80) ? settings.PartyCircleOfHealingThreshold : 95;
 

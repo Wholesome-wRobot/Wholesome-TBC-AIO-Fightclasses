@@ -1,4 +1,5 @@
 ﻿using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 
@@ -6,6 +7,12 @@ namespace WholesomeTBCAIO.Rotations.Warrior
 {
     public class FuryParty : Warrior
     {
+        public FuryParty(BaseSettings settings) : base(settings)
+        {
+            RotationType = Enums.RotationType.Party;
+            RotationRole = Enums.RotationRole.DPS;
+        }
+
         protected override void BuffRotation()
         {
             base.BuffRotation();

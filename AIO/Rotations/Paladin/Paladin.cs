@@ -1,10 +1,10 @@
-﻿using System;
+﻿using robotManager.Helpful;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
-using robotManager.Helpful;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
@@ -16,41 +16,30 @@ using Timer = robotManager.Helpful.Timer;
 
 namespace WholesomeTBCAIO.Rotations.Paladin
 {
-    public class Paladin : IClassRotation
+    public class Paladin : BaseRotation
     {
-        public Enums.RotationType RotationType { get; set; }
-        public Enums.RotationRole RotationRole { get; set; }
-
-        private static List<BlessingBuff> RecordedBlessingBuffs { get; set; } = new List<BlessingBuff>();
-
-        public static PaladinSettings settings;
-
-        protected Cast cast;
-
+        protected PaladinSettings settings;
+        protected Paladin specialization;
         protected Stopwatch _purifyTimer = new Stopwatch();
         protected Stopwatch _cleanseTimer = new Stopwatch();
         protected WoWLocalPlayer Me = ObjectManager.Me;
-
-        protected static int _manaSavePercent;
+        protected int _manaSavePercent;
         private Timer _moveBehindTimer = new Timer(500);
         protected Timer _combatMeleeTimer = new Timer();
 
-        protected Paladin specialization;
+        public Paladin(BaseSettings settings) : base(settings) { }
 
-        public void Initialize(IClassRotation specialization)
+        private static List<BlessingBuff> RecordedBlessingBuffs { get; set; } = new List<BlessingBuff>();
+
+        public override void Initialize(IClassRotation specialization)
         {
-            settings = PaladinSettings.Current;
-            if (settings.PartyDrinkName != "")
-                WTSettings.AddToDoNotSellList(settings.PartyDrinkName);
-            cast = new Cast(HolyLight, null, settings);
-            
             this.specialization = specialization as Paladin;
-            (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);
-            TalentsManager.InitTalents(settings);
+            settings = PaladinSettings.Current;
+            BaseInit(28, HolyLight, null, settings);
 
             if (specialization.RotationType == Enums.RotationType.Party && settings.PartyDetectSpecs)
-                AIOParty.ActivateSpecRecord = true;
-            
+                partyManager.ActivateSpecRecords();
+
             _manaSavePercent = System.Math.Max(20, settings.ManaSaveLimitPercent);
 
             FightEvents.OnFightEnd += FightEndHandler;
@@ -60,23 +49,23 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             Rotation();
         }
 
-        public bool AnswerReadyCheck()
+        public override bool AnswerReadyCheck()
         {
             return Me.ManaPercentage > settings.PartyDrinkThreshold;
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             FightEvents.OnFightEnd -= FightEndHandler;
             FightEvents.OnFightStart -= FightStartHandler;
             FightEvents.OnFightLoop -= FightLoopHandler;
-            cast.Dispose();
-            Logger.Log("Disposed");
+
+            BaseDispose();
         }
 
         private void Rotation()
         {
-            while (Main.isLaunched)
+            while (Main.IsLaunched)
             {
                 try
                 {
@@ -90,7 +79,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                         specialization.BuffRotation();
 
                     if (StatusChecker.InPull())
-                        specialization.PullRotation();
+                        specialization.Pull();
 
                     if (StatusChecker.InCombat())
                         specialization.CombatRotation();
@@ -98,7 +87,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                     if (StatusChecker.InCombatNoTarget())
                         specialization.CombatNoTarget();
 
-                    if (AIOParty.GroupAndRaid.Any(p => p.InCombatFlagOnly && p.GetDistance < 50))
+                    if (partyManager.GroupAndRaid.Any(p => p.InCombatFlagOnly && p.GetDistance < 50))
                         specialization.HealerCombat();
                 }
                 catch (Exception arg)
@@ -110,7 +99,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             Logger.Log("Stopped.");
         }
 
-        protected virtual void BuffRotation()
+        protected override void BuffRotation()
         {
             // PARTY buff rotations
             if (specialization.RotationType == Enums.RotationType.Party)
@@ -121,7 +110,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                     return;
 
                 // PARTY Resurrection
-                List<AIOPartyMember> needRes = AIOParty.GroupAndRaid
+                List<AIOPartyMember> needRes = partyManager.GroupAndRaid
                     .FindAll(m => m.IsDead)
                     .OrderBy(m => m.GetDistance)
                     .ToList();
@@ -131,7 +120,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 if (settings.PartyHealOOC || specialization is PaladinHolyParty || specialization is PaladinHolyRaid)
                 {
                     // PARTY Heal
-                    List<AIOPartyMember> needHeal = AIOParty.GroupAndRaid
+                    List<AIOPartyMember> needHeal = partyManager.GroupAndRaid
                         .FindAll(m => m.HealthPercent < 70)
                         .OrderBy(m => m.HealthPercent)
                         .ToList();
@@ -139,7 +128,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                         return;
 
                     // PARTY Flash of Light
-                    List<AIOPartyMember> needFoL = AIOParty.GroupAndRaid
+                    List<AIOPartyMember> needFoL = partyManager.GroupAndRaid
                         .FindAll(m => m.HealthPercent < 95)
                         .OrderBy(m => m.HealthPercent)
                         .ToList();
@@ -148,13 +137,13 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 }
 
                 // PARTY Purifiy
-                WoWPlayer needsPurify = AIOParty.GroupAndRaid
+                WoWPlayer needsPurify = partyManager.GroupAndRaid
                     .Find(m => WTEffects.HasDiseaseDebuff(m.Name) || WTEffects.HasPoisonDebuff(m.Name));
                 if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
 
                 // Party Cleanse
-                WoWPlayer needsCleanse = AIOParty.GroupAndRaid
+                WoWPlayer needsCleanse = partyManager.GroupAndRaid
                     .Find(m => UnitHasCleansableDebuff(m.Name));
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;
@@ -164,26 +153,15 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                     return;
 
                 // PARTY Drink
-                if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
+                if (partyManager.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
                     return;
             }
         }
 
-        protected virtual void PullRotation()
-        {
-        }
-
-        protected virtual void CombatRotation()
-        {
-        }
-
-        protected virtual void CombatNoTarget()
-        {
-        }
-
-        protected virtual void HealerCombat()
-        {
-        }
+        protected override void Pull() { }
+        protected override void CombatRotation() { }
+        protected override void CombatNoTarget() { }
+        protected override void HealerCombat() { }
 
         protected AIOSpell SealOfRighteousness = new AIOSpell("Seal of Righteousness");
         protected AIOSpell SealOfTheCrusader = new AIOSpell("Seal of the Crusader");
@@ -314,17 +292,17 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                     return true;
                 }
             }
-            
-            foreach (AIOPartyMember member in AIOParty.GroupAndRaid)
+
+            foreach (AIOPartyMember member in partyManager.GroupAndRaid)
             {
                 // Avoid paladin loop buff
                 if (member.WowClass == WoWClass.Paladin
-                    && AIOParty.GroupAndRaid.Exists(m => m.WowClass == WoWClass.Paladin && (m.HaveBuff("Drink") || m.GetDistance > 25)))
+                    && partyManager.GroupAndRaid.Exists(m => m.WowClass == WoWClass.Paladin && (m.HaveBuff("Drink") || m.GetDistance > 25)))
                     continue;
 
                 List<AIOSpell> buffsForThisMember = settings.PartyDetectSpecs ? GetBlessingPerSpec(member.Specialization, member.WowClass) : GetBlessingPerClass(member.WowClass);
-                if (member.IsDead 
-                    || !member.IsValid 
+                if (member.IsDead
+                    || !member.IsValid
                     || member.Guid == Me.Guid
                     || buffsForThisMember == null
                     || (settings.PartyDetectSpecs && member.Specialization == null))
@@ -341,8 +319,8 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                     else
                         lastMissingBuffIndex = i;
 
-                    if (lastMissingBuffIndex < lastFoundBuffIndex 
-                        && lastMissingBuffIndex > -1 
+                    if (lastMissingBuffIndex < lastFoundBuffIndex
+                        && lastMissingBuffIndex > -1
                         && !RecordedBlessingBuffs.Exists(b => b.CasterName == member.Name && b.TargetName == member.Name && b.SpellName == buffsForThisMember[i].Name))
                     {
                         memberbuffsAreIdeal = false;
@@ -370,31 +348,31 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if (spec == null)
                 return null;
 
-            if (spec == "Balance" 
-                || spec == "Restoration" 
-                || spec == "Arcane" 
-                || spec == "Fire" 
-                || spec == "Frost" 
+            if (spec == "Balance"
+                || spec == "Restoration"
+                || spec == "Arcane"
+                || spec == "Fire"
+                || spec == "Frost"
                 || spec == "Shadow"
                 || spec == "Holy"
                 || spec == "Discipline"
-                || spec == "Elemental" 
-                || spec == "Affliction" 
-                || spec == "Demonology" 
+                || spec == "Elemental"
+                || spec == "Affliction"
+                || spec == "Demonology"
                 || spec == "Destruction")
                 return new List<AIOSpell>() { BlessingOfWisdom, BlessingOfKings };
 
-            if (spec == "Assassination" 
-                || spec == "Combat" 
-                || spec == "Subtlety" 
+            if (spec == "Assassination"
+                || spec == "Combat"
+                || spec == "Subtlety"
                 || spec == "Arms"
                 || spec == "Fury")
                 return new List<AIOSpell>() { BlessingOfMight, BlessingOfKings };
 
-            if (spec == "Feral" 
-                || spec == "Beast Mastery" 
-                || spec == "Marksmanship" 
-                || spec == "Survival" 
+            if (spec == "Feral"
+                || spec == "Beast Mastery"
+                || spec == "Marksmanship"
+                || spec == "Survival"
                 || spec == "Retribution"
                 || spec == "Enhancement")
                 return new List<AIOSpell>() { BlessingOfMight, BlessingOfKings, BlessingOfWisdom };
@@ -410,20 +388,20 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
         private List<AIOSpell> GetBlessingPerClass(WoWClass playerClass)
         {
-            if (playerClass == WoWClass.Druid 
+            if (playerClass == WoWClass.Druid
                 || playerClass == WoWClass.Paladin)
                 return new List<AIOSpell>() { BlessingOfKings, BlessingOfWisdom, BlessingOfMight };
 
             if (playerClass == WoWClass.Hunter)
                 return new List<AIOSpell>() { BlessingOfMight, BlessingOfKings, BlessingOfWisdom };
 
-            if (playerClass == WoWClass.Warrior 
+            if (playerClass == WoWClass.Warrior
                 || playerClass == WoWClass.Rogue)
                 return new List<AIOSpell>() { BlessingOfMight, BlessingOfKings };
 
-            if (playerClass == WoWClass.Mage 
-                || playerClass == WoWClass.Priest 
-                || playerClass == WoWClass.Shaman 
+            if (playerClass == WoWClass.Mage
+                || playerClass == WoWClass.Priest
+                || playerClass == WoWClass.Shaman
                 || playerClass == WoWClass.Warlock)
                 return new List<AIOSpell>() { BlessingOfWisdom, BlessingOfKings, BlessingOfMight };
 

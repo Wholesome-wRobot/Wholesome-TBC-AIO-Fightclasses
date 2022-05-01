@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
@@ -9,6 +10,12 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 {
     public class BeastMasteryParty : Hunter
     {
+        public BeastMasteryParty(BaseSettings settings) : base(settings)
+        {
+            RotationType = Enums.RotationType.Party;
+            RotationRole = Enums.RotationRole.DPS;
+        }
+
         protected override void BuffRotation()
         {
             if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
@@ -23,7 +30,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     return;
 
                 // PARTY Drink
-                if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
+                if (partyManager.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
                     return;
             }
         }
@@ -80,7 +87,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 return;
 
             // Aspect of the viper
-            if (!Me.HaveBuff("Aspect of the Viper") 
+            if (!Me.HaveBuff("Aspect of the Viper")
                 && Me.ManaPercentage < 30
                 && cast.OnSelf(AspectViper))
                 return;
@@ -140,7 +147,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 return;
 
             // Feign Death
-            if ((Me.HealthPercent < 20 || AIOParty.EnemiesFighting.Any(e => e.IsTargetingMe))
+            if ((Me.HealthPercent < 20 || partyManager.EnemiesFighting.Any(e => e.IsTargetingMe))
                 && cast.OnSelf(FeignDeath))
                 return;
 
@@ -162,7 +169,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
             // Multi-Shot
             if (Target.GetDistance > minRange
-                && AIOParty.EnemiesFighting.FindAll(e => e.Position.DistanceTo(Target.Position) < 15).Count > settings.MultishotCount
+                && partyManager.EnemiesFighting.FindAll(e => e.Position.DistanceTo(Target.Position) < 15).Count > settings.MultishotCount
                 && cast.OnTarget(MultiShot))
                 return;
 

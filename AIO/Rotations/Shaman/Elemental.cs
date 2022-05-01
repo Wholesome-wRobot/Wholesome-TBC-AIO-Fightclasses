@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 
@@ -7,6 +8,12 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 {
     public class Elemental : Shaman
     {
+        public Elemental(BaseSettings settings) : base(settings)
+        {
+            RotationType = Enums.RotationType.Solo;
+            RotationRole = Enums.RotationRole.DPS;
+        }
+
         protected override void BuffRotation()
         {
             base.BuffRotation();

@@ -94,16 +94,23 @@
   <ItemGroup>
     <Compile Include="AutoUpdater.cs" />
     <Compile Include="Helpers\AIOPartyMember.cs" />
-    <Compile Include="Helpers\AIORadar.cs" />
     <Compile Include="Helpers\AIOSpell.cs" />
     <Compile Include="Helpers\Cast.cs" />
     <Compile Include="Helpers\Enums.cs" />
     <Compile Include="Helpers\Logger.cs" />
-    <Compile Include="Helpers\AIOParty.cs" />
-    <Compile Include="Helpers\Racials.cs" />
     <Compile Include="Helpers\RangeManager.cs" />
     <Compile Include="Helpers\StatusChecker.cs" />
     <Compile Include="Helpers\UnitImmunities.cs" />
+    <Compile Include="Managers\ICycleable.cs" />
+    <Compile Include="Managers\PartyManager\IPartyManager.cs" />
+    <Compile Include="Managers\RacialsManager\IRacialsManager.cs" />
+    <Compile Include="Managers\RacialsManager\RacialManager.cs" />
+    <Compile Include="Managers\TalentManager\ITalentManager.cs" />
+    <Compile Include="Managers\PartyManager\PartyManager.cs" />
+    <Compile Include="Managers\TalentManager\TalentManager.cs" />
+    <Compile Include="Managers\UnitCache\IUnitCache.cs" />
+    <Compile Include="Managers\UnitCache\UnitCache.cs" />
+    <Compile Include="Rotations\BaseRotation.cs" />
     <Compile Include="Rotations\Druid\RestorationParty.cs" />
     <Compile Include="Rotations\Druid\FeralTankParty.cs" />
     <Compile Include="Rotations\Druid\FeralDPSParty.cs" />
@@ -143,7 +150,6 @@
     <Compile Include="AIOTBCSettings.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Helpers\TalentsManager.cs" />
     <Compile Include="Helpers\ToolBox.cs" />
     <Compile Include="Rotations\Hunter\HunterFoodManager.cs" />
     <Compile Include="Rotations\Hunter\Hunter.cs" />

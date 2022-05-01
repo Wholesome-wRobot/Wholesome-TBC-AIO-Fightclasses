@@ -29,7 +29,7 @@ namespace WholesomeTBCAIO.Helpers
         {
             Logging.Write($"[{FCName} - {wowClass}]: {message}", Logging.LogType.Normal, c);
         }
-        
+
         public static void LogDebug(string message)
         {
             if (_debug)

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
@@ -9,6 +10,12 @@ namespace WholesomeTBCAIO.Rotations.Druid
 {
     public class RestorationParty : Druid
     {
+        public RestorationParty(BaseSettings settings) : base(settings)
+        {
+            RotationType = Enums.RotationType.Party;
+            RotationRole = Enums.RotationRole.Tank;
+        }
+
         protected override void BuffRotation()
         {
             if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
@@ -16,25 +23,25 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 base.BuffRotation();
 
                 // PARTY Remove Curse
-                WoWPlayer needRemoveCurse = AIOParty.GroupAndRaid
+                WoWPlayer needRemoveCurse = partyManager.GroupAndRaid
                     .Find(m => WTEffects.HasCurseDebuff(m.Name));
                 if (needRemoveCurse != null && cast.OnFocusUnit(RemoveCurse, needRemoveCurse))
                     return;
 
                 // PARTY Abolish Poison
-                WoWPlayer needAbolishPoison = AIOParty.GroupAndRaid
+                WoWPlayer needAbolishPoison = partyManager.GroupAndRaid
                     .Find(m => WTEffects.HasPoisonDebuff(m.Name));
                 if (needAbolishPoison != null && cast.OnFocusUnit(AbolishPoison, needAbolishPoison))
                     return;
 
                 // PARTY Mark of the Wild
-                WoWPlayer needMotW = AIOParty.GroupAndRaid
+                WoWPlayer needMotW = partyManager.GroupAndRaid
                     .Find(m => !m.HaveBuff(MarkOfTheWild.Name));
                 if (needMotW != null && cast.OnFocusUnit(MarkOfTheWild, needMotW))
                     return;
 
                 // PARTY Thorns
-                WoWPlayer needThorns = AIOParty.GroupAndRaid
+                WoWPlayer needThorns = partyManager.GroupAndRaid
                     .Find(m => !m.HaveBuff(Thorns.Name));
                 if (needThorns != null && cast.OnFocusUnit(Thorns, needThorns))
                     return;
@@ -46,21 +53,21 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     return;
 
                 // Regrowth
-                WoWPlayer needRegrowth = AIOParty.GroupAndRaid
+                WoWPlayer needRegrowth = partyManager.GroupAndRaid
                     .Find(m => m.HealthPercent < 80 && !m.HaveBuff("Regrowth"));
                 if (needRegrowth != null
                     && cast.OnFocusUnit(Regrowth, needRegrowth))
                     return;
 
                 // Rejuvenation
-                WoWPlayer needRejuvenation = AIOParty.GroupAndRaid
+                WoWPlayer needRejuvenation = partyManager.GroupAndRaid
                     .Find(m => m.HealthPercent < 80 && !m.HaveBuff("Rejuvenation"));
                 if (needRejuvenation != null
                     && cast.OnFocusUnit(Rejuvenation, needRejuvenation))
                     return;
 
                 // PARTY Drink
-                if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
+                if (partyManager.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
                     return;
 
                 // Tree form
@@ -75,14 +82,14 @@ namespace WholesomeTBCAIO.Rotations.Druid
             base.HealerCombat();
 
             WoWUnit Target = ObjectManager.Target;
-            List<AIOPartyMember> lisPartyOrdered = AIOParty.GroupAndRaid
+            List<AIOPartyMember> lisPartyOrdered = partyManager.GroupAndRaid
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
 
             // Party Tranquility
-            if (settings.PartyTranquility && !AIOParty.GroupAndRaid.Any(e => e.IsTargetingMe))
+            if (settings.PartyTranquility && !partyManager.GroupAndRaid.Any(e => e.IsTargetingMe))
             {
-                bool needTranquility = AIOParty.GroupAndRaid
+                bool needTranquility = partyManager.GroupAndRaid
                     .FindAll(m => m.HealthPercent < 50)
                     .Count > 2;
                 if (needTranquility

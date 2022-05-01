@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 using Timer = robotManager.Helpful.Timer;
@@ -9,6 +10,12 @@ namespace WholesomeTBCAIO.Rotations.Druid
 {
     public class Feral : Druid
     {
+        public Feral(BaseSettings settings) : base(settings)
+        {
+            RotationType = Enums.RotationType.Solo;
+            RotationRole = Enums.RotationRole.DPS;
+        }
+
         protected override void BuffRotation()
         {
             string currentGroundMount = wManager.wManagerSetting.CurrentSetting.GroundMountName;

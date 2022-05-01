@@ -27,19 +27,13 @@ using static WholesomeTBCAIO.Helpers.Enums;
 
 public class Main : ICustomClass
 {
-    private static readonly BackgroundWorker _talentThread = new BackgroundWorker();
-    private static readonly BackgroundWorker _racialsThread = new BackgroundWorker();
-    private static readonly BackgroundWorker _partyThread = new BackgroundWorker();
-    private Racials _racials = new Racials();
-
+    private IClassRotation _selectedRotation;
     public static string wowClass = ObjectManager.Me.WowClass.ToString();
     public static int humanReflexTime = 500;
-    public static bool isLaunched;
     public static string version = "3.1.07"; // Must match version in Version.txt
     public static bool HMPrunningAway = false;
 
-    private IClassRotation selectedRotation;
-
+    public static bool IsLaunched { get; private set; }
     public float Range => RangeManager.GetRange();
 
     public void Initialize()
@@ -47,13 +41,12 @@ public class Main : ICustomClass
         AIOTBCSettings.Load();
         AutoUpdater.CheckUpdate(version);
         Logger.Log($"Launching version {version} on client {WTLua.GetWoWVersion}");
+        IsLaunched = true;
 
-        selectedRotation = ChooseRotation();
+        _selectedRotation = ChooseRotation();
 
-        if (selectedRotation != null)
+        if (_selectedRotation != null)
         {
-            isLaunched = true;
-
             FightEvents.OnFightLoop += FightLoopHandler;
             FightEvents.OnFightStart += FightStartHandler;
             FightEvents.OnFightEnd += FightEndHandler;
@@ -61,33 +54,9 @@ public class Main : ICustomClass
             EventsLua.AttachEventLua("RESURRECT_REQUEST", e => ResurrectionEventHandler(e));
             EventsLua.AttachEventLua("PLAYER_DEAD", e => PlayerDeadHandler(e));
             EventsLua.AttachEventLua("READY_CHECK", e => ReadyCheckHandler(e));
-            EventsLua.AttachEventLua("INSPECT_TALENT_READY", e => AIOParty.InspectTalentReadyHandler());
-            EventsLua.AttachEventLua("PARTY_MEMBERS_CHANGED", e => AIOParty.GroupRosterChangedHandler());
-            EventsLua.AttachEventLua("PARTY_MEMBER_DISABLE", e => AIOParty.GroupRosterChangedHandler());
-            EventsLua.AttachEventLua("PARTY_MEMBER_ENABLE", e => AIOParty.GroupRosterChangedHandler());
-            EventsLua.AttachEventLua("RAID_ROSTER_UPDATE", e => AIOParty.GroupRosterChangedHandler());
             EventsLuaWithArgs.OnEventsLuaStringWithArgs += EventsWithArgsHandler;
-            AIOParty.UpdateParty();
 
-            if (!TalentsManager._isRunning)
-            {
-                _talentThread.DoWork += TalentsManager.DoTalentPulse;
-                _talentThread.RunWorkerAsync();
-            }
-
-            if (!_racials._isRunning && CombatSettings.UseRacialSkills)
-            {
-                _racialsThread.DoWork += _racials.DoRacialsPulse;
-                _racialsThread.RunWorkerAsync();
-            }
-
-            if (!AIORadar._isRunning)
-            {
-                _partyThread.DoWork += AIORadar.Pulse;
-                _partyThread.RunWorkerAsync();
-            }
-
-            selectedRotation.Initialize(selectedRotation);
+            _selectedRotation.Initialize(_selectedRotation);
         }
         else
         {
@@ -97,23 +66,8 @@ public class Main : ICustomClass
 
     public void Dispose()
     {
-        selectedRotation?.Dispose();
-        isLaunched = false;
-
-        _talentThread.DoWork -= TalentsManager.DoTalentPulse;
-        _talentThread.Dispose();
-        TalentsManager._isRunning = false;
-        if (CombatSettings.UseRacialSkills)
-        {
-            _racialsThread.DoWork -= _racials.DoRacialsPulse;
-            _racialsThread.Dispose();
-            _racials._isRunning = false;
-        }
-
-        _partyThread.DoWork -= AIORadar.Pulse;
-        _partyThread.Dispose();
-        AIORadar._isRunning = false;
-
+        _selectedRotation?.Dispose();
+        IsLaunched = false;
         FightEvents.OnFightLoop -= FightLoopHandler;
         FightEvents.OnFightStart -= FightStartHandler;
         FightEvents.OnFightEnd -= FightEndHandler;
@@ -121,69 +75,69 @@ public class Main : ICustomClass
         EventsLuaWithArgs.OnEventsLuaStringWithArgs -= EventsWithArgsHandler;
     }
 
-    public void ShowConfiguration() => CombatSettings?.ShowConfiguration();
+    public void ShowConfiguration() => baseSettings?.ShowConfiguration();
 
     private IClassRotation ChooseRotation()
     {
-        string spec = CombatSettings.Specialization;
+        string spec = baseSettings.Specialization;
         Dictionary<string, Specs> mySpecDictionary = GetSpecDictionary();
 
-        if (!mySpecDictionary.ContainsKey(CombatSettings.Specialization))
+        if (!mySpecDictionary.ContainsKey(spec))
         {
-            Logger.LogError($"Couldn't find spec {CombatSettings.Specialization} in the class dictionary");
+            Logger.LogError($"Couldn't find spec {spec} in the class dictionary");
             return null;
         }
 
-        switch (mySpecDictionary[CombatSettings.Specialization])
+        switch (mySpecDictionary[spec])
         {
             // Shaman
-            case Specs.ShamanEnhancement: return new Enhancement();
-            case Specs.ShamanEnhancementParty: return new EnhancementParty();
-            case Specs.ShamanElemental: return new Elemental();
-            case Specs.ShamanRestoParty: return new ShamanRestoParty();
+            case Specs.ShamanEnhancement: return new Enhancement(baseSettings);
+            case Specs.ShamanEnhancementParty: return new EnhancementParty(baseSettings);
+            case Specs.ShamanElemental: return new Elemental(baseSettings);
+            case Specs.ShamanRestoParty: return new ShamanRestoParty(baseSettings);
             // Druid
-            case Specs.DruidFeral: return new Feral();
-            case Specs.DruidFeralDPSParty: return new FeralDPSParty();
-            case Specs.DruidFeralTankParty: return new FeralTankParty();
-            case Specs.DruidRestorationParty: return new RestorationParty();
+            case Specs.DruidFeral: return new Feral(baseSettings);
+            case Specs.DruidFeralDPSParty: return new FeralDPSParty(baseSettings);
+            case Specs.DruidFeralTankParty: return new FeralTankParty(baseSettings);
+            case Specs.DruidRestorationParty: return new RestorationParty(baseSettings);
             // Hunter
-            case Specs.HunterBeastMaster: return new BeastMastery();
-            case Specs.HunterBeastMasterParty: return new BeastMasteryParty();
+            case Specs.HunterBeastMaster: return new BeastMastery(baseSettings);
+            case Specs.HunterBeastMasterParty: return new BeastMasteryParty(baseSettings);
             // Mage
-            case Specs.MageFrost: return new Frost();
-            case Specs.MageFrostParty: return new FrostParty();
-            case Specs.MageArcane: return new Arcane();
-            case Specs.MageArcaneParty: return new ArcaneParty();
-            case Specs.MageFire: return new Fire();
-            case Specs.MageFireParty: return new FireParty();
+            case Specs.MageFrost: return new Frost(baseSettings);
+            case Specs.MageFrostParty: return new FrostParty(baseSettings);
+            case Specs.MageArcane: return new Arcane(baseSettings);
+            case Specs.MageArcaneParty: return new ArcaneParty(baseSettings);
+            case Specs.MageFire: return new Fire(baseSettings);
+            case Specs.MageFireParty: return new FireParty(baseSettings);
             // Paladin
-            case Specs.PaladinRetribution: return new Retribution();
-            case Specs.PaladinHolyParty: return new PaladinHolyParty();
-            case Specs.PaladinHolyRaid: return new PaladinHolyRaid();
-            case Specs.PaladinRetributionParty: return new RetributionParty();
-            case Specs.PaladinProtectionParty: return new PaladinProtectionParty();
+            case Specs.PaladinRetribution: return new Retribution(baseSettings);
+            case Specs.PaladinHolyParty: return new PaladinHolyParty(baseSettings);
+            case Specs.PaladinHolyRaid: return new PaladinHolyRaid(baseSettings);
+            case Specs.PaladinRetributionParty: return new RetributionParty(baseSettings);
+            case Specs.PaladinProtectionParty: return new PaladinProtectionParty(baseSettings);
             // Priest
-            case Specs.PriestShadow: return new Shadow();
-            case Specs.PriestShadowParty: return new ShadowParty();
-            case Specs.PriestHolyParty: return new HolyPriestParty();
-            case Specs.PriestHolyRaid: return new HolyPriestRaid();
+            case Specs.PriestShadow: return new Shadow(baseSettings);
+            case Specs.PriestShadowParty: return new ShadowParty(baseSettings);
+            case Specs.PriestHolyParty: return new HolyPriestParty(baseSettings);
+            case Specs.PriestHolyRaid: return new HolyPriestRaid(baseSettings);
             // Rogue
-            case Specs.RogueCombat: return new Combat();
-            case Specs.RogueCombatParty: return new RogueCombatParty();
+            case Specs.RogueCombat: return new Combat(baseSettings);
+            case Specs.RogueCombatParty: return new RogueCombatParty(baseSettings);
             // Warlock
-            case Specs.WarlockAffliction: return new Affliction();
-            case Specs.WarlockDemonology: return new Demonology();
-            case Specs.WarlockAfflictionParty: return new AfflictionParty();
+            case Specs.WarlockAffliction: return new Affliction(baseSettings);
+            case Specs.WarlockDemonology: return new Demonology(baseSettings);
+            case Specs.WarlockAfflictionParty: return new AfflictionParty(baseSettings);
             // Warrior
-            case Specs.WarriorFury: return new Fury();
-            case Specs.WarriorFuryParty: return new FuryParty();
-            case Specs.WarriorProtectionParty: return new ProtectionWarrior();
+            case Specs.WarriorFury: return new Fury(baseSettings);
+            case Specs.WarriorFuryParty: return new FuryParty(baseSettings);
+            case Specs.WarriorProtectionParty: return new ProtectionWarrior(baseSettings);
 
             default: return null;
         }
     }
 
-    private BaseSettings CombatSettings
+    private BaseSettings baseSettings
     {
         get
         {
@@ -198,7 +152,7 @@ public class Main : ICustomClass
                 case "Rogue": return RogueSettings.Current;
                 case "Warlock": return WarlockSettings.Current;
                 case "Warrior": return WarriorSettings.Current;
-                default: return null;
+                default: throw new Exception($"WoWClass not recognized");
             }
         }
     }
@@ -245,7 +199,7 @@ public class Main : ICustomClass
     private void ReadyCheckHandler(object context)
     {
         var delay = 1000 + new Random().Next(1, 2000);
-        string isReady = selectedRotation.AnswerReadyCheck() ? "true" : "false";
+        string isReady = _selectedRotation.AnswerReadyCheck() ? "true" : "false";
         Logger.Log($"Answering ReadyCheck ({isReady}), in {delay} ms");
         Thread.Sleep(delay);
         // Test with static button instead
@@ -267,13 +221,13 @@ public class Main : ICustomClass
 
     private void EventsWithArgsHandler(string id, List<string> args)
     {
-        if (selectedRotation is Hunter
+        if (_selectedRotation is Hunter
             && id == "UNIT_SPELLCAST_SUCCEEDED"
             && args[0] == "player"
             && args[1] == "Auto Shot")
             Hunter.LastAuto = DateTime.Now;
 
-        if (selectedRotation is Paladin
+        if (_selectedRotation is Paladin
             && args.Count >= 10
             && args[1] == "SPELL_CAST_SUCCESS"
             && id == "COMBAT_LOG_EVENT_UNFILTERED"

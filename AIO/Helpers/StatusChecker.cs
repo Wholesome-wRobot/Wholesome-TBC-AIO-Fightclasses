@@ -65,7 +65,7 @@ namespace WholesomeTBCAIO.Helpers
         {
             return Conditions.InGameAndConnectedAndProductStartedNotInPause
                 && ObjectManager.Me.IsAlive
-                && Main.isLaunched
+                && Main.IsLaunched
                 && !Main.HMPrunningAway;
         }
     }

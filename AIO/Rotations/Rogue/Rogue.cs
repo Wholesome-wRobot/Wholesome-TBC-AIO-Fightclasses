@@ -1,56 +1,44 @@
-﻿using System;
-using System.Threading;
-using robotManager.Helpful;
-using wManager.Events;
-using wManager.Wow.Helpers;
-using wManager.Wow.ObjectManager;
+﻿using robotManager.Helpful;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using WholesomeTBCAIO.Settings;
+using System.Threading;
 using WholesomeTBCAIO.Helpers;
-using Timer = robotManager.Helpful.Timer;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
+using wManager.Events;
+using wManager.Wow.Helpers;
+using wManager.Wow.ObjectManager;
+using Timer = robotManager.Helpful.Timer;
 
 namespace WholesomeTBCAIO.Rotations.Rogue
 {
-    public class Rogue : IClassRotation
+    public class Rogue : BaseRotation
     {
-        public Enums.RotationType RotationType { get; set; }
-        public Enums.RotationRole RotationRole { get; set; }
 
-        public static RogueSettings settings;
-
-        protected Cast cast;
+        protected RogueSettings settings;
         protected Rogue specialization;
-
         protected List<string> _casterEnemies = new List<string>();
-
         protected readonly BackgroundWorker _pulseThread = new BackgroundWorker();
-
         protected bool _fightingACaster = false;
         protected bool _isStealthApproching;
-        public static uint MHPoison;
-        public static uint OHPoison;
+        protected uint MHPoison;
+        protected uint OHPoison;
         protected string _myBestBandage = null;
         protected WoWLocalPlayer Me = ObjectManager.Me;
-
         private Timer _moveBehindTimer = new Timer();
         protected Timer _combatMeleeTimer = new Timer();
         protected Timer _behindTargetTimer = new Timer();
 
-        public void Initialize(IClassRotation specialization)
+        public Rogue(BaseSettings settings) : base(settings) { }
+
+        public override void Initialize(IClassRotation specialization)
         {
-            settings = RogueSettings.Current;
-            if (settings.PartyDrinkName != "")
-                WTSettings.AddToDoNotSellList(settings.PartyDrinkName);
-            cast = new Cast(SinisterStrike, null, settings);
-
             this.specialization = specialization as Rogue;
-            (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);
-            TalentsManager.InitTalents(settings);
+            settings = RogueSettings.Current;
+            BaseInit(RangeManager.DefaultMeleeRange, SinisterStrike, null, settings);
 
-            RangeManager.SetRangeToMelee();
             WTSettings.AddToDoNotSellList(new List<string>
             {
                 "Instant Poison",
@@ -79,12 +67,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             Rotation();
         }
 
-        public bool AnswerReadyCheck()
-        {
-            return true;
-        }
-
-        public void Dispose()
+        public override void Dispose()
         {
             FightEvents.OnFightEnd -= FightEndHandler;
             FightEvents.OnFightStart -= FightStartHandler;
@@ -92,13 +75,18 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             FightEvents.OnFightLoop -= FightLoopHandler;
             OthersEvents.OnAddBlackListGuid -= BlackListHandler;
             EventsLuaWithArgs.OnEventsLuaStringWithArgs -= EventsWithArgsHandler;
-            cast.Dispose();
-            Logger.Log("Disposed");
+
+            BaseDispose();
+        }
+
+        public override bool AnswerReadyCheck()
+        {
+            return true;
         }
 
         private void Rotation()
         {
-            while (Main.isLaunched)
+            while (Main.IsLaunched)
             {
                 try
                 {
@@ -120,7 +108,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             Logger.Log("Stopped.");
         }
 
-        protected virtual void BuffRotation()
+        protected override void BuffRotation()
         {
             PoisonWeapon();
 
@@ -132,13 +120,10 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 return;
         }
 
-        protected virtual void Pull()
-        {
-        }
-
-        protected virtual void CombatRotation()
-        {
-        }
+        protected override void Pull() { }
+        protected override void CombatRotation() { }
+        protected override void CombatNoTarget() { }
+        protected override void HealerCombat() { }
 
         protected AIOSpell Attack = new AIOSpell("Attack");
         protected AIOSpell Shoot = new AIOSpell("Shoot");
@@ -186,7 +171,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             {
                 if (cast.OnTarget(CheapShot))
                     return;
-                if (HaveDaggerInMH() 
+                if (HaveDaggerInMH()
                     && cast.OnTarget(Gouge))
                     return;
                 if (cast.OnTarget(Hemorrhage) || cast.OnTarget(SinisterStrike))
@@ -224,7 +209,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 ToolBox.CheckAutoAttack(Attack);
             }
 
-            if (!activate 
+            if (!activate
                 && _autoAttacking
                 && cast.OnTarget(Attack))
             {
@@ -252,13 +237,13 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             if (!hasMainHandEnchant)
             {
                 IEnumerable<uint> DP = DeadlyPoisonDictionary
-                    .Where(i => i.Key <= Me.Level 
+                    .Where(i => i.Key <= Me.Level
                     && ItemsManager.HasItemById(i.Value))
                     .OrderByDescending(i => i.Key)
                     .Select(i => i.Value);
 
                 IEnumerable<uint> IP = InstantPoisonDictionary
-                    .Where(i => i.Key <= Me.Level 
+                    .Where(i => i.Key <= Me.Level
                     && ItemsManager.HasItemById(i.Value))
                     .OrderByDescending(i => i.Key)
                     .Select(i => i.Value);
@@ -278,7 +263,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             {
 
                 IEnumerable<uint> IP = InstantPoisonDictionary
-                    .Where(i => i.Key <= Me.Level 
+                    .Where(i => i.Key <= Me.Level
                     && ItemsManager.HasItemById(i.Value))
                     .OrderByDescending(i => i.Key)
                     .Select(i => i.Value);

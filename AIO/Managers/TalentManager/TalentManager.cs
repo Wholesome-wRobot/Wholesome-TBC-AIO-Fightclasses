@@ -1,55 +1,80 @@
-﻿using robotManager.Helpful;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using System.Threading;
+using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 
-namespace WholesomeTBCAIO.Helpers
+namespace WholesomeTBCAIO.Managers.TalentManager
 {
-    public class TalentsManager
+    public class TalentManager : ITalentManager
     {
-        private static bool _isInitialized = false;
-        public static bool _isRunning = false;
-        public static List<string> _talentsCodes = new List<string> { };
-        private static int _talentPulseTimer = 60000 * 5; // 5 minutes
-        private static object _talentLock = new object();
+        private List<string> _talentsCodes = new List<string> { };
+        private BaseSettings _settings;
+        private bool _isAssigning = false;
 
-        // Talent initialization
-        public static void InitTalents(BaseSettings settings)
+        public TalentManager(BaseSettings settings)
         {
-            if (settings.AssignTalents)
+            _settings = settings;
+            _talentsCodes = GetTalentCode(Enums.GetSpecDictionary()[settings.Specialization]);
+        }
+
+        public void Initialize()
+        {
+            if (_settings.AssignTalents)
             {
-                if (settings.UseDefaultTalents)
-                {
-                    SetTalentCodes(Enums.GetSpecDictionary()[settings.Specialization]);
-                }
-                else
-                {
-                    SetTalentCodes(settings.TalentCodes);
-                }
+                _talentsCodes = _settings.UseDefaultTalents ?
+                    GetTalentCode(Enums.GetSpecDictionary()[_settings.Specialization])
+                    : _settings.TalentCodes;
 
                 if (_talentsCodes.Count() > 0)
-                    Logger.Log($"Talents code [{settings.Specialization}]: {_talentsCodes.Last()}");
+                    Logger.Log($"Talents code [{_settings.Specialization}]: {_talentsCodes.Last()}");
                 else
                     Logger.LogError("No talent code");
 
-                _isInitialized = true;
+                Pulse();
+                EventsLuaWithArgs.OnEventsLuaStringWithArgs += EventsWithArgsHandler;
+            }
+        }
+
+        public void Dispose()
+        {
+            EventsLuaWithArgs.OnEventsLuaStringWithArgs -= EventsWithArgsHandler;
+        }
+
+        private void EventsWithArgsHandler(string id, List<string> args)
+        {
+            if (id == "PLAYER_LEVEL_UP"
+                || id == "PLAYER_TALENT_UPDATE"
+                || id == "CHARACTER_POINTS_CHANGED")
+            {
+                Pulse();
+            }
+        }
+
+        // Talent pulse
+        private void Pulse()
+        {
+            if (Conditions.InGameAndConnectedAndProductStartedNotInPause
+                && ObjectManager.Me.IsAlive
+                && !_isAssigning)
+            {
+                _isAssigning = true;
+                WTTalent.TBCAssignTalents(_talentsCodes);
+                _isAssigning = false;
             }
         }
 
         // Set the default talents codes to use
-        public static void SetTalentCodes(Enums.Specs spec)
+        private List<string> GetTalentCode(Enums.Specs spec)
         {
             switch (spec)
             {
                 // DRUID
                 case Enums.Specs.DruidFeral:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "00000000000000000000050302203002000000000000000000000000000000",
                         "00000000000000000000050302203032010000000000000000000000000000",
@@ -58,9 +83,8 @@ namespace WholesomeTBCAIO.Helpers
                         "00000000000000000000050302203032212520125105050001000000000000",
                         "00000000000000000000052303203232212530125105053001000000000000"
                     };
-                    break;
                 case Enums.Specs.DruidFeralDPSParty:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "00000000000000000000050302203002000000000000000000000000000000",
                         "00000000000000000000050302203032010000000000000000000000000000",
@@ -69,9 +93,8 @@ namespace WholesomeTBCAIO.Helpers
                         "00000000000000000000050302203032212520125105050001000000000000",
                         "00000000000000000000052303203232212530125105053001000000000000"
                     };
-                    break;
                 case Enums.Specs.DruidFeralTankParty:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "00000000000000000000050302010000000000000000000000000000000000",
                         "00000000000000000000050303211030000000000000000000000000000000",
@@ -81,9 +104,8 @@ namespace WholesomeTBCAIO.Helpers
                         "00000000000000000000055303213232010530125105500001000000000000",
                         "00000000000000000000055303213232010530125105500301000000000000"
                     };
-                    break;
                 case Enums.Specs.DruidRestorationParty:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "00000000000000000000000000000000000000000050050320030000000000",
                         "00000000000000000000000000000000000000000050050320231500401000",
@@ -91,10 +113,9 @@ namespace WholesomeTBCAIO.Helpers
                         "00000000000000000000000000000000000000000050050350531500531351",
                         "01432001000000000000000000000000000000000050050350531500531351"
                     };
-                    break;
                 // HUNTER
                 case Enums.Specs.HunterBeastMaster:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "5020122120501000000000000000000000000000000000000000000000000000",
                         "5020122122501205010000000000000000000000000000000000000000000000",
@@ -102,9 +123,8 @@ namespace WholesomeTBCAIO.Helpers
                         "5020122142501225010510550200000000000000000000000000000000000000",
                         "5020322152501225010510555200000000000000000000000000000000000000"
                     };
-                    break;
                 case Enums.Specs.HunterBeastMasterParty:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "5020122120501000000000000000000000000000000000000000000000000000",
                         "5020122122501205010000000000000000000000000000000000000000000000",
@@ -112,10 +132,9 @@ namespace WholesomeTBCAIO.Helpers
                         "5020122142501225010510550200000000000000000000000000000000000000",
                         "5020322152501225010510555200000000000000000000000000000000000000"
                     };
-                    break;
                 // MAGE
                 case Enums.Specs.MageFrost:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "0000000000000000000000000000000000000000000000500320010000000000000",
                         "0000000000000000000000000000000000000000000000504320010005010000000",
@@ -124,9 +143,8 @@ namespace WholesomeTBCAIO.Helpers
                         "0000000000000000000000000000000000000000000000535323310035013251551",
                         "0000000000000000000000005000000000000000000000535323310035013251551"
                     };
-                    break;
                 case Enums.Specs.MageFrostParty:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "0000000000000000000000000000000000000000000000502300010000000000000",
                         "0000000000000000000000000000000000000000000000503300310030000000000",
@@ -135,9 +153,8 @@ namespace WholesomeTBCAIO.Helpers
                         "0000000000000000000000000000000000000000000000535320310033010051051",
                         "2300050000000000000000000000000000000000000000535323310033010251551"
                     };
-                    break;
                 case Enums.Specs.MageArcane:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "0050050000000000000000000000000000000000000000000000000000000000000",
                         "0052050310030000000000000000000000000000000000000000000000000000000",
@@ -147,18 +164,16 @@ namespace WholesomeTBCAIO.Helpers
                         "2552050312030152333125100000000000000000000000000000000000000000000",
                         "2552050312030152333125105002000000000000000000000000000000000000000"
                     };
-                    break;
                 case Enums.Specs.MageArcaneParty:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "2300050300000000000000000000000000000000000000000000000000000000000",
                         "2500052300030150310120000000000000000000000000000000000000000000000",
                         "2500052300030150330125000000000000000000000000535000010000000000000",
                         "2500052300030150330125000000000000000000000000535000310030010000000"
                     };
-                    break;
                 case Enums.Specs.MageFire:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "0000000000000000000000050500000200000000000000000000000000000000000",
                         "0000000000000000000000053500000200300000000000000000000000000000000",
@@ -169,9 +184,8 @@ namespace WholesomeTBCAIO.Helpers
                         "2300050010000000000000055500001200333105312510030000000000000000000",
                         "2302050010000000000000055500001200333105312510030000000000000000000"
                     };
-                    break;
                 case Enums.Specs.MageFireParty:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "0000000000000000000000050500001000000000000000000000000000000000000",
                         "0000000000000000000000050500201230203000000000000000000000000000000",
@@ -179,19 +193,17 @@ namespace WholesomeTBCAIO.Helpers
                         "0000000000000000000000050500201230303105311510030000000000000000000",
                         "2300050000000000000000050521201230333105312510030000000000000000000"
                     };
-                    break;
                 // PALADIN
                 case Enums.Specs.PaladinRetribution:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "0000000000000000000000000000000000000000000523005130000000000000",
                         "0000000000000000000000000000000000000000001523005130000100000000",
                         "0000000000000000000000000000000000000000001523005130003115321041",
                         "5500300000000000000000000000000000000000005523005130003125331051"
                     };
-                    break;
                 case Enums.Specs.PaladinRetributionParty:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "0000000000000000000000000000000000000000000523000100000000000000",
                         "0000000000000000000000000000000000000000000523005100030000000000",
@@ -202,9 +214,8 @@ namespace WholesomeTBCAIO.Helpers
                         "0000000000000000000050320100000000000000000523005120033125331051",
                         "5000000000000000000050320100000000000000000523005120033125331051"
                     };
-                    break;
                 case Enums.Specs.PaladinProtectionParty:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "0000000000000000000005005003000000000000000000000000000000000000",
                         "0000000000000000000005005113500001000000000000000000000000000000",
@@ -214,43 +225,38 @@ namespace WholesomeTBCAIO.Helpers
                         "0000000000000000000005205123500011025215510520500000000000000000",
                         "0000000000000000000005305133500021025215510520500000000000000000"
                     };
-                    break;
                 case Enums.Specs.PaladinHolyParty:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "0550311050013000000000000000000000000000000000000000000000000000",
                         "0550311051013050100000000000000000000000000000000000000000000000",
                         "0550311052013053105150320100000000000000005000000000000000000000",
                         "0550312152013253105150320100000000000000005000000000000000000000"
                     };
-                    break;
                 case Enums.Specs.PaladinHolyRaid:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "0550311252013253105150023100000000000000005000000000000000000000"
                     };
-                    break;
                 // PRIEST
                 case Enums.Specs.PriestShadow:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "0000000000000000000000000000000000000000000500230010000000000000",
                         "0000000000000000000000000000000000000000000500232310041120000000",
                         "0000000000000000000000000000000000000000000500232310041121051451",
                         "0500320130000000000000000000000000000000000500232510051123051551"
                     };
-                    break;
                 case Enums.Specs.PriestShadowParty:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "0000000000000000000000000000000000000000000503200310000000000000",
                         "0000000000000000000000000000000000000000000503210310050103000000",
                         "0000000000000000000000000000000000000000000503220310050103051451",
                         "5002300130000000000000000000000000000000000503250310050123051551"
                     };
-                    break;
                 case Enums.Specs.PriestHolyParty:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "0000000000000000000000032050030000000000000000000000000000000000",
                         "0000000000000000000000232050030300000000000000000000000000000000",
@@ -258,9 +264,8 @@ namespace WholesomeTBCAIO.Helpers
                         "0000000000000000000000235050030300150530030000000000000000000000",
                         "5002301130500120000000235050030300150530030000000000000000000000"
                     };
-                    break;
                 case Enums.Specs.PriestHolyRaid:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "0000000000000000000000230050000000000000000000000000000000000000",
                         "0000000000000000000000235050032000100000000000000000000000000000",
@@ -268,10 +273,9 @@ namespace WholesomeTBCAIO.Helpers
                         "5002300100000000000000235050032002150520051000000000000000000000",
                         "5002301130500000000000235050032002150520051000000000000000000000"
                     };
-                    break;
                 // ROGUE
                 case Enums.Specs.RogueCombat:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "0000000000000000000000230050000000000000000000000000000000000000000",
                         "0000000000000000000000230550100040100000000000000000000000000000000",
@@ -281,9 +285,8 @@ namespace WholesomeTBCAIO.Helpers
                         "0000000000000000000000230550100050150023210515000300000000000000000",
                         "3053001000000000000000230550100050150023210515000300000000000000000"
                     };
-                    break;
                 case Enums.Specs.RogueCombatParty:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "0000000000000000000000230050000000000000000000000000000000000000000",
                         "0000000000000000000000233050020050140000000000000000000000000000000",
@@ -291,19 +294,17 @@ namespace WholesomeTBCAIO.Helpers
                         "0000000000000000000000233050020050150023211510000000000000000000000",
                         "0053201054000000000000233050020050150023211510000000000000000000000"
                     };
-                    break;
                 // SHAMAN
                 case Enums.Specs.ShamanEnhancement:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "0000000000000000000050052301040010000000000000000000000000000",
                         "0000000000000000000050052301050013050110000000000000000000000",
                         "0000000000000000000050052301050013053115100000000000000000000",
                         "2500310000000000000050052321450013353115100000000000000000000"
                     };
-                    break;
                 case Enums.Specs.ShamanEnhancementParty:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "0000000000000000000050050001000000000000000000000000000000000",
                         "0000000000000000000050050021000000000000000000000000000000000",
@@ -312,18 +313,16 @@ namespace WholesomeTBCAIO.Helpers
                         "0000000000000000000050052021050113053115100000000000000000000",
                         "2500305020000000000050052021050113353115100000000000000000000"
                     };
-                    break;
                 case Enums.Specs.ShamanElemental:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "5200310503000000000000000000000000000000000000000000000000000",
                         "5300310503001405100000000000000000000000000000000000000000000",
                         "5500310503001515105100000000000000000000000000000000000000000",
                         "5500310503001535105150000300000000000000005005000000000000000",
                     };
-                    break;
                 case Enums.Specs.ShamanRestoParty:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "0000000000000000000000000000000000000000052030001000000000000",
                         "0000000000000000000000000000000000000000055030001150010000000",
@@ -333,10 +332,9 @@ namespace WholesomeTBCAIO.Helpers
                         "5000000000000000000000000000000000000000055035051355310510321",
                         "5003000000000000000000000000000000000000055035051355310510321"
                     };
-                    break;
                 // WARLOCK
                 case Enums.Specs.WarlockDemonology:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "0000000000000000000000052300100000000000000000000000000000000000",
                         "0000000000000000000000052310130050100000000000000000000000000000",
@@ -345,9 +343,8 @@ namespace WholesomeTBCAIO.Helpers
                         "0000000000000000000000052330133050102531351000000000000000000000",
                         "1500222210000000000000052330133050102531351000000000000000000000"
                     };
-                    break;
                 case Enums.Specs.WarlockAffliction:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "0502210010000000000000000000000000000000000000000000000000000000",
                         "0502222110230100000000000000000000000000000000000000000000000000",
@@ -357,9 +354,8 @@ namespace WholesomeTBCAIO.Helpers
                         "0502222510234105510010052300100000000000000000000000000000000000",
                         "1502222510235105510010052330130100000000000000000000000000000000"
                     };
-                    break;
                 case Enums.Specs.WarlockAfflictionParty:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "0502210410230100000000000000000000000000000000000000000000000000",
                         "0502210410234105500300000000000000000000000000000000000000000000",
@@ -367,10 +363,9 @@ namespace WholesomeTBCAIO.Helpers
                         "0502210411235105500310000000000000000000000505000500200000000000",
                         "0502210412235105500310200000000000000000000505000500200000000000"
                     };
-                    break;
                 // WARRIOR
                 case Enums.Specs.WarriorFury:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "000000000000000000000000505000500501200000000000000000000000000000",
                         "000000000000000000000000505000520501205010000000000000000000000000",
@@ -379,9 +374,8 @@ namespace WholesomeTBCAIO.Helpers
                         "320230013000000000000000505000550501205311510000000000000000000000",
                         "320240013020000000000000505000550501205311510000000000000000000000"
                     };
-                    break;
                 case Enums.Specs.WarriorFuryParty:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "000000000000000000000000505000500501200000000000000000000000000000",
                         "000000000000000000000000505000520501205010000000000000000000000000",
@@ -390,9 +384,8 @@ namespace WholesomeTBCAIO.Helpers
                         "320230013000000000000000505000550501205311510000000000000000000000",
                         "320240013020000000000000505000550501205311510000000000000000000000"
                     };
-                    break;
                 case Enums.Specs.WarriorProtectionParty:
-                    _talentsCodes = new List<string>
+                    return new List<string>
                     {
                         "000000000000000000000000000000000000000000000055011000000000000000",
                         "000000000000000000000000000000000000000000000055211033000100000000",
@@ -401,49 +394,10 @@ namespace WholesomeTBCAIO.Helpers
                         "050000000000000000000000000000000000000000001055511033000103231331",
                         "350000000000000000000000501000000000000000002055511033000103531351"
                     };
-                    break;
 
                 default:
-                    Logger.LogError($"Couldn't find talent codes for {spec}.");
-                    break;
+                    throw new Exception($"Couldn't find talent codes for {spec}.");
             }
-        }
-
-        // Set the custom talents codes to use
-        public static void SetTalentCodes(List<string> talentsCodes)
-        {
-            _talentsCodes = talentsCodes;
-        }
-
-        // Talent pulse
-        public static void DoTalentPulse(object sender, DoWorkEventArgs args)
-        {
-            _isRunning = true;
-            while (Main.isLaunched && _isRunning)
-            {
-                Thread.Sleep(3000);
-                try
-                {
-                    if (Conditions.InGameAndConnectedAndProductStartedNotInPause
-                        && ObjectManager.Me.IsAlive 
-                        && Main.isLaunched
-                        && _isInitialized 
-                        && _isRunning)
-                    {
-                        lock(_talentLock)
-                        {
-                            Logger.LogDebug("Assigning Talents");
-                            WTTalent.TBCAssignTalents(_talentsCodes);
-                        }
-                    }
-                }
-                catch (Exception arg)
-                {
-                    Logging.WriteError(string.Concat(arg), true);
-                }
-                Thread.Sleep(_talentPulseTimer);
-            }
-            _isRunning = false;
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 using Timer = robotManager.Helpful.Timer;
@@ -9,6 +10,12 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 {
     public class PaladinProtectionParty : Paladin
     {
+        public PaladinProtectionParty(BaseSettings settings) : base(settings)
+        {
+            RotationType = Enums.RotationType.Party;
+            RotationRole = Enums.RotationRole.Tank;
+        }
+
         protected override void BuffRotation()
         {
             if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
@@ -22,9 +29,9 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             }
         }
 
-        protected override void PullRotation()
+        protected override void Pull()
         {
-            base.PullRotation();
+            base.Pull();
 
             WoWUnit Target = ObjectManager.Target;
 
@@ -56,7 +63,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             base.CombatNoTarget();
 
             if (settings.PartyTankSwitchTarget)
-                AIOParty.SwitchTarget(cast, RighteousDefense);
+                partyManager.SwitchTarget(cast, RighteousDefense);
         }
 
         protected override void CombatRotation()
@@ -72,12 +79,12 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             ToolBox.CheckAutoAttack(Attack);
 
             if (settings.PartyTankSwitchTarget)
-                AIOParty.SwitchTarget(cast, RighteousDefense);
+                partyManager.SwitchTarget(cast, RighteousDefense);
 
             // Righteous Defense
             if (!Target.IsTargetingMe
                 && Target.Target > 0
-                && AIOParty.GroupAndRaid.Contains(Target.TargetObject)
+                && partyManager.GroupAndRaid.Contains(Target.TargetObject)
                 && cast.OnFocusUnit(RighteousDefense, Target.TargetObject))
                 return;
 
@@ -87,7 +94,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 return;
 
             // PARTY Lay On Hands
-            List<AIOPartyMember> needsLoH = AIOParty.GroupAndRaid
+            List<AIOPartyMember> needsLoH = partyManager.GroupAndRaid
                 .FindAll(m => m.HealthPercent < 10)
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
@@ -97,7 +104,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Purifiy
             if (settings.PartyPurify)
             {
-                WoWPlayer needsPurify = AIOParty.GroupAndRaid
+                WoWPlayer needsPurify = partyManager.GroupAndRaid
                     .Find(m => WTEffects.HasDiseaseDebuff(m.Name) || WTEffects.HasPoisonDebuff(m.Name));
                 if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
@@ -106,7 +113,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Cleanse
             if (settings.PartyCleanse)
             {
-                WoWPlayer needsCleanse = AIOParty.GroupAndRaid
+                WoWPlayer needsCleanse = partyManager.GroupAndRaid
                     .Find(m => WTEffects.HasMagicDebuff(m.Name));
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;

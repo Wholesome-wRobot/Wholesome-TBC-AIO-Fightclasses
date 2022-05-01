@@ -4,8 +4,10 @@ namespace WholesomeTBCAIO.Rotations
 {
     public interface IClassRotation
     {
-        public RotationType RotationType { get; set; }
-        public RotationRole RotationRole { get; set; }
+
+        public abstract RotationType RotationType { get; }
+        public abstract RotationRole RotationRole { get; }
+
         public void Initialize(IClassRotation specialization);
         public bool AnswerReadyCheck();
         public void Dispose();

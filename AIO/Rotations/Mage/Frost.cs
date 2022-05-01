@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
@@ -8,6 +9,12 @@ namespace WholesomeTBCAIO.Rotations.Mage
 {
     public class Frost : Mage
     {
+        public Frost(BaseSettings settings) : base(settings)
+        {
+            RotationType = Enums.RotationType.Solo;
+            RotationRole = Enums.RotationRole.DPS;
+        }
+
         protected override void BuffRotation()
         {
             base.BuffRotation();
@@ -28,7 +35,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                     return;
 
             // Frost Armor
-            if (!Me.HaveBuff("Frost Armor") 
+            if (!Me.HaveBuff("Frost Armor")
                 && !IceArmor.KnownSpell)
                 if (cast.OnSelf(FrostArmor))
                     return;
@@ -115,7 +122,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Use Mana Stone
             if ((ObjectManager.GetNumberAttackPlayer() > 1 && Me.ManaPercentage < 50 || Me.ManaPercentage < 5)
-                && _foodManager.UseManaStone())
+                && foodManager.UseManaStone())
                 return;
 
             // Ice Lance
@@ -133,7 +140,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Fire Blast
             if (Target.HealthPercent <= settings.FireblastThreshold
-                && !Target.HaveBuff("Frostbite") 
+                && !Target.HaveBuff("Frostbite")
                 && !Target.HaveBuff("Frost Nova")
                 && cast.OnTarget(FireBlast))
                 return;

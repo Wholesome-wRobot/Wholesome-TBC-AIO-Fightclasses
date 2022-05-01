@@ -1,6 +1,6 @@
-﻿using System;
+﻿using MarsSettingsGUI;
+using System;
 using System.ComponentModel;
-using MarsSettingsGUI;
 
 namespace WholesomeTBCAIO.Settings
 {

@@ -1,6 +1,6 @@
-﻿using System;
+﻿using MarsSettingsGUI;
+using System;
 using System.Collections.Generic;
-using MarsSettingsGUI;
 using System.ComponentModel;
 using System.Configuration;
 using wManager.Wow.ObjectManager;
@@ -62,7 +62,7 @@ namespace WholesomeTBCAIO.Settings
         [DisplayName("Auto assign talents")]
         [Description("Will automatically assign your talent points.")]
         public bool AssignTalents { get; set; }
-        
+
         [Setting]
         [Category("Rotation")]
         [DefaultValue("Auto")]
@@ -99,8 +99,8 @@ namespace WholesomeTBCAIO.Settings
             PartyDrinkName = "";
             PartyDrinkThreshold = 40;
         }
-                
-        protected virtual void OnUpdate() {  }
+
+        protected virtual void OnUpdate() { }
 
         public void ShowConfiguration()
         {

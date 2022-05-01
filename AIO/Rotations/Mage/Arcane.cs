@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
@@ -8,6 +9,12 @@ namespace WholesomeTBCAIO.Rotations.Mage
 {
     public class Arcane : Mage
     {
+        public Arcane(BaseSettings settings) : base(settings)
+        {
+            RotationType = Enums.RotationType.Solo;
+            RotationRole = Enums.RotationRole.DPS;
+        }
+
         protected override void BuffRotation()
         {
             base.BuffRotation();
@@ -113,7 +120,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Use Mana Stone
             if ((ObjectManager.GetNumberAttackPlayer() > 1 && Me.ManaPercentage < 50 || Me.ManaPercentage < 5)
-                && _foodManager.UseManaStone())
+                && foodManager.UseManaStone())
                 return;
 
             // Cast presence of mind spell

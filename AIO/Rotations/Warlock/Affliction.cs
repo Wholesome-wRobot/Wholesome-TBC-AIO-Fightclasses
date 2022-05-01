@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
@@ -8,6 +9,12 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 {
     public class Affliction : Warlock
     {
+        public Affliction(BaseSettings settings) : base(settings)
+        {
+            RotationType = Enums.RotationType.Solo;
+            RotationRole = Enums.RotationRole.DPS;
+        }
+
         protected override void BuffRotation()
         {
             base.BuffRotation();

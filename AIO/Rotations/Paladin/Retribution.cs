@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 
@@ -7,6 +8,12 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 {
     public class Retribution : Paladin
     {
+        public Retribution(BaseSettings settings) : base(settings)
+        {
+            RotationType = Enums.RotationType.Solo;
+            RotationRole = Enums.RotationRole.DPS;
+        }
+
         protected override void BuffRotation()
         {
             base.BuffRotation();
@@ -49,9 +56,9 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 return;
         }
 
-        protected override void PullRotation()
+        protected override void Pull()
         {
-            base.PullRotation();
+            base.Pull();
 
             WoWUnit Target = ObjectManager.Target;
 

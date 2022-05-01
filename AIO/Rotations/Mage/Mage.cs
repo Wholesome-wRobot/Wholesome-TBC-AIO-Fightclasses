@@ -1,51 +1,37 @@
-﻿using System;
+﻿using robotManager.Helpful;
+using System;
+using System.ComponentModel;
 using System.Threading;
-using robotManager.Helpful;
+using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
+using WholesomeToolbox;
 using wManager.Events;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
-using WholesomeTBCAIO.Settings;
-using WholesomeTBCAIO.Helpers;
-using System.ComponentModel;
 using Timer = robotManager.Helpful.Timer;
-using WholesomeToolbox;
 
 namespace WholesomeTBCAIO.Rotations.Mage
 {
-    public class Mage : IClassRotation
+    public class Mage : BaseRotation
     {
-        public Enums.RotationType RotationType { get; set; }
-        public Enums.RotationRole RotationRole { get; set; }
-
-        public static MageSettings settings;
-
-        protected Cast cast;
-
-        protected MageFoodManager _foodManager;
-
+        protected Mage specialization;
+        protected MageSettings settings;
+        protected MageFoodManager foodManager;
         protected WoWLocalPlayer Me = ObjectManager.Me;
         protected WoWUnit _polymorphedEnemy = null;
-
         protected bool _iCanUseWand = WTGear.HaveRangedWeaponEquipped;
         protected bool _isPolymorphing;
         protected bool _polymorphableEnemyInThisFight = true;
         protected bool _knowImprovedScorch = WTTalent.GetTalentRank(2, 9) > 0;
 
-        protected Mage specialization;
+        public Mage(BaseSettings settings) : base(settings) { }
 
-        public void Initialize(IClassRotation specialization)
+        public override void Initialize(IClassRotation specialization)
         {
-            settings = MageSettings.Current;
-            if (settings.PartyDrinkName != "")
-                WTSettings.AddToDoNotSellList(settings.PartyDrinkName);
-            cast = new Cast(Fireball, UseWand, settings);
-            _foodManager = new MageFoodManager(cast);
-
             this.specialization = specialization as Mage;
-            (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);
-            TalentsManager.InitTalents(settings);
-
-            RangeManager.SetRange(30);
+            settings = MageSettings.Current;
+            BaseInit(30, Fireball, UseWand, settings);
+            foodManager = new MageFoodManager(cast);
 
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightStart += FightStartHandler;
@@ -54,31 +40,31 @@ namespace WholesomeTBCAIO.Rotations.Mage
             Rotation();
         }
 
-        public bool AnswerReadyCheck()
+        public override bool AnswerReadyCheck()
         {
             return true;
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             cast.IsBackingUp = false;
             FightEvents.OnFightEnd -= FightEndHandler;
             FightEvents.OnFightStart -= FightStartHandler;
             FightEvents.OnFightLoop -= FightLoopHandler;
-            cast.Dispose();
-            Logger.Log("Disposed");
+
+            BaseDispose();
         }
 
         private void Rotation()
         {
-            while (Main.isLaunched)
+            while (Main.IsLaunched)
             {
                 try
                 {
                     if (StatusChecker.BasicConditions()
-                        && _polymorphedEnemy != null 
+                        && _polymorphedEnemy != null
                         && !ObjectManager.Me.InCombatFlagOnly)
-                            _polymorphedEnemy = null;
+                        _polymorphedEnemy = null;
 
                     if (StatusChecker.OutOfCombat(RotationRole))
                         specialization.BuffRotation();
@@ -101,16 +87,20 @@ namespace WholesomeTBCAIO.Rotations.Mage
             Logger.Log("Stopped.");
         }
 
-        protected virtual void BuffRotation()
+        protected override void Pull() { }
+        protected override void CombatNoTarget() { }
+        protected override void HealerCombat() { }
+
+        protected override void BuffRotation()
         {
-            _foodManager.CheckIfEnoughFoodAndDrinks();
-            _foodManager.CheckIfThrowFoodAndDrinks();
-            _foodManager.CheckIfHaveManaStone();
+            foodManager.CheckIfEnoughFoodAndDrinks();
+            foodManager.CheckIfThrowFoodAndDrinks();
+            foodManager.CheckIfHaveManaStone();
 
             if (specialization.RotationType == Enums.RotationType.Party)
             {
                 // PARTY Arcane Intellect
-                WoWPlayer noAI = AIOParty.GroupAndRaid
+                WoWPlayer noAI = partyManager.GroupAndRaid
                     .Find(m => m.Mana > 0 && !m.HaveBuff(ArcaneIntellect.Name));
                 if (noAI != null && cast.OnFocusUnit(ArcaneIntellect, noAI))
                     return;
@@ -125,11 +115,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 return;
         }
 
-        protected virtual void Pull()
-        {
-        }
-
-        protected virtual void CombatRotation()
+        protected override void CombatRotation()
         {
             if (ObjectManager.Pet.IsValid && !ObjectManager.Pet.HasTarget)
                 Lua.LuaDoString("PetAttack();");
@@ -326,7 +312,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                         _polymorphableEnemyInThisFight = false;
 
                     // Polymorph cast
-                    if (potentialPolymorphTarget != null 
+                    if (potentialPolymorphTarget != null
                         && _polymorphedEnemy == null
                         && cast.OnFocusUnit(Polymorph, potentialPolymorphTarget))
                     {

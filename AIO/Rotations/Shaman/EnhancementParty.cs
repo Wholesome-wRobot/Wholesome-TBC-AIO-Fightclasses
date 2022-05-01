@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 
@@ -7,6 +8,12 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 {
     public class EnhancementParty : Shaman
     {
+        public EnhancementParty(BaseSettings settings) : base(settings)
+        {
+            RotationType = Enums.RotationType.Party;
+            RotationRole = Enums.RotationRole.DPS;
+        }
+
         protected override void BuffRotation()
         {
             base.BuffRotation();
@@ -37,19 +44,19 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     return;
 
                 // PARTY Cure poison
-                WoWPlayer needCurePoison = AIOParty.GroupAndRaid
+                WoWPlayer needCurePoison = partyManager.GroupAndRaid
                     .Find(m => WTEffects.HasPoisonDebuff(m.Name));
                 if (needCurePoison != null && cast.OnFocusUnit(CurePoison, needCurePoison))
                     return;
 
                 // PARTY Cure Disease
-                WoWPlayer needCureDisease = AIOParty.GroupAndRaid
+                WoWPlayer needCureDisease = partyManager.GroupAndRaid
                     .Find(m => WTEffects.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
 
                 // PARTY Drink
-                if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
+                if (partyManager.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
                     return;
             }
         }
@@ -112,7 +119,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             // PARTY Cure Poison
             if (settings.PartyCurePoison)
             {
-                WoWPlayer needCurePoison = AIOParty.GroupAndRaid
+                WoWPlayer needCurePoison = partyManager.GroupAndRaid
                     .Find(m => WTEffects.HasPoisonDebuff(m.Name));
                 if (needCurePoison != null && cast.OnFocusUnit(CurePoison, needCurePoison))
                     return;
@@ -121,7 +128,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             // PARTY Cure Disease
             if (settings.CureDisease)
             {
-                WoWPlayer needCureDisease = AIOParty.GroupAndRaid
+                WoWPlayer needCureDisease = partyManager.GroupAndRaid
                     .Find(m => WTEffects.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
