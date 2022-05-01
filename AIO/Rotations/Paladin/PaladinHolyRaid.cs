@@ -85,7 +85,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             }
 
             // High priority heal
-            var priorityTanks = ToolBox.TanksNeedPriorityHeal(tanks, aliveMembers, settings.PartyTankHealingPriority);
+            var priorityTanks = partyManager.TanksNeedPriorityHeal(tanks, aliveMembers, settings.PartyTankHealingPriority);
             foreach (var tank in priorityTanks)
             {
                 if (SingleTargetHeal(tank))

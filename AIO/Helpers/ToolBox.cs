@@ -88,29 +88,6 @@ namespace WholesomeTBCAIO.Helpers
             Logger.LogDebug("Waited for GCD : " + c);
         }
 
-        // Virtually increases missing HP of tanks based on given `priorityPercent`.
-        // Then returns a list of tanks those should be healed before other group members.
-        public static List<WoWUnit> TanksNeedPriorityHeal(List<WoWUnit> tanks, List<AIOPartyMember> groupMembers, int priorityPercent) 
-        {
-            var prioirtyList = new List<WoWUnit>();
-            if (tanks.Count == 0 || groupMembers.Count == 0)
-            {
-                return prioirtyList;
-            }
-
-            foreach (var tank in tanks)
-            {
-                var missingHPPercent = 100.0 - tank.HealthPercent;
-                var virtualHP = 100 - missingHPPercent * (1.0 + ((float)priorityPercent) / 100);
-                if (virtualHP < groupMembers[0].HealthPercent)
-                {
-                    prioirtyList.Add(tank);
-                }
-            }
-
-            return prioirtyList;
-        }
-
         #endregion
 
         #region Misc
