@@ -116,6 +116,13 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     return;
             }
 
+            // Normal single target heal on lowest health group member
+            foreach (var member in membersByMissingHealth)
+            {
+                if (SingleTargetHeal(member))
+                    return;
+            }
+
             // Keep Renew on tank
             if (settings.PartyKeepRenewOnTank)
             {
@@ -124,13 +131,6 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     if (!tank.HaveBuff(Renew.Name) && cast.OnFocusUnit(Renew, tank))
                         return;
                 }
-            }
-
-            // Normal single target heal on lowest health group member
-            foreach (var member in membersByMissingHealth)
-            {
-                if (SingleTargetHeal(member))
-                    return;
             }
         }
 
