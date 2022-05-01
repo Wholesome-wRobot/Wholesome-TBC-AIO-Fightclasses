@@ -2,22 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using WholesomeTBCAIO.Rotations;
-using WholesomeTBCAIO.Rotations.Druid;
-using WholesomeTBCAIO.Rotations.Hunter;
-using WholesomeTBCAIO.Rotations.Mage;
-using WholesomeTBCAIO.Rotations.Paladin;
-using WholesomeTBCAIO.Rotations.Priest;
-using WholesomeTBCAIO.Rotations.Rogue;
-using WholesomeTBCAIO.Rotations.Shaman;
-using WholesomeTBCAIO.Rotations.Warlock;
-using WholesomeTBCAIO.Rotations.Warrior;
 using WholesomeToolbox;
 using wManager.Wow.Bot.Tasks;
 using wManager.Wow.Class;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
-using static WholesomeTBCAIO.Helpers.Enums;
 
 namespace WholesomeTBCAIO.Helpers
 {
@@ -131,55 +120,6 @@ namespace WholesomeTBCAIO.Helpers
             Lua.LuaDoString("ClearCursor();");
         }
 
-        public static (RotationType, RotationRole) GetRotationType(IClassRotation rotation)
-        {
-            // DRUID
-            if (rotation is Feral) return (RotationType.Solo, RotationRole.DPS);
-            if (rotation is FeralDPSParty) return (RotationType.Party, RotationRole.DPS);
-            if (rotation is FeralTankParty) return (RotationType.Party, RotationRole.Tank);
-            if (rotation is RestorationParty) return (RotationType.Party, RotationRole.Healer);
-            // HUNTER
-            if (rotation is BeastMastery) return (RotationType.Solo, RotationRole.DPS);
-            if (rotation is BeastMasteryParty) return (RotationType.Party, RotationRole.DPS);
-            // MAGE
-            if (rotation is Arcane) return (RotationType.Solo, RotationRole.DPS);
-            if (rotation is Fire) return (RotationType.Solo, RotationRole.DPS);
-            if (rotation is Frost) return (RotationType.Solo, RotationRole.DPS);
-            if (rotation is ArcaneParty) return (RotationType.Party, RotationRole.DPS);
-            if (rotation is FireParty) return (RotationType.Party, RotationRole.DPS);
-            if (rotation is FrostParty) return (RotationType.Party, RotationRole.DPS);
-            // PALADIN
-            if (rotation is Retribution) return (RotationType.Solo, RotationRole.DPS);
-            if (rotation is RetributionParty) return (RotationType.Party, RotationRole.DPS);
-            if (rotation is PaladinHolyParty) return (RotationType.Party, RotationRole.Healer);
-            if (rotation is PaladinHolyRaid) return (RotationType.Party, RotationRole.Healer);
-            if (rotation is PaladinProtectionParty) return (RotationType.Party, RotationRole.Tank);
-            // PRIEST
-            if (rotation is Shadow) return (RotationType.Solo, RotationRole.DPS);
-            if (rotation is ShadowParty) return (RotationType.Party, RotationRole.DPS);
-            if (rotation is HolyPriestParty) return (RotationType.Party, RotationRole.Healer);
-            if (rotation is HolyPriestRaid) return (RotationType.Party, RotationRole.Healer);
-            // ROGUE
-            if (rotation is Combat) return (RotationType.Solo, RotationRole.DPS);
-            if (rotation is RogueCombatParty) return (RotationType.Party, RotationRole.DPS);
-            // SHAMAN
-            if (rotation is Elemental) return (RotationType.Solo, RotationRole.DPS);
-            if (rotation is Enhancement) return (RotationType.Solo, RotationRole.DPS);
-            if (rotation is EnhancementParty) return (RotationType.Party, RotationRole.DPS);
-            if (rotation is ShamanRestoParty) return (RotationType.Party, RotationRole.Healer);
-            // WARLOCK
-            if (rotation is Affliction) return (RotationType.Solo, RotationRole.DPS);
-            if (rotation is Demonology) return (RotationType.Solo, RotationRole.DPS);
-            if (rotation is AfflictionParty) return (RotationType.Party, RotationRole.DPS);
-            // WARRIOR
-            if (rotation is Fury) return (RotationType.Solo, RotationRole.DPS);
-            if (rotation is FuryParty) return (RotationType.Party, RotationRole.DPS);
-            if (rotation is ProtectionWarrior) return (RotationType.Party, RotationRole.Tank);
-
-            Logger.LogError($"Couldn't find Rotation Type");
-            return (RotationType.Solo, RotationRole.DPS);
-        }
-
         public static int GetNumberEnemiesAround(float distance, WoWUnit unit)
         {
             List<WoWUnit> surroundingEnemies = ObjectManager.GetObjectWoWUnit();
@@ -242,51 +182,6 @@ namespace WholesomeTBCAIO.Helpers
             return null;
         }
 
-        // Gets Character's specialization (talents)
-        public static string GetSpec(string inspectUnitName = null)
-        {
-            string inspectString = inspectUnitName == null ? "false" : "true";
-
-            int highestTalents = 0;
-            Dictionary<string, int> Talents = new Dictionary<string, int>();
-
-            if (inspectUnitName != null)
-            {
-                Lua.LuaDoString($"InspectUnit('{inspectUnitName}');");
-                Thread.Sleep(500 + GetLatency());
-                if (!AIOParty.InspectTalentReady)
-                {
-                    Lua.RunMacroText("/Click InspectFrameCloseButton");
-                    return "retry";
-                }
-            }
-
-            for (int i = 1; i <= 3; i++)
-            {
-                Talents.Add(
-                    Lua.LuaDoString<string>($"local name, _, _ = GetTalentTabInfo('{i}', {inspectString}); return name"),
-                    Lua.LuaDoString<int>($"local _, _, pointsSpent = GetTalentTabInfo('{i}', {inspectString}); return pointsSpent")
-                );
-            }
-            highestTalents = Talents.Max(x => x.Value);
-            /*
-            foreach (KeyValuePair<string, int> pair in Talents)
-            {
-                Logger.Log($"{pair.Key} -> {pair.Value}");
-            }
-            */
-            if (inspectUnitName != null)
-            {
-                Lua.RunMacroText("/Click InspectFrameCloseButton");
-                AIOParty.InspectTalentReady = false;
-            }
-
-            if (highestTalents == 0)
-                return null;
-
-            return Talents.Where(t => t.Value == highestTalents).FirstOrDefault().Key;
-        }
-
         // Returns the latency
         public static int GetLatency()
         {
@@ -325,8 +220,8 @@ namespace WholesomeTBCAIO.Helpers
 
         public static void UseConsumableToSelfHeal()
         {
-            List<string> consumables = new List<string> { 
-                "Master Healthstone", 
+            List<string> consumables = new List<string> {
+                "Master Healthstone",
                 "Major Healthstone",
                 "Greater Healthstone",
                 "Healthstone",

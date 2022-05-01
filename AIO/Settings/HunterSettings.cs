@@ -1,6 +1,6 @@
-﻿using System;
+﻿using MarsSettingsGUI;
+using System;
 using System.ComponentModel;
-using MarsSettingsGUI;
 
 namespace WholesomeTBCAIO.Settings
 {
@@ -84,13 +84,13 @@ namespace WholesomeTBCAIO.Settings
         [DisplayName("Rapid Fire on multi")]
         [Description("Only use Rapid Fire on multi aggro. If set to False, Rapid Fire will be used as soon at available")]
         public bool RapidFireOnMulti { get; set; }
-        
+
         [Category("Common")]
         [DefaultValue(false)]
         [DisplayName("Auto Growl")]
         [Description("If true, will let Growl on autocast. If false, will let the AIO manage Growl in order to save your pet's energy.")]
         public bool AutoGrowl { get; set; }
-        
+
         [Category("Common")]
         [DefaultValue(true)]
         [DisplayName("Concussive Shot")]

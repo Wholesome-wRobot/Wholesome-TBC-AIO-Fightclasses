@@ -1,47 +1,35 @@
-﻿using System;
+﻿using robotManager.Helpful;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Threading;
-using robotManager.Helpful;
+using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using wManager.Events;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
-using System.Collections.Generic;
-using WholesomeTBCAIO.Settings;
-using WholesomeTBCAIO.Helpers;
-using System.ComponentModel;
 using Timer = robotManager.Helpful.Timer;
-using WholesomeToolbox;
 
 namespace WholesomeTBCAIO.Rotations.Warrior
 {
-    public class Warrior : IClassRotation
+    public class Warrior : BaseRotation
     {
-        public Enums.RotationType RotationType { get; set; }
-        public Enums.RotationRole RotationRole { get; set; }
-
-        public static WarriorSettings settings;
-
-        protected Cast cast;
+        protected WarriorSettings settings;
         protected WoWLocalPlayer Me = ObjectManager.Me;
-
         protected bool _fightingACaster = false;
         protected List<string> _casterEnemies = new List<string>();
         protected bool _pullFromAfar = false;
-
         private Timer _moveBehindTimer = new Timer();
         protected Timer _combatMeleeTimer = new Timer();
-
         protected Warrior specialization;
 
-        public void Initialize(IClassRotation specialization)
-        {
-            settings = WarriorSettings.Current;
-            if (settings.PartyDrinkName != "")
-                WTSettings.AddToDoNotSellList(settings.PartyDrinkName);
-            cast = new Cast(BattleShout, null, settings);
+        public Warrior(BaseSettings settings) : base(settings) { }
 
+        public override void Initialize(IClassRotation specialization)
+        {
             this.specialization = specialization as Warrior;
-            (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);
-            TalentsManager.InitTalents(settings);
+            settings = WarriorSettings.Current;
+            BaseInit(RangeManager.DefaultMeleeRange, BattleShout, null, settings);
 
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightLoop += FightLoopHandler;
@@ -51,22 +39,22 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             Rotation();
         }
 
-        public bool AnswerReadyCheck()
+        public override void Dispose()
+        {
+            FightEvents.OnFightEnd -= FightEndHandler;
+            FightEvents.OnFightLoop -= FightLoopHandler;
+
+            BaseDispose();
+        }
+
+        public override bool AnswerReadyCheck()
         {
             return true;
         }
 
-        public void Dispose()
-        {
-            FightEvents.OnFightEnd -= FightEndHandler;
-            FightEvents.OnFightLoop -= FightLoopHandler;
-            cast.Dispose();
-            Logger.Log("Disposed");
-        }
-
         private void Rotation()
         {
-            while (Main.isLaunched)
+            while (Main.IsLaunched)
             {
                 try
                 {
@@ -91,7 +79,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             Logger.Log("Stopped.");
         }
 
-        protected virtual void BuffRotation()
+        protected override void BuffRotation()
         {
             if (!Me.IsMounted && !Me.IsCast)
             {
@@ -109,17 +97,10 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             }
         }
 
-        protected virtual void Pull()
-        {
-        }
-
-        protected virtual void CombatRotation()
-        {
-        }
-
-        protected virtual void CombatNoTarget()
-        {
-        }
+        protected override void Pull() { }
+        protected override void CombatRotation() { }
+        protected override void CombatNoTarget() { }
+        protected override void HealerCombat() { }
 
         private void FightLoopHandler(WoWUnit unit, CancelEventArgs cancel)
         {

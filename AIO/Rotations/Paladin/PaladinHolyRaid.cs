@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 
@@ -10,6 +11,12 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 {
     public class PaladinHolyRaid : Paladin
     {
+        public PaladinHolyRaid(BaseSettings settings) : base(settings)
+        {
+            RotationType = Enums.RotationType.Party;
+            RotationRole = Enums.RotationRole.Healer;
+        }
+
         private static Random rng = new Random();
 
         protected override void BuffRotation()
@@ -28,16 +35,16 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             WoWUnit Target = ObjectManager.Target;
 
-            List<AIOPartyMember> aliveMembers = AIOParty.GroupAndRaid
+            List<AIOPartyMember> aliveMembers = partyManager.GroupAndRaid
                 .FindAll(a => a.IsAlive && a.GetDistance < 60)
                 .OrderBy(a => a.HealthPercent)
                 .ToList();
             double groupHealthAverage = aliveMembers
                 .Aggregate(0.0, (s, a) => s + a.HealthPercent) / (double)aliveMembers.Count;
-            var tanks = AIOParty.TargetedByEnemies
+            var tanks = partyManager.TargetedByEnemies
                 .FindAll(a => a.IsAlive && a.GetDistance < 60)
                 .ToList();
- 
+
             // Divine Illumination
             if (groupHealthAverage < 70
                 && cast.OnSelf(DivineIllumination))
@@ -57,7 +64,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Lay On Hands
             if (Me.ManaPercentage < 5)
             {
-                List<AIOPartyMember> needsLoH = AIOParty.GroupAndRaid
+                List<AIOPartyMember> needsLoH = partyManager.GroupAndRaid
                     .FindAll(m => m.HealthPercent < 10)
                     .OrderBy(m => m.HealthPercent)
                     .ToList();
@@ -71,7 +78,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // High priority Cleanse
             if (settings.PartyCleanse && isCleanseHighPriority)
             {
-                WoWPlayer needsCleanse = AIOParty.GroupAndRaid
+                WoWPlayer needsCleanse = partyManager.GroupAndRaid
                     .Find(m => UnitHasCleansableDebuff(m.Name));
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;
@@ -92,7 +99,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // Low priority Cleanse
             if (settings.PartyCleanse && !isCleanseHighPriority)
             {
-                WoWPlayer needsCleanse = AIOParty.GroupAndRaid
+                WoWPlayer needsCleanse = partyManager.GroupAndRaid
                     .Find(m => UnitHasCleansableDebuff(m.Name));
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;
@@ -113,7 +120,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Purifiy
             if (settings.PartyPurify)
             {
-                WoWPlayer needsPurify = AIOParty.GroupAndRaid
+                WoWPlayer needsPurify = partyManager.GroupAndRaid
                     .Find(m => WTEffects.HasDiseaseDebuff(m.Name) || WTEffects.HasPoisonDebuff(m.Name));
                 if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
@@ -143,7 +150,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                     return true;
             }
             // Medium heal
-            if (unit.HealthPercent < settings.PartyHolyLightPercentThreshold 
+            if (unit.HealthPercent < settings.PartyHolyLightPercentThreshold
                 || (unit.MaxHealth - unit.Health) > settings.PartyHolyLightValueThreshold)
             {
                 if (cast.OnFocusUnit(HolyLight, unit))
@@ -158,7 +165,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                     return true;
                 if (cast.OnFocusUnit(FlashOfLight, unit))
                     return true;
-            }            
+            }
             return false;
         }
     }

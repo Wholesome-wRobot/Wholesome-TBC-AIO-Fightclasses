@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 using Timer = robotManager.Helpful.Timer;
@@ -8,6 +9,12 @@ namespace WholesomeTBCAIO.Rotations.Warrior
 {
     public class ProtectionWarrior : Warrior
     {
+        public ProtectionWarrior(BaseSettings settings) : base(settings)
+        {
+            RotationType = Enums.RotationType.Party;
+            RotationRole = Enums.RotationRole.Tank;
+        }
+
         protected override void BuffRotation()
         {
             base.BuffRotation();
@@ -43,7 +50,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             base.CombatNoTarget();
 
             if (settings.PartyTankSwitchTarget)
-                AIOParty.SwitchTarget(cast, settings.PartyUseIntervene ? Intervene : null);
+                partyManager.SwitchTarget(cast, settings.PartyUseIntervene ? Intervene : null);
         }
 
         protected override void CombatRotation()
@@ -67,7 +74,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             }
 
             if (settings.PartyTankSwitchTarget)
-                AIOParty.SwitchTarget(cast, settings.PartyUseIntervene ? Intervene : null);
+                partyManager.SwitchTarget(cast, settings.PartyUseIntervene ? Intervene : null);
 
             // Defensive Stance
             if (InBattleStance())
@@ -84,7 +91,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 return;
 
             // Cleave
-            List<WoWUnit> closeEnemies = AIOParty.EnemiesFighting
+            List<WoWUnit> closeEnemies = partyManager.EnemiesFighting
                 .FindAll(e => e.GetDistance < 10);
             if (inMeleeRange
                 && closeEnemies.Count > 1

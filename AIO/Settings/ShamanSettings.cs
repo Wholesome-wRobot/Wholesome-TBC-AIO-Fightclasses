@@ -1,6 +1,6 @@
-﻿using System;
+﻿using MarsSettingsGUI;
+using System;
 using System.ComponentModel;
-using MarsSettingsGUI;
 
 namespace WholesomeTBCAIO.Settings
 {
@@ -246,7 +246,7 @@ namespace WholesomeTBCAIO.Settings
         public bool PartyCureDisease { get; set; }
 
         // TALENT
-        [DropdownList(new string[] { "Enhancement", "Elemental", "Party Enhancement", "Party Restoration"})]
+        [DropdownList(new string[] { "Enhancement", "Elemental", "Party Enhancement", "Party Restoration" })]
         public override string Specialization { get; set; }
     }
 }

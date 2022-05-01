@@ -2,18 +2,17 @@
 using System.ComponentModel;
 using System.Linq;
 using System.Threading;
+using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Managers.PartyManager;
 using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 using static WholesomeTBCAIO.Helpers.Enums;
 
-namespace WholesomeTBCAIO.Helpers
+namespace WholesomeTBCAIO.Managers.RacialsManager
 {
-    internal class Racials
+    internal class RacialManager : IRacialsManager
     {
-        public bool _isRunning;
-        private WoWLocalPlayer Me = ObjectManager.Me;
-
         private AIOSpell Cannibalize = new AIOSpell("Cannibalize");
         private AIOSpell WillOfTheForsaken = new AIOSpell("Will of the Forsaken");
         private AIOSpell Berserking = new AIOSpell("Berserking");
@@ -24,11 +23,33 @@ namespace WholesomeTBCAIO.Helpers
         private AIOSpell GiftOfTheNaaru = new AIOSpell("Gift of the Naaru");
         private AIOSpell WarStomp = new AIOSpell("War Stomp");
         private AIOSpell BloodFury = new AIOSpell("Blood Fury");
+        private WoWLocalPlayer Me = ObjectManager.Me;
+        private readonly BackgroundWorker _racialsThread = new BackgroundWorker();
+        private readonly IPartyManager _partyManager;
+        private bool _isRunning;
 
-        public void DoRacialsPulse(object sender, DoWorkEventArgs args)
+        public RacialManager(IPartyManager partyManager)
+        {
+            _partyManager = partyManager;
+        }
+
+        public void Initialize()
         {
             _isRunning = true;
-            while (Main.isLaunched && _isRunning)
+            _racialsThread.DoWork += Pulse;
+            _racialsThread.RunWorkerAsync();
+        }
+
+        public void Dispose()
+        {
+            _racialsThread.DoWork -= Pulse;
+            _racialsThread.Dispose();
+            _isRunning = false;
+        }
+
+        public void Pulse(object sender, DoWorkEventArgs args)
+        {
+            while (_isRunning)
             {
                 try
                 {
@@ -57,13 +78,12 @@ namespace WholesomeTBCAIO.Helpers
                 }
                 Thread.Sleep(500);
             }
-            _isRunning = false;
         }
 
         private void RacialBloodFury()
         {
             if (BloodFury.KnownSpell
-                && AIOParty.GroupAndRaid.Count <= 1
+                && _partyManager.GroupAndRaid.Count <= 1
                 && BloodFury.IsSpellUsable
                 && ObjectManager.Target.HealthPercent > 70)
             {
@@ -112,7 +132,7 @@ namespace WholesomeTBCAIO.Helpers
         {
             if (ArcaneTorrent.KnownSpell
                 && ArcaneTorrent.IsSpellUsable
-                && Me.HaveBuff("Mana Tap") 
+                && Me.HaveBuff("Mana Tap")
                 && (Me.ManaPercentage < 50 || (ObjectManager.Target.IsCast && ObjectManager.Target.GetDistance < 8)))
             {
                 ArcaneTorrent.Launch();
@@ -172,7 +192,7 @@ namespace WholesomeTBCAIO.Helpers
                 && !Me.HaveBuff("Food")
                 && Me.IsAlive
                 && ObjectManager.GetObjectWoWUnit().Where(u => u.GetDistance <= 8 && u.IsDead && (u.CreatureTypeTarget == "Humanoid" || u.CreatureTypeTarget == "Undead")).Count() > 0)
-            { 
+            {
                 Cannibalize.Launch();
                 Usefuls.WaitIsCasting();
             }

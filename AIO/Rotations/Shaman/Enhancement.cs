@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 using Timer = robotManager.Helpful.Timer;
@@ -9,6 +10,12 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 {
     public class Enhancement : Shaman
     {
+        public Enhancement(BaseSettings settings) : base(settings)
+        {
+            RotationType = Enums.RotationType.Solo;
+            RotationRole = Enums.RotationRole.DPS;
+        }
+
         protected override void BuffRotation()
         {
             base.BuffRotation();
@@ -138,7 +145,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             if (!Me.HaveBuff("Bloodlust")
                 && Target.HealthPercent > 80
                 && cast.OnSelf(Bloodlust))
-                    return;
+                return;
 
             // Water Shield
             if (!Me.HaveBuff("Water Shield")

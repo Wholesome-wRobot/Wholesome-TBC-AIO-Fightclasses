@@ -1,10 +1,10 @@
-﻿using System;
+﻿using robotManager.Helpful;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
-using robotManager.Helpful;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
@@ -13,38 +13,25 @@ using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Priest
 {
-    public class Priest : IClassRotation
+    public class Priest : BaseRotation
     {
-        public Enums.RotationType RotationType { get; set; }
-        public Enums.RotationRole RotationRole { get; set; }
-
-        public static PriestSettings settings;
-
-        protected Cast cast;
-
+        protected PriestSettings settings;
+        protected Priest specialization;
         protected WoWLocalPlayer Me = ObjectManager.Me;
         protected Stopwatch _dispelTimer = new Stopwatch();
-
         protected bool _iCanUseWand = WTGear.HaveRangedWeaponEquipped;
         protected int _innerManaSaveThreshold = 20;
         protected int _wandThreshold;
         private float _defaultRange = 28;
 
-        protected Priest specialization;
+        public Priest(BaseSettings settings) : base(settings) { }
 
-        public void Initialize(IClassRotation specialization)
+        public override void Initialize(IClassRotation specialization)
         {
-            settings = PriestSettings.Current;
-            if (settings.PartyDrinkName != "")
-                WTSettings.AddToDoNotSellList(settings.PartyDrinkName);
-            cast = new Cast(Smite, UseWand, settings);
-
             this.specialization = specialization as Priest;
-            (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);
-            TalentsManager.InitTalents(settings);
-
+            settings = PriestSettings.Current;
+            BaseInit(_defaultRange, Smite, UseWand, settings);
             _wandThreshold = settings.WandThreshold > 100 ? 50 : settings.WandThreshold;
-            RangeManager.SetRange(_defaultRange);
 
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightStart += FightStartHandler;
@@ -52,29 +39,29 @@ namespace WholesomeTBCAIO.Rotations.Priest
             Rotation();
         }
 
-        public bool AnswerReadyCheck()
+        public override bool AnswerReadyCheck()
         {
             return Me.ManaPercentage > settings.PartyDrinkThreshold;
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             FightEvents.OnFightEnd -= FightEndHandler;
             FightEvents.OnFightStart -= FightStartHandler;
-            cast.Dispose();
-            Logger.Log("Disposed");
+
+            BaseDispose();
         }
 
         private void Rotation()
         {
-            while (Main.isLaunched)
+            while (Main.IsLaunched)
             {
                 try
                 {
                     if (Me.HaveBuff("Spirit of Redemption"))
                     {
                         // PARTY Greater heal
-                        List<AIOPartyMember> needGreaterHealSR = AIOParty.GroupAndRaid
+                        List<AIOPartyMember> needGreaterHealSR = partyManager.GroupAndRaid
                             .FindAll(m => m.HealthPercent < 100)
                             .OrderBy(m => m.HealthPercent)
                             .ToList();
@@ -82,7 +69,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                             continue;
 
                         // PARTY Heal
-                        List<AIOPartyMember> needHealSR = AIOParty.GroupAndRaid
+                        List<AIOPartyMember> needHealSR = partyManager.GroupAndRaid
                             .FindAll(m => m.HealthPercent < 100)
                             .OrderBy(m => m.HealthPercent)
                             .ToList();
@@ -99,7 +86,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     if (StatusChecker.InCombat())
                         specialization.CombatRotation();
 
-                    if (AIOParty.GroupAndRaid.Any(p => p.InCombatFlagOnly && p.GetDistance < 50) || ObjectManager.Me.HaveBuff("Spirit of Redemption"))
+                    if (partyManager.GroupAndRaid.Any(p => p.InCombatFlagOnly && p.GetDistance < 50) || ObjectManager.Me.HaveBuff("Spirit of Redemption"))
                         specialization.HealerCombat();
 
                 }
@@ -112,19 +99,19 @@ namespace WholesomeTBCAIO.Rotations.Priest
             Logger.Log("Stopped.");
         }
 
-        protected virtual void BuffRotation()
+        protected override void BuffRotation()
         {
             if (specialization.RotationType == Enums.RotationType.Party)
             {
                 // PARTY Resurrection
-                List<AIOPartyMember> needRes = AIOParty.GroupAndRaid
+                List<AIOPartyMember> needRes = partyManager.GroupAndRaid
                     .FindAll(m => m.IsDead)
                     .OrderBy(m => m.GetDistance)
                     .ToList();
                 if (needRes.Count > 0 && cast.OnFocusUnit(Resurrection, needRes[0]))
                     return;
 
-                List<AIOPartyMember> closeMembers = AIOParty.ClosePartyMembers;
+                List<AIOPartyMember> closeMembers = partyManager.ClosePartyMembers;
 
                 // Party Cure Disease
                 WoWPlayer needCureDisease = closeMembers
@@ -179,17 +166,10 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return;
         }
 
-        protected virtual void Pull()
-        {
-        }
-
-        protected virtual void CombatRotation()
-        {
-        }
-
-        protected virtual void HealerCombat()
-        {
-        }
+        protected override void Pull() { }
+        protected override void CombatRotation() { }
+        protected override void CombatNoTarget() { }
+        protected override void HealerCombat() { }
 
         protected AIOSpell Smite = new AIOSpell("Smite");
         protected AIOSpell LesserHeal = new AIOSpell("Lesser Heal");

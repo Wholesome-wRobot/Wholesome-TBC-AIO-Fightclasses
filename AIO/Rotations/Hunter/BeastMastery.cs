@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
@@ -9,6 +10,12 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 {
     public class BeastMastery : Hunter
     {
+        public BeastMastery(BaseSettings settings) : base(settings)
+        {
+            RotationType = Enums.RotationType.Solo;
+            RotationRole = Enums.RotationRole.DPS;
+        }
+
         protected override void BuffRotation()
         {
             // Aspect of the Cheetah

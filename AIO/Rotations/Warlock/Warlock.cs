@@ -1,10 +1,10 @@
-﻿using System;
+﻿using robotManager.Helpful;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
-using robotManager.Helpful;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
@@ -14,42 +14,28 @@ using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Warlock
 {
-    public class Warlock : IClassRotation
+    public class Warlock : BaseRotation
     {
-        public Enums.RotationType RotationType { get; set; }
-        public Enums.RotationRole RotationRole { get; set; }
-
-        public static WarlockSettings settings;
-
-        protected Cast cast;
-
+        protected WarlockSettings settings;
+        protected Warlock specialization;
         protected BackgroundWorker _petPulseThread = new BackgroundWorker();
         protected Stopwatch _addCheckTimer = new Stopwatch();
         protected WoWLocalPlayer Me = ObjectManager.Me;
-
         protected int _innerManaSaveThreshold = 20;
         protected bool _iCanUseWand = WTGear.HaveRangedWeaponEquipped;
         protected int _saveDrinkPercent = wManager.wManagerSetting.CurrentSetting.DrinkPercent;
 
-        protected Warlock specialization;
+        public Warlock(BaseSettings settings) : base(settings) { }
 
-        public void Initialize(IClassRotation specialization)
+        public override void Initialize(IClassRotation specialization)
         {
-            settings = WarlockSettings.Current;
-            if (settings.PartyDrinkName != "")
-                WTSettings.AddToDoNotSellList(settings.PartyDrinkName);
-            cast = new Cast(ShadowBolt, UseWand, settings);
-
             this.specialization = specialization as Warlock;
-            (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);
-            TalentsManager.InitTalents(settings);
-
+            settings = WarlockSettings.Current;
+            BaseInit(ShadowBolt.MaxRange, ShadowBolt, UseWand, settings);
             WarlockPetAndConsumables.Setup();
 
             _petPulseThread.DoWork += PetThread;
             _petPulseThread.RunWorkerAsync();
-            
-            RangeManager.SetRange(ShadowBolt.MaxRange);
 
             // Set pet mode
             if (settings.PetInPassiveWhenOOC)
@@ -63,12 +49,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             Rotation();
         }
 
-        public bool AnswerReadyCheck()
-        {
-            return true;
-        }
-
-        public void Dispose()
+        public override void Dispose()
         {
             _petPulseThread.DoWork -= PetThread;
             _petPulseThread.Dispose();
@@ -76,14 +57,19 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             FightEvents.OnFightEnd -= FightEndHandler;
             FightEvents.OnFightStart -= FightStartHandler;
             wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
-            cast.Dispose();
-            Logger.Log("Disposed");
+
+            BaseDispose();
+        }
+
+        public override bool AnswerReadyCheck()
+        {
+            return true;
         }
 
         // Pet thread
         protected void PetThread(object sender, DoWorkEventArgs args)
         {
-            while (Main.isLaunched)
+            while (Main.IsLaunched)
             {
                 try
                 {
@@ -108,7 +94,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                                 multiAggroImTargeted = true;
                                 if (unit.Guid != ObjectManager.Pet.TargetObject.Guid
                                     && ObjectManager.Pet.TargetObject.Target == ObjectManager.Pet.Guid)
-                                { 
+                                {
                                     Logger.Log($"Forcing pet aggro on {unit.Name}");
                                     Me.FocusGuid = unit.Guid;
                                     cast.PetSpell("PET_ACTION_ATTACK", true);
@@ -172,7 +158,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
         private void Rotation()
         {
-            while (Main.isLaunched)
+            while (Main.IsLaunched)
             {
                 try
                 {
@@ -194,9 +180,8 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             Logger.Log("Stopped.");
         }
 
-        protected virtual void BuffRotation()
+        protected override void BuffRotation()
         {
-            
             // Delete additional Soul Shards
             if (WTItem.CountItemStacks("Soul Shard") > settings.NumberOfSoulShards)
             {
@@ -221,7 +206,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 if (SummonFelguard.KnownSpell)
                     SummonSpell = SummonFelguard;
 
-                if (!ObjectManager.Pet.IsValid 
+                if (!ObjectManager.Pet.IsValid
                     || ObjectManager.Pet.ManaPercentage < settings.ManaThresholdResummon && SummonSpell != SummonImp
                     || ObjectManager.Pet.HealthPercent < settings.HealthThresholdResummon
                     || !SummonSpell.Name.Contains(WarlockPetAndConsumables.MyWarlockPet()))
@@ -257,14 +242,10 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             else
                 wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
         }
-
-        protected virtual void Pull()
-        {
-        }
-
-        protected virtual void CombatRotation()
-        {
-        }
+        protected override void Pull() { }
+        protected override void CombatRotation() { }
+        protected override void CombatNoTarget() { }
+        protected override void HealerCombat() { }
 
         protected AIOSpell DemonSkin = new AIOSpell("Demon Skin");
         protected AIOSpell DemonArmor = new AIOSpell("Demon Armor");

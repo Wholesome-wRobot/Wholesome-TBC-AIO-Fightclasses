@@ -1,4 +1,5 @@
 ﻿using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
@@ -7,6 +8,12 @@ namespace WholesomeTBCAIO.Rotations.Rogue
 {
     public class RogueCombatParty : Rogue
     {
+        public RogueCombatParty(BaseSettings settings) : base(settings)
+        {
+            RotationType = Enums.RotationType.Party;
+            RotationRole = Enums.RotationRole.DPS;
+        }
+
         protected override void BuffRotation()
         {
             base.BuffRotation();
@@ -25,8 +32,8 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             // Stealth
             if (!Me.HaveBuff("Stealth")
                 && ObjectManager.Target.GetDistance > 15f
-                && ObjectManager.Target.GetDistance < 25f 
-                && settings.StealthApproach 
+                && ObjectManager.Target.GetDistance < 25f
+                && settings.StealthApproach
                 && Backstab.KnownSpell
                 && (!WTEffects.HasPoisonDebuff() || settings.StealthWhenPoisoned)
                 && cast.OnSelf(Stealth))
@@ -83,7 +90,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 return;
 
             // Riposte
-            if (Riposte.IsSpellUsable 
+            if (Riposte.IsSpellUsable
                 && (Target.CreatureTypeTarget.Equals("Humanoid") || settings.RiposteAll)
                 && cast.OnTarget(Riposte))
                 return;
@@ -100,23 +107,23 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             }
 
             // Blind
-            if (Me.HealthPercent < 40 
+            if (Me.HealthPercent < 40
                 && Target.IsTargetingMe
-                && !WTEffects.HasDebuff("Recently Bandaged") 
+                && !WTEffects.HasDebuff("Recently Bandaged")
                 && _myBestBandage != null
                 && settings.UseBlindBandage
                 && cast.OnTarget(Blind))
                 return;
 
             // Evasion
-            if (Me.HealthPercent < 30 
+            if (Me.HealthPercent < 30
                 && !Me.HaveBuff("Evasion")
                 && cast.OnSelf(Evasion))
                 return;
 
             // Cloak of Shadows
-            if (Me.HealthPercent < 30 
-                && !Me.HaveBuff("Cloak of Shadows") 
+            if (Me.HealthPercent < 30
+                && !Me.HaveBuff("Cloak of Shadows")
                 && Target.HealthPercent > 50
                 && cast.OnSelf(CloakOfShadows))
                 return;
@@ -148,12 +155,12 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 return;
 
             // GhostlyStrike
-            if (Me.ComboPoint < 5 
+            if (Me.ComboPoint < 5
                 && cast.OnTarget(GhostlyStrike))
                 return;
 
             // Hemohrrage
-            if (Me.ComboPoint < 5 
+            if (Me.ComboPoint < 5
                 && cast.OnTarget(Hemorrhage))
                 return;
 

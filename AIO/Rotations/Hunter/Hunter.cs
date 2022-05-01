@@ -14,21 +14,13 @@ using Timer = robotManager.Helpful.Timer;
 
 namespace WholesomeTBCAIO.Rotations.Hunter
 {
-    public class Hunter : IClassRotation
+    public class Hunter : BaseRotation
     {
-        public Enums.RotationType RotationType { get; set; }
-        public Enums.RotationRole RotationRole { get; set; }
-        public static DateTime LastAuto { get; set; }
-
-        public static HunterSettings settings;
-        public static bool PetIsDead { get; set; }
-
+        protected HunterSettings settings;
+        protected Hunter specialization;
         protected WoWLocalPlayer Me = ObjectManager.Me;
         protected HunterFoodManager _foodManager = new HunterFoodManager();
         protected BackgroundWorker _petPulseThread = new BackgroundWorker();
-
-        protected Cast cast;
-
         protected bool _autoshotRepeating;
         protected bool RangeCheck;
         protected int _backupAttempts = 0;
@@ -36,24 +28,20 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         protected bool _canOnlyMelee = false;
         protected int _saveDrinkPercent = wManager.wManagerSetting.CurrentSetting.DrinkPercent;
 
-        protected Hunter specialization;
+        public static DateTime LastAuto { get; set; }
+        public static bool PetIsDead { get; set; }
 
-        public void Initialize(IClassRotation specialization)
+        public Hunter(BaseSettings settings) : base(settings) { }
+
+        public override void Initialize(IClassRotation specialization)
         {
-            settings = HunterSettings.Current;
-            if (settings.PartyDrinkName != "")
-                WTSettings.AddToDoNotSellList(settings.PartyDrinkName);
-
-            AIOSpell baseSpell = SerpentSting.KnownSpell ? SerpentSting : RaptorStrike;
-            cast = new Cast(baseSpell, null, settings);
-
             this.specialization = specialization as Hunter;
-            (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);
-            TalentsManager.InitTalents(settings);
+            settings = HunterSettings.Current;
+            AIOSpell baseSpell = SerpentSting.KnownSpell ? SerpentSting : RaptorStrike;
+            BaseInit(28, baseSpell, null, settings);
 
             _petPulseThread.DoWork += PetThread;
             _petPulseThread.RunWorkerAsync();
-
             FightEvents.OnFightStart += FightStartHandler;
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightLoop += FightLoopHandler;
@@ -62,12 +50,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             Rotation();
         }
 
-        public bool AnswerReadyCheck()
-        {
-            return true;
-        }
-
-        public void Dispose()
+        public override void Dispose()
         {
             wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
             _petPulseThread.DoWork -= PetThread;
@@ -75,14 +58,19 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             FightEvents.OnFightStart -= FightStartHandler;
             FightEvents.OnFightEnd -= FightEndHandler;
             FightEvents.OnFightLoop -= FightLoopHandler;
-            cast.Dispose();
-            Logger.Log("Disposed");
+
+            BaseDispose();
+        }
+
+        public override bool AnswerReadyCheck()
+        {
+            return true;
         }
 
         // Pet thread
         private void PetThread(object sender, DoWorkEventArgs args)
         {
-            while (Main.isLaunched)
+            while (Main.IsLaunched)
             {
                 try
                 {
@@ -184,7 +172,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         private void Rotation()
         {
-            while (Main.isLaunched)
+            while (Main.IsLaunched)
             {
                 try
                 {
@@ -227,17 +215,11 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             Logger.Log("Stopped.");
         }
 
-        protected virtual void BuffRotation()
-        {
-        }
-
-        protected virtual void Pull()
-        {
-        }
-
-        protected virtual void CombatRotation()
-        {
-        }
+        protected override void BuffRotation() { }
+        protected override void Pull() { }
+        protected override void CombatRotation() { }
+        protected override void CombatNoTarget() { }
+        protected override void HealerCombat() { }
 
         protected void Feed()
         {

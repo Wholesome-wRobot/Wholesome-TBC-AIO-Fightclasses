@@ -1,8 +1,8 @@
 ﻿using System;
-using wManager.Wow.Helpers;
-using wManager.Wow.ObjectManager;
 using System.IO;
 using WholesomeTBCAIO.Helpers;
+using wManager.Wow.Helpers;
+using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO
 {

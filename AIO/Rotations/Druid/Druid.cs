@@ -15,38 +15,26 @@ using Timer = robotManager.Helpful.Timer;
 
 namespace WholesomeTBCAIO.Rotations.Druid
 {
-    public class Druid : IClassRotation
+    public class Druid : BaseRotation
     {
-        public Enums.RotationType RotationType { get; set; }
-        public Enums.RotationRole RotationRole { get; set; }
-
-        protected WoWLocalPlayer Me = ObjectManager.Me;
         protected DruidSettings settings;
-
-        protected Cast cast;
-
+        protected Druid specialization;
+        protected WoWLocalPlayer Me = ObjectManager.Me;
         protected bool _fightingACaster = false;
         protected List<string> _casterEnemies = new List<string>();
         protected int bigHealComboCost;
         protected int smallHealComboCost;
         protected bool _isStealthApproching;
-
         private Timer _moveBehindTimer = new Timer();
         protected Timer _combatMeleeTimer = new Timer();
 
-        protected Druid specialization;
+        public Druid(BaseSettings settings) : base(settings) { }
 
-        public void Initialize(IClassRotation specialization)
+        public override void Initialize(IClassRotation specialization)
         {
-            RangeManager.SetRange(28);
-            settings = DruidSettings.Current;
-            if (settings.PartyDrinkName != "")
-                WTSettings.AddToDoNotSellList(settings.PartyDrinkName);
-            cast = new Cast(Wrath, null, settings);
-
             this.specialization = specialization as Druid;
-            (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);
-            TalentsManager.InitTalents(settings);
+            settings = DruidSettings.Current;
+            BaseInit(28, Wrath, null, settings);
 
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightStart += FightStartHandler;
@@ -57,25 +45,25 @@ namespace WholesomeTBCAIO.Rotations.Druid
             Rotation();
         }
 
-        public bool AnswerReadyCheck()
-        {
-            return true;
-        }
-
-        public void Dispose()
+        public override void Dispose()
         {
             FightEvents.OnFightEnd -= FightEndHandler;
             FightEvents.OnFightStart -= FightStartHandler;
             FightEvents.OnFightLoop -= FightLoopHandler;
             MovementEvents.OnMoveToPulse -= MoveToPulseHandler;
             OthersEvents.OnAddBlackListGuid -= BlackListHandler;
-            cast.Dispose();
-            Logger.Log("Disposed");
+
+            BaseDispose();
+        }
+
+        public override bool AnswerReadyCheck()
+        {
+            return true;
         }
 
         private void Rotation()
         {
-            while (Main.isLaunched)
+            while (Main.IsLaunched)
             {
                 try
                 {
@@ -91,7 +79,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     if (StatusChecker.InCombatNoTarget())
                         specialization.CombatNoTarget();
 
-                    if (AIOParty.GroupAndRaid.Any(p => p.InCombatFlagOnly))
+                    if (partyManager.GroupAndRaid.Any(p => p.InCombatFlagOnly))
                         specialization.HealerCombat();
                 }
                 catch (Exception arg)
@@ -103,25 +91,11 @@ namespace WholesomeTBCAIO.Rotations.Druid
             Logger.Log("Stopped.");
         }
 
-        protected virtual void BuffRotation()
-        {
-        }
-
-        protected virtual void Pull()
-        {
-        }
-
-        protected virtual void CombatRotation()
-        {
-        }
-
-        protected virtual void CombatNoTarget()
-        {
-        }
-
-        protected virtual void HealerCombat()
-        {
-        }
+        protected override void BuffRotation() { }
+        protected override void Pull() { }
+        protected override void CombatRotation() { }
+        protected override void CombatNoTarget() { }
+        protected override void HealerCombat() { }
 
         protected AIOSpell Attack = new AIOSpell("Attack");
         protected AIOSpell HealingTouch = new AIOSpell("Healing Touch");

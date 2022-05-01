@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 
@@ -8,6 +9,12 @@ namespace WholesomeTBCAIO.Rotations.Priest
 {
     public class HolyPriestParty : Priest
     {
+        public HolyPriestParty(BaseSettings settings) : base(settings)
+        {
+            RotationType = Enums.RotationType.Party;
+            RotationRole = Enums.RotationRole.Healer;
+        }
+
         protected override void BuffRotation()
         {
             if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
@@ -15,7 +22,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 base.BuffRotation();
 
                 // PARTY Greater heal
-                List<AIOPartyMember> needGreaterHeal = AIOParty.GroupAndRaid
+                List<AIOPartyMember> needGreaterHeal = partyManager.GroupAndRaid
                     .FindAll(m => m.IsAlive && m.HealthPercent < 50)
                     .OrderBy(m => m.HealthPercent)
                     .ToList();
@@ -23,7 +30,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     return;
 
                 // PARTY Heal
-                List<AIOPartyMember> needHeal = AIOParty.GroupAndRaid
+                List<AIOPartyMember> needHeal = partyManager.GroupAndRaid
                     .FindAll(m => m.HealthPercent < 80)
                     .OrderBy(m => m.HealthPercent)
                     .ToList();
@@ -33,7 +40,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 if (!FlashHeal.KnownSpell)
                 {
                     // PARTY Lesser Heal
-                    List<AIOPartyMember> needLesserHeal = AIOParty.GroupAndRaid
+                    List<AIOPartyMember> needLesserHeal = partyManager.GroupAndRaid
                         .FindAll(m => m.HealthPercent < 80)
                         .OrderBy(m => m.HealthPercent)
                         .ToList();
@@ -42,7 +49,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 }
 
                 // PARTY Renew
-                List<AIOPartyMember> needRenew = AIOParty.GroupAndRaid
+                List<AIOPartyMember> needRenew = partyManager.GroupAndRaid
                     .FindAll(m => m.HealthPercent < 90 && !m.HaveBuff(Renew.Name))
                     .OrderBy(m => m.HealthPercent)
                     .ToList();
@@ -50,7 +57,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     return;
 
                 // PARTY Drink
-                if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
+                if (partyManager.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
                     return;
             }
         }
@@ -61,14 +68,14 @@ namespace WholesomeTBCAIO.Rotations.Priest
             if (settings.PartyCureDisease)
             {
                 // Party Cure Disease
-                WoWPlayer needCureDisease = AIOParty.GroupAndRaid
+                WoWPlayer needCureDisease = partyManager.GroupAndRaid
                     .Find(m => WTEffects.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
             }
 
             // Fade
-            if (AIORadar.CloseUnitsTargetingMe.Count > 0
+            if (unitCache.CloseUnitsTargetingMe.Count > 0
                 && cast.OnSelf(Fade))
                 return;
 
@@ -80,7 +87,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             // Party Dispel Magic
             if (settings.PartyDispelMagic)
             {
-                WoWPlayer needDispelMagic = AIOParty.GroupAndRaid
+                WoWPlayer needDispelMagic = partyManager.GroupAndRaid
                     .Find(m => WTEffects.HasMagicDebuff(m.Name));
                 if (needDispelMagic != null && cast.OnFocusUnit(DispelMagic, needDispelMagic))
                     return;
@@ -89,7 +96,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             // PARTY Heal
             if (!FlashHeal.KnownSpell && !GreaterHealRank7.KnownSpell)
             {
-                List<AIOPartyMember> needHeal = AIOParty.GroupAndRaid
+                List<AIOPartyMember> needHeal = partyManager.GroupAndRaid
                     .FindAll(m => m.HealthPercent < 60)
                     .OrderBy(m => m.HealthPercent)
                     .ToList();
@@ -100,7 +107,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             // PARTY Lesser Heal
             if (!FlashHeal.KnownSpell)
             {
-                List<AIOPartyMember> needLesserHeal = AIOParty.GroupAndRaid
+                List<AIOPartyMember> needLesserHeal = partyManager.GroupAndRaid
                     .FindAll(m => m.HealthPercent < 80)
                     .OrderBy(m => m.HealthPercent)
                     .ToList();
@@ -109,7 +116,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             }
 
             // PARTY Flash heal
-            List<AIOPartyMember> needFlashHeal = AIOParty.GroupAndRaid
+            List<AIOPartyMember> needFlashHeal = partyManager.GroupAndRaid
                 .FindAll(m => m.HealthPercent < 40)
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
@@ -117,7 +124,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return;
 
             // PARTY Greater heal
-            List<AIOPartyMember> needGreaterHeal = AIOParty.GroupAndRaid
+            List<AIOPartyMember> needGreaterHeal = partyManager.GroupAndRaid
                 .FindAll(m => m.HealthPercent < 60)
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
@@ -125,7 +132,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return;
 
             // PARTY Shield
-            List<AIOPartyMember> neeedShield = AIOParty.GroupAndRaid
+            List<AIOPartyMember> neeedShield = partyManager.GroupAndRaid
                 .FindAll(m => m.HealthPercent < 60 && !m.HaveBuff("Power Word: Shield") && !WTEffects.HasDebuff("Weakened Soul", m.Name))
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
@@ -133,7 +140,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return;
 
             // PARTY Prayer Healing
-            List<AIOPartyMember> needPrayerOfHealing = AIOParty.GroupAndRaid
+            List<AIOPartyMember> needPrayerOfHealing = partyManager.GroupAndRaid
                 .FindAll(m => m.IsAlive && m.HealthPercent < 70)
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
@@ -141,7 +148,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return;
 
             // PARTY Prayer of Mending
-            List<AIOPartyMember> needPrayerOfMending = AIOParty.GroupAndRaid
+            List<AIOPartyMember> needPrayerOfMending = partyManager.GroupAndRaid
                 .FindAll(m => m.IsAlive && m.HealthPercent < 70 && !m.HaveBuff(PrayerOfMending.Name))
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
@@ -151,7 +158,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             // PARTY Greater Heal rank 2
             if (GreaterHealRank7.KnownSpell)
             {
-                List<AIOPartyMember> needGHeal2 = AIOParty.GroupAndRaid
+                List<AIOPartyMember> needGHeal2 = partyManager.GroupAndRaid
                     .FindAll(m => m.HealthPercent < 75)
                     .OrderBy(m => m.HealthPercent)
                     .ToList();
@@ -161,7 +168,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             // PARTY Heal
             else
             {
-                List<AIOPartyMember> needHeal70 = AIOParty.GroupAndRaid
+                List<AIOPartyMember> needHeal70 = partyManager.GroupAndRaid
                     .FindAll(m => m.HealthPercent < 80)
                     .OrderBy(m => m.HealthPercent)
                     .ToList();
@@ -171,7 +178,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
 
             // PARTY Renew
-            List<AIOPartyMember> needRenew = AIOParty.GroupAndRaid
+            List<AIOPartyMember> needRenew = partyManager.GroupAndRaid
                 .FindAll(m => m.HealthPercent < 90 && !m.HaveBuff(Renew.Name))
                 .OrderBy(m => m.HealthPercent)
                 .ToList();

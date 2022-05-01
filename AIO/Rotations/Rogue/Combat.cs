@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
@@ -10,6 +11,12 @@ namespace WholesomeTBCAIO.Rotations.Rogue
 {
     public class Combat : Rogue
     {
+        public Combat(BaseSettings settings) : base(settings)
+        {
+            RotationType = Enums.RotationType.Solo;
+            RotationRole = Enums.RotationRole.DPS;
+        }
+
         protected override void BuffRotation()
         {
             base.BuffRotation();
@@ -31,11 +38,11 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             }
 
             // Stealth
-            if (!Me.HaveBuff("Stealth") 
+            if (!Me.HaveBuff("Stealth")
                 && ObjectManager.Target.GetDistance > 15f
-                && ObjectManager.Target.GetDistance < 25f 
+                && ObjectManager.Target.GetDistance < 25f
                 && ToolBox.GetClosestHostileFrom(ObjectManager.Target, 20) == null
-                && settings.StealthApproach 
+                && settings.StealthApproach
                 && Backstab.KnownSpell
                 && (!WTEffects.HasPoisonDebuff() || settings.StealthWhenPoisoned)
                 && cast.OnSelf(Stealth))

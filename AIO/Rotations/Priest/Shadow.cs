@@ -1,13 +1,19 @@
 ﻿using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
-using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Priest
 {
     public class Shadow : Priest
     {
+        public Shadow(BaseSettings settings) : base(settings)
+        {
+            RotationType = Enums.RotationType.Solo;
+            RotationRole = Enums.RotationRole.DPS;
+        }
+
         protected override void BuffRotation()
         {
             // OOC Cure Disease

@@ -106,12 +106,12 @@ namespace WholesomeTBCAIO.Helpers
         {
             return AdvancedCast(s, stopWandAndCast, true);
         }
-        
+
         public bool OnLocation(AIOSpell s, Vector3 location, bool stopWandAndCast = true)
         {
             return AdvancedCast(s, stopWandAndCast, location: location);
         }
-        
+
         public bool OnFocusUnit(AIOSpell s, WoWUnit onUnitFocus, bool stopWandAndCast = true)
         {
             return AdvancedCast(s, stopWandAndCast, onUnitFocus: onUnitFocus);

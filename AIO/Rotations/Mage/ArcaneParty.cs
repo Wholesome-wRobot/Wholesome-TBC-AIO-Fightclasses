@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
@@ -9,6 +10,12 @@ namespace WholesomeTBCAIO.Rotations.Mage
 {
     public class ArcaneParty : Mage
     {
+        public ArcaneParty(BaseSettings settings) : base(settings)
+        {
+            RotationType = Enums.RotationType.Party;
+            RotationRole = Enums.RotationRole.DPS;
+        }
+
         protected override void BuffRotation()
         {
             if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
@@ -35,7 +42,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                     return;
 
                 // PARTY Drink
-                if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
+                if (partyManager.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
                     return;
             }
         }
@@ -70,7 +77,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // PARTY Remove Curse
             if (settings.PartyRemoveCurse)
             {
-                List<AIOPartyMember> needRemoveCurse = AIOParty.GroupAndRaid
+                List<AIOPartyMember> needRemoveCurse = partyManager.GroupAndRaid
                     .FindAll(m => WTEffects.HasCurseDebuff(m.Name))
                     .ToList();
                 if (needRemoveCurse.Count > 0 && cast.OnFocusUnit(RemoveCurse, needRemoveCurse[0]))
@@ -79,12 +86,12 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Use Mana Stone
             if (Me.ManaPercentage < 20
-                && _foodManager.UseManaStone())
+                && foodManager.UseManaStone())
                 return;
 
             // Evocation
             if (Me.ManaPercentage < 20
-                && AIORadar.CloseUnitsTargetingMe.Count <= 0
+                && unitCache.CloseUnitsTargetingMe.Count <= 0
                 && cast.OnSelf(Evocation))
             {
                 Usefuls.WaitIsCasting();
@@ -93,7 +100,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             
             // Arcane Explosion
             if (ToolBox.GetNbEnemiesClose(8f) > 2
-                && AIORadar.CloseUnitsTargetingMe.Count <= 0
+                && unitCache.CloseUnitsTargetingMe.Count <= 0
                 && Me.Mana > 10
                 && cast.OnSelf(ArcaneExplosion))
                 return;

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
 
@@ -8,6 +9,12 @@ namespace WholesomeTBCAIO.Rotations.Priest
 {
     public class ShadowParty : Priest
     {
+        public ShadowParty(BaseSettings settings) : base(settings)
+        {
+            RotationType = Enums.RotationType.Party;
+            RotationRole = Enums.RotationRole.DPS;
+        }
+
         protected override void BuffRotation()
         {
             if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
@@ -26,7 +33,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     return;
 
                 // PARTY Drink
-                if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
+                if (partyManager.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
                     return;
             }
         }
@@ -54,12 +61,12 @@ namespace WholesomeTBCAIO.Rotations.Priest
             WoWUnit Target = ObjectManager.Target;
 
             // Fade
-            if (AIORadar.CloseUnitsTargetingMe.Count > 0
+            if (unitCache.CloseUnitsTargetingMe.Count > 0
                 && cast.OnSelf(Fade))
                 return;
 
             // Inner Focus  + spell
-            if (Me.HaveBuff("Inner Focus") 
+            if (Me.HaveBuff("Inner Focus")
                 && Target.HealthPercent > 80)
             {
                 cast.OnTarget(DevouringPlague);
@@ -84,7 +91,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             if (settings.PartyCureDisease)
             {
                 // PARTY Cure Disease
-                WoWPlayer needCureDisease = AIOParty.GroupAndRaid
+                WoWPlayer needCureDisease = partyManager.GroupAndRaid
                     .Find(m => WTEffects.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
@@ -93,7 +100,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             // PARTY Dispel Magic
             if (settings.PartyDispelMagic)
             {
-                WoWPlayer needDispelMagic = AIOParty.GroupAndRaid
+                WoWPlayer needDispelMagic = partyManager.GroupAndRaid
                     .Find(m => WTEffects.HasMagicDebuff(m.Name));
                 if (needDispelMagic != null && cast.OnFocusUnit(DispelMagic, needDispelMagic))
                     return;
@@ -135,14 +142,14 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return;
 
             // PARTY Shadow Word Pain
-            List<WoWUnit> enemiesWithoutPain = AIOParty.EnemiesFighting
+            List<WoWUnit> enemiesWithoutPain = partyManager.EnemiesFighting
                 .Where(e => e.InCombatFlagOnly && !e.HaveBuff("Shadow Word: Pain"))
                 .OrderBy(e => e.GetDistance)
                 .ToList();
             if (enemiesWithoutPain.Count > 0
-               && AIOParty.EnemiesFighting.Count - enemiesWithoutPain.Count < 3
+               && partyManager.EnemiesFighting.Count - enemiesWithoutPain.Count < 3
                && cast.OnFocusUnit(ShadowWordPain, enemiesWithoutPain[0]))
-               return;
+                return;
 
             // Mind Blast
             if (Me.ManaPercentage > settings.PartyMindBlastThreshold

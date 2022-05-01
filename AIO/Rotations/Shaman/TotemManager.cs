@@ -1,6 +1,8 @@
 ﻿using robotManager.Helpful;
 using System.Collections.Generic;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Managers.PartyManager;
+using WholesomeTBCAIO.Settings;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 
@@ -12,6 +14,8 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         private Vector3 _lastTotemPosition = null;
         private Vector3 _fireTotemPosition = null;
         private Cast _cast;
+        private ShamanSettings _settings;
+        private IPartyManager _partyManager;
 
         private AIOSpell TotemicCall = new AIOSpell("Totemic Call");
         private AIOSpell StoneclawTotem = new AIOSpell("Stoneclaw Totem");
@@ -25,9 +29,11 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         private AIOSpell TotemOfWrath = new AIOSpell("Totem of Wrath");
         private AIOSpell ManaTideTotem = new AIOSpell("Mana Tide Totem");
 
-        public TotemManager(Cast cast)
+        public TotemManager(Cast cast, ShamanSettings settings, IPartyManager partyManager)
         {
             _cast = cast;
+            _settings = settings;
+            _partyManager = partyManager;
         }
 
         public bool CastTotems(IClassRotation spec)
@@ -45,7 +51,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
         public void CheckForTotemicCall()
         {
-            if (Shaman.settings.UseTotemicCall)
+            if (_settings.UseTotemicCall)
             {
                 bool haveFireTotem = Lua.LuaDoString<string>(@"local _, totemName, _, _ = GetTotemInfo(1); return totemName;").Contains("Totem");
                 bool haveEarthTotem = Lua.LuaDoString<string>(@"local _, totemName, _, _ = GetTotemInfo(2); return totemName;").Contains("Totem");
@@ -88,11 +94,11 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     return true;
             }
 
-            if (Shaman.settings.UseEarthTotems)
+            if (_settings.UseEarthTotems)
             {
                 // Strenght of Earth totem
                 if ((spec is Enhancement || spec is EnhancementParty || spec is ShamanRestoParty)
-                    && (!Shaman.settings.UseStoneSkinTotem || !StoneskinTotem.KnownSpell)
+                    && (!_settings.UseStoneSkinTotem || !StoneskinTotem.KnownSpell)
                     && !Me.HaveBuff("Strength of Earth")
                     && !currentEarthTotem.Contains("Stoneclaw Totem")
                     && !currentEarthTotem.Contains("Earth Elemental Totem")
@@ -101,7 +107,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     return true;
 
                 // Stoneskin Totem
-                if ((Shaman.settings.UseStoneSkinTotem || !StrengthOfEarthTotem.KnownSpell || spec is Elemental || (spec.RotationType == Enums.RotationType.Solo && ObjectManager.GetNumberAttackPlayer() > 1))
+                if ((_settings.UseStoneSkinTotem || !StrengthOfEarthTotem.KnownSpell || spec is Elemental || (spec.RotationType == Enums.RotationType.Solo && ObjectManager.GetNumberAttackPlayer() > 1))
                     && !Me.HaveBuff("Stoneskin")
                     && !currentEarthTotem.Contains("Stoneclaw Totem")
                     && !currentEarthTotem.Contains("Earth Elemental Totem")
@@ -114,7 +120,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
         private bool CastFireTotem(IClassRotation spec)
         {
-            if (Shaman.settings.UseFireTotems)
+            if (_settings.UseFireTotems)
             {
                 string currentFireTotem = Lua.LuaDoString<string>
                     (@"local haveTotem, totemName, startTime, duration = GetTotemInfo(1); return totemName;");
@@ -124,7 +130,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     && Me.ManaPercentage > 50
                     && ObjectManager.Target.GetDistance < 10
                     && !currentFireTotem.Contains("Magma Totem")
-                    && Shaman.settings.UseMagmaTotem
+                    && _settings.UseMagmaTotem
                     && Cast(MagmaTotem))
                     return true;
 
@@ -132,7 +138,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 if ((!currentFireTotem.Contains("Searing Totem") || _fireTotemPosition == null || Me.Position.DistanceTo(_fireTotemPosition) > 15f)
                     && ObjectManager.Target.GetDistance < 15
                     && !currentFireTotem.Contains("Magma Totem")
-                    && (!Shaman.settings.UseTotemOfWrath || !TotemOfWrath.KnownSpell)
+                    && (!_settings.UseTotemOfWrath || !TotemOfWrath.KnownSpell)
                     && Cast(SearingTotem))
                 {
                     _fireTotemPosition = Me.Position;
@@ -142,7 +148,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 // Totem of Wrath
                 if (!currentFireTotem.Contains("Totem of Wrath")
                     && !Me.HaveBuff("Totem of Wrath")
-                    && Shaman.settings.UseTotemOfWrath
+                    && _settings.UseTotemOfWrath
                     && Cast(TotemOfWrath))
                     return true;
 
@@ -153,7 +159,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
         private bool CastAirTotem(IClassRotation spec)
         {
-            if (Shaman.settings.UseAirTotems)
+            if (_settings.UseAirTotems)
             {
                 string currentAirTotem = Lua.LuaDoString<string>
                     (@"local _, totemName, _, _ = GetTotemInfo(4); return totemName;");
@@ -169,7 +175,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
         private bool CastWaterTotem(IClassRotation spec)
         {
-            if (Shaman.settings.UseWaterTotems)
+            if (_settings.UseWaterTotems)
             {
                 string currentWaterTotem = Lua.LuaDoString<string>
                     (@"local _, totemName, _, _ = GetTotemInfo(3); return totemName;");
@@ -177,7 +183,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 // Mana Tide Totem
                 if (ManaTideTotem.KnownSpell)
                 {
-                    List<AIOPartyMember> alliesNeedingMana = AIOParty.GroupAndRaid
+                    List<AIOPartyMember> alliesNeedingMana = _partyManager.GroupAndRaid
                         .FindAll(a => a.ManaPercentage < 20);
                     if ((alliesNeedingMana.Count > 1 || Me.ManaPercentage < 10)
                         && Cast(ManaTideTotem))

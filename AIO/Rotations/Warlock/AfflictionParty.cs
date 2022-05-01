@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.Enums;
 using wManager.Wow.Helpers;
@@ -11,6 +12,12 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 {
     public class AfflictionParty : Warlock
     {
+        public AfflictionParty(BaseSettings settings) : base(settings)
+        {
+            RotationType = Enums.RotationType.Party;
+            RotationRole = Enums.RotationRole.DPS;
+        }
+
         protected override void BuffRotation()
         {
             if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
@@ -80,7 +87,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                     && WTItem.HaveOneInList(WarlockPetAndConsumables.SOULSTONES)
                     && ToolBox.GetItemCooldown(WarlockPetAndConsumables.SOULSTONES) <= 0)
                 {
-                    WoWPlayer noSoulstone = AIOParty.GroupAndRaid
+                    WoWPlayer noSoulstone = partyManager.GroupAndRaid
                         .Find(m => !m.HaveBuff("Soulstone Resurrection")
                             && m.GetDistance < 20
                             && m.Name != "Unknown"
@@ -103,7 +110,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 }
 
                 // PARTY Drink
-                if (AIOParty.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
+                if (partyManager.PartyDrink(settings.PartyDrinkName, settings.PartyDrinkThreshold))
                     return;
 
                 // Life Tap
@@ -123,10 +130,10 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 Lua.LuaDoString("PetAttack();");
 
             // PARTY Seed of Corruption
-            if (AIOParty.EnemiesFighting.Count >= settings.PartySeedOfCorruptionAmount
+            if (partyManager.EnemiesFighting.Count >= settings.PartySeedOfCorruptionAmount
                 && SeedOfCorruption.KnownSpell)
             {
-                List<WoWUnit> enemiesWithoutSeedOfCorruption = AIOParty.EnemiesFighting
+                List<WoWUnit> enemiesWithoutSeedOfCorruption = partyManager.EnemiesFighting
                     .Where(e => !e.HaveBuff("Seed of Corruption"))
                     .OrderBy(e => e.GetDistance)
                     .ToList();
@@ -188,7 +195,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             // Soulshatter
             if (SoulShatter.IsSpellUsable
                 && settings.UseSoulShatter
-                && AIORadar.CloseUnitsTargetingMe.Count > 0
+                && unitCache.CloseUnitsTargetingMe.Count > 0
                 && WTItem.CountItemStacks("Soul Shard") > 0
                 && cast.OnSelf(SoulShatter))
                 return;
@@ -206,10 +213,10 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 return;
 
             // PARTY Seed of Corruption
-            if (AIOParty.EnemiesFighting.Count >= settings.PartySeedOfCorruptionAmount
+            if (partyManager.EnemiesFighting.Count >= settings.PartySeedOfCorruptionAmount
                 && SeedOfCorruption.KnownSpell)
             {
-                List<WoWUnit> enemiesWithoutSeedOfCorruption = AIOParty.EnemiesFighting
+                List<WoWUnit> enemiesWithoutSeedOfCorruption = partyManager.EnemiesFighting
                     .Where(e => !e.HaveBuff("Seed of Corruption"))
                     .OrderBy(e => e.GetDistance)
                     .ToList();
@@ -225,65 +232,65 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && settings.PartyCurseOfTheElements)
             {
                 // PARTY Curse of the Elements
-                List<WoWUnit> enemiesWithoutCurseOfTheElements = AIOParty.EnemiesFighting
+                List<WoWUnit> enemiesWithoutCurseOfTheElements = partyManager.EnemiesFighting
                     .Where(e => !e.HaveBuff("Curse of the Elements"))
                     .OrderBy(e => e.GetDistance)
                     .ToList();
                 if (enemiesWithoutCurseOfTheElements.Count > 0
-                   && AIOParty.EnemiesFighting.Count - enemiesWithoutCurseOfTheElements.Count < 3
+                   && partyManager.EnemiesFighting.Count - enemiesWithoutCurseOfTheElements.Count < 3
                    && cast.OnFocusUnit(CurseOfTheElements, enemiesWithoutCurseOfTheElements[0]))
                     return;
             }
             else
             {
                 // PARTY Curse of Agony
-                List<WoWUnit> enemiesWithoutCurseOfAgony = AIOParty.EnemiesFighting
+                List<WoWUnit> enemiesWithoutCurseOfAgony = partyManager.EnemiesFighting
                     .Where(e => !e.HaveBuff("Curse of Agony"))
                     .OrderBy(e => e.GetDistance)
                     .ToList();
                 if (enemiesWithoutCurseOfAgony.Count > 0
-                   && AIOParty.EnemiesFighting.Count - enemiesWithoutCurseOfAgony.Count < 3
+                   && partyManager.EnemiesFighting.Count - enemiesWithoutCurseOfAgony.Count < 3
                    && cast.OnFocusUnit(CurseOfAgony, enemiesWithoutCurseOfAgony[0]))
                     return;
             }
 
             // PARTY Unstable Affliction
-            List<WoWUnit> enemiesWithoutUnstableAff = AIOParty.EnemiesFighting
+            List<WoWUnit> enemiesWithoutUnstableAff = partyManager.EnemiesFighting
                 .Where(e => !e.HaveBuff("Unstable Affliction"))
                 .OrderBy(e => e.GetDistance)
                 .ToList();
             if (enemiesWithoutUnstableAff.Count > 0
-               && AIOParty.EnemiesFighting.Count - enemiesWithoutUnstableAff.Count < 3
+               && partyManager.EnemiesFighting.Count - enemiesWithoutUnstableAff.Count < 3
                && cast.OnFocusUnit(UnstableAffliction, enemiesWithoutUnstableAff[0]))
                 return;
 
             // PARTY Corruption
-            List<WoWUnit> enemiesWithoutCorruption = AIOParty.EnemiesFighting
+            List<WoWUnit> enemiesWithoutCorruption = partyManager.EnemiesFighting
                 .Where(e => !e.HaveBuff("Corruption") && !e.HaveBuff("Seed of Corruption"))
                 .OrderBy(e => e.GetDistance)
                 .ToList();
             if (enemiesWithoutCorruption.Count > 0
-               && AIOParty.EnemiesFighting.Count - enemiesWithoutCorruption.Count < 3
+               && partyManager.EnemiesFighting.Count - enemiesWithoutCorruption.Count < 3
                && cast.OnFocusUnit(Corruption, enemiesWithoutCorruption[0]))
                 return;
 
             // PARTY Immolate
-            List<WoWUnit> enemiesWithoutImmolate = AIOParty.EnemiesFighting
+            List<WoWUnit> enemiesWithoutImmolate = partyManager.EnemiesFighting
                 .Where(e => !e.HaveBuff("Immolate"))
                 .OrderBy(e => e.GetDistance)
                 .ToList();
             if (enemiesWithoutImmolate.Count > 0
-               && AIOParty.EnemiesFighting.Count - enemiesWithoutImmolate.Count < 3
+               && partyManager.EnemiesFighting.Count - enemiesWithoutImmolate.Count < 3
                && cast.OnFocusUnit(Immolate, enemiesWithoutImmolate[0]))
                 return;
 
             // PARTY Siphon Life
-            List<WoWUnit> enemiesWithoutSiphonLife = AIOParty.EnemiesFighting
+            List<WoWUnit> enemiesWithoutSiphonLife = partyManager.EnemiesFighting
                 .Where(e => !e.HaveBuff("Siphon Life"))
                 .OrderBy(e => e.GetDistance)
                 .ToList();
             if (enemiesWithoutSiphonLife.Count > 0
-               && AIOParty.EnemiesFighting.Count - enemiesWithoutSiphonLife.Count < 3
+               && partyManager.EnemiesFighting.Count - enemiesWithoutSiphonLife.Count < 3
                && cast.OnFocusUnit(SiphonLife, enemiesWithoutSiphonLife[0]))
                 return;
 

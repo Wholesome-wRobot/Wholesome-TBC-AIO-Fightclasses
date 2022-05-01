@@ -1,53 +1,41 @@
-﻿using System;
-using System.Threading;
-using robotManager.Helpful;
-using wManager.Events;
-using wManager.Wow.Helpers;
-using wManager.Wow.ObjectManager;
+﻿using robotManager.Helpful;
+using System;
 using System.Collections.Generic;
-using WholesomeTBCAIO.Settings;
-using WholesomeTBCAIO.Helpers;
 using System.ComponentModel;
-using Timer = robotManager.Helpful.Timer;
 using System.Linq;
+using System.Threading;
+using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
+using wManager.Events;
+using wManager.Wow.ObjectManager;
+using Timer = robotManager.Helpful.Timer;
 
 namespace WholesomeTBCAIO.Rotations.Shaman
 {
-    public class Shaman : IClassRotation
+    public class Shaman : BaseRotation
     {
-        public Enums.RotationType RotationType { get; set; }
-        public Enums.RotationRole RotationRole { get; set; }
 
-        public static ShamanSettings settings;
-        protected Cast cast;
-
+        protected ShamanSettings settings;
+        protected Shaman specialization;
         protected TotemManager _totemManager;
-
         protected WoWLocalPlayer Me = ObjectManager.Me;
-
         protected bool _fightingACaster = false;
         protected float _pullRange = 28f;
         protected int _lowManaThreshold = 20;
         protected int _mediumManaThreshold = 50;
         protected List<string> _casterEnemies = new List<string>();
-
         private Timer _moveBehindTimer = new Timer();
         protected Timer _combatMeleeTimer = new Timer();
 
-        protected Shaman specialization;
+        public Shaman(BaseSettings settings) : base(settings) { }
 
-        public void Initialize(IClassRotation specialization)
+        public override void Initialize(IClassRotation specialization)
         {
-            settings = ShamanSettings.Current;
-            if (settings.PartyDrinkName != "")
-                WTSettings.AddToDoNotSellList(settings.PartyDrinkName);
-            cast = new Cast(LightningBolt, null, settings);
-            _totemManager = new TotemManager(cast);
-
             this.specialization = specialization as Shaman;
-            (RotationType, RotationRole) = ToolBox.GetRotationType(specialization);
-            TalentsManager.InitTalents(settings);
+            settings = ShamanSettings.Current;
+            BaseInit(_pullRange, LightningBolt, null, settings);
+            _totemManager = new TotemManager(cast, settings, partyManager);
 
             WTSettings.AddToDoNotSellList(new List<string>
             {
@@ -57,8 +45,6 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 "Fire Totem"
             });
 
-            RangeManager.SetRange(_pullRange);
-
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightStart += FightStartHandler;
             FightEvents.OnFightLoop += FightLoopHandler;
@@ -66,23 +52,23 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             Rotation();
         }
 
-        public bool AnswerReadyCheck()
-        {
-            return true;
-        }
-
-        public void Dispose()
+        public override void Dispose()
         {
             FightEvents.OnFightEnd -= FightEndHandler;
             FightEvents.OnFightStart -= FightStartHandler;
             FightEvents.OnFightLoop -= FightLoopHandler;
-            cast.Dispose();
-            Logger.Log("Disposed");
+
+            BaseDispose();
+        }
+
+        public override bool AnswerReadyCheck()
+        {
+            return true;
         }
 
         private void Rotation()
         {
-            while (Main.isLaunched)
+            while (Main.IsLaunched)
             {
                 try
                 {
@@ -101,7 +87,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     if (StatusChecker.InCombat())
                         specialization.CombatRotation();
 
-                    if (AIOParty.GroupAndRaid.Any(p => p.InCombatFlagOnly && p.GetDistance < 50))
+                    if (partyManager.GroupAndRaid.Any(p => p.InCombatFlagOnly && p.GetDistance < 50))
                         specialization.HealerCombat();
                 }
                 catch (Exception arg)
@@ -113,12 +99,12 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             Logger.Log("Stopped.");
         }
 
-        protected virtual void BuffRotation()
+        protected override void BuffRotation()
         {
             if (specialization.RotationType == Enums.RotationType.Party)
             {
                 // PARTY Resurrection
-                List<AIOPartyMember> needRes = AIOParty.GroupAndRaid
+                List<AIOPartyMember> needRes = partyManager.GroupAndRaid
                     .FindAll(m => m.IsDead)
                     .OrderBy(m => m.GetDistance)
                     .ToList();
@@ -127,17 +113,10 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             }
         }
 
-        protected virtual void Pull()
-        {
-        }
-
-        protected virtual void CombatRotation()
-        {
-        }
-
-        protected virtual void HealerCombat()
-        {
-        }
+        protected override void Pull() { }
+        protected override void CombatRotation() { }
+        protected override void CombatNoTarget() { }
+        protected override void HealerCombat() { }
 
         protected AIOSpell LightningBolt = new AIOSpell("Lightning Bolt");
         protected AIOSpell LightningBoltRank1 = new AIOSpell("Lightning Bolt", 1);
