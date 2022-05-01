@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using WholesomeTBCAIO.Helpers;
 using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
@@ -76,16 +77,12 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                     return;
             }
 
-            if (tanks.Count > 0 && aliveMembers.Count > 0)
+            // High priority heal
+            var priorityTanks = ToolBox.TanksNeedPriorityHeal(tanks, aliveMembers, settings.PartyTankHealingPriority);
+            foreach (var tank in priorityTanks)
             {
-                var lowestTankHealth = tanks[0].HealthPercent;
-                // Virtually increasing missing HP based on user settings
-                var virtualHP = 100 - (100.0 - lowestTankHealth) * (1.0 + ((float)settings.PartyTankHealingPriority) / 100);
-                if (virtualHP < aliveMembers[0].HealthPercent)
-                {
-                    if (SingleTargetHeal(tanks[0]))
-                        return;
-                }
+                if (SingleTargetHeal(tank))
+                    return;
             }
 
             // Single target heal
@@ -141,7 +138,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             {
                 // Divine Favor
                 if (!Me.HaveBuff("Divine Favor") && cast.OnSelf(DivineFavor))
-                    return true;
+                    Thread.Sleep(50); // Divine Favor causes no GCD to occour, no need to return here
                 if (cast.OnFocusUnit(HolyLight, unit))
                     return true;
             }

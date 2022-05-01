@@ -105,6 +105,28 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     return;
             }
 
+            // High priority single target heal
+            var tanks = AIOParty.TargetedByEnemies
+                .FindAll(a => a.IsAlive && a.GetDistance < 60)
+                .ToList();
+            var priorityTanks = ToolBox.TanksNeedPriorityHeal(tanks, membersByMissingHealth, settings.PartyTankHealingPriority);
+            foreach (var tank in priorityTanks)
+            {
+                if (SingleTargetHeal(tank))
+                    return;
+            }
+
+            // Keep Renew on tank
+            if (settings.PartyKeepRenewOnTank)
+            {
+                foreach (var tank in tanks)
+                {
+                    if (!tank.HaveBuff(Renew.Name) && cast.OnFocusUnit(Renew, tank))
+                        return;
+                }
+            }
+
+            // Normal single target heal on lowest health group member
             foreach (var member in membersByMissingHealth)
             {
                 if (SingleTargetHeal(member))
@@ -112,26 +134,26 @@ namespace WholesomeTBCAIO.Rotations.Priest
             }
         }
 
-        private bool SingleTargetHeal(WoWPlayer player, bool combat = true)
+        private bool SingleTargetHeal(WoWUnit unit, bool combat = true)
         {
-            if (player.HealthPercent < 30 && cast.OnFocusUnit(FlashHeal, player))
+            if (unit.HealthPercent < 30 && cast.OnFocusUnit(FlashHeal, unit))
                 return true;
             if (settings.UsePowerWordShield
-                && player.HealthPercent < 50
-                && player.RagePercentage <= 0
-                && player.HaveBuff("Power Word: Shield")
-                && !WTEffects.HasDebuff("Weakened Soul", player.Name)
-                && cast.OnFocusUnit(PowerWordShield, player))
+                && unit.HealthPercent < 50
+                && unit.RagePercentage <= 0
+                && !unit.HaveBuff("Power Word: Shield")
+                && !WTEffects.HasDebuff("Weakened Soul", unit.Name)
+                && cast.OnFocusUnit(PowerWordShield, unit))
                 return true;
-            if (player.HealthPercent < 60 && cast.OnFocusUnit(GreaterHeal, player))
+            if (unit.HealthPercent < 60 && cast.OnFocusUnit(GreaterHeal, unit))
                 return true;
-            if (player.HealthPercent < 80 && !player.HaveBuff(Renew.Name) && cast.OnFocusUnit(Renew, player))
+            if (unit.HealthPercent < 80 && !unit.HaveBuff(Renew.Name) && cast.OnFocusUnit(Renew, unit))
                 return true;
-            if (player.HealthPercent < 95 && !player.HaveBuff(Renew.Name) && cast.OnFocusUnit(RenewRank8, player))
+            if (unit.HealthPercent < 95 && !unit.HaveBuff(Renew.Name) && cast.OnFocusUnit(RenewRank8, unit))
                 return true;
-            if (combat && player.HealthPercent < 100)
+            if (combat && unit.HealthPercent < 100)
             {
-                if (cast.OnFocusUnit(PrayerOfMending, player))
+                if (cast.OnFocusUnit(PrayerOfMending, unit))
                     return true;
             }
             return false;
