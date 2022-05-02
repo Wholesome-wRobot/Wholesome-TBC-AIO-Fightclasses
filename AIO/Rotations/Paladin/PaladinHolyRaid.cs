@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
@@ -40,10 +41,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 .ToList();
             double groupHealthAverage = aliveMembers
                 .Aggregate(0.0, (s, a) => s + a.HealthPercent) / (double)aliveMembers.Count;
-            var tanks = partyManager.TargetedByEnemies
-                .FindAll(a => a.IsAlive && a.GetDistance < 60)
-                .ToList();
-
+            
             // Divine Illumination
             if (groupHealthAverage < 70
                 && cast.OnSelf(DivineIllumination))
@@ -83,18 +81,20 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                     return;
             }
 
-            if (tanks.Count > 0 && aliveMembers.Count > 0)
+            // High priority heal
+            if (settings.PartyTankHealingPriority > 0)
             {
-                var lowestTankHealth = tanks[0].HealthPercent;
-                // Virtually increasing missing HP based on user settings
-                var virtualHP = 100 - (100.0 - lowestTankHealth) * (1.0 + ((float)settings.PartyTankHealingPriority) / 100);
-                if (virtualHP < aliveMembers[0].HealthPercent)
+                var tanks = partyManager.TargetedByEnemies
+                .FindAll(a => a.IsAlive && a.GetDistance < 60)
+                .ToList();
+                var priorityTanks = partyManager.TanksNeedPriorityHeal(tanks, aliveMembers, settings.PartyTankHealingPriority);
+                foreach (var tank in priorityTanks)
                 {
-                    if (SingleTargetHeal(tanks[0]))
+                    if (SingleTargetHeal(tank))
                         return;
                 }
             }
-
+            
             // Single target heal
             if (aliveMembers.Count > 0 && SingleTargetHeal(aliveMembers[0]))
                 return;
@@ -148,7 +148,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             {
                 // Divine Favor
                 if (!Me.HaveBuff("Divine Favor") && cast.OnSelf(DivineFavor))
-                    return true;
+                    Thread.Sleep(50); // Divine Favor causes no GCD to occour, no need to return here
                 if (cast.OnFocusUnit(HolyLight, unit))
                     return true;
             }
