@@ -108,6 +108,15 @@
     <Compile Include="Managers\TalentManager\ITalentManager.cs" />
     <Compile Include="Managers\PartyManager\PartyManager.cs" />
     <Compile Include="Managers\TalentManager\TalentManager.cs" />
+    <Compile Include="Managers\UnitCache\Entities\CachedAura.cs" />
+    <Compile Include="Managers\UnitCache\Entities\CachedWoWLocalPlayer.cs" />
+    <Compile Include="Managers\UnitCache\Entities\CachedWoWPlayer.cs" />
+    <Compile Include="Managers\UnitCache\Entities\CachedWoWUnit.cs" />
+    <Compile Include="Managers\UnitCache\Entities\IAura.cs" />
+    <Compile Include="Managers\UnitCache\Entities\IGroupPlayer.cs" />
+    <Compile Include="Managers\UnitCache\Entities\IWoWLocalPlayer.cs" />
+    <Compile Include="Managers\UnitCache\Entities\IWoWPlayer.cs" />
+    <Compile Include="Managers\UnitCache\Entities\IWoWUnit.cs" />
     <Compile Include="Managers\UnitCache\IUnitCache.cs" />
     <Compile Include="Managers\UnitCache\UnitCache.cs" />
     <Compile Include="Rotations\BaseRotation.cs" />

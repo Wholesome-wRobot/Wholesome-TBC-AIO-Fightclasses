@@ -35,7 +35,6 @@ namespace WholesomeTBCAIO.Settings
             PartyHolyLightPercentThreshold = 65;
             PartyHolyLightValueThreshold = 4000;
             PartyHolySealOfLight = false;
-            PartyDetectSpecs = false;
             PartyAvengersShieldnRank1 = false;
             PartyConsecrationRank1 = false;
             PartyHolyShieldRank1 = false;
@@ -112,12 +111,6 @@ namespace WholesomeTBCAIO.Settings
         [DisplayName("Cleanse")]
         [Description("Use Cleanse in Party combat")]
         public bool PartyCleanse { get; set; }
-
-        [Category("Party")]
-        [DefaultValue(false)]
-        [DisplayName("Detect party specs")]
-        [Description("Allow party specs detection. By enabling this setting, your character will inspect every group member in range in order to detect its spcialization and select the best buffs. Be aware that it can take some time due to the TBC server API forcing a cooldown on inspection talent detection.")]
-        public bool PartyDetectSpecs { get; set; }
 
         // HOLY
         [Category("Holy")]

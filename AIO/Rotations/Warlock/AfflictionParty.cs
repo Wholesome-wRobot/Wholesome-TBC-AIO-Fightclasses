@@ -195,7 +195,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             // Soulshatter
             if (SoulShatter.IsSpellUsable
                 && settings.UseSoulShatter
-                && unitCache.CloseUnitsTargetingMe.Count > 0
+                && unitCache.EnemyUnitsTargetingPlayer.Length > 0
                 && WTItem.CountItemStacks("Soul Shard") > 0
                 && cast.OnSelf(SoulShatter))
                 return;

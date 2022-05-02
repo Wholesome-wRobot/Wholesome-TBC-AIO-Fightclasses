@@ -16,7 +16,6 @@ namespace WholesomeTBCAIO.Managers.PartyManager
         private List<AIOPartyMember> _groupAndRaid = new List<AIOPartyMember>();
         private Dictionary<int, List<AIOPartyMember>> _raidGroups = new Dictionary<int, List<AIOPartyMember>>();
         private Dictionary<string, string> _partySpecsCache = new Dictionary<string, string>();
-        private bool _activateSpecRecords;
         private bool _inspectTalentReady;
         private IUnitCache _unitCache;
 
@@ -59,7 +58,7 @@ namespace WholesomeTBCAIO.Managers.PartyManager
             {
                 lock (_partyLock)
                 {
-                    return _unitCache.AllUnits.FindAll(unit => unit.IsAttackable && GroupAndRaid.Exists(member => unit.Target == member.Guid));
+                    return ObjectManager.GetObjectWoWUnit().FindAll(unit => unit.IsAttackable && GroupAndRaid.Exists(member => unit.Target == member.Guid));
                 }
             }
         }
@@ -93,15 +92,6 @@ namespace WholesomeTBCAIO.Managers.PartyManager
         public void Dispose()
         {
             EventsLuaWithArgs.OnEventsLuaStringWithArgs -= EventsWithArgsHandler;
-        }
-
-        public void ActivateSpecRecords()
-        {
-            if (!_activateSpecRecords)
-            {
-                _activateSpecRecords = true;
-                RecordPartySpecs();
-            }
         }
 
         private void UpdateGroupAndRaid()
@@ -180,11 +170,6 @@ namespace WholesomeTBCAIO.Managers.PartyManager
                             }
                         }
                     }
-                }
-
-                if (_activateSpecRecords)
-                {
-                    RecordPartySpecs();
                 }
             }
         }
@@ -311,6 +296,7 @@ namespace WholesomeTBCAIO.Managers.PartyManager
                 {
                     ItemsManager.UseItemByNameOrId(drinkName);
                     Logger.Log($"[Party drink] Using {drinkName}");
+                    Thread.Sleep(2000);
                     return true;
                 }
                 else

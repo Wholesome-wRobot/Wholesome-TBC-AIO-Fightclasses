@@ -1,12 +1,18 @@
 ﻿using System.Collections.Generic;
-using wManager.Wow.ObjectManager;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 
 namespace WholesomeTBCAIO.Managers.UnitCache
 {
     public interface IUnitCache : ICycleable
     {
-        List<WoWUnit> UnitsTargetingMe { get; }
-        List<WoWUnit> AllUnits { get; }
-        List<WoWUnit> CloseUnitsTargetingMe { get; }
+        IWoWLocalPlayer Me { get; }
+        IWoWUnit Target { get; }
+        IWoWUnit Pet { get; }
+
+        IWoWUnit[] EnemyUnitsNearPlayer { get; }
+        IWoWUnit[] EnemyUnitsTargetingPlayer { get; }
+
+        IWoWPlayer[] Group { get; }
+        Dictionary<int, List<IWoWPlayer>> Raid { get; }
     }
 }

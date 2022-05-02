@@ -90,8 +90,8 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 return;
 
             // Evocation
-            if (Me.ManaPercentage < 20
-                && unitCache.CloseUnitsTargetingMe.Count <= 0
+            if (unitCache.Me.ManaPercent < 20
+                && unitCache.EnemyUnitsTargetingPlayer.Length <= 0
                 && cast.OnSelf(Evocation))
             {
                 Usefuls.WaitIsCasting();
@@ -100,7 +100,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             
             // Arcane Explosion
             if (ToolBox.GetNbEnemiesClose(8f) > 2
-                && unitCache.CloseUnitsTargetingMe.Count <= 0
+                && unitCache.EnemyUnitsTargetingPlayer.Length <= 0
                 && Me.Mana > 10
                 && cast.OnSelf(ArcaneExplosion))
                 return;

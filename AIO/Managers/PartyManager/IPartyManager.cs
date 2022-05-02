@@ -12,7 +12,6 @@ namespace WholesomeTBCAIO.Managers.PartyManager
         List<WoWUnit> EnemiesFighting { get; }
         List<WoWUnit> TargetedByEnemies { get; }
 
-        void ActivateSpecRecords();
         void SwitchTarget(Cast cast, AIOSpell spell);
         bool PartyDrink(string drinkName, int threshold);
     }

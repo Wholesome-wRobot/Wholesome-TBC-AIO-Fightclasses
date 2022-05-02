@@ -30,7 +30,7 @@ public class Main : ICustomClass
     private IClassRotation _selectedRotation;
     public static string wowClass = ObjectManager.Me.WowClass.ToString();
     public static int humanReflexTime = 500;
-    public static string version = "3.1.07"; // Must match version in Version.txt
+    public static string version = "3.2.00"; // Must match version in Version.txt
     public static bool HMPrunningAway = false;
 
     public static bool IsLaunched { get; private set; }
@@ -226,13 +226,6 @@ public class Main : ICustomClass
             && args[0] == "player"
             && args[1] == "Auto Shot")
             Hunter.LastAuto = DateTime.Now;
-
-        if (_selectedRotation is Paladin
-            && args.Count >= 10
-            && args[1] == "SPELL_CAST_SUCCESS"
-            && id == "COMBAT_LOG_EVENT_UNFILTERED"
-            && (args[9] == "Blessing of Might" || args[9] == "Blessing of Kings" || args[9] == "Blessing of Wisdom"))
-            Paladin.RecordBlessingCast(args[3], args[9], args[6]);
 
         if (id == "UI_ERROR_MESSAGE")
         {

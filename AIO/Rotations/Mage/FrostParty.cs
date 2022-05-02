@@ -87,7 +87,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Evocation
             if (Me.ManaPercentage < 15
-                && unitCache.CloseUnitsTargetingMe.Count <= 0
+                && unitCache.EnemyUnitsTargetingPlayer.Length <= 0
                 && cast.OnSelf(Evocation))
             {
                 Usefuls.WaitIsCasting();

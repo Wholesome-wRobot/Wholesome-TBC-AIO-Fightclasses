@@ -21,6 +21,7 @@ namespace WholesomeTBCAIO.Helpers
         public bool IsResurrectionSpell { get; }
         public bool PreventDoubleCast { get; }
         public bool OnDeadTarget { get; }
+        public uint MaxRankId { get; }
         public new bool IsSpellUsable
         {
             get
@@ -36,7 +37,6 @@ namespace WholesomeTBCAIO.Helpers
 
         private static List<AIOSpell> AllSpells = new List<AIOSpell>();
 
-
         public AIOSpell(string spellName, int rank = 0) : base(spellName)
         {
             Name = spellName;
@@ -45,6 +45,7 @@ namespace WholesomeTBCAIO.Helpers
             OnDeadTarget = OnDeadSpells.Contains(Name);
             IsResurrectionSpell = ResurrectionSpells.Contains(Name);
             IsClickOnTerrain = ClickOnTerrainSpells.Contains(Name);
+            MaxRankId = WTSpell.GetIdMaxRank(Name);
 
             if (Name.Contains("(") || Name.Contains(")"))
                 Name += "()";

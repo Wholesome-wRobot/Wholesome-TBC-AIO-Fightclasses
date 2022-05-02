@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Events;
@@ -150,6 +151,8 @@ namespace WholesomeTBCAIO.Helpers
                     return false;
                 CurrentSpellTarget = ObjectManager.Target;
             }
+
+            CombatDebug("*----------- TARGET IS " + CurrentSpellTarget.Name);
 
             // Now that we know the target
             if (CurrentSpellLocation == null)

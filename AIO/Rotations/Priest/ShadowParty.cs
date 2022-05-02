@@ -61,7 +61,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             WoWUnit Target = ObjectManager.Target;
 
             // Fade
-            if (unitCache.CloseUnitsTargetingMe.Count > 0
+            if (unitCache.EnemyUnitsTargetingPlayer.Length > 0
                 && cast.OnSelf(Fade))
                 return;
 

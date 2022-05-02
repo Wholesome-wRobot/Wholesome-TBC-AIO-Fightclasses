@@ -75,7 +75,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             }
 
             // Fade
-            if (unitCache.CloseUnitsTargetingMe.Count > 0
+            if (unitCache.EnemyUnitsTargetingPlayer.Length > 0
                 && cast.OnSelf(Fade))
                 return;
 

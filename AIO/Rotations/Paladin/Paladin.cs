@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Events;
@@ -29,16 +30,11 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
         public Paladin(BaseSettings settings) : base(settings) { }
 
-        private static List<BlessingBuff> RecordedBlessingBuffs { get; set; } = new List<BlessingBuff>();
-
         public override void Initialize(IClassRotation specialization)
         {
             this.specialization = specialization as Paladin;
             settings = PaladinSettings.Current;
             BaseInit(28, HolyLight, null, settings);
-
-            if (specialization.RotationType == Enums.RotationType.Party && settings.PartyDetectSpecs)
-                partyManager.ActivateSpecRecords();
 
             _manaSavePercent = System.Math.Max(20, settings.ManaSaveLimitPercent);
 
@@ -229,44 +225,6 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             }
         }
 
-        public static void RecordBlessingCast(string casterName, string spellName, string targetName)
-        {
-            // Remove buff from same source
-            while (RecordedBlessingBuffs.Exists(b => b.CasterName == casterName && b.TargetName == targetName))
-            {
-                BlessingBuff existingbuff = RecordedBlessingBuffs.Find(b => b.CasterName == casterName && b.TargetName == targetName);
-                RecordedBlessingBuffs.Remove(existingbuff);
-            }
-            // Remove buff for same spell
-            while (RecordedBlessingBuffs.Exists(b => b.SpellName == spellName && b.TargetName == targetName))
-            {
-                BlessingBuff existingbuff = RecordedBlessingBuffs.Find(b => b.SpellName == spellName && b.TargetName == targetName);
-                RecordedBlessingBuffs.Remove(existingbuff);
-            }
-
-            RecordedBlessingBuffs.Add(new BlessingBuff(casterName, spellName, targetName));
-            /*
-            Logger.Log("************");
-            RecordedBlessingBuffs.OrderBy(b => b.CasterName).ToList().ForEach(b => Logger.Log($"{b.CasterName} -> {b.TargetName} -> {b.SpellName}"));
-            Logger.Log("************");
-            */
-        }
-
-
-        private struct BlessingBuff
-        {
-            public BlessingBuff(string caster, string spell, string target)
-            {
-                CasterName = caster;
-                SpellName = spell;
-                TargetName = target;
-            }
-
-            public string CasterName { get; }
-            public string SpellName { get; }
-            public string TargetName { get; }
-        }
-
         protected bool PartyBlessingBuffs()
         {
             AIOSpell myBuffSpell = null;
@@ -277,113 +235,34 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if (myBuffSpell == null)
                 return false;
 
-            if (!RecordedBlessingBuffs.Exists(b => b.CasterName == Me.Name && b.TargetName == Me.Name))
+            if (unitCache.Group.Length > 0)
             {
-                if (Me.HaveBuff(myBuffSpell.Name))
-                    WTEffects.TBCCancelPlayerBuff(myBuffSpell.Name);
-                if (cast.OnSelf(myBuffSpell))
-                    return true;
-            }
-            else
-            {
-                if (!Me.HaveBuff(myBuffSpell.Name))
+                foreach (IWoWPlayer member in unitCache.Group)
                 {
-                    RecordedBlessingBuffs.Remove(RecordedBlessingBuffs.Find(b => b.CasterName == Me.Name && b.TargetName == Me.Name));
-                    return true;
-                }
-            }
+                    List<AIOSpell> buffsForThisMember = GetBlessingPerClass(member.WowClass);
+                    if (member.IsDead
+                        || !member.IsValid
+                        || member.Guid == Me.Guid
+                        || buffsForThisMember == null)
+                        continue;
 
-            foreach (AIOPartyMember member in partyManager.GroupAndRaid)
-            {
-                // Avoid paladin loop buff
-                if (member.WowClass == WoWClass.Paladin
-                    && partyManager.GroupAndRaid.Exists(m => m.WowClass == WoWClass.Paladin && (m.HaveBuff("Drink") || m.GetDistance > 25)))
-                    continue;
-
-                List<AIOSpell> buffsForThisMember = settings.PartyDetectSpecs ? GetBlessingPerSpec(member.Specialization, member.WowClass) : GetBlessingPerClass(member.WowClass);
-                if (member.IsDead
-                    || !member.IsValid
-                    || member.Guid == Me.Guid
-                    || buffsForThisMember == null
-                    || (settings.PartyDetectSpecs && member.Specialization == null))
-                    continue;
-
-                // check if ideal member buffs -> eg Hunter has wisdom + kings (not ideal)
-                bool memberbuffsAreIdeal = true;
-                int lastFoundBuffIndex = -1;
-                int lastMissingBuffIndex = -1;
-                for (int i = 0; i < buffsForThisMember.Count; i++)
-                {
-                    if (member.HaveBuff(buffsForThisMember[i].Name))
-                        lastFoundBuffIndex = i;
-                    else
-                        lastMissingBuffIndex = i;
-
-                    if (lastMissingBuffIndex < lastFoundBuffIndex
-                        && lastMissingBuffIndex > -1
-                        && !RecordedBlessingBuffs.Exists(b => b.CasterName == member.Name && b.TargetName == member.Name && b.SpellName == buffsForThisMember[i].Name))
+                    foreach (AIOSpell buff in buffsForThisMember)
                     {
-                        memberbuffsAreIdeal = false;
-                        break;
+                        if (member.HasAura(buff))
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            if (cast.OnFocusUnit(buff, member))
+                                break;
+                        }
                     }
-                }
 
-                BlessingBuff? myBuffOnThisTarget = RecordedBlessingBuffs.Find(b => b.CasterName == Me.Name && b.TargetName == member.Name);
-                if (member.HaveBuff(myBuffOnThisTarget?.SpellName) && (memberbuffsAreIdeal /*|| member.WowClass == WoWClass.Paladin*/))
-                    continue;
-
-                for (int i = 0; i < buffsForThisMember.Count; i++)
-                {
-                    if (!member.HaveBuff(buffsForThisMember[i].Name)
-                        && cast.OnFocusUnit(buffsForThisMember[i], member))
-                        return true;
                 }
             }
 
             return false;
-        }
-
-        private List<AIOSpell> GetBlessingPerSpec(string spec, WoWClass playerClass)
-        {
-            if (spec == null)
-                return null;
-
-            if (spec == "Balance"
-                || spec == "Restoration"
-                || spec == "Arcane"
-                || spec == "Fire"
-                || spec == "Frost"
-                || spec == "Shadow"
-                || spec == "Holy"
-                || spec == "Discipline"
-                || spec == "Elemental"
-                || spec == "Affliction"
-                || spec == "Demonology"
-                || spec == "Destruction")
-                return new List<AIOSpell>() { BlessingOfWisdom, BlessingOfKings };
-
-            if (spec == "Assassination"
-                || spec == "Combat"
-                || spec == "Subtlety"
-                || spec == "Arms"
-                || spec == "Fury")
-                return new List<AIOSpell>() { BlessingOfMight, BlessingOfKings };
-
-            if (spec == "Feral"
-                || spec == "Beast Mastery"
-                || spec == "Marksmanship"
-                || spec == "Survival"
-                || spec == "Retribution"
-                || spec == "Enhancement")
-                return new List<AIOSpell>() { BlessingOfMight, BlessingOfKings, BlessingOfWisdom };
-
-            if (spec == "Protection" && playerClass == WoWClass.Warrior)
-                return new List<AIOSpell>() { BlessingOfKings, BlessingOfMight };
-
-            if (spec == "Protection" && playerClass == WoWClass.Paladin)
-                return new List<AIOSpell>() { BlessingOfKings, BlessingOfMight, BlessingOfWisdom };
-
-            return null;
         }
 
         private List<AIOSpell> GetBlessingPerClass(WoWClass playerClass)
