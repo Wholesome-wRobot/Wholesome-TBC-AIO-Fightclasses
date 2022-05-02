@@ -113,14 +113,17 @@ namespace WholesomeTBCAIO.Rotations.Priest
             }
 
             // High priority single target heal
-            var tanks = partyManager.TargetedByEnemies
-                .FindAll(a => a.IsAlive && a.GetDistance < 60)
-                .ToList();
-            var priorityTanks = partyManager.TanksNeedPriorityHeal(tanks, membersByMissingHealth, settings.PartyTankHealingPriority);
-            foreach (var tank in priorityTanks)
+            if (settings.PartyTankHealingPriority > 0)
             {
-                if (SingleTargetHeal(tank))
-                    return;
+                var tanks = partyManager.TargetedByEnemies
+                    .FindAll(a => a.IsAlive && a.GetDistance < 60)
+                    .ToList();
+                var priorityTanks = partyManager.TanksNeedPriorityHeal(tanks, membersByMissingHealth, settings.PartyTankHealingPriority);
+                foreach (var tank in priorityTanks)
+                {
+                    if (SingleTargetHeal(tank))
+                        return;
+                }
             }
 
             // Normal single target heal on lowest health group member

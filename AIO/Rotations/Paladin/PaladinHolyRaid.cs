@@ -41,10 +41,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 .ToList();
             double groupHealthAverage = aliveMembers
                 .Aggregate(0.0, (s, a) => s + a.HealthPercent) / (double)aliveMembers.Count;
-            var tanks = partyManager.TargetedByEnemies
-                .FindAll(a => a.IsAlive && a.GetDistance < 60)
-                .ToList();
-
+            
             // Divine Illumination
             if (groupHealthAverage < 70
                 && cast.OnSelf(DivineIllumination))
@@ -85,13 +82,19 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             }
 
             // High priority heal
-            var priorityTanks = partyManager.TanksNeedPriorityHeal(tanks, aliveMembers, settings.PartyTankHealingPriority);
-            foreach (var tank in priorityTanks)
+            if (settings.PartyTankHealingPriority > 0)
             {
-                if (SingleTargetHeal(tank))
-                    return;
+                var tanks = partyManager.TargetedByEnemies
+                .FindAll(a => a.IsAlive && a.GetDistance < 60)
+                .ToList();
+                var priorityTanks = partyManager.TanksNeedPriorityHeal(tanks, aliveMembers, settings.PartyTankHealingPriority);
+                foreach (var tank in priorityTanks)
+                {
+                    if (SingleTargetHeal(tank))
+                        return;
+                }
             }
-
+            
             // Single target heal
             if (aliveMembers.Count > 0 && SingleTargetHeal(aliveMembers[0]))
                 return;
