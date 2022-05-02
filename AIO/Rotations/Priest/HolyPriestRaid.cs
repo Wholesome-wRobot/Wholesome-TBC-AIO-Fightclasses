@@ -1,4 +1,5 @@
 ﻿using robotManager.Helpful;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
@@ -55,6 +56,10 @@ namespace WholesomeTBCAIO.Rotations.Priest
             List<AIOPartyMember> membersByMissingHealth = partyManager.ClosePartyMembers
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
+            // Collecting tanks only if needed
+            var tanks = new Lazy<List<WoWUnit>>(() => partyManager.TargetedByEnemies
+                  .FindAll(a => a.IsAlive && a.GetDistance < 60)
+                  .ToList());
 
             // Fade
             if (unitCache.CloseUnitsTargetingMe.Count > 0
@@ -115,10 +120,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             // High priority single target heal
             if (settings.PartyTankHealingPriority > 0)
             {
-                var tanks = partyManager.TargetedByEnemies
-                    .FindAll(a => a.IsAlive && a.GetDistance < 60)
-                    .ToList();
-                var priorityTanks = partyManager.TanksNeedPriorityHeal(tanks, membersByMissingHealth, settings.PartyTankHealingPriority);
+                var priorityTanks = partyManager.TanksNeedPriorityHeal(tanks.Value, membersByMissingHealth, settings.PartyTankHealingPriority);
                 foreach (var tank in priorityTanks)
                 {
                     if (SingleTargetHeal(tank))
@@ -136,7 +138,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             // Keep Renew on tank
             if (settings.PartyKeepRenewOnTank)
             {
-                foreach (var tank in tanks)
+                foreach (var tank in tanks.Value)
                 {
                     if (!tank.HaveBuff(Renew.Name) && cast.OnFocusUnit(Renew, tank))
                         return;
