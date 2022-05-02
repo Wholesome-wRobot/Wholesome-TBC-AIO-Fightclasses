@@ -34,6 +34,8 @@ namespace WholesomeTBCAIO.Settings
             PartyMindBlastThreshold = 70;
             PartyCircleOfHealingThreshold = 90;
             PartyCircleofHealingRadius = 18;
+            PartyTankHealingPriority = 0;
+            PartyKeepRenewOnTank = false;
 
             Specialization = "Shadow";
         }
@@ -160,6 +162,19 @@ namespace WholesomeTBCAIO.Settings
         [DisplayName("[Party] Circle of Healing Radius")]
         [Description("Healing radius of Circle of Healing")]
         public int PartyCircleofHealingRadius { get; set; }
+
+        [Category("Holy")]
+        [DefaultValue(0)]
+        [DisplayName("[Party] Tank healing priority")]
+        [Description("Prefer healing tanks over other group members")]
+        [Percentage(true)]
+        public int PartyTankHealingPriority { get; set; }
+
+        [Category("Holy")]
+        [DefaultValue(false)]
+        [DisplayName("[Party] Keep renew on tank")]
+        [Description("Keep renew on tank")]
+        public bool PartyKeepRenewOnTank { get; set; }
 
         // PARTY
         [Category("Party")]

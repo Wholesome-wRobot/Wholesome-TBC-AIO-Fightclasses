@@ -14,5 +14,6 @@ namespace WholesomeTBCAIO.Managers.PartyManager
 
         void SwitchTarget(Cast cast, AIOSpell spell);
         bool PartyDrink(string drinkName, int threshold);
+        List<WoWUnit> TanksNeedPriorityHeal(List<WoWUnit> tanks, List<AIOPartyMember> groupMembers, int priorityPercent);
     }
 }
