@@ -8,11 +8,15 @@ namespace WholesomeTBCAIO.Managers.UnitCache
         IWoWLocalPlayer Me { get; }
         IWoWUnit Target { get; }
         IWoWUnit Pet { get; }
-
-        IWoWUnit[] EnemyUnitsNearPlayer { get; }
-        IWoWUnit[] EnemyUnitsTargetingPlayer { get; }
-
-        IWoWPlayer[] Group { get; }
+        List<IWoWUnit> EnemyUnitsNearPlayer { get; }
+        List<IWoWUnit> EnemyUnitsTargetingPlayer { get; }
+        List<IWoWPlayer> GroupAndRaid { get; }
         Dictionary<int, List<IWoWPlayer>> Raid { get; }
+        List<IWoWUnit> EnemiesFighting { get; }
+        List<IWoWPlayer> TargetedByEnemies { get; }
+        List<IWoWUnit> EnemiesAttackingMe { get; }
+        List<IWoWPlayer> ClosePartyMembers { get; }
+
+        IWoWUnit GetClosestHostileFrom(IWoWUnit target, float distance);
     }
 }

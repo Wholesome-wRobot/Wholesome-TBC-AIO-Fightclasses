@@ -3,7 +3,6 @@ using System.Threading;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
-using wManager.Wow.ObjectManager;
 using Timer = robotManager.Helpful.Timer;
 
 namespace WholesomeTBCAIO.Rotations.Druid
@@ -22,13 +21,13 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
             // Regrowth
             if (Me.HealthPercent < 70
-                && !Me.HaveBuff("Regrowth")
+                && !Me.HasAura(Regrowth)
                 && cast.OnSelf(Regrowth))
                 return;
 
             // Rejuvenation
             if (Me.HealthPercent < 50
-                && !Me.HaveBuff("Rejuvenation")
+                && !Me.HasAura(Rejuvenation)
                 && !Regrowth.KnownSpell
                 && cast.OnSelf(Rejuvenation))
                 return;
@@ -50,23 +49,23 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 return;
 
             // Mark of the Wild
-            if (!Me.HaveBuff("Mark of the Wild")
+            if (!Me.HasAura(MarkOfTheWild)
                 && cast.OnSelf(MarkOfTheWild))
                 return;
 
             // Thorns
-            if (!Me.HaveBuff("Thorns")
+            if (!Me.HasAura(Thorns)
                 && cast.OnSelf(Thorns))
                 return;
 
             // Omen of Clarity
-            if (!Me.HaveBuff("Omen of Clarity")
+            if (!Me.HasAura(OmenOfClarity)
                 && cast.OnSelf(OmenOfClarity))
                 return;
 
             // Aquatic form
             if (Me.IsSwimming
-                && !Me.HaveBuff("Aquatic Form")
+                && !Me.HasAura(AquaticForm)
                 && Me.ManaPercentage > 50
                 && cast.OnSelf(AquaticForm))
                 return;
@@ -85,47 +84,47 @@ namespace WholesomeTBCAIO.Rotations.Druid
         {
             // Bear Form
             if (!CatForm.KnownSpell
-                && !Me.HaveBuff("Bear Form")
+                && !Me.HasAura(BearForm)
                 && cast.OnSelf(BearForm))
                 return;
 
             // Cat Form
-            if (!Me.HaveBuff("Cat Form")
-                && ObjectManager.Target.Guid > 0
+            if (!Me.HasAura(CatForm)
+                && Target.Guid > 0
                 && cast.OnSelf(CatForm))
                 return;
 
             // Prowl
-            if (Me.HaveBuff("Cat Form")
-                && !Me.HaveBuff(Prowl.Name)
-                && ObjectManager.Target.GetDistance > 15f
-                && ObjectManager.Target.GetDistance < 25f
-                && ToolBox.GetClosestHostileFrom(ObjectManager.Target, 20) == null
+            if (Me.HasAura(CatForm)
+                && !Me.HasAura(Prowl)
+                && Target.GetDistance > 15f
+                && Target.GetDistance < 25f
+                && unitCache.GetClosestHostileFrom(Target, 20) == null
                 && settings.StealthEngage
                 && cast.OnSelf(Prowl))
                 return;
 
             // Check if caster in list
-            if (_casterEnemies.Contains(ObjectManager.Target.Name))
-                _fightingACaster = true;
+            if (casterEnemies.Contains(Target.Name))
+                fightingACaster = true;
 
             // Pull logic
-            if (ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { FaerieFireFeral, MoonfireRank1, Wrath }))
+            if (ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { FaerieFireFeral, MoonfireRank1, Wrath }, unitCache))
             {
-                _combatMeleeTimer = new Timer(2000);
+                combatMeleeTimer = new Timer(2000);
                 return;
             }
 
             // Pull Bear/Cat
-            if (Me.HaveBuff("Bear Form")
-                || Me.HaveBuff("Dire Bear Form")
-                || Me.HaveBuff("Cat Form"))
+            if (Me.HasAura(BearForm)
+                || Me.HasAura(DireBearForm)
+                || Me.HasAura(CatForm))
             {
                 RangeManager.SetRangeToMelee();
 
                 // Prowl approach
-                if (Me.HaveBuff("Prowl")
-                    && !_isStealthApproching)
+                if (Me.HasAura(Prowl)
+                    && !isStealthApproching)
                 {
                     StealthApproach();
                 }
@@ -143,20 +142,19 @@ namespace WholesomeTBCAIO.Rotations.Druid
         {
             base.CombatRotation();
 
-            bool _shouldBeInterrupted = WTCombat.TargetIsCasting();
-            WoWUnit Target = ObjectManager.Target;
+            bool shouldBeInterrupted = WTCombat.TargetIsCasting();
 
             // Force melee
-            if (_combatMeleeTimer.IsReady)
+            if (combatMeleeTimer.IsReady)
                 RangeManager.SetRangeToMelee();
 
             // Check if fighting a caster
-            if (_shouldBeInterrupted)
+            if (shouldBeInterrupted)
             {
-                _fightingACaster = true;
+                fightingACaster = true;
                 RangeManager.SetRangeToMelee();
-                if (!_casterEnemies.Contains(Target.Name))
-                    _casterEnemies.Add(Target.Name);
+                if (!casterEnemies.Contains(Target.Name))
+                    casterEnemies.Add(Target.Name);
             }
 
             // Check Auto-Attacking
@@ -172,26 +170,26 @@ namespace WholesomeTBCAIO.Rotations.Druid
             if (settings.UseBarkskin
                 && Barkskin.KnownSpell
                 && Me.HealthPercent < 50
-                && !Me.HaveBuff("Regrowth")
+                && !Me.HasAura(Regrowth)
                 && Me.Mana > bigHealComboCost + Barkskin.Cost
                 && (Target.HealthPercent > 15 || Me.HealthPercent < 25)
-                && cast.OnSelf(Barkskin) 
+                && cast.OnSelf(Barkskin)
                 && cast.OnSelf(Regrowth)
                 && cast.OnSelf(Rejuvenation))
                 return;
 
             // Regrowth + Rejuvenation
             if (Me.HealthPercent < 50
-                && !Me.HaveBuff("Regrowth")
+                && !Me.HasAura(Regrowth)
                 && Me.Mana > bigHealComboCost
                 && (Target.HealthPercent > 15 || Me.HealthPercent < 25)
-                && cast.OnSelf(Regrowth) 
+                && cast.OnSelf(Regrowth)
                 && cast.OnSelf(Rejuvenation))
                 return;
 
             // Regrowth
             if (Me.HealthPercent < 50
-                && !Me.HaveBuff("Regrowth")
+                && !Me.HasAura(Regrowth)
                 && Me.Mana > smallHealComboCost
                 && (Target.HealthPercent > 15 || Me.HealthPercent < 25)
                 && cast.OnSelf(Regrowth))
@@ -199,7 +197,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
             // Rejuvenation
             if (Me.HealthPercent < 50
-                && !Me.HaveBuff("Rejuvenation")
+                && !Me.HasAura(Rejuvenation)
                 && !Regrowth.KnownSpell
                 && (Target.HealthPercent > 15 || Me.HealthPercent < 25)
                 && cast.OnSelf(Rejuvenation))
@@ -213,21 +211,21 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 return;
 
             // Catorm
-            if (!Me.HaveBuff("Cat Form")
-                && (ObjectManager.GetNumberAttackPlayer() < settings.NumberOfAttackersBearForm || !BearForm.KnownSpell && !DireBearForm.KnownSpell))
+            if (!Me.HasAura(CatForm)
+                && (unitCache.EnemiesAttackingMe.Count < settings.NumberOfAttackersBearForm || !BearForm.KnownSpell && !DireBearForm.KnownSpell))
                 if (cast.OnSelf(CatForm))
                     return;
 
             // Bear Form
-            if (!Me.HaveBuff("Bear Form")
-                && !Me.HaveBuff("Dire Bear Form"))
+            if (!Me.HasAura(BearForm)
+                && !Me.HasAura(DireBearForm))
             {
                 if (!CatForm.KnownSpell)
                 {
                     if (cast.OnSelf(DireBearForm) || cast.OnSelf(BearForm))
                         return;
                 }
-                else if (ObjectManager.GetNumberAttackPlayer() >= settings.NumberOfAttackersBearForm
+                else if (unitCache.EnemiesAttackingMe.Count >= settings.NumberOfAttackersBearForm
                         && settings.NumberOfAttackersBearForm > 1)
                 {
                     {
@@ -242,24 +240,24 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
             // **************** CAT FORM ROTATION ****************
 
-            if (Me.HaveBuff("Cat Form"))
+            if (Me.HasAura(CatForm))
             {
                 RangeManager.SetRangeToMelee();
 
                 // Shred (when behind)
-                if (Target.HaveBuff("Pounce")
+                if (Target.HasAura(Pounce)
                     && cast.OnTarget(Shred))
                     return;
 
                 // Faerie Fire
-                if (!Target.HaveBuff("Faerie Fire (Feral)")
-                    && !Target.HaveBuff("Pounce")
+                if (!Target.HasBuff("Faerie Fire (Feral)")
+                    && !Target.HasAura(Pounce)
                     && cast.OnTarget(FaerieFireFeral))
                     return;
 
                 // Rip
-                if (!Target.HaveBuff("Rip")
-                    && !Target.HaveBuff("Pounce"))
+                if (!Target.HasAura(Rip)
+                    && !Target.HasAura(Pounce))
                 {
                     if (Me.ComboPoint >= 3
                         && Target.HealthPercent > 60
@@ -274,7 +272,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
                 // Ferocious Bite
                 if (FerociousBite.KnownSpell
-                    && !Target.HaveBuff("Pounce"))
+                    && !Target.HasAura(Pounce))
                 {
                     if (Me.ComboPoint >= 3
                         && Target.HealthPercent > 60
@@ -288,8 +286,8 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 }
 
                 // Rake
-                if (!Target.HaveBuff("Rake")
-                    && !Target.HaveBuff("Pounce")
+                if (!Target.HasAura(Rake)
+                    && !Target.HasAura(Pounce)
                     && cast.OnTarget(Rake))
                     return;
 
@@ -297,14 +295,14 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 if (!TigersFury.HaveBuff
                     && settings.UseTigersFury
                     && Me.ComboPoint < 1
-                    && !Target.HaveBuff("Pounce")
+                    && !Target.HasAura(Pounce)
                     && Me.Energy > 30
                     && cast.OnTarget(TigersFury))
                     return;
 
                 // Mangle
                 if (Me.ComboPoint < 5
-                    && !Target.HaveBuff("Pounce")
+                    && !Target.HasAura(Pounce)
                     && Me.Energy > 40
                     && MangleCat.KnownSpell
                     && Claw.IsSpellUsable
@@ -312,7 +310,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     return;
 
                 // Claw
-                if (Me.ComboPoint < 5 && !Target.HaveBuff("Pounce")
+                if (Me.ComboPoint < 5 && !Target.HasAura(Pounce)
                     && !MangleCat.KnownSpell
                     && cast.OnTarget(Claw))
                     return;
@@ -324,7 +322,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
             // **************** BEAR FORM ROTATION ****************
 
-            if (Me.HaveBuff("Bear Form") || Me.HaveBuff("Dire Bear Form"))
+            if (Me.HasAura(BearForm) || Me.HasAura(DireBearForm))
             {
                 RangeManager.SetRangeToMelee();
 
@@ -334,18 +332,18 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     return;
 
                 // Faerie Fire
-                if (!Target.HaveBuff("Faerie Fire (Feral)")
+                if (!Target.HasBuff("Faerie Fire (Feral)")
                     && cast.OnTarget(FaerieFireFeral))
                     return;
 
                 // Swipe
-                if (ObjectManager.GetNumberAttackPlayer() > 1 
+                if (unitCache.EnemiesAttackingMe.Count > 1
                     && ToolBox.GetNbEnemiesClose(8f) > 1
                     && cast.OnTarget(Swipe))
                     return;
 
                 // Interrupt with Bash
-                if (_shouldBeInterrupted)
+                if (shouldBeInterrupted)
                 {
                     Thread.Sleep(Main.humanReflexTime);
                     if (cast.OnTarget(Bash))
@@ -358,15 +356,15 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     return;
 
                 // Demoralizing Roar
-                if (!Target.HaveBuff("Demoralizing Roar")
-                    && !Target.HaveBuff("Demoralizing Shout")
+                if (!Target.HasAura(DemoralizingRoar)
+                    && !Target.HasBuff("Demoralizing Shout")
                     && Target.GetDistance < 9f
                     && cast.OnTarget(DemoralizingRoar))
                     return;
 
                 // Maul
                 if (!WTCombat.IsSpellActive("Maul")
-                    && (!_fightingACaster || Me.Rage > 30)
+                    && (!fightingACaster || Me.Rage > 30)
                     && cast.OnTarget(Maul))
                     return;
             }
@@ -383,12 +381,12 @@ namespace WholesomeTBCAIO.Rotations.Druid
             if (BearForm.KnownSpell && BearForm.Cost < Me.Mana)
                 return;
 
-            if (!Me.HaveBuff("Bear Form")
-                && !Me.HaveBuff("Cat Form")
-                && !Me.HaveBuff("Dire Bear Form"))
+            if (!Me.HasAura(BearForm)
+                && !Me.HasAura(CatForm)
+                && !Me.HasAura(DireBearForm))
             {
                 // Moonfire
-                if (!Target.HaveBuff("Moonfire")
+                if (!Target.HasAura(Moonfire)
                     && Me.ManaPercentage > 15
                     && Target.HealthPercent > 15
                     && Me.Level >= 8
@@ -403,7 +401,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     return;
 
                 // Moonfire Low level DPS
-                if (!Target.HaveBuff("Moonfire")
+                if (!Target.HasAura(Moonfire)
                     && Me.ManaPercentage > 50
                     && Target.HealthPercent > 30
                     && Me.Level < 8

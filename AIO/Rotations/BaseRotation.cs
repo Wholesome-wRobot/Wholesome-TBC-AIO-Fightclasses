@@ -3,6 +3,7 @@ using WholesomeTBCAIO.Managers.PartyManager;
 using WholesomeTBCAIO.Managers.RacialsManager;
 using WholesomeTBCAIO.Managers.TalentManager;
 using WholesomeTBCAIO.Managers.UnitCache;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using static WholesomeTBCAIO.Helpers.Enums;
@@ -26,11 +27,10 @@ namespace WholesomeTBCAIO.Rotations
             unitCache.Initialize();
 
             partyManager = new PartyManager(unitCache);
-            partyManager.Initialize();
 
             if (settings.UseRacialSkills)
             {
-                racialsManager = new RacialManager(partyManager);
+                racialsManager = new RacialManager(partyManager, unitCache);
                 racialsManager.Initialize();
             }
 
@@ -40,6 +40,10 @@ namespace WholesomeTBCAIO.Rotations
                 talentManager.Initialize();
             }
         }
+
+        protected IWoWLocalPlayer Me => unitCache.Me;
+        protected IWoWUnit Target => unitCache.Target;
+        protected IWoWUnit Pet => unitCache.Pet;
 
         public abstract bool AnswerReadyCheck();
         protected abstract void BuffRotation();
@@ -54,7 +58,6 @@ namespace WholesomeTBCAIO.Rotations
         {
             cast.Dispose();
             unitCache.Dispose();
-            partyManager.Dispose();
             racialsManager?.Dispose();
             talentManager?.Dispose();
             Logger.Log($"Disposed");
@@ -67,7 +70,7 @@ namespace WholesomeTBCAIO.Rotations
             BaseSettings settings)
         {
             RangeManager.SetRange(range);
-            cast = new Cast(baseSpell, wandSpell, settings);
+            cast = new Cast(baseSpell, wandSpell, settings, unitCache);
 
             if (settings.PartyDrinkName != "")
             {

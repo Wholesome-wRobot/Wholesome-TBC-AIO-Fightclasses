@@ -1,19 +1,13 @@
 ﻿using System.Collections.Generic;
 using WholesomeTBCAIO.Helpers;
-using wManager.Wow.ObjectManager;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 
 namespace WholesomeTBCAIO.Managers.PartyManager
 {
-    public interface IPartyManager : ICycleable
+    public interface IPartyManager
     {
-        Dictionary<int, List<AIOPartyMember>> RaidGroups { get; }
-        List<AIOPartyMember> GroupAndRaid { get; }
-        List<AIOPartyMember> ClosePartyMembers { get; }
-        List<WoWUnit> EnemiesFighting { get; }
-        List<WoWUnit> TargetedByEnemies { get; }
-
         void SwitchTarget(Cast cast, AIOSpell spell);
         bool PartyDrink(string drinkName, int threshold);
-        List<WoWUnit> TanksNeedPriorityHeal(List<WoWUnit> tanks, List<AIOPartyMember> groupMembers, int priorityPercent);
+        List<IWoWPlayer> TanksNeedPriorityHeal(List<IWoWPlayer> tanks, List<IWoWPlayer> groupMembers, int priorityPercent);
     }
 }

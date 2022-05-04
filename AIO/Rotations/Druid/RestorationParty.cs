@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.Helpers;
-using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Druid
 {
@@ -18,50 +18,50 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
         protected override void BuffRotation()
         {
-            if ((!Me.HaveBuff("Drink") || Me.ManaPercentage > 95) && Wrath.IsSpellUsable)
+            if ((!Me.HasBuff("Drink") || Me.ManaPercentage > 95) && Wrath.IsSpellUsable)
             {
                 base.BuffRotation();
 
                 // PARTY Remove Curse
-                WoWPlayer needRemoveCurse = partyManager.GroupAndRaid
+                IWoWPlayer needRemoveCurse = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasCurseDebuff(m.Name));
                 if (needRemoveCurse != null && cast.OnFocusUnit(RemoveCurse, needRemoveCurse))
                     return;
 
                 // PARTY Abolish Poison
-                WoWPlayer needAbolishPoison = partyManager.GroupAndRaid
+                IWoWPlayer needAbolishPoison = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasPoisonDebuff(m.Name));
                 if (needAbolishPoison != null && cast.OnFocusUnit(AbolishPoison, needAbolishPoison))
                     return;
 
                 // PARTY Mark of the Wild
-                WoWPlayer needMotW = partyManager.GroupAndRaid
-                    .Find(m => !m.HaveBuff(MarkOfTheWild.Name));
+                IWoWPlayer needMotW = unitCache.GroupAndRaid
+                    .Find(m => !m.HasAura(MarkOfTheWild));
                 if (needMotW != null && cast.OnFocusUnit(MarkOfTheWild, needMotW))
                     return;
 
                 // PARTY Thorns
-                WoWPlayer needThorns = partyManager.GroupAndRaid
-                    .Find(m => !m.HaveBuff(Thorns.Name));
+                IWoWPlayer needThorns = unitCache.GroupAndRaid
+                    .Find(m => !m.HasAura(Thorns));
                 if (needThorns != null && cast.OnFocusUnit(Thorns, needThorns))
                     return;
 
                 // Omen of Clarity
-                if (!Me.HaveBuff("Omen of Clarity")
+                if (!Me.HasAura(OmenOfClarity)
                     && OmenOfClarity.IsSpellUsable
                     && cast.OnTarget(OmenOfClarity))
                     return;
 
                 // Regrowth
-                WoWPlayer needRegrowth = partyManager.GroupAndRaid
-                    .Find(m => m.HealthPercent < 80 && !m.HaveBuff("Regrowth"));
+                IWoWPlayer needRegrowth = unitCache.GroupAndRaid
+                    .Find(m => m.HealthPercent < 80 && !m.HasAura(Regrowth));
                 if (needRegrowth != null
                     && cast.OnFocusUnit(Regrowth, needRegrowth))
                     return;
 
                 // Rejuvenation
-                WoWPlayer needRejuvenation = partyManager.GroupAndRaid
-                    .Find(m => m.HealthPercent < 80 && !m.HaveBuff("Rejuvenation"));
+                IWoWPlayer needRejuvenation = unitCache.GroupAndRaid
+                    .Find(m => m.HealthPercent < 80 && !m.HasAura(Rejuvenation));
                 if (needRejuvenation != null
                     && cast.OnFocusUnit(Rejuvenation, needRejuvenation))
                     return;
@@ -71,7 +71,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     return;
 
                 // Tree form
-                if (!Me.HaveBuff("Tree of Life")
+                if (!Me.HasAura(TreeOfLife)
                     && cast.OnSelf(TreeOfLife))
                     return;
             }
@@ -81,15 +81,14 @@ namespace WholesomeTBCAIO.Rotations.Druid
         {
             base.HealerCombat();
 
-            WoWUnit Target = ObjectManager.Target;
-            List<AIOPartyMember> lisPartyOrdered = partyManager.GroupAndRaid
+            List<IWoWPlayer> lisPartyOrdered = unitCache.GroupAndRaid
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
 
             // Party Tranquility
-            if (settings.PartyTranquility && !partyManager.GroupAndRaid.Any(e => e.IsTargetingMe))
+            if (settings.PartyTranquility && !unitCache.EnemiesFighting.Any(e => e.IsTargetingMe))
             {
-                bool needTranquility = partyManager.GroupAndRaid
+                bool needTranquility = unitCache.GroupAndRaid
                     .FindAll(m => m.HealthPercent < 50)
                     .Count > 2;
                 if (needTranquility
@@ -103,7 +102,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             // PARTY Rebirth
             if (settings.PartyUseRebirth)
             {
-                WoWPlayer needRebirth = lisPartyOrdered
+                IWoWPlayer needRebirth = lisPartyOrdered
                     .Find(m => m.IsDead);
                 if (needRebirth != null && cast.OnFocusUnit(Rebirth, needRebirth))
                     return;
@@ -112,8 +111,8 @@ namespace WholesomeTBCAIO.Rotations.Druid
             // PARTY Innervate
             if (settings.PartyUseInnervate)
             {
-                WoWPlayer needInnervate = lisPartyOrdered
-                    .Find(m => m.ManaPercentage < 10 && !m.HaveBuff("Innervate"));
+                IWoWPlayer needInnervate = lisPartyOrdered
+                    .Find(m => m.ManaPercentage < 10 && !m.HasAura(Innervate));
                 if (needInnervate != null && cast.OnFocusUnit(Innervate, needInnervate))
                     return;
             }
@@ -121,7 +120,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             if (settings.PartyRemoveCurse)
             {
                 // PARTY Remove Curse
-                WoWPlayer needRemoveCurse = lisPartyOrdered
+                IWoWPlayer needRemoveCurse = lisPartyOrdered
                     .Find(m => WTEffects.HasCurseDebuff(m.Name));
                 if (needRemoveCurse != null && cast.OnFocusUnit(RemoveCurse, needRemoveCurse))
                     return;
@@ -130,41 +129,41 @@ namespace WholesomeTBCAIO.Rotations.Druid
             if (settings.PartyAbolishPoison)
             {
                 // PARTY Abolish Poison
-                WoWPlayer needAbolishPoison = lisPartyOrdered
+                IWoWPlayer needAbolishPoison = lisPartyOrdered
                     .Find(m => WTEffects.HasPoisonDebuff(m.Name));
                 if (needAbolishPoison != null && cast.OnFocusUnit(AbolishPoison, needAbolishPoison))
                     return;
             }
 
             // PARTY Burst Heal
-            WoWPlayer needBurstHeal = lisPartyOrdered
+            IWoWPlayer needBurstHeal = lisPartyOrdered
                 .Find(m => m.HealthPercent < 30);
             if (needBurstHeal != null
                 && Me.ManaPercentage > 10
                 && cast.OnTarget(NaturesSwiftness))
                 return;
             if (needBurstHeal != null
-                && Me.HaveBuff("Nature's Swiftness"))
+                && Me.HasBuff("Nature's Swiftness"))
             {
                 cast.OnFocusUnit(HealingTouch, needBurstHeal);
                 return;
             }
 
             // Tree form
-            if (!Me.HaveBuff("Tree of Life")
+            if (!Me.HasAura(TreeOfLife)
                 && Me.ManaPercentage > 20
                 && cast.OnSelf(TreeOfLife))
                 return;
 
             // Swiftmend
-            WoWPlayer needBigHeal = lisPartyOrdered
-                .Find(m => m.HealthPercent < 60 && (m.HaveBuff("Regrowth") || m.HaveBuff("Rejuvenation")));
+            IWoWPlayer needBigHeal = lisPartyOrdered
+                .Find(m => m.HealthPercent < 60 && (m.HasAura(Regrowth) || m.HasAura(Rejuvenation)));
             if (needBigHeal != null
                 && cast.OnFocusUnit(Swiftmend, needBigHeal))
                 return;
 
             // Healing Touch
-            if (!Me.HaveBuff("Tree of Life"))
+            if (!Me.HasAura(TreeOfLife))
             {
                 if (needBigHeal != null
                     && cast.OnFocusUnit(HealingTouch, needBigHeal))
@@ -172,36 +171,36 @@ namespace WholesomeTBCAIO.Rotations.Druid
             }
 
             // Regrowth
-            WoWPlayer needRegrowth = lisPartyOrdered
-                .Find(m => m.HealthPercent < 70 && !m.HaveBuff("Regrowth"));
+            IWoWPlayer needRegrowth = lisPartyOrdered
+                .Find(m => m.HealthPercent < 70 && !m.HasAura(Regrowth));
             if (needRegrowth != null
                 && cast.OnFocusUnit(Regrowth, needRegrowth))
                 return;
 
             // Rejuvenation
-            WoWPlayer needRejuvenation = lisPartyOrdered
-                .Find(m => m.HealthPercent < 80 && !m.HaveBuff("Rejuvenation"));
+            IWoWPlayer needRejuvenation = lisPartyOrdered
+                .Find(m => m.HealthPercent < 80 && !m.HasAura(Rejuvenation));
             if (needRejuvenation != null
                 && cast.OnFocusUnit(Rejuvenation, needRejuvenation))
                 return;
 
             // Lifebloom 1
-            WoWPlayer needLifeBloom1 = lisPartyOrdered
-                .Find(m => m.HealthPercent < 90 && WTEffects.CountBuffStacks("Lifebloom", m.Name) < 1);
+            IWoWPlayer needLifeBloom1 = lisPartyOrdered
+                .Find(m => m.HealthPercent < 90 && m.BuffStacks(Lifebloom) < 1);
             if (needLifeBloom1 != null
                 && cast.OnFocusUnit(Lifebloom, needLifeBloom1))
                 return;
 
             // Lifebloom 2
-            WoWPlayer needLifeBloom2 = lisPartyOrdered
-                .Find(m => m.HealthPercent < 85 && WTEffects.CountBuffStacks("Lifebloom", m.Name) < 2);
+            IWoWPlayer needLifeBloom2 = lisPartyOrdered
+                .Find(m => m.HealthPercent < 85 && m.BuffStacks(Lifebloom) < 2);
             if (needLifeBloom2 != null
                 && cast.OnFocusUnit(Lifebloom, needLifeBloom2))
                 return;
 
             // Lifebloom 3
-            WoWPlayer needLifeBloom3 = lisPartyOrdered
-                .Find(m => m.HealthPercent < 80 && WTEffects.CountBuffStacks("Lifebloom", m.Name) < 3);
+            IWoWPlayer needLifeBloom3 = lisPartyOrdered
+                .Find(m => m.HealthPercent < 80 && m.BuffStacks(Lifebloom) < 3);
             if (needLifeBloom3 != null
                 && cast.OnFocusUnit(Lifebloom, needLifeBloom3))
                 return;

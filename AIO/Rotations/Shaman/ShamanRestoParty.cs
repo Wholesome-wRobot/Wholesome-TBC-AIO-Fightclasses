@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
-using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Shaman
 {
@@ -19,7 +19,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         {
             base.BuffRotation();
 
-            if (!Me.HaveBuff("Ghost Wolf") && (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95))
+            if (!Me.HasAura(GhostWolf) && (!Me.HasBuff("Drink") || Me.ManaPercentage > 95))
             {
                 // Ghost Wolf
                 if (settings.GhostWolfMount
@@ -28,7 +28,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     WTSettings.SetGroundMount(GhostWolf.Name);
 
                 // PARTY Healing Wave
-                List<AIOPartyMember> alliesNeedingHealWave = partyManager.GroupAndRaid
+                List<IWoWPlayer> alliesNeedingHealWave = unitCache.GroupAndRaid
                     .FindAll(a => a.IsAlive && a.HealthPercent < 70)
                     .OrderBy(a => a.HealthPercent)
                     .ToList();
@@ -37,20 +37,20 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     return;
 
                 // Water Shield
-                if (!Me.HaveBuff("Water Shield")
-                    && !Me.HaveBuff("Lightning Shield")
+                if (!Me.HasAura(WaterShield)
+                    && !Me.HasAura(LightningShield)
                     && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage < 20)
                     && cast.OnSelf(WaterShield))
                     return;
 
                 // PARTY Cure poison
-                WoWPlayer needCurePoison = partyManager.GroupAndRaid
+                IWoWPlayer needCurePoison = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasPoisonDebuff(m.Name));
                 if (needCurePoison != null && cast.OnFocusUnit(CurePoison, needCurePoison))
                     return;
 
                 // PARTY Cure Disease
-                WoWPlayer needCureDisease = partyManager.GroupAndRaid
+                IWoWPlayer needCureDisease = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
@@ -66,14 +66,14 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             base.Pull();
 
             // Remove Ghost Wolf
-            if (Me.HaveBuff("Ghost Wolf")
+            if (Me.HasAura(GhostWolf)
                 && cast.OnSelf(GhostWolf))
                 return;
 
             // Water Shield
-            if (!Me.HaveBuff("Water Shield")
-                && !Me.HaveBuff("Lightning Shield")
-                && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage < _lowManaThreshold)
+            if (!Me.HasAura(WaterShield)
+                && !Me.HasAura(LightningShield)
+                && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage < lowManaThreshold)
                 && cast.OnSelf(WaterShield))
                 return;
         }
@@ -82,20 +82,18 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         {
             base.HealerCombat();
 
-            WoWUnit Target = ObjectManager.Target;
-
-            WoWPlayer allyNeedBigHeal = partyManager.GroupAndRaid
+            IWoWPlayer allyNeedBigHeal = unitCache.GroupAndRaid
                 .Find(a => a.IsAlive && a.HealthPercent < 40);
 
             RangeManager.SetRange(25);
 
             // Remove Ghost Wolf
-            if (Me.HaveBuff("Ghost Wolf")
+            if (Me.HasAura(GhostWolf)
                 && cast.OnSelf(GhostWolf))
                 return;
 
             // PARTY Healing Wave with NATURE SWIFTNESS
-            if (Me.HaveBuff("Nature's Swiftness"))
+            if (Me.HasAura(NaturesSwiftness))
             {
                 if (allyNeedBigHeal != null && cast.OnFocusUnit(HealingWave, allyNeedBigHeal))
                     return;
@@ -103,12 +101,12 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
             // Party Nature's Swiftness
             if (allyNeedBigHeal != null
-                && !Me.HaveBuff("Nature's Swiftness")
+                && !Me.HasAura(NaturesSwiftness)
                 && cast.OnSelf(NaturesSwiftness))
                 return;
 
             // PARTY Lesser Healing Wave
-            List<AIOPartyMember> alliesNeedingLesserHealWave = partyManager.GroupAndRaid
+            List<IWoWPlayer> alliesNeedingLesserHealWave = unitCache.GroupAndRaid
                 .FindAll(a => a.IsAlive && a.HealthPercent < settings.PartyLesserHealingWaveThreshold)
                 .OrderBy(a => a.HealthPercent)
                 .ToList();
@@ -117,7 +115,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 return;
 
             // PARTY Healing Wave
-            List<AIOPartyMember> alliesNeedingHealWave = partyManager.GroupAndRaid
+            List<IWoWPlayer> alliesNeedingHealWave = unitCache.GroupAndRaid
                 .FindAll(a => a.IsAlive && a.HealthPercent < settings.PartyHealingWaveThreshold)
                 .OrderBy(a => a.HealthPercent)
                 .ToList();
@@ -126,7 +124,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 return;
 
             // PARTY Chain Heal
-            List<AIOPartyMember> alliesNeedChainHeal = partyManager.GroupAndRaid
+            List<IWoWPlayer> alliesNeedChainHeal = unitCache.GroupAndRaid
                 .FindAll(a => a.IsAlive && a.HealthPercent < settings.PartyChainHealThreshold)
                 .OrderBy(a => a.GetDistance)
                 .ToList();
@@ -140,11 +138,11 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             }
 
             // PARTY Earth Shield
-            if (EarthShield.KnownSpell && !partyManager.GroupAndRaid.Exists(a => a.HaveBuff("Earth Shield")))
+            if (EarthShield.KnownSpell && !unitCache.GroupAndRaid.Exists(a => a.HasAura(EarthShield)))
             {
-                foreach (WoWPlayer player in partyManager.GroupAndRaid.FindAll(p => p.IsAlive && p.WowClass != wManager.Wow.Enums.WoWClass.Shaman))
+                foreach (IWoWPlayer player in unitCache.GroupAndRaid.FindAll(p => p.IsAlive && p.WowClass != wManager.Wow.Enums.WoWClass.Shaman))
                 {
-                    List<WoWUnit> enemiesTargetingHim = partyManager.EnemiesFighting
+                    List<IWoWUnit> enemiesTargetingHim = unitCache.EnemiesFighting
                         .FindAll(e => e.Target == player.Guid);
                     if (enemiesTargetingHim.Count > 1 && cast.OnFocusUnit(EarthShield, player))
                         return;
@@ -154,7 +152,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             // PARTY Cure Poison
             if (settings.PartyCurePoison)
             {
-                WoWPlayer needCurePoison = partyManager.GroupAndRaid
+                IWoWPlayer needCurePoison = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasPoisonDebuff(m.Name));
                 if (needCurePoison != null && cast.OnFocusUnit(CurePoison, needCurePoison))
                     return;
@@ -163,27 +161,27 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             // PARTY Cure Disease
             if (settings.PartyCureDisease)
             {
-                WoWPlayer needCureDisease = partyManager.GroupAndRaid
+                IWoWPlayer needCureDisease = unitCache.GroupAndRaid
                     .Find(m => m.IsAlive && WTEffects.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
             }
 
             // Bloodlust
-            if (!Me.HaveBuff("Bloodlust")
+            if (!Me.HasAura(Bloodlust)
                 && Target.HealthPercent > 80
                 && cast.OnSelf(Bloodlust))
                 return;
 
             // Water Shield
-            if (!Me.HaveBuff("Water Shield")
-                && !Me.HaveBuff("Lightning Shield")
-                && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage <= _lowManaThreshold)
+            if (!Me.HasAura(WaterShield)
+                && !Me.HasAura(LightningShield)
+                && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage <= lowManaThreshold)
                 && cast.OnSelf(WaterShield))
                 return;
 
             // Totems
-            if (_totemManager.CastTotems(specialization))
+            if (totemManager.CastTotems(specialization))
                 return;
         }
     }

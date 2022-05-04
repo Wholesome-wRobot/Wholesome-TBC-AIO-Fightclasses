@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
-using wManager.Wow.ObjectManager;
 using Timer = robotManager.Helpful.Timer;
 
 namespace WholesomeTBCAIO.Rotations.Warrior
@@ -34,13 +34,13 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 return;
 
             // Check if caster in list
-            if (_casterEnemies.Contains(ObjectManager.Target.Name))
-                _fightingACaster = true;
+            if (casterEnemies.Contains(Target.Name))
+                fightingACaster = true;
 
             // Pull logic
-            if (ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { Shoot, Throw }))
+            if (ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { Shoot, Throw }, unitCache))
             {
-                _combatMeleeTimer = new Timer(2000);
+                combatMeleeTimer = new Timer(2000);
                 return;
             }
         }
@@ -56,21 +56,20 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         protected override void CombatRotation()
         {
             base.CombatRotation();
-            WoWUnit Target = ObjectManager.Target;
             bool shouldBeInterrupted = WTCombat.TargetIsCasting();
             bool inMeleeRange = Target.GetDistance < RangeManager.GetMeleeRangeWithTarget();
 
             // Force melee
-            if (_combatMeleeTimer.IsReady)
+            if (combatMeleeTimer.IsReady)
                 RangeManager.SetRangeToMelee();
 
             // Check if we need to interrupt
             if (shouldBeInterrupted)
             {
-                _fightingACaster = true;
+                fightingACaster = true;
                 RangeManager.SetRangeToMelee();
-                if (!_casterEnemies.Contains(Target.Name))
-                    _casterEnemies.Add(Target.Name);
+                if (!casterEnemies.Contains(Target.Name))
+                    casterEnemies.Add(Target.Name);
             }
 
             if (settings.PartyTankSwitchTarget)
@@ -91,11 +90,11 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 return;
 
             // Cleave
-            List<WoWUnit> closeEnemies = partyManager.EnemiesFighting
+            List<IWoWUnit> closeEnemies = unitCache.EnemiesFighting
                 .FindAll(e => e.GetDistance < 10);
             if (inMeleeRange
                 && closeEnemies.Count > 1
-                && ObjectManager.Me.Rage > 70)
+                && Me.Rage > 70)
                 cast.OnTarget(Cleave);
 
             // Heroic Strike
@@ -116,15 +115,15 @@ namespace WholesomeTBCAIO.Rotations.Warrior
 
             // Demoralizing Shout
             if (settings.UseDemoralizingShout
-                && !Target.HaveBuff("Demoralizing Shout")
-                && !Target.HaveBuff("Demoralizing Roar")
+                && !Target.HasAura(DemoralizingShout)
+                && !Target.HasBuff("Demoralizing Roar")
                 && inMeleeRange
                 && cast.OnSelf(DemoralizingShout))
                 return;
 
             // Thunderclap
             if (inMeleeRange
-                && !ObjectManager.Target.HaveBuff(ThunderClap.Name)
+                && !Target.HasAura(ThunderClap)
                 && cast.OnSelf(ThunderClap))
                 return;
 
@@ -151,7 +150,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 return;
 
             // Shield Block
-            if (ObjectManager.Me.HealthPercent < 50
+            if (Me.HealthPercent < 50
                 && cast.OnSelf(ShieldBlock))
                 return;
 
@@ -161,7 +160,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 return;
 
             // Commanding Shout
-            if (!Me.HaveBuff("Commanding Shout")
+            if (!Me.HasAura(CommandingShout)
                 && settings.UseCommandingShout
                 && cast.OnSelf(CommandingShout))
                 return;

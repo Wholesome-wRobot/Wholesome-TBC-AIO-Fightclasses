@@ -4,7 +4,6 @@ using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.Helpers;
-using wManager.Wow.ObjectManager;
 using Timer = robotManager.Helpful.Timer;
 
 namespace WholesomeTBCAIO.Rotations.Rogue
@@ -27,21 +26,21 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             base.Pull();
 
             // Check if caster in list
-            if (_casterEnemies.Contains(ObjectManager.Target.Name))
+            if (_casterEnemies.Contains(Target.Name))
                 _fightingACaster = true;
 
             // Pull logic
-            if (ToolBox.Pull(cast, settings.AlwaysPull || WTEffects.HasPoisonDebuff(), new List<AIOSpell> { Shoot, Throw }))
+            if (ToolBox.Pull(cast, settings.AlwaysPull || WTEffects.HasPoisonDebuff(), new List<AIOSpell> { Shoot, Throw }, unitCache))
             {
                 _combatMeleeTimer = new Timer(2000);
                 return;
             }
 
             // Stealth
-            if (!Me.HaveBuff("Stealth")
-                && ObjectManager.Target.GetDistance > 15f
-                && ObjectManager.Target.GetDistance < 25f
-                && ToolBox.GetClosestHostileFrom(ObjectManager.Target, 20) == null
+            if (!Me.HasAura(Stealth)
+                && Target.GetDistance > 15f
+                && Target.GetDistance < 25f
+                && unitCache.GetClosestHostileFrom(Target, 20) == null
                 && settings.StealthApproach
                 && Backstab.KnownSpell
                 && (!WTEffects.HasPoisonDebuff() || settings.StealthWhenPoisoned)
@@ -49,13 +48,13 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 return;
 
             // Stealth approach
-            if (Me.HaveBuff("Stealth")
-                && ObjectManager.Target.GetDistance > 3f
+            if (Me.HasAura(Stealth)
+                && Target.GetDistance > 3f
                 && !_isStealthApproching)
                 StealthApproach();
 
             // Auto
-            if (ObjectManager.Target.GetDistance < 6f && !Me.HaveBuff("Stealth"))
+            if (Target.GetDistance < 6f && !Me.HasAura(Stealth))
                 ToggleAutoAttack(true);
         }
 
@@ -64,7 +63,6 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             base.CombatRotation();
 
             bool _shouldBeInterrupted = WTCombat.TargetIsCasting();
-            WoWUnit Target = ObjectManager.Target;
 
             // Force melee
             if (_combatMeleeTimer.IsReady)
@@ -78,8 +76,8 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             {
                 _fightingACaster = true;
                 RangeManager.SetRangeToMelee();
-                if (!_casterEnemies.Contains(ObjectManager.Target.Name))
-                    _casterEnemies.Add(ObjectManager.Target.Name);
+                if (!_casterEnemies.Contains(Target.Name))
+                    _casterEnemies.Add(Target.Name);
             }
 
             // Kick interrupt
@@ -91,12 +89,12 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             }
 
             // Adrenaline Rush
-            if ((ObjectManager.GetNumberAttackPlayer() > 1 || Target.IsElite) && !Me.HaveBuff("Adrenaline Rush"))
+            if ((unitCache.EnemiesAttackingMe.Count > 1 || Target.IsElite) && !Me.HasAura(AdrenalineRush))
                 if (cast.OnTarget(AdrenalineRush))
                     return;
 
             // Blade Flurry
-            if (ObjectManager.GetNumberAttackPlayer() > 1 && !Me.HaveBuff("Blade Flurry"))
+            if (unitCache.EnemiesAttackingMe.Count > 1 && !Me.HasAura(BladeFlurry))
                 if (cast.OnTarget(BladeFlurry))
                     return;
 
@@ -106,7 +104,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                     return;
 
             // Bandage
-            if (Target.HaveBuff("Blind"))
+            if (Target.HasAura(Blind))
             {
                 MovementManager.StopMoveTo(true, 500);
                 ItemsManager.UseItemByNameOrId(_myBestBandage);
@@ -116,28 +114,35 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             }
 
             // Blind
-            if (Me.HealthPercent < 40 && !WTEffects.HasDebuff("Recently Bandaged") && _myBestBandage != null
+            if (Me.HealthPercent < 40
+                && !WTEffects.HasDebuff("Recently Bandaged")
+                && _myBestBandage != null
                 && settings.UseBlindBandage)
                 if (cast.OnTarget(Blind))
                     return;
 
             // Evasion
-            if (ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 30 && !Me.HaveBuff("Evasion") && Target.HealthPercent > 50)
+            if (unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 30 && !Me.HasAura(Evasion) && Target.HealthPercent > 50)
                 if (cast.OnTarget(Evasion))
                     return;
 
             // Cloak of Shadows
-            if (Me.HealthPercent < 30 && !Me.HaveBuff("Cloak of Shadows") && Target.HealthPercent > 50)
+            if (Me.HealthPercent < 30
+                && !Me.HasAura(CloakOfShadows)
+                && Target.HealthPercent > 50)
                 if (cast.OnTarget(CloakOfShadows))
                     return;
 
             // Backstab in combat
-            if (IsTargetStunned() && WTGear.GetMainHandWeaponType().Equals("Daggers"))
+            if (IsTargetStunned()
+                && WTGear.GetMainHandWeaponType().Equals("Daggers"))
                 if (cast.OnTarget(Backstab))
                     return;
 
             // Slice and Dice
-            if (!Me.HaveBuff("Slice and Dice") && Me.ComboPoint > 1 && Target.HealthPercent > 40)
+            if (!Me.HasAura(SliceAndDice)
+                && Me.ComboPoint > 1
+                && Target.HealthPercent > 40)
                 if (cast.OnTarget(SliceAndDice))
                     return;
 

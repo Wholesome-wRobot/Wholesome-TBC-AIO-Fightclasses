@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
@@ -18,10 +19,10 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
         protected override void BuffRotation()
         {
-            if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
+            if (!Me.HasBuff("Drink") || Me.ManaPercentage > 95)
             {
                 // Righteous Fury
-                if (!Me.HaveBuff("Righteous Fury")
+                if (!Me.HasAura(RighteousFury)
                 && cast.OnSelf(RighteousFury))
                     return;
 
@@ -39,21 +40,21 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             // Seal of Righteousness
             if (Me.ManaPercentage > settings.PartyProtSealOfWisdom
-                && !Me.HaveBuff("Seal of Righteousness")
+                && !Me.HasAura(SealOfRighteousness)
                 && cast.OnSelf(SealOfRighteousness))
                 return;
 
             // Seal of Wisdom
             if (Me.ManaPercentage <= settings.PartyProtSealOfWisdom
-                && !Me.HaveBuff("Seal of Wisdom")
+                && !Me.HasAura(SealOfWisdom)
                 && cast.OnSelf(SealOfWisdom))
                 return;
 
             AIOSpell avengersShield = settings.PartyAvengersShieldnRank1 ? AvengersShieldRank1 : AvengersShield;
             // Pull logic
-            if (ToolBox.Pull(cast, true, new List<AIOSpell> { avengersShield, Judgement }))
+            if (ToolBox.Pull(cast, true, new List<AIOSpell> { avengersShield, Judgement }, unitCache))
             {
-                _combatMeleeTimer = new Timer(500);
+                combatMeleeTimer = new Timer(500);
                 return;
             }
         }
@@ -70,10 +71,8 @@ namespace WholesomeTBCAIO.Rotations.Paladin
         {
             base.CombatRotation();
 
-            WoWUnit Target = ObjectManager.Target;
-
             // Force melee
-            if (_combatMeleeTimer.IsReady)
+            if (combatMeleeTimer.IsReady)
                 RangeManager.SetRangeToMelee();
 
             ToolBox.CheckAutoAttack(Attack);
@@ -83,18 +82,18 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             // Righteous Defense
             if (!Target.IsTargetingMe
-                && Target.Target > 0
-                && partyManager.GroupAndRaid.Contains(Target.TargetObject)
-                && cast.OnFocusUnit(RighteousDefense, Target.TargetObject))
+                && Me.HasTarget
+                && unitCache.GroupAndRaid.Exists(member => member.Guid == Target.Target)
+                && cast.OnFocusUnit(RighteousDefense, Target.GetTargetObject))
                 return;
 
             // Righteous Fury
-            if (!Me.HaveBuff("Righteous Fury")
+            if (!Me.HasAura(RighteousFury)
                 && cast.OnSelf(RighteousFury))
                 return;
 
             // PARTY Lay On Hands
-            List<AIOPartyMember> needsLoH = partyManager.GroupAndRaid
+            List<IWoWPlayer> needsLoH = unitCache.GroupAndRaid
                 .FindAll(m => m.HealthPercent < 10)
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
@@ -104,7 +103,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Purifiy
             if (settings.PartyPurify)
             {
-                WoWPlayer needsPurify = partyManager.GroupAndRaid
+                IWoWPlayer needsPurify = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasDiseaseDebuff(m.Name) || WTEffects.HasPoisonDebuff(m.Name));
                 if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
@@ -113,21 +112,22 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Cleanse
             if (settings.PartyCleanse)
             {
-                WoWPlayer needsCleanse = partyManager.GroupAndRaid
+                IWoWPlayer needsCleanse = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasMagicDebuff(m.Name));
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;
             }
 
+            int nbEnemiesClose = unitCache.EnemiesFighting.FindAll(unit => unit.GetDistance < 7).Count;
             // Consecration
             if (!settings.PartyConsecrationRank1
-                && ToolBox.GetNbEnemiesClose(7) > 1
+                && nbEnemiesClose > 1
                 && cast.OnSelf(Consecration))
                 return;
 
             // Consecration Rank 1
             if (settings.PartyConsecrationRank1
-                && ToolBox.GetNbEnemiesClose(7) > 1
+                && nbEnemiesClose > 1
                 && cast.OnSelf(ConsecrationRank1))
                 return;
 
@@ -142,31 +142,31 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             // Judgement
             if (Target.GetDistance < Judgement.MaxRange
-                && (!Target.HaveBuff("Judgement of Wisdom") || Me.ManaPercentage > settings.PartyProtSealOfWisdom)
+                && (!Target.HasBuff("Judgement of Wisdom") || Me.ManaPercentage > settings.PartyProtSealOfWisdom)
                 && cast.OnTarget(Judgement))
                 return;
 
             // Seal of Righteousness
             if (Me.ManaPercentage > settings.PartyProtSealOfWisdom
-                && !Me.HaveBuff("Seal of Righteousness")
+                && !Me.HasAura(SealOfRighteousness)
                 && cast.OnSelf(SealOfRighteousness))
                 return;
 
             // Seal of Wisdom
             if (Me.ManaPercentage <= settings.PartyProtSealOfWisdom
-                && !Me.HaveBuff("Seal of Wisdom")
+                && !Me.HasAura(SealOfWisdom)
                 && cast.OnSelf(SealOfWisdom))
                 return;
 
             // Holy Shield
             if (!settings.PartyHolyShieldRank1
-                && !Me.HaveBuff("Holy Shield")
+                && !Me.HasAura(HolyShield)
                 && cast.OnSelf(HolyShield))
                 return;
 
             // Holy Shield Rank 1
             if (settings.PartyHolyShieldRank1
-                && !Me.HaveBuff("Holy Shield")
+                && !Me.HasAura(HolyShieldRank1)
                 && cast.OnSelf(HolyShieldRank1))
                 return;
 

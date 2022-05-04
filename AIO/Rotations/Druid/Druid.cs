@@ -19,14 +19,13 @@ namespace WholesomeTBCAIO.Rotations.Druid
     {
         protected DruidSettings settings;
         protected Druid specialization;
-        protected WoWLocalPlayer Me = ObjectManager.Me;
-        protected bool _fightingACaster = false;
-        protected List<string> _casterEnemies = new List<string>();
+        protected bool fightingACaster = false;
+        protected List<string> casterEnemies = new List<string>();
         protected int bigHealComboCost;
         protected int smallHealComboCost;
-        protected bool _isStealthApproching;
+        protected bool isStealthApproching;
+        protected Timer combatMeleeTimer = new Timer();
         private Timer _moveBehindTimer = new Timer();
-        protected Timer _combatMeleeTimer = new Timer();
 
         public Druid(BaseSettings settings) : base(settings) { }
 
@@ -79,7 +78,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     if (StatusChecker.InCombatNoTarget())
                         specialization.CombatNoTarget();
 
-                    if (partyManager.GroupAndRaid.Any(p => p.InCombatFlagOnly))
+                    if (unitCache.GroupAndRaid.Any(p => p.InCombatFlagOnly))
                         specialization.HealerCombat();
                 }
                 catch (Exception arg)
@@ -151,49 +150,49 @@ namespace WholesomeTBCAIO.Rotations.Druid
         protected void StealthApproach()
         {
             Timer stealthApproachTimer = new Timer(7000);
-            _isStealthApproching = true;
+            isStealthApproching = true;
 
-            if (ObjectManager.Me.IsAlive && ObjectManager.Target.IsAlive)
+            if (Me.IsAlive && Target.IsAlive)
             {
                 while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                    && (ObjectManager.Target.GetDistance > 3f || !Claw.IsSpellUsable)
-                    && (specialization.RotationType == Enums.RotationType.Party || ToolBox.GetClosestHostileFrom(ObjectManager.Target, 20f) == null)
+                    && (Target.GetDistance > 3f || !Claw.IsSpellUsable)
+                    && (specialization.RotationType == Enums.RotationType.Party || unitCache.GetClosestHostileFrom(Target, 20f) == null)
                     && Fight.InFight
                     && !stealthApproachTimer.IsReady
-                    && !TraceLine.TraceLineGo(ObjectManager.Me.Position, ObjectManager.Target.Position, CGWorldFrameHitFlags.HitTestSpellLoS | CGWorldFrameHitFlags.HitTestLOS)
-                    && Me.HaveBuff("Prowl"))
+                    && !TraceLine.TraceLineGo(Me.PositionWithoutType, Target.PositionWithoutType, CGWorldFrameHitFlags.HitTestSpellLoS | CGWorldFrameHitFlags.HitTestLOS)
+                    && Me.HasAura(Prowl))
                 {
-                    float distanceToTarget = ObjectManager.Target.Position.DistanceTo(ObjectManager.Me.Position);
+                    float distanceToTarget = Target.PositionWithoutType.DistanceTo(Me.PositionWithoutType);
                     Vector3 position;
                     if (distanceToTarget > 5)
-                        position = WTSpace.BackOfUnit(ObjectManager.Target, 2.5f);
+                        position = WTSpace.BackOfUnit(Target.WowUnit, 2.5f);
                     else
-                        position = ObjectManager.Target.Position;
+                        position = Target.PositionWithoutType;
 
                     MovementManager.MoveTo(position);
                     Thread.Sleep(50);
                     CastOpener();
                 }
 
-                if (TraceLine.TraceLineGo(ObjectManager.Me.Position, ObjectManager.Target.Position, CGWorldFrameHitFlags.HitTestSpellLoS | CGWorldFrameHitFlags.HitTestLOS))
+                if (TraceLine.TraceLineGo(Me.PositionWithoutType, Target.PositionWithoutType, CGWorldFrameHitFlags.HitTestSpellLoS | CGWorldFrameHitFlags.HitTestLOS))
                 {
                     cast.OnSelf(Prowl);
-                    _isStealthApproching = false;
+                    isStealthApproching = false;
                     return;
                 }
 
                 CastOpener();
 
                 if (stealthApproachTimer.IsReady
-                    && ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { FaerieFireFeral, MoonfireRank1, Wrath }))
+                    && ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { FaerieFireFeral, MoonfireRank1, Wrath }, unitCache))
                 {
-                    _combatMeleeTimer = new Timer(2000);
+                    combatMeleeTimer = new Timer(2000);
                     return;
                 }
 
                 ToolBox.CheckAutoAttack(Attack);
 
-                _isStealthApproching = false;
+                isStealthApproching = false;
             }
         }
 
@@ -222,14 +221,14 @@ namespace WholesomeTBCAIO.Rotations.Druid
         private void BlackListHandler(ulong guid, int timeInMilisec, bool isSessionBlacklist, CancelEventArgs cancelable)
         {
             Logger.LogDebug("BL : " + guid + " ms : " + timeInMilisec + " is session: " + isSessionBlacklist);
-            if (Me.HaveBuff("Prowl"))
+            if (Me.HasAura(Prowl))
                 cancelable.Cancel = true;
         }
 
         private void FightEndHandler(ulong guid)
         {
-            _fightingACaster = false;
-            _isStealthApproching = false;
+            fightingACaster = false;
+            isStealthApproching = false;
         }
 
         private void FightStartHandler(WoWUnit unit, CancelEventArgs cancel)
@@ -248,23 +247,23 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 && settings.PartyStandBehind
                 && _moveBehindTimer.IsReady)
             {
-                if (ToolBox.StandBehindTargetCombat())
+                if (ToolBox.StandBehindTargetCombat(unitCache))
                     _moveBehindTimer = new Timer(4000);
             }
 
             if (specialization is Feral
-                && (ObjectManager.Target.HaveBuff("Pounce") || ObjectManager.Target.HaveBuff("Maim"))
+                && (Target.HasAura(Pounce) || Target.HasAura(Maim))
                 && !MovementManager.InMovement
                 && Me.IsAlive
                 && !Me.IsCast
-                && ObjectManager.Target.IsAlive)
+                && Target.IsAlive)
             {
-                Vector3 position = WTSpace.BackOfUnit(ObjectManager.Target, 2.5f);
+                Vector3 position = WTSpace.BackOfUnit(Target.WowUnit, 2.5f);
                 MovementManager.Go(PathFinder.FindPath(position), false);
 
                 while (MovementManager.InMovement
                     && Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                    && (ObjectManager.Target.HaveBuff("Pounce") || ObjectManager.Target.HaveBuff("Maim")))
+                    && (Target.HasAura(Pounce) || Target.HasAura(Maim)))
                 {
                     // Wait follow path
                     Thread.Sleep(500);
@@ -274,8 +273,8 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
         private void MoveToPulseHandler(Vector3 point, CancelEventArgs cancelable)
         {
-            if (_isStealthApproching &&
-            !point.ToString().Equals(WTSpace.BackOfUnit(ObjectManager.Target, 2.5f).ToString()))
+            if (isStealthApproching &&
+            !point.ToString().Equals(WTSpace.BackOfUnit(Target.WowUnit, 2.5f).ToString()))
                 cancelable.Cancel = true;
         }
     }

@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Managers.PartyManager;
+using WholesomeTBCAIO.Managers.UnitCache;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeTBCAIO.Settings;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
@@ -16,6 +18,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         private Cast _cast;
         private ShamanSettings _settings;
         private IPartyManager _partyManager;
+        private IUnitCache _unitCache;
 
         private AIOSpell TotemicCall = new AIOSpell("Totemic Call");
         private AIOSpell StoneclawTotem = new AIOSpell("Stoneclaw Totem");
@@ -29,11 +32,12 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         private AIOSpell TotemOfWrath = new AIOSpell("Totem of Wrath");
         private AIOSpell ManaTideTotem = new AIOSpell("Mana Tide Totem");
 
-        public TotemManager(Cast cast, ShamanSettings settings, IPartyManager partyManager)
+        public TotemManager(Cast cast, ShamanSettings settings, IPartyManager partyManager, IUnitCache unitCache)
         {
             _cast = cast;
             _settings = settings;
             _partyManager = partyManager;
+            _unitCache = unitCache;
         }
 
         public bool CastTotems(IClassRotation spec)
@@ -62,7 +66,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 if (_lastTotemPosition != null
                     && haveTotem
                     && _lastTotemPosition.DistanceTo(Me.Position) > 17
-                    && !Me.HaveBuff("Ghost Wolf")
+                    && !_unitCache.Me.HasBuff("GhostWolf")
                     && !Me.IsMounted
                     && !Me.IsCast
                     && Cast(TotemicCall))
@@ -78,7 +82,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             if (spec.RotationType == Enums.RotationType.Solo)
             {
                 // Earth Elemental Totem on multiaggro
-                if (ObjectManager.GetNumberAttackPlayer() > 1
+                if (_unitCache.EnemiesAttackingMe.Count > 1
                     && EarthElementalTotem.KnownSpell
                     && !currentEarthTotem.Contains("Stoneclaw Totem")
                     && !currentEarthTotem.Contains("Earth Elemental Totem")
@@ -86,7 +90,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     return true;
 
                 // Stoneclaw on multiaggro
-                if (ObjectManager.GetNumberAttackPlayer() > 1
+                if (_unitCache.EnemiesAttackingMe.Count > 1
                     && StoneclawTotem.KnownSpell
                     && !currentEarthTotem.Contains("Stoneclaw Totem")
                     && !currentEarthTotem.Contains("Earth Elemental Totem")
@@ -102,12 +106,12 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     && !Me.HaveBuff("Strength of Earth")
                     && !currentEarthTotem.Contains("Stoneclaw Totem")
                     && !currentEarthTotem.Contains("Earth Elemental Totem")
-                    && (ObjectManager.GetNumberAttackPlayer() < 2 || spec.RotationType == Enums.RotationType.Party)
+                    && (_unitCache.EnemiesAttackingMe.Count < 2 || spec.RotationType == Enums.RotationType.Party)
                     && Cast(StrengthOfEarthTotem))
                     return true;
 
                 // Stoneskin Totem
-                if ((_settings.UseStoneSkinTotem || !StrengthOfEarthTotem.KnownSpell || spec is Elemental || (spec.RotationType == Enums.RotationType.Solo && ObjectManager.GetNumberAttackPlayer() > 1))
+                if ((_settings.UseStoneSkinTotem || !StrengthOfEarthTotem.KnownSpell || spec is Elemental || (spec.RotationType == Enums.RotationType.Solo && _unitCache.EnemiesAttackingMe.Count > 1))
                     && !Me.HaveBuff("Stoneskin")
                     && !currentEarthTotem.Contains("Stoneclaw Totem")
                     && !currentEarthTotem.Contains("Earth Elemental Totem")
@@ -126,7 +130,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     (@"local haveTotem, totemName, startTime, duration = GetTotemInfo(1); return totemName;");
 
                 // Magma Totem
-                if (ObjectManager.GetNumberAttackPlayer() > 1
+                if (_unitCache.EnemiesAttackingMe.Count > 1
                     && Me.ManaPercentage > 50
                     && ObjectManager.Target.GetDistance < 10
                     && !currentFireTotem.Contains("Magma Totem")
@@ -183,7 +187,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 // Mana Tide Totem
                 if (ManaTideTotem.KnownSpell)
                 {
-                    List<AIOPartyMember> alliesNeedingMana = _partyManager.GroupAndRaid
+                    List<IWoWPlayer> alliesNeedingMana = _unitCache.GroupAndRaid
                         .FindAll(a => a.ManaPercentage < 20);
                     if ((alliesNeedingMana.Count > 1 || Me.ManaPercentage < 10)
                         && Cast(ManaTideTotem))

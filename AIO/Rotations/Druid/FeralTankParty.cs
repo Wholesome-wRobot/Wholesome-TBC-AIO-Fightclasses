@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.Helpers;
-using wManager.Wow.ObjectManager;
 using Timer = robotManager.Helpful.Timer;
 
 namespace WholesomeTBCAIO.Rotations.Druid
@@ -19,36 +19,36 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
         protected override void BuffRotation()
         {
-            if ((!Me.HaveBuff("Drink") || Me.ManaPercentage > 95) && Wrath.IsSpellUsable)
+            if ((!Me.HasBuff("Drink") || Me.ManaPercentage > 95) && Wrath.IsSpellUsable)
             {
                 base.BuffRotation();
 
                 // PARTY Remove Curse
-                WoWPlayer needRemoveCurse = partyManager.GroupAndRaid
+                IWoWPlayer needRemoveCurse = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasCurseDebuff(m.Name));
                 if (needRemoveCurse != null && cast.OnFocusUnit(RemoveCurse, needRemoveCurse))
                     return;
 
                 // PARTY Abolish Poison
-                WoWPlayer needAbolishPoison = partyManager.GroupAndRaid
+                IWoWPlayer needAbolishPoison = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasPoisonDebuff(m.Name));
                 if (needAbolishPoison != null && cast.OnFocusUnit(AbolishPoison, needAbolishPoison))
                     return;
 
                 // PARTY Mark of the Wild
-                WoWPlayer needMotW = partyManager.GroupAndRaid
-                    .Find(m => !m.HaveBuff(MarkOfTheWild.Name));
+                IWoWPlayer needMotW = unitCache.GroupAndRaid
+                    .Find(m => !m.HasAura(MarkOfTheWild));
                 if (needMotW != null && cast.OnFocusUnit(MarkOfTheWild, needMotW))
                     return;
 
                 // PARTY Thorns
-                WoWPlayer needThorns = partyManager.GroupAndRaid
-                    .Find(m => !m.HaveBuff(Thorns.Name));
+                IWoWPlayer needThorns = unitCache.GroupAndRaid
+                    .Find(m => !m.HasAura(Thorns));
                 if (needThorns != null && cast.OnFocusUnit(Thorns, needThorns))
                     return;
 
                 // Omen of Clarity
-                if (!Me.HaveBuff("Omen of Clarity")
+                if (!Me.HasAura(OmenOfClarity)
                     && OmenOfClarity.IsSpellUsable
                     && cast.OnSelf(OmenOfClarity))
                     return;
@@ -58,13 +58,13 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     return;
 
                 // Dire Bear Form
-                if (!Me.HaveBuff("Dire Bear Form")
+                if (!Me.HasAura(DireBearForm)
                     && cast.OnSelf(DireBearForm))
                     return;
 
                 // Bear Form
                 if (!DireBearForm.KnownSpell
-                    && !Me.HaveBuff("Bear Form")
+                    && !Me.HasAura(BearForm)
                     && cast.OnSelf(BearForm))
                     return;
             }
@@ -75,24 +75,24 @@ namespace WholesomeTBCAIO.Rotations.Druid
             base.Pull();
 
             // Dire Bear Form
-            if (!Me.HaveBuff("Dire Bear Form")
+            if (!Me.HasAura(DireBearForm)
                 && cast.OnSelf(DireBearForm))
                 return;
 
             // Bear Form
             if (!DireBearForm.KnownSpell
-                && !Me.HaveBuff("Bear Form")
+                && !Me.HasAura(BearForm)
                 && cast.OnSelf(BearForm))
                 return;
 
             // Check if caster in list
-            if (_casterEnemies.Contains(ObjectManager.Target.Name))
-                _fightingACaster = true;
+            if (casterEnemies.Contains(Target.Name))
+                fightingACaster = true;
 
             // Pull logic
-            if (ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { FaerieFireFeral, MoonfireRank1, Wrath }))
+            if (ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { FaerieFireFeral, MoonfireRank1, Wrath }, unitCache))
             {
-                _combatMeleeTimer = new Timer(1000);
+                combatMeleeTimer = new Timer(1000);
                 return;
             }
         }
@@ -109,33 +109,33 @@ namespace WholesomeTBCAIO.Rotations.Druid
         {
             base.CombatRotation();
 
-            bool _shouldBeInterrupted = WTCombat.TargetIsCasting();
-            bool _inMeleeRange = ObjectManager.Target.GetDistance < 6f;
-            WoWUnit Target = ObjectManager.Target;
+            bool shouldBeInterrupted = WTCombat.TargetIsCasting();
+            bool inMeleeRange = Target.GetDistance < 6f;
+            IWoWUnit target = Target;
 
             if (settings.PartyTankSwitchTarget)
                 partyManager.SwitchTarget(cast, null);
 
             // Force melee
-            if (_combatMeleeTimer.IsReady)
+            if (combatMeleeTimer.IsReady)
                 RangeManager.SetRangeToMelee();
 
             // Check if fighting a caster
-            if (_shouldBeInterrupted)
+            if (shouldBeInterrupted)
             {
-                _fightingACaster = true;
+                fightingACaster = true;
                 RangeManager.SetRangeToMelee();
-                if (!_casterEnemies.Contains(Target.Name))
-                    _casterEnemies.Add(Target.Name);
+                if (!casterEnemies.Contains(target.Name))
+                    casterEnemies.Add(target.Name);
             }
 
             // Check Auto-Attacking
             ToolBox.CheckAutoAttack(Attack);
 
             // Party Tranquility
-            if (settings.PartyTranquility && !partyManager.GroupAndRaid.Any(e => e.IsTargetingMe))
+            if (settings.PartyTranquility && !unitCache.EnemiesFighting.Any(e => e.IsTargetingMe))
             {
-                bool needTranquility = partyManager.GroupAndRaid
+                bool needTranquility = unitCache.GroupAndRaid
                     .FindAll(m => m.HealthPercent < 50)
                     .Count > 2;
                 if (needTranquility
@@ -149,7 +149,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             // PARTY Rebirth
             if (settings.PartyUseRebirth)
             {
-                WoWPlayer needRebirth = partyManager.GroupAndRaid
+                IWoWPlayer needRebirth = unitCache.GroupAndRaid
                     .Find(m => m.IsDead);
                 if (needRebirth != null && cast.OnFocusUnit(Rebirth, needRebirth))
                     return;
@@ -158,8 +158,8 @@ namespace WholesomeTBCAIO.Rotations.Druid
             // PARTY Innervate
             if (settings.PartyUseInnervate)
             {
-                WoWPlayer needInnervate = partyManager.GroupAndRaid
-                    .Find(m => m.ManaPercentage < 10 && !m.HaveBuff("Innervate"));
+                IWoWPlayer needInnervate = unitCache.GroupAndRaid
+                    .Find(m => m.ManaPercentage < 10 && !m.HasAura(Innervate));
                 if (needInnervate != null && cast.OnFocusUnit(Innervate, needInnervate))
                     return;
             }
@@ -167,7 +167,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             if (settings.PartyRemoveCurse)
             {
                 // PARTY Remove Curse
-                WoWPlayer needRemoveCurse = partyManager.GroupAndRaid
+                IWoWPlayer needRemoveCurse = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasCurseDebuff(m.Name));
                 if (needRemoveCurse != null && cast.OnFocusUnit(RemoveCurse, needRemoveCurse))
                     return;
@@ -176,7 +176,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             if (settings.PartyAbolishPoison)
             {
                 // PARTY Abolish Poison
-                WoWPlayer needAbolishPoison = partyManager.GroupAndRaid
+                IWoWPlayer needAbolishPoison = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasPoisonDebuff(m.Name));
                 if (needAbolishPoison != null && cast.OnFocusUnit(AbolishPoison, needAbolishPoison))
                     return;
@@ -184,37 +184,37 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
             // Dire Bear Form
             if (DireBearForm.KnownSpell
-                && !Me.HaveBuff("Dire Bear Form")
+                && !Me.HasAura(DireBearForm)
                 && cast.OnSelf(DireBearForm))
                 return;
 
             // Bear Form
             if (!DireBearForm.KnownSpell
-                && !Me.HaveBuff("Bear Form")
+                && !Me.HasAura(BearForm)
                 && cast.OnSelf(BearForm))
                 return;
 
             // Feral Charge
-            if (Target.GetDistance > 10
+            if (target.GetDistance > 10
                 && cast.OnTarget(FeralCharge))
                 return;
 
             // Interrupt with Bash
-            if (_shouldBeInterrupted
+            if (shouldBeInterrupted
                 && cast.OnTarget(Bash))
                 return;
 
             // Taunt
-            if (_inMeleeRange
-                && !Target.IsTargetingMe
-                && Target.Target > 0
+            if (inMeleeRange
+                && !target.IsTargetingMe
+                && target.Target > 0
                 && cast.OnTarget(Growl))
                 return;
 
             // Challenging roar
-            if (_inMeleeRange
-                && !Target.IsTargetingMe
-                && Target.Target > 0
+            if (inMeleeRange
+                && !target.IsTargetingMe
+                && target.Target > 0
                 && ToolBox.GetNbEnemiesClose(8) > 2
                 && cast.OnTarget(ChallengingRoar))
                 return;
@@ -235,31 +235,31 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 return;
 
             // Faerie Fire
-            if (!Target.HaveBuff("Faerie Fire (Feral)")
+            if (!target.HasBuff("Faerie Fire (Feral)")
                 && cast.OnTarget(FaerieFireFeral))
                 return;
 
             // Demoralizing Roar
-            if (!Target.HaveBuff("Demoralizing Roar")
-                && !Target.HaveBuff("Demoralizing Shout")
-                && Target.GetDistance < 9f
+            if (!target.HasAura(DemoralizingRoar)
+                && !target.HasBuff("Demoralizing Shout")
+                && target.GetDistance < 9f
                 && cast.OnTarget(DemoralizingRoar))
                 return;
 
             // Mangle
             if (MangleBear.KnownSpell
                 && Me.Rage > 15
-                && _inMeleeRange
-                && !Target.HaveBuff("Mangle (Bear)")
+                && inMeleeRange
+                && !target.HasBuff("Mangle (Bear)")
                 && cast.OnTarget(MangleBear))
                 return;
 
             // Swipe
-            List<WoWUnit> closeEnemies = partyManager.EnemiesFighting
+            List<IWoWUnit> closeEnemies = unitCache.EnemiesFighting
                 .FindAll(e => e.GetDistance < 10)
                 .ToList();
             if (closeEnemies.Count > 1
-                && Target.IsTargetingMe
+                && target.IsTargetingMe
                 && cast.OnTarget(Swipe))
                 return;
 

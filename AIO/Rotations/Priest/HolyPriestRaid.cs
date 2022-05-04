@@ -3,9 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
-using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Priest
 {
@@ -19,7 +19,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
         protected override void BuffRotation()
         {
-            if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
+            if (!Me.HasBuff("Drink") || Me.ManaPercentage > 95)
             {
                 base.BuffRotation();
 
@@ -27,7 +27,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 if (AoEHeal(false))
                     return;
 
-                List<AIOPartyMember> membersByMissingHealth = partyManager.ClosePartyMembers
+                List<IWoWPlayer> membersByMissingHealth = unitCache.ClosePartyMembers
                     .OrderBy(m => m.HealthPercent)
                     .ToList();
 
@@ -46,33 +46,33 @@ namespace WholesomeTBCAIO.Rotations.Priest
         protected override void HealerCombat()
         {
             // Target an enemy if we have a shadowfiend
-            if (ObjectManager.Pet.IsValid && !ObjectManager.Me.HasTarget)
+            if (Pet.IsValid && !Me.HasTarget)
             {
-                WoWUnit target = partyManager.EnemiesFighting.Find(u => u.IsValid);
+                IWoWUnit target = unitCache.EnemiesFighting.Find(u => u.IsValid);
                 if (target != null)
-                    ObjectManager.Me.Target = target.Guid;
+                    Me.SetTarget(target.Guid);
             }
 
-            List<AIOPartyMember> membersByMissingHealth = partyManager.ClosePartyMembers
+            List<IWoWPlayer> membersByMissingHealth = unitCache.ClosePartyMembers
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
             // Collecting tanks only if needed
-            var tanks = new Lazy<List<WoWUnit>>(() => partyManager.TargetedByEnemies
+            var tanks = new Lazy<List<IWoWPlayer>>(() => unitCache.TargetedByEnemies
                   .FindAll(a => a.IsAlive && a.GetDistance < 60)
                   .ToList());
 
             // Fade
-            if (unitCache.EnemyUnitsTargetingPlayer.Length > 0
+            if (unitCache.EnemyUnitsTargetingPlayer.Count > 0
                 && cast.OnSelf(Fade))
                 return;
 
-            List<AIOPartyMember> needDispel = partyManager.ClosePartyMembers
+            List<IWoWPlayer> needDispel = unitCache.ClosePartyMembers
                     .FindAll(m => m.IsAlive && WTEffects.HasMagicDebuff(m.Name));
 
             // PARTY Mass Dispel
             if (settings.PartyMassDispel && MassDispel.KnownSpell)
             {
-                Vector3 centerPosition = WTSpace.FindAggregatedCenter(needDispel.Select(u => u.Position).ToList(), 15, settings.PartyMassDispelCount);
+                Vector3 centerPosition = WTSpace.FindAggregatedCenter(needDispel.Select(u => u.PositionWithoutType).ToList(), 15, settings.PartyMassDispelCount);
                 if (centerPosition != null && cast.OnLocation(MassDispel, centerPosition))
                     return;
             }
@@ -86,12 +86,12 @@ namespace WholesomeTBCAIO.Rotations.Priest
             }
 
             // ShadowFiend
-            if (Me.ManaPercentage < 50 && !ObjectManager.Pet.IsValid)
+            if (Me.ManaPercentage < 50 && !Pet.IsValid)
             {
-                WoWUnit target = partyManager.EnemiesFighting.Find(u => u.IsValid);
+                IWoWUnit target = unitCache.EnemiesFighting.Find(u => u.IsValid);
                 if (target != null)
                 {
-                    ObjectManager.Me.Target = target.Guid;
+                    Me.SetTarget(target.Guid);
                     if (cast.OnTarget(Shadowfiend))
                         return;
                 }
@@ -104,7 +104,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             if (settings.PartyCureDisease)
             {
                 // Party Cure Disease
-                WoWPlayer needCureDisease = membersByMissingHealth
+                IWoWPlayer needCureDisease = membersByMissingHealth
                     .Find(m => WTEffects.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
@@ -140,28 +140,28 @@ namespace WholesomeTBCAIO.Rotations.Priest
             {
                 foreach (var tank in tanks.Value)
                 {
-                    if (!tank.HaveBuff(Renew.Name) && cast.OnFocusUnit(Renew, tank))
+                    if (!tank.HasAura(Renew) && cast.OnFocusUnit(Renew, tank))
                         return;
                 }
             }
         }
 
-        private bool SingleTargetHeal(WoWUnit unit, bool combat = true)
+        private bool SingleTargetHeal(IWoWUnit unit, bool combat = true)
         {
             if (unit.HealthPercent < 30 && cast.OnFocusUnit(FlashHeal, unit))
                 return true;
             if (settings.UsePowerWordShield
                 && unit.HealthPercent < 50
-                && unit.RagePercentage <= 0
-                && !unit.HaveBuff("Power Word: Shield")
+                && unit.RagePercent <= 0
+                && !unit.HasAura(PowerWordShield)
                 && !WTEffects.HasDebuff("Weakened Soul", unit.Name)
                 && cast.OnFocusUnit(PowerWordShield, unit))
                 return true;
             if (unit.HealthPercent < 60 && cast.OnFocusUnit(GreaterHeal, unit))
                 return true;
-            if (unit.HealthPercent < 80 && !unit.HaveBuff(Renew.Name) && cast.OnFocusUnit(Renew, unit))
+            if (unit.HealthPercent < 80 && !unit.HasAura(Renew) && cast.OnFocusUnit(Renew, unit))
                 return true;
-            if (unit.HealthPercent < 95 && !unit.HaveBuff(Renew.Name) && cast.OnFocusUnit(RenewRank8, unit))
+            if (unit.HealthPercent < 95 && !unit.HasAura(Renew) && cast.OnFocusUnit(RenewRank8, unit))
                 return true;
             if (combat && unit.HealthPercent < 100)
             {
@@ -181,7 +181,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             else if (PrayerOfHealing.KnownSpell)
             {
                 // PARTY Prayer of Healing
-                List<AIOPartyMember> needPrayerOfHealing = partyManager.GroupAndRaid
+                List<IWoWPlayer> needPrayerOfHealing = unitCache.GroupAndRaid
                     .FindAll(m => m.IsAlive && m.GetDistance < 33 && m.HealthPercent < 75)
                     .ToList();
                 if (needPrayerOfHealing.Count > 2 && cast.OnSelf(PrayerOfHealing))
@@ -193,9 +193,9 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
         private bool CastCircleOfHealing(bool combat = true)
         {
-            List<List<AIOPartyMember>> groups = partyManager.RaidGroups.Count == 0
-                ? new List<List<AIOPartyMember>> { partyManager.GroupAndRaid }
-                : partyManager.RaidGroups.Values.ToList();
+            List<List<IWoWPlayer>> groups = unitCache.Raid.Count == 0
+                ? new List<List<IWoWPlayer>> { unitCache.GroupAndRaid }
+                : unitCache.Raid.Values.ToList();
             var minimumCount = 3;
             int healthThreshold = (combat && Me.ManaPercentage < 80) ? settings.PartyCircleOfHealingThreshold : 95;
 
@@ -212,12 +212,12 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
             foreach (var group in groupsNeedCoH)
             {
-                List<(AIOPartyMember member, int count)> alliesNeedCoH = group
+                List<(IWoWPlayer member, int count)> alliesNeedCoH = group
                     // Checking all group members how many healable allies are in range (count)
                     .Select(member => (member, count: group.FindAll(otherMember =>
                         otherMember.IsAlive
                         && otherMember.HealthPercent < healthThreshold
-                        && otherMember.Position.DistanceTo(member.Position) < settings.PartyCircleofHealingRadius)
+                        && otherMember.PositionWithoutType.DistanceTo(member.PositionWithoutType) < settings.PartyCircleofHealingRadius)
                         .Count))
                     .ToList()
                     // Removing those who would heal less members than `minimumCount`

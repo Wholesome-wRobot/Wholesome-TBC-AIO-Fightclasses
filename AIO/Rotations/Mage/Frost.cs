@@ -25,17 +25,17 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 return;
 
             // Arcane Intellect
-            if (!Me.HaveBuff("Arcane Intellect")
+            if (!Me.HasAura(ArcaneIntellect)
                 && cast.OnSelf(ArcaneIntellect))
                 return;
 
             // Ice Armor
-            if (!Me.HaveBuff("Ice Armor"))
+            if (!Me.HasAura(IceArmor))
                 if (cast.OnSelf(IceArmor))
                     return;
 
             // Frost Armor
-            if (!Me.HaveBuff("Frost Armor")
+            if (!Me.HasAura(FrostArmor)
                 && !IceArmor.KnownSpell)
                 if (cast.OnSelf(FrostArmor))
                     return;
@@ -48,13 +48,14 @@ namespace WholesomeTBCAIO.Rotations.Mage
             WoWUnit _target = ObjectManager.Target;
 
             // Ice Barrier
-            if (IceBarrier.IsSpellUsable && !Me.HaveBuff("Ice Barrier")
+            if (IceBarrier.IsSpellUsable
+                && !Me.HasAura(IceBarrier)
                 && cast.OnSelf(IceBarrier))
                 return;
 
             // Frost Bolt
             if (Me.Level >= 6
-                && (_target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 30 || !_iCanUseWand)
+                && (_target.HealthPercent > settings.WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 30 || !iCanUseWand)
                 && cast.OnTarget(Frostbolt))
                 return;
 
@@ -74,11 +75,10 @@ namespace WholesomeTBCAIO.Rotations.Mage
         protected override void CombatRotation()
         {
             base.CombatRotation();
-            WoWUnit Target = ObjectManager.Target;
 
             // Stop wand use on multipull
-            if (_iCanUseWand && ObjectManager.GetNumberAttackPlayer() > 1)
-                _iCanUseWand = false;
+            if (iCanUseWand && unitCache.EnemiesAttackingMe.Count > 1 && Me.ManaPercentage > 10)
+                iCanUseWand = false;
 
             // Remove Curse
             if (WTEffects.HasCurseDebuff())
@@ -90,65 +90,65 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Summon Water Elemental
             if (Target.HealthPercent > 95
-                || ObjectManager.GetNumberAttackPlayer() > 1)
+                || unitCache.EnemiesAttackingMe.Count > 1)
                 if (cast.OnSelf(SummonWaterElemental))
                     return;
 
             // Ice Barrier
             if (IceBarrier.IsSpellUsable
-                && !Me.HaveBuff("Ice Barrier")
+                && !Me.HasAura(IceBarrier)
                 && cast.OnSelf(IceBarrier))
                 return;
 
             // Mana Shield
-            if (!Me.HaveBuff("Mana Shield")
-                && (Me.HealthPercent < 30 && Me.ManaPercentage > 50
-                || Me.HealthPercent < 10)
+            if (!Me.HasAura(ManaShield)
+                && (Me.HealthPercent < 30 && Me.ManaPercentage > 50 || Me.HealthPercent < 10)
                 && cast.OnSelf(ManaShield))
                 return;
 
             // Cold Snap
-            if (ObjectManager.GetNumberAttackPlayer() > 1
-                && !Me.HaveBuff("Icy Veins")
+            if (unitCache.EnemiesAttackingMe.Count > 1
+                && !Me.HasAura(IcyVeins)
                 && !IcyVeins.IsSpellUsable
                 && cast.OnSelf(ColdSnap))
                 return;
 
             // Icy Veins
-            if (ObjectManager.GetNumberAttackPlayer() > 1 && settings.IcyVeinMultiPull
+            if (unitCache.EnemiesAttackingMe.Count > 1 && settings.IcyVeinMultiPull
                 || !settings.IcyVeinMultiPull
                 && cast.OnSelf(IcyVeins))
                 return;
 
             // Use Mana Stone
-            if ((ObjectManager.GetNumberAttackPlayer() > 1 && Me.ManaPercentage < 50 || Me.ManaPercentage < 5)
+            if ((unitCache.EnemiesAttackingMe.Count > 1 && Me.ManaPercentage < 50 || Me.ManaPercentage < 5)
                 && foodManager.UseManaStone())
                 return;
 
+            bool targetHasFrostBite = Target.HasBuff("Frostbite");
             // Ice Lance
-            if ((Target.HaveBuff("Frostbite") || Target.HaveBuff("Frost Nova"))
+            if ((targetHasFrostBite || Target.HasAura(FrostNova))
                 && cast.OnTarget(IceLance))
                 return;
 
             // Frost Nova
             if (Target.GetDistance < 6f
                 && Target.HealthPercent > 10
-                && !Target.HaveBuff("Frostbite")
+                && !targetHasFrostBite
                 && _polymorphedEnemy == null
                 && cast.OnSelf(FrostNova))
                 return;
 
             // Fire Blast
             if (Target.HealthPercent <= settings.FireblastThreshold
-                && !Target.HaveBuff("Frostbite")
-                && !Target.HaveBuff("Frost Nova")
+                && !targetHasFrostBite
+                && !Target.HasAura(FrostNova)
                 && cast.OnTarget(FireBlast))
                 return;
 
             // Cone of Cold
             if (Target.GetDistance < 10
                 && settings.UseConeOfCold
-                && Me.IsFacing(Target.Position, 0.5f)
+                && Me.IsFacing(Target.PositionWithoutType, 0.5f)
                 && _polymorphedEnemy == null
                 && cast.OnSelf(ConeOfCold))
                 return;
@@ -156,7 +156,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // Frost Bolt
             if (Me.Level >= 6
                 && !cast.IsBackingUp
-                && (Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand)
+                && (Target.HealthPercent > settings.WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 40 || !iCanUseWand)
                 && cast.OnTarget(Frostbolt))
                 return;
 
@@ -174,18 +174,18 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Stop wand if banned
             if (WTCombat.IsSpellRepeating(5019)
-                && UnitImmunities.Contains(ObjectManager.Target, "Shoot")
+                && UnitImmunities.Contains(Target, "Shoot")
                 && cast.OnTarget(UseWand))
                 return;
 
             // Spell if wand banned
-            if (UnitImmunities.Contains(ObjectManager.Target, "Shoot"))
+            if (UnitImmunities.Contains(Target, "Shoot"))
                 if (cast.OnTarget(Frostbolt) || cast.OnTarget(Fireball) || cast.OnTarget(ArcaneMissiles))
                     return;
 
             // Use Wand
             if (!WTCombat.IsSpellRepeating(5019)
-                && _iCanUseWand
+                && iCanUseWand
                 && !cast.IsBackingUp
                 && !MovementManager.InMovement)
             {

@@ -1,8 +1,8 @@
 ﻿using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
-using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Shaman
 {
@@ -18,7 +18,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         {
             base.BuffRotation();
 
-            if (!Me.HaveBuff("Ghost Wolf") && (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95))
+            if (!Me.HasAura(GhostWolf) && (!Me.HasBuff("Drink") || Me.ManaPercentage > 95))
             {
                 // Ghost Wolf
                 if (settings.GhostWolfMount
@@ -37,20 +37,20 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     return;
 
                 // Water Shield
-                if (!Me.HaveBuff("Water Shield")
-                    && !Me.HaveBuff("Lightning Shield")
+                if (!Me.HasAura(WaterShield)
+                    && !Me.HasAura(LightningShield)
                     && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage < 20)
                     && cast.OnSelf(WaterShield))
                     return;
 
                 // PARTY Cure poison
-                WoWPlayer needCurePoison = partyManager.GroupAndRaid
+                IWoWPlayer needCurePoison = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasPoisonDebuff(m.Name));
                 if (needCurePoison != null && cast.OnFocusUnit(CurePoison, needCurePoison))
                     return;
 
                 // PARTY Cure Disease
-                WoWPlayer needCureDisease = partyManager.GroupAndRaid
+                IWoWPlayer needCureDisease = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
@@ -68,25 +68,25 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             RangeManager.SetRangeToMelee();
 
             // Check if caster
-            if (_casterEnemies.Contains(ObjectManager.Target.Name))
-                _fightingACaster = true;
+            if (casterEnemies.Contains(Target.Name))
+                fightingACaster = true;
 
             // Remove Ghost Wolf
-            if (Me.HaveBuff("Ghost Wolf")
+            if (Me.HasAura(GhostWolf)
                 && cast.OnSelf(GhostWolf))
                 return;
 
             // Water Shield
-            if (!Me.HaveBuff("Water Shield")
-                && !Me.HaveBuff("Lightning Shield")
-                && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage < _lowManaThreshold)
+            if (!Me.HasAura(WaterShield)
+                && !Me.HasAura(LightningShield)
+                && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage < lowManaThreshold)
                 && cast.OnSelf(WaterShield))
                 return;
 
             // Ligntning Shield
-            if (Me.ManaPercentage > _lowManaThreshold
-                && !Me.HaveBuff("Lightning Shield")
-                && !Me.HaveBuff("Water Shield")
+            if (Me.ManaPercentage > lowManaThreshold
+                && !Me.HasAura(LightningShield)
+                && !Me.HasAura(WaterShield)
                 && settings.UseLightningShield
                 && (!WaterShield.KnownSpell || !settings.UseWaterShield)
                 && cast.OnSelf(LightningShield))
@@ -99,27 +99,26 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
             RangeManager.SetRangeToMelee();
 
-            WoWUnit Target = ObjectManager.Target;
-            bool _isPoisoned = WTEffects.HasPoisonDebuff();
-            bool _hasDisease = WTEffects.HasDiseaseDebuff();
-            bool _shouldBeInterrupted = WTCombat.TargetIsCasting();
+            bool isPoisoned = WTEffects.HasPoisonDebuff();
+            bool hasDisease = WTEffects.HasDiseaseDebuff();
+            bool shouldBeInterrupted = WTCombat.TargetIsCasting();
 
             // Check Auto-Attacking
             ToolBox.CheckAutoAttack(Attack);
 
-            if (_shouldBeInterrupted
-                && !_casterEnemies.Contains(Target.Name))
-                _casterEnemies.Add(Target.Name);
+            if (shouldBeInterrupted
+                && !casterEnemies.Contains(Target.Name))
+                casterEnemies.Add(Target.Name);
 
             // Remove Ghost Wolf
-            if (Me.HaveBuff("Ghost Wolf")
+            if (Me.HasAura(GhostWolf)
                 && cast.OnSelf(GhostWolf))
                 return;
 
             // PARTY Cure Poison
             if (settings.PartyCurePoison)
             {
-                WoWPlayer needCurePoison = partyManager.GroupAndRaid
+                IWoWPlayer needCurePoison = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasPoisonDebuff(m.Name));
                 if (needCurePoison != null && cast.OnFocusUnit(CurePoison, needCurePoison))
                     return;
@@ -128,29 +127,29 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             // PARTY Cure Disease
             if (settings.CureDisease)
             {
-                WoWPlayer needCureDisease = partyManager.GroupAndRaid
+                IWoWPlayer needCureDisease = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
             }
 
             // Bloodlust
-            if (!Me.HaveBuff("Bloodlust")
+            if (!Me.HasAura(Bloodlust)
                 && Target.HealthPercent > 80
                 && cast.OnSelf(Bloodlust))
                 return;
 
             // Water Shield
-            if (!Me.HaveBuff("Water Shield")
-                && !Me.HaveBuff("Lightning Shield")
-                && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage <= _lowManaThreshold)
+            if (!Me.HasAura(WaterShield)
+                && !Me.HasAura(LightningShield)
+                && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage <= lowManaThreshold)
                 && cast.OnSelf(WaterShield))
                 return;
 
             // Lightning Shield
-            if (Me.ManaPercentage > _lowManaThreshold
-                && !Me.HaveBuff("Lightning Shield")
-                && !Me.HaveBuff("Water Shield")
+            if (Me.ManaPercentage > lowManaThreshold
+                && !Me.HasAura(LightningShield)
+                && !Me.HasAura(WaterShield)
                 && settings.UseLightningShield
                 && (!WaterShield.KnownSpell || !settings.UseWaterShield)
                 && cast.OnTarget(LightningShield))
@@ -162,11 +161,11 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 return;
 
             // Earth Shock Interrupt
-            if (_shouldBeInterrupted)
+            if (shouldBeInterrupted)
             {
-                if (!_casterEnemies.Contains(Target.Name))
-                    _casterEnemies.Add(Target.Name);
-                _fightingACaster = true;
+                if (!casterEnemies.Contains(Target.Name))
+                    casterEnemies.Add(Target.Name);
+                fightingACaster = true;
                 Thread.Sleep(Main.humanReflexTime);
                 if (cast.OnTarget(EarthShock))
                     return;
@@ -175,12 +174,12 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             // Totems
             if (Me.ManaPercentage > 20
                 && Target.GetDistance < 20
-                && _totemManager.CastTotems(specialization))
+                && totemManager.CastTotems(specialization))
                 return;
 
             // Flame Shock DPS
             if (Target.GetDistance < 19f
-                && !Target.HaveBuff("Flame Shock")
+                && !Target.HasAura(FlameShock)
                 && cast.OnTarget(FlameShock))
                 return;
 

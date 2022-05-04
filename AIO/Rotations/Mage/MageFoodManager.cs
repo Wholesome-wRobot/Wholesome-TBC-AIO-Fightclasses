@@ -151,7 +151,12 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
         public bool UseManaStone()
         {
-            if (_manaStone == null || WTItem.GetItemCooldown(_manaStone) >= 2)
+
+            if (_manaStone == null)
+                return false;
+
+            int manaStoneCD = WTItem.GetItemCooldown(_manaStone);
+            if (manaStoneCD == 0 || manaStoneCD >= 2)
                 return false;
 
             Logger.LogFight($"Using {_manaStone}");

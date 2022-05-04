@@ -93,7 +93,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AutoUpdater.cs" />
-    <Compile Include="Helpers\AIOPartyMember.cs" />
     <Compile Include="Helpers\AIOSpell.cs" />
     <Compile Include="Helpers\Cast.cs" />
     <Compile Include="Helpers\Enums.cs" />

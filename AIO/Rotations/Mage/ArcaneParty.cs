@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.Helpers;
-using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Mage
 {
@@ -18,24 +18,24 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
         protected override void BuffRotation()
         {
-            if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
+            if (!Me.HasBuff("Drink") || Me.ManaPercentage > 95)
             {
                 base.BuffRotation();
 
                 // Mage Armor
-                if (!Me.HaveBuff("Mage Armor")
+                if (!Me.HasAura(MageArmor)
                     && settings.ACMageArmor
                     && cast.OnSelf(MageArmor))
                     return;
 
                 // Ice Armor
-                if (!Me.HaveBuff("Ice Armor")
+                if (!Me.HasAura(IceArmor)
                     && (!settings.ACMageArmor || !MageArmor.KnownSpell)
                     && cast.OnSelf(IceArmor))
                     return;
 
                 // Frost Armor
-                if (!Me.HaveBuff("Frost Armor")
+                if (!Me.HasAura(FrostArmor)
                     && !IceArmor.KnownSpell
                     && (!settings.ACMageArmor || !MageArmor.KnownSpell)
                     && cast.OnSelf(FrostArmor))
@@ -51,11 +51,9 @@ namespace WholesomeTBCAIO.Rotations.Mage
         {
             base.Pull();
 
-            WoWUnit _target = ObjectManager.Target;
-
             // Slow
             if (settings.ACSlow
-                && !_target.HaveBuff("Slow")
+                && !Target.HasAura(Slow)
                 && cast.OnTarget(Slow))
                 return;
 
@@ -72,12 +70,12 @@ namespace WholesomeTBCAIO.Rotations.Mage
         {
             base.CombatRotation();
             Lua.LuaDoString("PetAttack();");
-            WoWUnit Target = ObjectManager.Target;
+            int presenceOfMindCD = WTCombat.GetSpellCooldown(PresenceOfMind.Name);
 
             // PARTY Remove Curse
             if (settings.PartyRemoveCurse)
             {
-                List<AIOPartyMember> needRemoveCurse = partyManager.GroupAndRaid
+                List<IWoWPlayer> needRemoveCurse = unitCache.GroupAndRaid
                     .FindAll(m => WTEffects.HasCurseDebuff(m.Name))
                     .ToList();
                 if (needRemoveCurse.Count > 0 && cast.OnFocusUnit(RemoveCurse, needRemoveCurse[0]))
@@ -90,17 +88,17 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 return;
 
             // Evocation
-            if (unitCache.Me.ManaPercent < 20
-                && unitCache.EnemyUnitsTargetingPlayer.Length <= 0
+            if (Me.ManaPercentage < 20
+                && unitCache.EnemyUnitsTargetingPlayer.Count <= 0
                 && cast.OnSelf(Evocation))
             {
                 Usefuls.WaitIsCasting();
                 return;
             }
-            
+
             // Arcane Explosion
-            if (ToolBox.GetNbEnemiesClose(8f) > 2
-                && unitCache.EnemyUnitsTargetingPlayer.Length <= 0
+            if (unitCache.EnemiesFighting.FindAll(unit => unit.GetDistance < 8).Count > 2
+                && unitCache.EnemyUnitsTargetingPlayer.Count <= 0
                 && Me.Mana > 10
                 && cast.OnSelf(ArcaneExplosion))
                 return;
@@ -118,11 +116,12 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 return;
 
             // Presence of Mind
-            if (!Me.HaveBuff("Presence of Mind")
+            if (presenceOfMindCD <= 0
+                && !Me.HasAura(PresenceOfMind)
                 && Target.HealthPercent < 100
                 && cast.OnSelf(PresenceOfMind))
                 return;
-            if (Me.HaveBuff("Presence of Mind"))
+            if (Me.HasAura(PresenceOfMind))
                 if (cast.OnTarget(ArcaneBlast) || cast.OnTarget(Frostbolt))
                 {
                     Usefuls.WaitIsCasting();
@@ -132,13 +131,13 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // Cold Snap
             if (IcyVeins.GetCurrentCooldown > 0
                 && Me.ManaPercentage > 10
-                && !Me.HaveBuff(IcyVeins.Name)
+                && !Me.HasAura(IcyVeins)
                 && cast.OnSelf(ColdSnap))
                 return;
 
             // Slow
             if (Target.CreatureTypeTarget == "Humanoid"
-                && !Target.HaveBuff("Slow")
+                && !Target.HasAura(Slow)
                 && Target.HealthPercent < 10
                 && Me.ManaPercentage > 10
                 && cast.OnTarget(Slow))
@@ -148,7 +147,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             bool _shouldCastArcaneBlast =
                 ArcaneBlast.KnownSpell
                 && (Me.ManaPercentage > 70
-                || Me.HaveBuff("Clearcasting")
+                || Me.HasBuff("Clearcasting")
                 || (Me.ManaPercentage > 50 && arcaneBlastDebuffCount < 3)
                 || (Me.ManaPercentage > 35 && arcaneBlastDebuffCount < 2)
                 || (arcaneBlastDebuffCount < 1));
@@ -164,18 +163,18 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Stop wand if banned
             if (WTCombat.IsSpellRepeating(5019)
-                && UnitImmunities.Contains(ObjectManager.Target, "Shoot")
+                && UnitImmunities.Contains(Target, "Shoot")
                 && cast.OnTarget(UseWand))
                 return;
 
             // Spell if wand banned
-            if (UnitImmunities.Contains(ObjectManager.Target, "Shoot"))
+            if (UnitImmunities.Contains(Target, "Shoot"))
                 if (cast.OnTarget(ArcaneBlast) || cast.OnTarget(ArcaneMissiles) || cast.OnTarget(Frostbolt) || cast.OnTarget(Fireball))
                     return;
 
             // Use Wand
             if (!WTCombat.IsSpellRepeating(5019)
-                && _iCanUseWand
+                && iCanUseWand
                 && !cast.IsBackingUp
                 && !MovementManager.InMovement
                 && cast.OnTarget(UseWand, false))

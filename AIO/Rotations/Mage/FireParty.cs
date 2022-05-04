@@ -2,10 +2,10 @@
 using System.Linq;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.Helpers;
-using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Mage
 {
@@ -19,34 +19,34 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
         protected override void BuffRotation()
         {
-            if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
+            if (!Me.HasBuff("Drink") || Me.ManaPercentage > 95)
             {
                 base.BuffRotation();
 
-                if (_knowImprovedScorch)
+                if (knowImprovedScorch)
                     RangeManager.SetRange(Scorch.MaxRange);
                 else
                     RangeManager.SetRange(Fireball.MaxRange);
 
                 // Molten Armor
-                if (!Me.HaveBuff("Molten Armor")
+                if (!Me.HasAura(MoltenArmor)
                     && cast.OnSelf(MoltenArmor))
                     return;
 
                 // Mage Armor
-                if (!Me.HaveBuff("Mage Armor")
+                if (!Me.HasAura(MageArmor)
                     && !MoltenArmor.KnownSpell
                     && cast.OnSelf(MageArmor))
                     return;
 
                 // Ice Armor
-                if (!Me.HaveBuff("Ice Armor")
+                if (!Me.HasAura(IceArmor)
                     && (!MoltenArmor.KnownSpell && !MageArmor.KnownSpell)
                     && cast.OnSelf(IceArmor))
                     return;
 
                 // Frost Armor
-                if (!Me.HaveBuff("Frost Armor")
+                if (!Me.HasAura(FrostArmor)
                     && (!MoltenArmor.KnownSpell && !MageArmor.KnownSpell && !IceArmor.KnownSpell)
                     && cast.OnSelf(FrostArmor))
                     return;
@@ -61,10 +61,8 @@ namespace WholesomeTBCAIO.Rotations.Mage
         {
             base.Pull();
 
-            WoWUnit _target = ObjectManager.Target;
-
             // Scorch
-            if (_knowImprovedScorch
+            if (knowImprovedScorch
                 && cast.OnTarget(Scorch))
                 return;
 
@@ -76,12 +74,12 @@ namespace WholesomeTBCAIO.Rotations.Mage
         protected override void CombatRotation()
         {
             base.CombatRotation();
-            WoWUnit Target = ObjectManager.Target;
+            int presenceOfMindCD = WTCombat.GetSpellCooldown(PresenceOfMind.Name);
 
             // PARTY Remove Curse
             if (settings.PartyRemoveCurse)
             {
-                List<AIOPartyMember> needRemoveCurse = partyManager.GroupAndRaid
+                List<IWoWPlayer> needRemoveCurse = unitCache.GroupAndRaid
                     .FindAll(m => m.InCombatFlagOnly && WTEffects.HasCurseDebuff(m.Name))
                     .ToList();
                 if (needRemoveCurse.Count > 0 && cast.OnFocusUnit(RemoveCurse, needRemoveCurse[0]))
@@ -95,7 +93,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Evocation
             if (Me.ManaPercentage < 20
-                && unitCache.EnemyUnitsTargetingPlayer.Length <= 0
+                && unitCache.EnemyUnitsTargetingPlayer.Count <= 0
                 && cast.OnSelf(Evocation))
             {
                 Usefuls.WaitIsCasting();
@@ -103,12 +101,12 @@ namespace WholesomeTBCAIO.Rotations.Mage
             }
 
             // Dragon's Breath
-            if (ToolBox.GetNbEnemiesClose(10f) > 2
+            if (unitCache.EnemyUnitsNearPlayer.FindAll(enemy => enemy.GetDistance < 10).Count > 2
                 && cast.OnSelf(DragonsBreath))
                 return;
 
             // Blast Wave
-            if (ToolBox.GetNbEnemiesClose(10f) > 2
+            if (unitCache.EnemyUnitsNearPlayer.FindAll(enemy => enemy.GetDistance < 10).Count > 2
                 && cast.OnSelf(BlastWave))
                 return;
 
@@ -125,11 +123,12 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 return;
 
             // Presence of Mind
-            if (!Me.HaveBuff("Presence of Mind")
+            if (presenceOfMindCD <= 0
+                && !Me.HasAura(PresenceOfMind)
                 && Target.HealthPercent < 100
                 && cast.OnSelf(PresenceOfMind))
                 return;
-            if (Me.HaveBuff("Presence of Mind"))
+            if (Me.HasAura(PresenceOfMind))
                 if (cast.OnTarget(Fireball) || cast.OnTarget(Frostbolt))
                 {
                     Usefuls.WaitIsCasting();
@@ -139,21 +138,21 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // Cold Snap
             if (IcyVeins.GetCurrentCooldown > 0
                 && Me.ManaPercentage > 10
-                && !Me.HaveBuff(IcyVeins.Name)
+                && !Me.HasAura(IcyVeins)
                 && cast.OnSelf(ColdSnap))
                 return;
 
             // Scorch first
             int wantedScorchCount = Target.IsBoss ? 5 : 2;
             int nbScorchDebuffOnTarget = WTEffects.CountDebuff("Fire Vulnerability", "target");
-            if (_knowImprovedScorch
+            if (knowImprovedScorch
                 && (nbScorchDebuffOnTarget < wantedScorchCount)
                 && cast.OnTarget(Scorch))
                 return;
 
             // Scorch renewal
-            if (_knowImprovedScorch
-                && nbScorchDebuffOnTarget >= wantedScorchCount 
+            if (knowImprovedScorch
+                && nbScorchDebuffOnTarget >= wantedScorchCount
                 && WTEffects.DeBuffTimeLeft("Fire Vulnerability", "target") < 10
                 && cast.OnTarget(Scorch))
             {
@@ -162,7 +161,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             }
 
             // Combustion
-            if (!Me.HaveBuff("Combustion")
+            if (!Me.HasAura(Combustion)
                 && Combustion.GetCurrentCooldown <= 0
                 && WTEffects.DeBuffTimeLeft("Fire Vulnerability", "target") > 20
                 && WTEffects.CountDebuff("Fire Vulnerability", "target") >= wantedScorchCount
@@ -170,7 +169,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 return;
 
             // Fire Blast
-            if (!_knowImprovedScorch
+            if (!knowImprovedScorch
                 && cast.OnTarget(FireBlast))
                 return;
 
@@ -181,18 +180,18 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Stop wand if banned
             if (WTCombat.IsSpellRepeating(5019)
-                && UnitImmunities.Contains(ObjectManager.Target, "Shoot")
+                && UnitImmunities.Contains(Target, "Shoot")
                 && cast.OnTarget(UseWand))
                 return;
 
             // Spell if wand banned
-            if (UnitImmunities.Contains(ObjectManager.Target, "Shoot"))
+            if (UnitImmunities.Contains(Target, "Shoot"))
                 if (cast.OnTarget(Frostbolt) || cast.OnTarget(Fireball) || cast.OnTarget(ArcaneBlast) || cast.OnTarget(ArcaneMissiles))
                     return;
 
             // Use Wand
             if (!WTCombat.IsSpellRepeating(5019)
-                && _iCanUseWand
+                && iCanUseWand
                 && !cast.IsBackingUp
                 && !MovementManager.InMovement
                 && cast.OnTarget(UseWand, false))

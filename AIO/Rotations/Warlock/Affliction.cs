@@ -3,7 +3,6 @@ using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.Helpers;
-using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Warlock
 {
@@ -27,36 +26,36 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 return;
 
             // Unending Breath
-            if (!Me.HaveBuff("Unending Breath")
+            if (!Me.HasAura(UnendingBreath)
                 && settings.UseUnendingBreath
                 && cast.OnSelf(UnendingBreath))
                 return;
 
             // Fel Armor
-            if (!Me.HaveBuff("Fel Armor")
+            if (!Me.HasAura(FelArmor)
                 && settings.UseFelArmor
                 && cast.OnSelf(FelArmor))
                 return;
 
             // Demon Armor
-            if (!Me.HaveBuff("Demon Skin")
-                && !Me.HaveBuff("Demon Armor")
-                && !Me.HaveBuff("Fel Armor")
+            if (!Me.HasAura(DemonSkin)
+                && !Me.HasAura(DemonArmor)
+                && !Me.HasAura(FelArmor)
                 && cast.OnSelf(DemonArmor))
                 return;
 
             // Demon Skin
-            if (!Me.HaveBuff("Demon Skin")
-                && !Me.HaveBuff("Demon Armor")
-                && !Me.HaveBuff("Fel Armor")
+            if (!Me.HasAura(DemonSkin)
+                && !Me.HasAura(DemonArmor)
+                && !Me.HasAura(FelArmor)
                 && cast.OnSelf(DemonSkin))
                 return;
 
             // Health Funnel OOC
-            if (ObjectManager.Pet.HealthPercent < 50
+            if (Pet.HealthPercent < 50
                 && Me.HealthPercent > 40
-                && ObjectManager.Pet.GetDistance < 19
-                && !ObjectManager.Pet.InCombatFlagOnly
+                && Pet.GetDistance < 19
+                && !Pet.InCombatFlagOnly
                 && settings.HealthFunnelOOC)
             {
                 Lua.LuaDoString("PetWait();");
@@ -87,7 +86,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 return;
 
             // Use Soul Stone
-            if (!Me.HaveBuff("Soulstone Resurrection")
+            if (!Me.HasBuff("Soulstone Resurrection")
                 && CreateSoulstone.KnownSpell
                 && WTItem.HaveOneInList(WarlockPetAndConsumables.SOULSTONES)
                 && ToolBox.GetItemCooldown(WarlockPetAndConsumables.SOULSTONES) <= 0)
@@ -106,7 +105,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             base.Pull();
 
             // Pet attack
-            if (ObjectManager.Pet.Target != ObjectManager.Me.Target)
+            if (Pet.Target != Me.Target)
                 Lua.LuaDoString("PetAttack();");
 
             // Life Tap
@@ -117,35 +116,35 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 return;
 
             // Amplify Curse
-            if (!Me.HaveBuff("Amplify Curse")
+            if (!Me.HasAura(AmplifyCurse)
                 && cast.OnSelf(AmplifyCurse))
                 return;
 
             // Siphon Life
             if (Me.HealthPercent < 90
                 && settings.UseSiphonLife
-                && !ObjectManager.Target.HaveBuff("Siphon Life")
+                && !Target.HasAura(SiphonLife)
                 && cast.OnTarget(SiphonLife))
                 return;
 
             // Unstable Affliction
-            if (!ObjectManager.Target.HaveBuff("Unstable Affliction")
+            if (!Target.HasAura(UnstableAffliction)
                 && cast.OnTarget(UnstableAffliction))
                 return;
 
             // Curse of Agony
-            if (!ObjectManager.Target.HaveBuff("Curse of Agony")
+            if (!Target.HasAura(CurseOfAgony)
                 && cast.OnTarget(CurseOfAgony))
                 return;
 
             // Corruption
-            if (!ObjectManager.Target.HaveBuff("Corruption")
+            if (!Target.HasAura(Corruption)
                 && cast.OnTarget(Corruption))
                 return;
 
             // Immolate
-            if (!ObjectManager.Target.HaveBuff("Immolate")
-                && !ObjectManager.Target.HaveBuff("Fire Ward")
+            if (!Target.HasAura(Immolate)
+                && !Target.HasBuff("Fire Ward")
                 && !Corruption.KnownSpell
                 && cast.OnTarget(Immolate))
                 return;
@@ -160,17 +159,15 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         {
             base.CombatRotation();
 
-            WoWUnit Me = ObjectManager.Me;
-            WoWUnit Target = ObjectManager.Target;
-            double _myManaPC = Me.ManaPercentage;
-            bool _overLowManaThreshold = _myManaPC > _innerManaSaveThreshold;
+            double myManaPC = Me.ManaPercentage;
+            bool overLowManaThreshold = myManaPC > _innerManaSaveThreshold;
 
             // Drain Soul
             bool _shouldDrainSoul = WTItem.CountItemStacks("Soul Shard") < settings.NumberOfSoulShards || settings.AlwaysDrainSoul;
             if (_shouldDrainSoul
-                && ObjectManager.Target.HealthPercent < settings.DrainSoulHP
-                && ObjectManager.Target.Level >= Me.Level - 8
-                && !UnitImmunities.Contains(ObjectManager.Target, "Drain Soul(Rank 1)"))
+                && Target.HealthPercent < settings.DrainSoulHP
+                && Target.Level >= Me.Level - 8
+                && !UnitImmunities.Contains(Target, "Drain Soul(Rank 1)"))
             {
                 if (settings.DrainSoulLevel1
                     && cast.OnTarget(DrainSoulRank1))
@@ -180,7 +177,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             }
 
             // How of Terror
-            if (ToolBox.GetNumberEnemiesAround(10f, Me) > 1
+            if (unitCache.EnemiesAttackingMe.FindAll(unit => unit.GetDistance < 10).Count > 1
                 && cast.OnSelf(HowlOfTerror))
                 return;
 
@@ -189,16 +186,16 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 WarlockPetAndConsumables.UseHealthstone();
 
             // Shadow Trance
-            if (Me.HaveBuff("Shadow Trance")
-                && _overLowManaThreshold
+            if (Me.HasBuff("Shadow Trance")
+                && overLowManaThreshold
                 && cast.OnTarget(ShadowBolt))
                 return;
 
             // Siphon Life
             if (Me.HealthPercent < 90
-                && _overLowManaThreshold
+                && overLowManaThreshold
                 && Target.HealthPercent > 20
-                && !Target.HaveBuff("Siphon Life")
+                && !Target.HasAura(SiphonLife)
                 && settings.UseSiphonLife
                 && cast.OnTarget(SiphonLife))
                 return;
@@ -215,30 +212,30 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 return;
 
             // Curse of Agony
-            if (!Target.HaveBuff("Curse of Agony")
-                && _overLowManaThreshold
+            if (!Target.HasAura(CurseOfAgony)
+                && overLowManaThreshold
                 && Target.HealthPercent > 20
                 && cast.OnTarget(CurseOfAgony))
                 return;
 
             // Unstable Affliction
-            if (!Target.HaveBuff("Unstable Affliction")
-                && _overLowManaThreshold
+            if (!Target.HasAura(UnstableAffliction)
+                && overLowManaThreshold
                 && Target.HealthPercent > 30
                 && cast.OnTarget(UnstableAffliction))
                 return;
 
             // Corruption
-            if (!Target.HaveBuff("Corruption")
-                && _overLowManaThreshold
+            if (!Target.HasAura(Corruption)
+                && overLowManaThreshold
                 && Target.HealthPercent > 20
                 && cast.OnTarget(Corruption))
                 return;
 
             // Immolate
-            if (!Target.HaveBuff("Immolate")
-                && !ObjectManager.Target.HaveBuff("Fire Ward")
-                && _overLowManaThreshold
+            if (!Target.HasAura(Immolate)
+                && !Target.HasBuff("Fire Ward")
+                && overLowManaThreshold
                 && Target.HealthPercent > 30
                 && (settings.UseImmolateHighLevel || !UnstableAffliction.KnownSpell)
                 && cast.OnTarget(Immolate))
@@ -251,8 +248,8 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 return;
 
             // Health Funnel
-            if (ObjectManager.Pet.IsValid
-                && ObjectManager.Pet.HealthPercent < 30
+            if (Pet.IsValid
+                && Pet.HealthPercent < 30
                 && Me.HealthPercent > 30)
             {
                 if (RangeManager.GetRange() > 19)
@@ -263,8 +260,8 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             // Dark Pact
             if (Me.ManaPercentage < 70
-                && ObjectManager.Pet.Mana > 0
-                && ObjectManager.Pet.ManaPercentage > 60
+                && Pet.Mana > 0
+                && Pet.ManaPercentage > 60
                 && settings.UseDarkPact
                 && cast.OnSelf(DarkPact))
                 return;
@@ -277,8 +274,8 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 return;
 
             // Incinerate
-            if (Target.HaveBuff("Immolate")
-                && _overLowManaThreshold
+            if (Target.HasAura(Immolate)
+                && overLowManaThreshold
                 && Target.HealthPercent > 30
                 && settings.UseIncinerate
                 && cast.OnTarget(Incinerate))
@@ -286,27 +283,27 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             // Shadow Bolt
             if ((!settings.PrioritizeWandingOverSB || !_iCanUseWand)
-                && (ObjectManager.Target.HealthPercent > 50 || Me.ManaPercentage > 90 && ObjectManager.Target.HealthPercent > 10)
-                && _myManaPC > 40
+                && (Target.HealthPercent > 50 || Me.ManaPercentage > 90 && Target.HealthPercent > 10)
+                && myManaPC > 40
                 && cast.OnTarget(ShadowBolt))
                 return;
 
             // Life Tap
             if (Me.HealthPercent > 50
                 && Me.ManaPercentage < 40
-                && !ObjectManager.Target.IsTargetingMe
+                && !Target.IsTargetingMe
                 && settings.UseLifeTap
                 && cast.OnSelf(LifeTap))
                 return;
 
             // Stop wand if banned
             if (WTCombat.IsSpellRepeating(5019)
-                && UnitImmunities.Contains(ObjectManager.Target, "Shoot")
+                && UnitImmunities.Contains(Target, "Shoot")
                 && cast.OnTarget(UseWand))
                 return;
 
             // Spell if wand banned
-            if (UnitImmunities.Contains(ObjectManager.Target, "Shoot")
+            if (UnitImmunities.Contains(Target, "Shoot")
                 && cast.OnTarget(ShadowBolt))
                 return;
 

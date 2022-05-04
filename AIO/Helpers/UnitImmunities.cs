@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using wManager.Wow.Class;
 using wManager.Wow.ObjectManager;
 
@@ -8,12 +9,12 @@ namespace WholesomeTBCAIO.Helpers
     {
         public static List<UnitImmunity> ListUnitImmunities { get; } = new List<UnitImmunity>();
 
-        public static bool Contains(WoWUnit unit, string spellName)
+        public static bool Contains(IWoWUnit unit, string spellName)
         {
             return ListUnitImmunities.Exists(ei => ei.UnitGuid == unit.Guid && ei.SpellName == spellName);
         }
 
-        public static void Add(WoWUnit unit, string spellName)
+        public static void Add(IWoWUnit unit, string spellName)
         {
             Spell spell = new Spell(spellName);
             if (!Contains(unit, spellName) && spell.KnownSpell)

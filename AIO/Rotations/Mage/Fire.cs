@@ -25,19 +25,19 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 return;
 
             // Arcane Intellect
-            if (!Me.HaveBuff("Arcane Intellect")
+            if (!Me.HasAura(ArcaneIntellect)
                 && ArcaneIntellect.KnownSpell
                 && ArcaneIntellect.IsSpellUsable
                 && cast.OnSelf(ArcaneIntellect))
                 return;
 
             // Ice Armor
-            if (!Me.HaveBuff("Ice Armor")
+            if (!Me.HasAura(IceArmor)
                 && cast.OnSelf(IceArmor))
                 return;
 
             // Frost Armor
-            if (!Me.HaveBuff("Frost Armor")
+            if (!Me.HasAura(FrostArmor)
                 && !IceArmor.KnownSpell
                 && cast.OnSelf(FrostArmor))
                 return;
@@ -50,13 +50,13 @@ namespace WholesomeTBCAIO.Rotations.Mage
             WoWUnit _target = ObjectManager.Target;
 
             // Combustion
-            if (!Me.HaveBuff("Combustion")
+            if (!Me.HasAura(Combustion)
                 && cast.OnSelf(Combustion))
                 return;
 
             // Fireball
             if (_target.GetDistance < 33f
-                && (_target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 30 || !_iCanUseWand)
+                && (_target.HealthPercent > settings.WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 30 || !iCanUseWand)
                 && cast.OnTarget(Fireball))
                 return;
         }
@@ -68,11 +68,10 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 ToolBox.CheckAutoAttack(Attack);
 
             base.CombatRotation();
-            WoWUnit Target = ObjectManager.Target;
 
             // Stop wand use on multipull
-            if (_iCanUseWand && ObjectManager.GetNumberAttackPlayer() > 1)
-                _iCanUseWand = false;
+            if (iCanUseWand && unitCache.EnemiesAttackingMe.Count > 1)
+                iCanUseWand = false;
 
             // Remove Curse
             if (WTEffects.HasCurseDebuff())
@@ -83,41 +82,41 @@ namespace WholesomeTBCAIO.Rotations.Mage
             }
 
             // Mana Shield
-            if (!Me.HaveBuff("Mana Shield")
+            if (!Me.HasAura(ManaShield)
                 && (Me.HealthPercent < 30 && Me.ManaPercentage > 50
                 || Me.HealthPercent < 10)
                 && cast.OnTarget(ManaShield))
                 return;
 
             // Use Mana Stone
-            if ((ObjectManager.GetNumberAttackPlayer() > 1 && Me.ManaPercentage < 50 || Me.ManaPercentage < 5)
+            if ((unitCache.EnemiesAttackingMe.Count > 1 && Me.ManaPercentage < 50 || Me.ManaPercentage < 5)
                 && foodManager.UseManaStone())
                 return;
 
             // Combustion
-            if (!Me.HaveBuff("Combustion")
+            if (!Me.HasAura(Combustion)
                 && cast.OnSelf(Combustion))
                 return;
 
             // Blast Wave
             if (settings.BlastWaveOnMulti
                 && ToolBox.GetNbEnemiesClose(10) > 1
-                && ObjectManager.GetNumberAttackPlayer() > 1
+                && unitCache.EnemiesAttackingMe.Count > 1
                 && cast.OnSelf(BlastWave))
                 return;
 
             // Dragon's Breath
             if (Target.GetDistance <= 10f
                 && settings.UseDragonsBreath
-                && (Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand)
+                && (Target.HealthPercent > settings.WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 40 || !iCanUseWand)
                 && _polymorphedEnemy == null
                 && cast.OnSelf(DragonsBreath))
                 return;
 
             // Fire Blast
             if (Target.HealthPercent <= settings.FireblastThreshold
-                && (Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand)
-                && !Target.HaveBuff("Polymorph")
+                && (Target.HealthPercent > settings.WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 40 || !iCanUseWand)
+                && !Target.HasAura(Polymorph)
                 && cast.OnTarget(FireBlast))
                 return;
 
@@ -129,25 +128,25 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 return;
 
             // FireBall
-            if ((Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand)
-                && !Target.HaveBuff("Polymorph")
+            if ((Target.HealthPercent > settings.WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 40 || !iCanUseWand)
+                && !Target.HasAura(Polymorph)
                 && cast.OnTarget(Fireball))
                 return;
 
             // Stop wand if banned
             if (WTCombat.IsSpellRepeating(5019)
-                && UnitImmunities.Contains(ObjectManager.Target, "Shoot"))
+                && UnitImmunities.Contains(Target, "Shoot"))
                 if (cast.OnTarget(UseWand))
                     return;
 
             // Spell if wand banned
-            if (UnitImmunities.Contains(ObjectManager.Target, "Shoot"))
+            if (UnitImmunities.Contains(Target, "Shoot"))
                 if (cast.OnTarget(Fireball) || cast.OnTarget(Frostbolt) || cast.OnTarget(ArcaneMissiles))
                     return;
 
             // Use Wand
             if (!WTCombat.IsSpellRepeating(5019)
-                && _iCanUseWand
+                && iCanUseWand
                 && !cast.IsBackingUp
                 && !MovementManager.InMovement)
             {

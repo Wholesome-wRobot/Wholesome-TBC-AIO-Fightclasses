@@ -15,13 +15,12 @@ namespace WholesomeTBCAIO.Rotations.Warrior
     public class Warrior : BaseRotation
     {
         protected WarriorSettings settings;
-        protected WoWLocalPlayer Me = ObjectManager.Me;
-        protected bool _fightingACaster = false;
-        protected List<string> _casterEnemies = new List<string>();
-        protected bool _pullFromAfar = false;
-        private Timer _moveBehindTimer = new Timer();
-        protected Timer _combatMeleeTimer = new Timer();
+        protected bool fightingACaster = false;
+        protected List<string> casterEnemies = new List<string>();
+        protected bool pullFromAfar = false;
+        protected Timer combatMeleeTimer = new Timer();
         protected Warrior specialization;
+        private Timer _moveBehindTimer = new Timer();
 
         public Warrior(BaseSettings settings) : base(settings) { }
 
@@ -84,13 +83,13 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             if (!Me.IsMounted && !Me.IsCast)
             {
                 // Battle Shout
-                if (!Me.HaveBuff("Battle Shout")
+                if (!Me.HasAura(BattleShout)
                     && (!settings.UseCommandingShout || !CommandingShout.KnownSpell)
                     && cast.OnSelf(BattleShout))
                     return;
 
                 // Commanding Shout
-                if (!Me.HaveBuff("Commanding Shout")
+                if (!Me.HasAura(CommandingShout)
                     && settings.UseCommandingShout
                     && cast.OnSelf(CommandingShout))
                     return;
@@ -108,7 +107,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 && settings.PartyStandBehind
                 && _moveBehindTimer.IsReady)
             {
-                if (ToolBox.StandBehindTargetCombat())
+                if (ToolBox.StandBehindTargetCombat(unitCache))
                     _moveBehindTimer = new Timer(4000);
             }
         }
@@ -164,8 +163,8 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         // EVENT HANDLERS
         private void FightEndHandler(ulong guid)
         {
-            _fightingACaster = false;
-            _pullFromAfar = false;
+            fightingACaster = false;
+            pullFromAfar = false;
         }
     }
 }

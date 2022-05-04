@@ -3,6 +3,7 @@ using System;
 using System.ComponentModel;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Events;
@@ -17,12 +18,11 @@ namespace WholesomeTBCAIO.Rotations.Mage
         protected Mage specialization;
         protected MageSettings settings;
         protected MageFoodManager foodManager;
-        protected WoWLocalPlayer Me = ObjectManager.Me;
-        protected WoWUnit _polymorphedEnemy = null;
-        protected bool _iCanUseWand = WTGear.HaveRangedWeaponEquipped;
-        protected bool _isPolymorphing;
-        protected bool _polymorphableEnemyInThisFight = true;
-        protected bool _knowImprovedScorch = WTTalent.GetTalentRank(2, 9) > 0;
+        protected IWoWUnit _polymorphedEnemy = null;
+        protected bool iCanUseWand = WTGear.HaveRangedWeaponEquipped;
+        protected bool isPolymorphing;
+        protected bool polymorphableEnemyInThisFight = true;
+        protected bool knowImprovedScorch = WTTalent.GetTalentRank(2, 9) > 0;
 
         public Mage(BaseSettings settings) : base(settings) { }
 
@@ -63,7 +63,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 {
                     if (StatusChecker.BasicConditions()
                         && _polymorphedEnemy != null
-                        && !ObjectManager.Me.InCombatFlagOnly)
+                        && !Me.InCombatFlagOnly)
                         _polymorphedEnemy = null;
 
                     if (StatusChecker.OutOfCombat(RotationRole))
@@ -74,8 +74,8 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
                     if (StatusChecker.InCombat()
                         && !cast.IsBackingUp
-                        && !_isPolymorphing
-                        && (!ObjectManager.Target.HaveBuff("Polymorph") || ObjectManager.GetNumberAttackPlayer() < 1))
+                        && !isPolymorphing
+                        && (!Target.HasAura(Polymorph) || unitCache.EnemiesAttackingMe.Count < 1))
                         specialization.CombatRotation();
                 }
                 catch (Exception arg)
@@ -100,14 +100,14 @@ namespace WholesomeTBCAIO.Rotations.Mage
             if (specialization.RotationType == Enums.RotationType.Party)
             {
                 // PARTY Arcane Intellect
-                WoWPlayer noAI = partyManager.GroupAndRaid
-                    .Find(m => m.Mana > 0 && !m.HaveBuff(ArcaneIntellect.Name));
+                IWoWPlayer noAI = unitCache.GroupAndRaid
+                    .Find(m => m.Mana > 0 && !m.HasAura(ArcaneIntellect));
                 if (noAI != null && cast.OnFocusUnit(ArcaneIntellect, noAI))
                     return;
             }
 
             // Dampen Magic
-            if (!Me.HaveBuff("Dampen Magic")
+            if (!Me.HasAura(DampenMagic)
                 && settings.UseDampenMagic
                 && DampenMagic.KnownSpell
                 && DampenMagic.IsSpellUsable
@@ -117,7 +117,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
         protected override void CombatRotation()
         {
-            if (ObjectManager.Pet.IsValid && !ObjectManager.Pet.HasTarget)
+            if (Pet.IsValid && !Pet.HasTarget)
                 Lua.LuaDoString("PetAttack();");
 
             if (specialization.RotationType == Enums.RotationType.Party)
@@ -126,11 +126,11 @@ namespace WholesomeTBCAIO.Rotations.Mage
                     && cast.OnSelf(IceBlock))
                     return;
 
-                if (Me.HaveBuff("Ice Block")
+                if (Me.HasAura(IceBlock)
                     && Me.HealthPercent <= 50)
                     return;
 
-                if (Me.HaveBuff("Ice Block")
+                if (Me.HasAura(IceBlock)
                     && Me.HealthPercent > 50)
                 {
                     WTEffects.TBCCancelPlayerBuff("Ice Block");
@@ -190,20 +190,20 @@ namespace WholesomeTBCAIO.Rotations.Mage
         private void FightEndHandler(ulong guid)
         {
             cast.IsBackingUp = false;
-            _iCanUseWand = false;
-            _polymorphableEnemyInThisFight = false;
-            _isPolymorphing = false;
+            iCanUseWand = false;
+            polymorphableEnemyInThisFight = false;
+            isPolymorphing = false;
             RangeManager.SetRange(Fireball.MaxRange);
 
             if (!Fight.InFight
-            && Me.InCombatFlagOnly
-            && _polymorphedEnemy != null
-            && ObjectManager.GetNumberAttackPlayer() < 1
-            && _polymorphedEnemy.IsAlive)
+                && Me.InCombatFlagOnly
+                && _polymorphedEnemy != null
+                && unitCache.EnemiesAttackingMe.Count < 1
+                && _polymorphedEnemy.IsAlive)
             {
                 Logger.Log($"Starting fight with {_polymorphedEnemy.Name} (polymorphed)");
                 Fight.InFight = false;
-                Fight.CurrentTarget = _polymorphedEnemy;
+                Fight.CurrentTarget = _polymorphedEnemy.WowUnit;
                 ulong _enemyGUID = _polymorphedEnemy.Guid;
                 _polymorphedEnemy = null;
                 Fight.StartFight(_enemyGUID);
@@ -212,7 +212,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
         private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)
         {
-            _iCanUseWand = WTGear.HaveRangedWeaponEquipped;
+            iCanUseWand = WTGear.HaveRangedWeaponEquipped;
         }
 
         private void FightLoopHandler(WoWUnit unit, CancelEventArgs cancelable)
@@ -220,15 +220,15 @@ namespace WholesomeTBCAIO.Rotations.Mage
             float minDistance = RangeManager.GetMeleeRangeWithTarget() + 3f;
 
             // Do we need to backup?
-            if ((ObjectManager.Target.HaveBuff("Frostbite") || ObjectManager.Target.HaveBuff("Frost Nova"))
-                && ObjectManager.Target.GetDistance < minDistance
+            if ((Target.HasBuff("Frostbite") || Target.HasAura(FrostNova))
+                && Target.GetDistance < minDistance
                 && Me.IsAlive
-                && ObjectManager.Target.IsAlive
+                && Target.IsAlive
                 && !cast.IsBackingUp
                 && !Me.IsCast
                 && !RangeManager.CurrentRangeIsMelee()
-                && ObjectManager.Target.HealthPercent > 5
-                && !_isPolymorphing)
+                && Target.HealthPercent > 5
+                && !isPolymorphing)
             {
                 cast.IsBackingUp = true;
                 Timer timer = new Timer(3000);
@@ -236,17 +236,17 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 // Using CTM
                 if (settings.BackupUsingCTM)
                 {
-                    Vector3 position = WTSpace.BackOfUnit(Me, 15f);
+                    Vector3 position = WTSpace.BackOfUnit(Me.WowUnit, 15f);
                     MovementManager.Go(PathFinder.FindPath(position), false);
                     Thread.Sleep(500);
 
                     // Backup loop
                     while (MovementManager.InMoveTo
                         && Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                        && ObjectManager.Target.GetDistance < minDistance
-                        && ObjectManager.Me.IsAlive
-                        && ObjectManager.Target.IsAlive
-                        && (ObjectManager.Target.HaveBuff("Frostbite") || ObjectManager.Target.HaveBuff("Frost Nova"))
+                        && Target.GetDistance < minDistance
+                        && Me.IsAlive
+                        && Target.IsAlive
+                        && (Target.HasBuff("Frostbite") || Target.HasAura(FrostNova))
                         && !timer.IsReady)
                     {
                         // Wait follow path
@@ -261,10 +261,10 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 else
                 {
                     while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                    && ObjectManager.Me.IsAlive
-                    && ObjectManager.Target.IsAlive
-                    && ObjectManager.Target.GetDistance < minDistance
-                    && (ObjectManager.Target.HaveBuff("Frostbite") || ObjectManager.Target.HaveBuff("Frost Nova"))
+                    && Me.IsAlive
+                    && Target.IsAlive
+                    && Target.GetDistance < minDistance
+                    && (Target.HasBuff("Frostbite") || Target.HasAura(FrostNova))
                     && !timer.IsReady)
                     {
                         Move.Backward(Move.MoveAction.PressKey, 500);
@@ -275,28 +275,28 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Polymorph
             if (settings.UsePolymorph
-                && ObjectManager.GetNumberAttackPlayer() > 1
+                && unitCache.EnemiesAttackingMe.Count > 1
                 && Polymorph.KnownSpell
                 && !cast.IsBackingUp
                 && !cast.IsApproachingTarget
                 && specialization.RotationType != Enums.RotationType.Party
-                && _polymorphableEnemyInThisFight)
+                && polymorphableEnemyInThisFight)
             {
-                WoWUnit myNearbyPolymorphed = null;
+                IWoWUnit myNearbyPolymorphed = null;
                 // Detect if a polymorph cast has succeeded
                 if (_polymorphedEnemy != null)
-                    myNearbyPolymorphed = ObjectManager.GetObjectWoWUnit().Find(u => u.HaveBuff("Polymorph") && u.Guid == _polymorphedEnemy.Guid);
+                    myNearbyPolymorphed = unitCache.EnemyUnitsNearPlayer.Find(u => u.HasAura(Polymorph) && u.Guid == _polymorphedEnemy.Guid);
 
                 // If we don't have a polymorphed enemy
                 if (myNearbyPolymorphed == null)
                 {
                     _polymorphedEnemy = null;
-                    _isPolymorphing = true;
-                    WoWUnit firstTarget = ObjectManager.Target;
-                    WoWUnit potentialPolymorphTarget = null;
+                    isPolymorphing = true;
+                    IWoWUnit firstTarget = Target;
+                    IWoWUnit potentialPolymorphTarget = null;
 
                     // Select our attackers one by one for potential polymorphs
-                    foreach (WoWUnit enemy in ObjectManager.GetUnitAttackPlayer())
+                    foreach (IWoWUnit enemy in unitCache.EnemiesAttackingMe)
                     {
                         Interact.InteractGameObject(enemy.GetBaseAddress);
 
@@ -309,7 +309,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                     }
 
                     if (potentialPolymorphTarget == null)
-                        _polymorphableEnemyInThisFight = false;
+                        polymorphableEnemyInThisFight = false;
 
                     // Polymorph cast
                     if (potentialPolymorphTarget != null
@@ -320,7 +320,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                         _polymorphedEnemy = potentialPolymorphTarget;
                     }
 
-                    _isPolymorphing = false;
+                    isPolymorphing = false;
                 }
             }
         }

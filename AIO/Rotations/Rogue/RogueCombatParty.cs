@@ -2,7 +2,6 @@
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.Helpers;
-using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Rogue
 {
@@ -26,13 +25,13 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             RangeManager.SetRangeToMelee();
 
             // Check if caster in list
-            if (_casterEnemies.Contains(ObjectManager.Target.Name))
+            if (_casterEnemies.Contains(Target.Name))
                 _fightingACaster = true;
 
             // Stealth
-            if (!Me.HaveBuff("Stealth")
-                && ObjectManager.Target.GetDistance > 15f
-                && ObjectManager.Target.GetDistance < 25f
+            if (!Me.HasAura(Stealth)
+                && Target.GetDistance > 15f
+                && Target.GetDistance < 25f
                 && settings.StealthApproach
                 && Backstab.KnownSpell
                 && (!WTEffects.HasPoisonDebuff() || settings.StealthWhenPoisoned)
@@ -40,13 +39,13 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 return;
 
             // Stealth approach
-            if (Me.HaveBuff("Stealth")
-                && ObjectManager.Target.GetDistance > 3f
+            if (Me.HasAura(Stealth)
+                && Target.GetDistance > 3f
                 && !_isStealthApproching)
                 StealthApproach();
 
             // Auto
-            if (ObjectManager.Target.GetDistance < 6f && !Me.HaveBuff("Stealth"))
+            if (Target.GetDistance < 6f && !Me.HasAura(Stealth))
                 ToggleAutoAttack(true);
         }
 
@@ -55,8 +54,6 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             base.CombatRotation();
 
             bool _shouldBeInterrupted = WTCombat.TargetIsCasting();
-
-            WoWUnit Target = ObjectManager.Target;
 
             // Force melee
             if (_combatMeleeTimer.IsReady)
@@ -70,8 +67,8 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             {
                 _fightingACaster = true;
                 RangeManager.SetRangeToMelee();
-                if (!_casterEnemies.Contains(ObjectManager.Target.Name))
-                    _casterEnemies.Add(ObjectManager.Target.Name);
+                if (!_casterEnemies.Contains(Target.Name))
+                    _casterEnemies.Add(Target.Name);
             }
 
             // Kick interrupt
@@ -80,12 +77,12 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 return;
 
             // Adrenaline Rush
-            if (!Me.HaveBuff("Adrenaline Rush")
+            if (!Me.HasAura(AdrenalineRush)
                 && cast.OnSelf(AdrenalineRush))
                 return;
 
             // Blade Flurry
-            if (!Me.HaveBuff("Blade Flurry")
+            if (!Me.HasAura(BladeFlurry)
                 && cast.OnSelf(BladeFlurry))
                 return;
 
@@ -96,7 +93,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 return;
 
             // Bandage
-            if (!ObjectManager.Target.IsTargetingMe
+            if (!Target.IsTargetingMe
                 && Me.HealthPercent < 40)
             {
                 MovementManager.StopMoveTo(true, 500);
@@ -117,13 +114,13 @@ namespace WholesomeTBCAIO.Rotations.Rogue
 
             // Evasion
             if (Me.HealthPercent < 30
-                && !Me.HaveBuff("Evasion")
+                && !Me.HasAura(Evasion)
                 && cast.OnSelf(Evasion))
                 return;
 
             // Cloak of Shadows
             if (Me.HealthPercent < 30
-                && !Me.HaveBuff("Cloak of Shadows")
+                && !Me.HasAura(CloakOfShadows)
                 && Target.HealthPercent > 50
                 && cast.OnSelf(CloakOfShadows))
                 return;
@@ -131,19 +128,19 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             // DPS ROTATION
 
             // Slice and Dice
-            if ((!Me.HaveBuff("Slice and Dice") || WTEffects.BuffTimeLeft("Slice and Dice") < 4)
+            if ((!Me.HasAura(SliceAndDice) || WTEffects.BuffTimeLeft("Slice and Dice") < 4)
                 && Me.ComboPoint > 0
                 && cast.OnTarget(SliceAndDice))
                 return;
 
             // Shiv
-            if (Target.HaveBuff("Deadly Poison")
+            if (Target.HasBuff("Deadly Poison")
                 && WTEffects.DeBuffTimeLeft("Deadly Poison", "target") < 3
                 && cast.OnTarget(Shiv))
                 return;
 
             // Rupture
-            if (!Target.HaveBuff("Rupture")
+            if (!Target.HasAura(Rupture)
                 && Me.ComboPoint > 1
                 && cast.OnTarget(Rupture))
                 return;

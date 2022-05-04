@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.ObjectManager;
@@ -17,7 +18,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
         protected override void BuffRotation()
         {
-            if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
+            if (!Me.HasBuff("Drink") || Me.ManaPercentage > 95)
             {
                 base.BuffRotation();
             }
@@ -27,12 +28,10 @@ namespace WholesomeTBCAIO.Rotations.Paladin
         {
             base.Pull();
 
-            WoWUnit Target = ObjectManager.Target;
-
             ToolBox.CheckAutoAttack(Attack);
 
             // PARTY Lay On Hands
-            List<AIOPartyMember> needsLoH = partyManager.GroupAndRaid
+            List<IWoWPlayer> needsLoH = unitCache.GroupAndRaid
                 .FindAll(m => m.HealthPercent < 10)
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
@@ -42,7 +41,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Purifiy
             if (settings.PartyPurify)
             {
-                WoWPlayer needsPurify = partyManager.GroupAndRaid
+                IWoWPlayer needsPurify = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasDiseaseDebuff(m.Name) || WTEffects.HasPoisonDebuff(m.Name));
                 if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
@@ -51,52 +50,54 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Cleanse
             if (settings.PartyCleanse)
             {
-                WoWPlayer needsCleanse = partyManager.GroupAndRaid
+                IWoWPlayer needsCleanse = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasMagicDebuff(m.Name));
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;
             }
 
             // Judgement
-            if ((Me.HaveBuff("Seal of Righteousness") || Me.HaveBuff("Seal of Command"))
+            if ((Me.HasAura(SealOfRighteousness) || Me.HasAura(SealOfCommand) || Me.HasAura(SealOfCommandRank1))
                 && Target.GetDistance < Judgement.MaxRange
-                && (Me.ManaPercentage >= _manaSavePercent || Me.HaveBuff("Seal of the Crusader"))
+                && (Me.ManaPercentage >= manaSavePercent || Me.HasAura(SealOfTheCrusader))
                 && cast.OnTarget(Judgement))
                 return;
 
             // Seal of the Crusader
-            if (!Target.HaveBuff("Judgement of the Crusader")
-                && !Me.HaveBuff("Seal of the Crusader")
-                && Me.ManaPercentage > _manaSavePercent - 20
+            if (!Target.HasBuff("Judgement of the Crusader")
+                && !Me.HasAura(SealOfTheCrusader)
+                && Me.ManaPercentage > manaSavePercent - 20
                 && settings.UseSealOfTheCrusader
                 && cast.OnSelf(SealOfTheCrusader))
                 return;
 
             // Seal of Righteousness
-            if (!Me.HaveBuff("Seal of Righteousness")
-                && !Me.HaveBuff("Seal of the Crusader")
+            if (!Me.HasAura(SealOfRighteousness)
+                && !Me.HasAura(SealOfTheCrusader)
                 && !settings.UseSealOfTheCrusader
-                && (Target.HaveBuff("Judgement of the Crusader") || Me.ManaPercentage > _manaSavePercent || !settings.UseSealOfTheCrusader)
+                && (Target.HasBuff("Judgement of the Crusader") || Me.ManaPercentage > manaSavePercent || !settings.UseSealOfTheCrusader)
                 && (!settings.UseSealOfCommand || !SealOfCommand.KnownSpell)
                 && cast.OnSelf(SealOfRighteousness))
                 return;
 
             // Seal of Command
-            if (!Me.HaveBuff("Seal of Command")
-                && !Me.HaveBuff("Seal of the Crusader")
-                && (Target.HaveBuff("Judgement of the Crusader") || Me.ManaPercentage > _manaSavePercent || !settings.UseSealOfTheCrusader)
+            if (!Me.HasAura(SealOfCommand)
+                && !Me.HasAura(SealOfCommandRank1)
+                && !Me.HasAura(SealOfTheCrusader)
+                && (Target.HasBuff("Judgement of the Crusader") || Me.ManaPercentage > manaSavePercent || !settings.UseSealOfTheCrusader)
                 && settings.UseSealOfCommand
                 && SealOfCommand.KnownSpell
                 && cast.OnSelf(SealOfCommand))
                 return;
 
             // Seal of Command Rank 1
-            if (!Me.HaveBuff("Seal of Righteousness")
-                && !Me.HaveBuff("Seal of the Crusader")
-                && !Me.HaveBuff("Seal of Command")
+            if (!Me.HasAura(SealOfRighteousness)
+                && !Me.HasAura(SealOfTheCrusader)
+                && !Me.HasAura(SealOfCommand)
+                && !Me.HasAura(SealOfCommandRank1)
                 && !SealOfCommand.IsSpellUsable
                 && !SealOfRighteousness.IsSpellUsable
-                && Me.Mana < _manaSavePercent
+                && Me.Mana < manaSavePercent
                 && cast.OnSelf(SealOfCommandRank1))
                 return;
         }
@@ -105,12 +106,10 @@ namespace WholesomeTBCAIO.Rotations.Paladin
         {
             base.CombatRotation();
 
-            WoWUnit Target = ObjectManager.Target;
-
             ToolBox.CheckAutoAttack(Attack);
 
             // PARTY Lay On Hands
-            List<AIOPartyMember> needsLoH = partyManager.GroupAndRaid
+            List<IWoWPlayer> needsLoH = unitCache.GroupAndRaid
                 .FindAll(m => m.HealthPercent < 10)
                 .OrderBy(m => m.HealthPercent)
                 .ToList();
@@ -120,7 +119,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Purifiy
             if (settings.PartyPurify)
             {
-                WoWPlayer needsPurify = partyManager.GroupAndRaid
+                IWoWPlayer needsPurify = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasDiseaseDebuff(m.Name) || WTEffects.HasPoisonDebuff(m.Name));
                 if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
@@ -129,7 +128,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Cleanse
             if (settings.PartyCleanse)
             {
-                WoWPlayer needsCleanse = partyManager.GroupAndRaid
+                IWoWPlayer needsCleanse = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasMagicDebuff(m.Name));
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;
@@ -145,7 +144,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 return;
 
             // Judgement (Crusader)
-            if (Me.HaveBuff("Seal of the Crusader")
+            if (Me.HasAura(SealOfTheCrusader)
                 && Target.GetDistance < Judgement.MaxRange
                 && cast.OnTarget(Judgement))
                 return;
@@ -154,40 +153,43 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if (cast.OnTarget(Judgement))
                 return;
 
+            bool targetHasJOCrsudaer = Target.HasBuff("Judgement of the Crusader");
             // Seal of the Crusader
-            if (!Target.HaveBuff("Judgement of the Crusader")
-                && !Me.HaveBuff("Seal of the Crusader")
+            if (!targetHasJOCrsudaer
+                && !Me.HasAura(SealOfTheCrusader)
                 && cast.OnSelf(SealOfTheCrusader))
                 return;
 
             // Seal of Blood
-            if (Target.HaveBuff("Judgement of the Crusader")
-                && !Me.HaveBuff("Seal of Blood")
+            if (targetHasJOCrsudaer
+                && !Me.HasAura(SealOfBlood)
                 && cast.OnSelf(SealOfBlood))
                 return;
 
             if (!SealOfBlood.KnownSpell)
             {
                 // Seal of Righteousness
-                if (!Me.HaveBuff("Seal of Righteousness")
-                    && !Me.HaveBuff("Seal of the Crusader")
-                    && (Target.HaveBuff("Judgement of the Crusader") || !settings.UseSealOfTheCrusader)
+                if (!Me.HasAura(SealOfRighteousness)
+                    && !Me.HasAura(SealOfTheCrusader)
+                    && (targetHasJOCrsudaer || !settings.UseSealOfTheCrusader)
                     && (!settings.UseSealOfCommand || !SealOfCommand.KnownSpell)
                     && cast.OnSelf(SealOfRighteousness))
                     return;
 
                 // Seal of Command
-                if (!Me.HaveBuff("Seal of Command")
-                    && !Me.HaveBuff("Seal of the Crusader")
-                    && (Target.HaveBuff("Judgement of the Crusader") || !settings.UseSealOfTheCrusader)
+                if (!Me.HasAura(SealOfCommand)
+                    && !Me.HasAura(SealOfCommandRank1)
+                    && !Me.HasAura(SealOfTheCrusader)
+                    && (targetHasJOCrsudaer || !settings.UseSealOfTheCrusader)
                     && settings.UseSealOfCommand
                     && cast.OnSelf(SealOfCommand))
                     return;
 
                 // Seal of Command Rank 1
-                if (!Me.HaveBuff("Seal of Righteousness")
-                    && !Me.HaveBuff("Seal of the Crusader")
-                    && !Me.HaveBuff("Seal of Command")
+                if (!Me.HasAura(SealOfRighteousness)
+                    && !Me.HasAura(SealOfTheCrusader)
+                    && !Me.HasAura(SealOfCommand)
+                    && !Me.HasAura(SealOfCommandRank1)
                     && !SealOfCommand.IsSpellUsable
                     && !SealOfRighteousness.IsSpellUsable
                     && cast.OnSelf(SealOfCommandRank1))

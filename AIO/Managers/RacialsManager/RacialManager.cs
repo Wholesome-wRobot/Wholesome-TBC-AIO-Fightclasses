@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Managers.PartyManager;
+using WholesomeTBCAIO.Managers.UnitCache;
 using WholesomeToolbox;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
@@ -26,11 +27,13 @@ namespace WholesomeTBCAIO.Managers.RacialsManager
         private WoWLocalPlayer Me = ObjectManager.Me;
         private readonly BackgroundWorker _racialsThread = new BackgroundWorker();
         private readonly IPartyManager _partyManager;
+        private readonly IUnitCache _unitCache;
         private bool _isRunning;
 
-        public RacialManager(IPartyManager partyManager)
+        public RacialManager(IPartyManager partyManager, IUnitCache unitCache)
         {
             _partyManager = partyManager;
+            _unitCache = unitCache;
         }
 
         public void Initialize()
@@ -83,7 +86,7 @@ namespace WholesomeTBCAIO.Managers.RacialsManager
         private void RacialBloodFury()
         {
             if (BloodFury.KnownSpell
-                && _partyManager.GroupAndRaid.Count <= 1
+                && _unitCache.GroupAndRaid.Count <= 1
                 && BloodFury.IsSpellUsable
                 && ObjectManager.Target.HealthPercent > 70)
             {
@@ -98,7 +101,7 @@ namespace WholesomeTBCAIO.Managers.RacialsManager
                 && !Me.HaveBuff("Bear Form")
                 && !Me.HaveBuff("Cat Form")
                 && !Me.HaveBuff("Dire Bear Form")
-                && ObjectManager.GetNumberAttackPlayer() > 1
+                && _unitCache.EnemiesAttackingMe.Count > 1
                 && ObjectManager.Target.GetDistance < 8)
             {
                 WarStomp.Launch();
@@ -121,7 +124,7 @@ namespace WholesomeTBCAIO.Managers.RacialsManager
         {
             if (GiftOfTheNaaru.KnownSpell
                 && GiftOfTheNaaru.IsSpellUsable
-                && ObjectManager.GetNumberAttackPlayer() > 1 && Me.HealthPercent < 50)
+                && _unitCache.EnemiesAttackingMe.Count > 1 && Me.HealthPercent < 50)
             {
                 GiftOfTheNaaru.Launch();
                 Usefuls.WaitIsCasting();

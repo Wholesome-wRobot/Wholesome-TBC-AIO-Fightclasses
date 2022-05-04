@@ -21,12 +21,11 @@ namespace WholesomeTBCAIO.Rotations.Paladin
     {
         protected PaladinSettings settings;
         protected Paladin specialization;
-        protected Stopwatch _purifyTimer = new Stopwatch();
-        protected Stopwatch _cleanseTimer = new Stopwatch();
-        protected WoWLocalPlayer Me = ObjectManager.Me;
-        protected int _manaSavePercent;
+        protected Stopwatch purifyTimer = new Stopwatch();
+        protected Stopwatch cleanseTimer = new Stopwatch();
+        protected int manaSavePercent;
+        protected Timer combatMeleeTimer = new Timer();
         private Timer _moveBehindTimer = new Timer(500);
-        protected Timer _combatMeleeTimer = new Timer();
 
         public Paladin(BaseSettings settings) : base(settings) { }
 
@@ -36,7 +35,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             settings = PaladinSettings.Current;
             BaseInit(28, HolyLight, null, settings);
 
-            _manaSavePercent = System.Math.Max(20, settings.ManaSaveLimitPercent);
+            manaSavePercent = System.Math.Max(20, settings.ManaSaveLimitPercent);
 
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightStart += FightStartHandler;
@@ -68,7 +67,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                     if (StatusChecker.OOCMounted())
                         // Crusader Aura
                         if (CrusaderAura.KnownSpell
-                            && !Me.HaveBuff("Crusader Aura"))
+                            && !Me.HasAura(CrusaderAura))
                             cast.OnTarget(CrusaderAura);
 
                     if (StatusChecker.OutOfCombat(RotationRole))
@@ -83,7 +82,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                     if (StatusChecker.InCombatNoTarget())
                         specialization.CombatNoTarget();
 
-                    if (partyManager.GroupAndRaid.Any(p => p.InCombatFlagOnly && p.GetDistance < 50))
+                    if (unitCache.GroupAndRaid.Any(p => p.InCombatFlagOnly && p.GetDistance < 50))
                         specialization.HealerCombat();
                 }
                 catch (Exception arg)
@@ -101,22 +100,23 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if (specialization.RotationType == Enums.RotationType.Party)
             {
                 // Aura
-                if (!Me.HaveBuff(settings.PartyAura)
+                if (!Me.HasBuff(settings.PartyAura)
+                    && AIOSpell.GetSpellByName(settings.PartyAura) != null
                     && cast.OnSelf(AIOSpell.GetSpellByName(settings.PartyAura)))
                     return;
 
                 // PARTY Resurrection
-                List<AIOPartyMember> needRes = partyManager.GroupAndRaid
-                    .FindAll(m => m.IsDead)
+                List<IWoWPlayer> needRes = unitCache.GroupAndRaid
+                    .Where(m => m.IsDead)
                     .OrderBy(m => m.GetDistance)
                     .ToList();
                 if (needRes.Count > 0 && cast.OnFocusUnit(Redemption, needRes[0]))
                     return;
 
-                if (settings.PartyHealOOC || specialization is PaladinHolyParty || specialization is PaladinHolyRaid)
+                if (settings.PartyHealOOC)
                 {
                     // PARTY Heal
-                    List<AIOPartyMember> needHeal = partyManager.GroupAndRaid
+                    List<IWoWPlayer> needHeal = unitCache.GroupAndRaid
                         .FindAll(m => m.HealthPercent < 70)
                         .OrderBy(m => m.HealthPercent)
                         .ToList();
@@ -124,7 +124,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                         return;
 
                     // PARTY Flash of Light
-                    List<AIOPartyMember> needFoL = partyManager.GroupAndRaid
+                    List<IWoWPlayer> needFoL = unitCache.GroupAndRaid
                         .FindAll(m => m.HealthPercent < 95)
                         .OrderBy(m => m.HealthPercent)
                         .ToList();
@@ -133,13 +133,13 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 }
 
                 // PARTY Purifiy
-                WoWPlayer needsPurify = partyManager.GroupAndRaid
+                IWoWPlayer needsPurify = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasDiseaseDebuff(m.Name) || WTEffects.HasPoisonDebuff(m.Name));
                 if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
 
                 // Party Cleanse
-                WoWPlayer needsCleanse = partyManager.GroupAndRaid
+                IWoWPlayer needsCleanse = unitCache.GroupAndRaid
                     .Find(m => UnitHasCleansableDebuff(m.Name));
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;
@@ -162,6 +162,11 @@ namespace WholesomeTBCAIO.Rotations.Paladin
         protected AIOSpell SealOfRighteousness = new AIOSpell("Seal of Righteousness");
         protected AIOSpell SealOfTheCrusader = new AIOSpell("Seal of the Crusader");
         protected AIOSpell SealOfCommand = new AIOSpell("Seal of Command");
+        protected AIOSpell SealOfCommandRank1 = new AIOSpell("Seal of Command", 1);
+        protected AIOSpell SealOfVengeance = new AIOSpell("Seal of Vengeance");
+        protected AIOSpell SealOfWisdom = new AIOSpell("Seal of Wisdom");
+        protected AIOSpell SealOfLight = new AIOSpell("Seal of Light");
+        protected AIOSpell SealOfBlood = new AIOSpell("Seal of Blood");
         protected AIOSpell DevotionAura = new AIOSpell("Devotion Aura");
         protected AIOSpell BlessingOfMight = new AIOSpell("Blessing of Might");
         protected AIOSpell Judgement = new AIOSpell("Judgement");
@@ -181,18 +186,13 @@ namespace WholesomeTBCAIO.Rotations.Paladin
         protected AIOSpell Attack = new AIOSpell("Attack");
         protected AIOSpell CrusaderAura = new AIOSpell("Crusader Aura");
         protected AIOSpell AvengingWrath = new AIOSpell("Avenging Wrath");
-        protected AIOSpell SealOfCommandRank1 = new AIOSpell("Seal of Command", 1);
         protected AIOSpell Consecration = new AIOSpell("Consecration");
         protected AIOSpell ConsecrationRank1 = new AIOSpell("Consecration", 1);
         protected AIOSpell RighteousFury = new AIOSpell("Righteous Fury");
-        protected AIOSpell SealOfVengeance = new AIOSpell("Seal of Vengeance");
-        protected AIOSpell SealOfWisdom = new AIOSpell("Seal of Wisdom");
         protected AIOSpell HolyShield = new AIOSpell("Holy Shield");
         protected AIOSpell HolyShieldRank1 = new AIOSpell("Holy Shield", 1);
         protected AIOSpell AvengersShield = new AIOSpell("Avenger's Shield");
         protected AIOSpell AvengersShieldRank1 = new AIOSpell("Avenger's Shield", 1);
-        protected AIOSpell SealOfLight = new AIOSpell("Seal of Light");
-        protected AIOSpell SealOfBlood = new AIOSpell("Seal of Blood");
         protected AIOSpell DivineIllumination = new AIOSpell("Divine Illumination");
         protected AIOSpell FlashOfLight = new AIOSpell("Flash of Light");
         protected AIOSpell FlashOfLightRank6 = new AIOSpell("Flash of Light", 6);
@@ -206,8 +206,8 @@ namespace WholesomeTBCAIO.Rotations.Paladin
         // EVENT HANDLERS
         private void FightEndHandler(ulong guid)
         {
-            _purifyTimer.Reset();
-            _cleanseTimer.Reset();
+            purifyTimer.Reset();
+            cleanseTimer.Reset();
         }
 
         private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)
@@ -220,7 +220,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 && settings.PartyStandBehind
                 && _moveBehindTimer.IsReady)
             {
-                if (ToolBox.StandBehindTargetCombat())
+                if (ToolBox.StandBehindTargetCombat(unitCache))
                     _moveBehindTimer = new Timer(4000);
             }
         }
@@ -234,10 +234,12 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             if (myBuffSpell == null)
                 return false;
+            else if (!Me.HasAura(myBuffSpell))
+                cast.OnSelf(myBuffSpell);
 
-            if (unitCache.Group.Length > 0)
+            if (unitCache.GroupAndRaid.Count > 0)
             {
-                foreach (IWoWPlayer member in unitCache.Group)
+                foreach (IWoWPlayer member in unitCache.GroupAndRaid)
                 {
                     List<AIOSpell> buffsForThisMember = GetBlessingPerClass(member.WowClass);
                     if (member.IsDead
@@ -248,7 +250,11 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
                     foreach (AIOSpell buff in buffsForThisMember)
                     {
-                        if (member.HasAura(buff))
+                        if (member.HasMyAura(buff))
+                        {
+                            break;
+                        }
+                        else if (member.HasAura(buff))
                         {
                             continue;
                         }

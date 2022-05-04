@@ -4,5 +4,6 @@
     {
         int Stacks { get; }
         int TimeLeft { get; }
+        string Name { get; }
     }
 }

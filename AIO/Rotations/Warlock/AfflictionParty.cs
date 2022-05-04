@@ -2,11 +2,11 @@
 using System.Linq;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.Enums;
 using wManager.Wow.Helpers;
-using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Warlock
 {
@@ -20,39 +20,39 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
         protected override void BuffRotation()
         {
-            if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
+            if (!Me.HasBuff("Drink") || Me.ManaPercentage > 95)
             {
                 base.BuffRotation();
 
                 // Unending Breath
-                if (!Me.HaveBuff("Unending Breath")
+                if (!Me.HasAura(UnendingBreath)
                     && settings.UseUnendingBreath
                     && cast.OnSelf(UnendingBreath))
                     return;
 
                 // Demon Skin
-                if (!Me.HaveBuff("Demon Skin")
+                if (!Me.HasAura(DemonSkin)
                     && !DemonArmor.KnownSpell
                     && !FelArmor.KnownSpell
                     && cast.OnSelf(DemonSkin))
                     return;
 
                 // Demon Armor
-                if ((!Me.HaveBuff("Demon Armor"))
+                if (!Me.HasAura(DemonArmor)
                     && !FelArmor.KnownSpell
                     && cast.OnSelf(DemonArmor))
                     return;
 
                 // Fel Armor
-                if (!Me.HaveBuff("Fel Armor")
+                if (!Me.HasAura(FelArmor)
                     && cast.OnSelf(FelArmor))
                     return;
 
                 // Health Funnel OOC
-                if (ObjectManager.Pet.HealthPercent < 50
+                if (Pet.HealthPercent < 50
                     && Me.HealthPercent > 40
-                    && ObjectManager.Pet.GetDistance < 19
-                    && !ObjectManager.Pet.InCombatFlagOnly
+                    && Pet.GetDistance < 19
+                    && !Pet.InCombatFlagOnly
                     && settings.HealthFunnelOOC)
                 {
                     Lua.LuaDoString("PetWait();");
@@ -87,11 +87,11 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                     && WTItem.HaveOneInList(WarlockPetAndConsumables.SOULSTONES)
                     && ToolBox.GetItemCooldown(WarlockPetAndConsumables.SOULSTONES) <= 0)
                 {
-                    WoWPlayer noSoulstone = partyManager.GroupAndRaid
-                        .Find(m => !m.HaveBuff("Soulstone Resurrection")
+                    IWoWPlayer noSoulstone = unitCache.GroupAndRaid
+                        .Find(m => !m.HasBuff("Soulstone Resurrection")
                             && m.GetDistance < 20
                             && m.Name != "Unknown"
-                            && !TraceLine.TraceLineGo(Me.Position, m.Position)
+                            && !TraceLine.TraceLineGo(Me.PositionWithoutType, m.PositionWithoutType)
                             && (m.WowClass == WoWClass.Paladin || m.WowClass == WoWClass.Priest || m.WowClass == WoWClass.Shaman || m.WowClass == WoWClass.Druid));
                     if (noSoulstone != null)
                     {
@@ -99,7 +99,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                         MovementManager.StopMoveNewThread();
                         MovementManager.StopMoveToNewThread();
                         Lua.RunMacroText($"/target {noSoulstone.Name}");
-                        if (ObjectManager.Target.Name == noSoulstone.Name)
+                        if (Target.Name == noSoulstone.Name)
                         {
                             ToolBox.UseFirstMatchingItem(WarlockPetAndConsumables.SOULSTONES);
                             Usefuls.WaitIsCasting();
@@ -126,15 +126,15 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             base.Pull();
 
             // Pet attack
-            if (ObjectManager.Pet.Target != ObjectManager.Me.Target)
+            if (Pet.Target != Me.Target)
                 Lua.LuaDoString("PetAttack();");
 
             // PARTY Seed of Corruption
-            if (partyManager.EnemiesFighting.Count >= settings.PartySeedOfCorruptionAmount
+            if (unitCache.EnemiesFighting.Count >= settings.PartySeedOfCorruptionAmount
                 && SeedOfCorruption.KnownSpell)
             {
-                List<WoWUnit> enemiesWithoutSeedOfCorruption = partyManager.EnemiesFighting
-                    .Where(e => !e.HaveBuff("Seed of Corruption"))
+                List<IWoWUnit> enemiesWithoutSeedOfCorruption = unitCache.EnemiesFighting
+                    .Where(e => !e.HasAura(SeedOfCorruption))
                     .OrderBy(e => e.GetDistance)
                     .ToList();
                 if (enemiesWithoutSeedOfCorruption.Count > 0
@@ -146,41 +146,41 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             }
 
             // Curse of The Elements
-            if (!ObjectManager.Target.HaveBuff("Curse of the Elements")
+            if (!Target.HasAura(CurseOfTheElements)
                 && settings.PartyCurseOfTheElements
                 && cast.OnTarget(CurseOfTheElements))
                 return;
 
             // Amplify Curse
-            if (!Me.HaveBuff("Amplify Curse")
+            if (!Me.HasAura(AmplifyCurse)
                 && cast.OnSelf(AmplifyCurse))
                 return;
 
             // Siphon Life
             if (Me.HealthPercent < 90
                 && settings.UseSiphonLife
-                && !ObjectManager.Target.HaveBuff("Siphon Life")
+                && !Target.HasAura(SiphonLife)
                 && cast.OnTarget(SiphonLife))
                 return;
 
             // Unstable Affliction
-            if (!ObjectManager.Target.HaveBuff("Unstable Affliction")
+            if (!Target.HasAura(UnstableAffliction)
                 && cast.OnTarget(UnstableAffliction))
                 return;
 
             // Curse of Agony
-            if (!ObjectManager.Target.HaveBuff("Curse of Agony")
+            if (!Target.HasAura(CurseOfAgony)
                 && cast.OnTarget(CurseOfAgony))
                 return;
 
             // Corruption
-            if (!ObjectManager.Target.HaveBuff("Corruption")
-                && ObjectManager.Target.HaveBuff("Seed of Corruption")
+            if (!Target.HasAura(Corruption)
+                && Target.HasAura(SeedOfCorruption)
                 && cast.OnTarget(Corruption))
                 return;
 
             // Immolate
-            if (!ObjectManager.Target.HaveBuff("Immolate")
+            if (!Target.HasAura(Immolate)
                 && !Corruption.KnownSpell
                 && cast.OnTarget(Immolate))
                 return;
@@ -190,12 +190,10 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         {
             base.CombatRotation();
 
-            WoWUnit target = ObjectManager.Target;
-
             // Soulshatter
             if (SoulShatter.IsSpellUsable
                 && settings.UseSoulShatter
-                && unitCache.EnemyUnitsTargetingPlayer.Length > 0
+                && unitCache.EnemyUnitsTargetingPlayer.Count > 0
                 && WTItem.CountItemStacks("Soul Shard") > 0
                 && cast.OnSelf(SoulShatter))
                 return;
@@ -208,16 +206,16 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 return;
 
             // Shadow Trance
-            if (Me.HaveBuff("Shadow Trance")
+            if (Me.HasBuff("Shadow Trance")
                 && cast.OnTarget(ShadowBolt))
                 return;
 
             // PARTY Seed of Corruption
-            if (partyManager.EnemiesFighting.Count >= settings.PartySeedOfCorruptionAmount
+            if (unitCache.EnemiesFighting.Count >= settings.PartySeedOfCorruptionAmount
                 && SeedOfCorruption.KnownSpell)
             {
-                List<WoWUnit> enemiesWithoutSeedOfCorruption = partyManager.EnemiesFighting
-                    .Where(e => !e.HaveBuff("Seed of Corruption"))
+                List<IWoWUnit> enemiesWithoutSeedOfCorruption = unitCache.EnemiesFighting
+                    .Where(e => !e.HasAura(SeedOfCorruption))
                     .OrderBy(e => e.GetDistance)
                     .ToList();
                 if (enemiesWithoutSeedOfCorruption.Count > 0
@@ -232,74 +230,74 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && settings.PartyCurseOfTheElements)
             {
                 // PARTY Curse of the Elements
-                List<WoWUnit> enemiesWithoutCurseOfTheElements = partyManager.EnemiesFighting
-                    .Where(e => !e.HaveBuff("Curse of the Elements"))
+                List<IWoWUnit> enemiesWithoutCurseOfTheElements = unitCache.EnemiesFighting
+                    .Where(e => !e.HasAura(CurseOfTheElements))
                     .OrderBy(e => e.GetDistance)
                     .ToList();
                 if (enemiesWithoutCurseOfTheElements.Count > 0
-                   && partyManager.EnemiesFighting.Count - enemiesWithoutCurseOfTheElements.Count < 3
+                   && unitCache.EnemiesFighting.Count - enemiesWithoutCurseOfTheElements.Count < 3
                    && cast.OnFocusUnit(CurseOfTheElements, enemiesWithoutCurseOfTheElements[0]))
                     return;
             }
             else
             {
                 // PARTY Curse of Agony
-                List<WoWUnit> enemiesWithoutCurseOfAgony = partyManager.EnemiesFighting
-                    .Where(e => !e.HaveBuff("Curse of Agony"))
+                List<IWoWUnit> enemiesWithoutCurseOfAgony = unitCache.EnemiesFighting
+                    .Where(e => !e.HasAura(CurseOfAgony))
                     .OrderBy(e => e.GetDistance)
                     .ToList();
                 if (enemiesWithoutCurseOfAgony.Count > 0
-                   && partyManager.EnemiesFighting.Count - enemiesWithoutCurseOfAgony.Count < 3
+                   && unitCache.EnemiesFighting.Count - enemiesWithoutCurseOfAgony.Count < 3
                    && cast.OnFocusUnit(CurseOfAgony, enemiesWithoutCurseOfAgony[0]))
                     return;
             }
 
             // PARTY Unstable Affliction
-            List<WoWUnit> enemiesWithoutUnstableAff = partyManager.EnemiesFighting
-                .Where(e => !e.HaveBuff("Unstable Affliction"))
+            List<IWoWUnit> enemiesWithoutUnstableAff = unitCache.EnemiesFighting
+                .Where(e => !e.HasAura(UnstableAffliction))
                 .OrderBy(e => e.GetDistance)
                 .ToList();
             if (enemiesWithoutUnstableAff.Count > 0
-               && partyManager.EnemiesFighting.Count - enemiesWithoutUnstableAff.Count < 3
+               && unitCache.EnemiesFighting.Count - enemiesWithoutUnstableAff.Count < 3
                && cast.OnFocusUnit(UnstableAffliction, enemiesWithoutUnstableAff[0]))
                 return;
 
             // PARTY Corruption
-            List<WoWUnit> enemiesWithoutCorruption = partyManager.EnemiesFighting
-                .Where(e => !e.HaveBuff("Corruption") && !e.HaveBuff("Seed of Corruption"))
+            List<IWoWUnit> enemiesWithoutCorruption = unitCache.EnemiesFighting
+                .Where(e => !e.HasAura(Corruption) && !e.HasAura(SeedOfCorruption))
                 .OrderBy(e => e.GetDistance)
                 .ToList();
             if (enemiesWithoutCorruption.Count > 0
-               && partyManager.EnemiesFighting.Count - enemiesWithoutCorruption.Count < 3
+               && unitCache.EnemiesFighting.Count - enemiesWithoutCorruption.Count < 3
                && cast.OnFocusUnit(Corruption, enemiesWithoutCorruption[0]))
                 return;
 
             // PARTY Immolate
-            List<WoWUnit> enemiesWithoutImmolate = partyManager.EnemiesFighting
-                .Where(e => !e.HaveBuff("Immolate"))
+            List<IWoWUnit> enemiesWithoutImmolate = unitCache.EnemiesFighting
+                .Where(e => !e.HasAura(Immolate))
                 .OrderBy(e => e.GetDistance)
                 .ToList();
             if (enemiesWithoutImmolate.Count > 0
-               && partyManager.EnemiesFighting.Count - enemiesWithoutImmolate.Count < 3
+               && unitCache.EnemiesFighting.Count - enemiesWithoutImmolate.Count < 3
                && cast.OnFocusUnit(Immolate, enemiesWithoutImmolate[0]))
                 return;
 
             // PARTY Siphon Life
-            List<WoWUnit> enemiesWithoutSiphonLife = partyManager.EnemiesFighting
-                .Where(e => !e.HaveBuff("Siphon Life"))
+            List<IWoWUnit> enemiesWithoutSiphonLife = unitCache.EnemiesFighting
+                .Where(e => !e.HasAura(SiphonLife))
                 .OrderBy(e => e.GetDistance)
                 .ToList();
             if (enemiesWithoutSiphonLife.Count > 0
-               && partyManager.EnemiesFighting.Count - enemiesWithoutSiphonLife.Count < 3
+               && unitCache.EnemiesFighting.Count - enemiesWithoutSiphonLife.Count < 3
                && cast.OnFocusUnit(SiphonLife, enemiesWithoutSiphonLife[0]))
                 return;
 
             // Drain Soul
             bool _shouldDrainSoul = WTItem.CountItemStacks("Soul Shard") < settings.NumberOfSoulShards || settings.AlwaysDrainSoul;
             if (_shouldDrainSoul
-                && ObjectManager.Target.HealthPercent < settings.DrainSoulHP
-                && ObjectManager.Target.Level >= Me.Level - 8
-                && !UnitImmunities.Contains(ObjectManager.Target, "Drain Soul(Rank 1)"))
+                && Target.HealthPercent < settings.DrainSoulHP
+                && Target.Level >= Me.Level - 8
+                && !UnitImmunities.Contains(Target, "Drain Soul(Rank 1)"))
             {
                 if (settings.DrainSoulLevel1
                     && cast.OnTarget(DrainSoulRank1))
@@ -314,12 +312,12 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             // Stop wand if banned
             if (WTCombat.IsSpellRepeating(5019)
-                && UnitImmunities.Contains(ObjectManager.Target, "Shoot")
+                && UnitImmunities.Contains(Target, "Shoot")
                 && cast.OnTarget(UseWand))
                 return;
 
             // Spell if wand banned
-            if (UnitImmunities.Contains(ObjectManager.Target, "Shoot"))
+            if (UnitImmunities.Contains(Target, "Shoot"))
                 if (cast.OnTarget(ShadowBolt))
                     return;
 

@@ -4,7 +4,6 @@ using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.Helpers;
-using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Hunter
 {
@@ -20,7 +19,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         {
             // Aspect of the Cheetah
             if (!Me.IsMounted
-                && !Me.HaveBuff("Aspect of the Cheetah")
+                && !Me.HasAura(AspectCheetah)
                 && MovementManager.InMoveTo
                 && Me.ManaPercentage > 60
                 && settings.UseAspectOfTheCheetah
@@ -30,21 +29,20 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         protected override void Pull()
         {
             // Hunter's Mark
-            if (ObjectManager.Pet.IsValid
+            if (Pet.IsValid
                 && !HuntersMark.TargetHaveBuff
                 && cast.OnTarget(HuntersMark))
                 return;
 
             // Serpent Sting
-            if (!ObjectManager.Target.HaveBuff("Serpent Sting")
-                && ObjectManager.Target.GetDistance < AutoShot.MaxRange
-                && ObjectManager.Target.GetDistance > 13f
+            if (!Target.HasAura(SerpentSting)
+                && Target.GetDistance < AutoShot.MaxRange
+                && Target.GetDistance > 13f
                 && cast.OnTarget(SerpentSting))
                 return;
         }
         protected override void CombatRotation()
         {
-            WoWUnit Target = ObjectManager.Target;
             float minRange = RangeManager.GetMeleeRangeWithTarget() + settings.BackupDistance;
 
             if (Target.GetDistance < minRange
@@ -57,40 +55,40 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
             if (Target.GetDistance < minRange
                 && !settings.BackupFromMelee)
-                _canOnlyMelee = true;
+                canOnlyMelee = true;
 
             // Mend Pet
-            if (ObjectManager.Pet.IsAlive
-                && ObjectManager.Pet.HealthPercent <= 50
-                && !ObjectManager.Pet.HaveBuff("Mend Pet")
-                && cast.OnFocusUnit(MendPet, ObjectManager.Pet))
+            if (Pet.IsAlive
+                && Pet.HealthPercent <= 50
+                && !Pet.HasAura(MendPet)
+                && cast.OnFocusUnit(MendPet, Pet))
                 return;
 
             // Aspect of the viper
-            if (!Me.HaveBuff("Aspect of the Viper")
+            if (!Me.HasAura(AspectViper)
                 && Me.ManaPercentage < 30
                 && cast.OnSelf(AspectViper))
                 return;
 
             // Aspect of the Hawk
-            if (!Me.HaveBuff("Aspect of the Hawk")
-                && (Me.ManaPercentage > 90 || Me.HaveBuff("Aspect of the Cheetah"))
-                || !Me.HaveBuff("Aspect of the Hawk")
-                && !Me.HaveBuff("Aspect of the Cheetah")
-                && !Me.HaveBuff("Aspect of the Viper"))
+            if (!Me.HasAura(AspectHawk)
+                && (Me.ManaPercentage > 90 || Me.HasAura(AspectCheetah))
+                || !Me.HasAura(AspectHawk)
+                && !Me.HasAura(AspectCheetah)
+                && !Me.HasAura(AspectViper))
                 if (cast.OnSelf(AspectHawk))
                     return;
 
             // Aspect of the Monkey
-            if (!Me.HaveBuff("Aspect of the Monkey")
+            if (!Me.HasAura(AspectMonkey)
                 && !AspectHawk.KnownSpell
                 && cast.OnSelf(AspectMonkey))
                 return;
 
             // Disengage
             if (settings.UseDisengage
-                && ObjectManager.Pet.Target == Me.Target
-                && Target.Target == Me.Guid
+                && Pet.Target == Me.Target
+                && Target.IsTargetingMe
                 && Target.GetDistance < minRange
                 && cast.OnTarget(Disengage))
                 return;
@@ -100,19 +98,19 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && Target.HealthPercent >= 60
                 && Me.ManaPercentage > 10
                 && BestialWrath.IsSpellUsable
-                && (settings.BestialWrathOnMulti && ObjectManager.GetUnitAttackPlayer().Count > 1 || !settings.BestialWrathOnMulti)
+                && (settings.BestialWrathOnMulti && unitCache.EnemiesAttackingMe.Count > 1 || !settings.BestialWrathOnMulti)
                 && cast.OnSelf(BestialWrath))
                 return;
 
             // Rapid Fire
             if (Target.GetDistance < AutoShot.MaxRange
                 && Target.HealthPercent >= 80.0
-                && (settings.RapidFireOnMulti && ObjectManager.GetUnitAttackPlayer().Count > 1 || !settings.RapidFireOnMulti)
+                && (settings.RapidFireOnMulti && unitCache.EnemiesAttackingMe.Count > 1 || !settings.RapidFireOnMulti)
                 && cast.OnSelf(RapidFire))
                 return;
 
             // Kill Command
-            if (ObjectManager.Pet.IsAlive
+            if (Pet.IsAlive
                 && cast.OnTarget(KillCommand))
                 return;
 
@@ -130,7 +128,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
             // Feign Death
             if ((Me.HealthPercent < 20
-                || (ObjectManager.GetNumberAttackPlayer() > 1 && ObjectManager.GetUnitAttackPlayer().Where(u => u.Target == Me.Guid).Count() > 0))
+                || (unitCache.EnemiesAttackingMe.Count > 1 && unitCache.EnemiesAttackingMe.Where(u => u.Target == Me.Guid).Count() > 0))
                 && cast.OnSelf(FeignDeath))
                 return;
 
@@ -146,12 +144,12 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             if ((Target.CreatureTypeTarget == "Humanoid" || Target.Name.Contains("Plainstrider"))
                 && settings.UseConcussiveShot
                 && Target.HealthPercent < 20
-                && !Target.HaveBuff("Wing Clip")
+                && !Target.HasAura(WingClip)
                 && cast.OnTarget(WingClip))
                 return;
 
             // Hunter's Mark
-            if (ObjectManager.Pet.IsValid
+            if (Pet.IsValid
                 && !HuntersMark.TargetHaveBuff
                 && Target.GetDistance > minRange
                 && Target.IsAlive
@@ -167,7 +165,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 return;
 
             // Serpent Sting
-            if (!Target.HaveBuff("Serpent Sting")
+            if (!Target.HasAura(SerpentSting)
                 && Target.GetDistance < AutoShot.MaxRange
                 && Target.HealthPercent >= 60
                 && Me.ManaPercentage > 50u

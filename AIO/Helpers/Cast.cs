@@ -4,10 +4,12 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading;
+using WholesomeTBCAIO.Managers.UnitCache;
 using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Events;
+using wManager.Wow.Enums;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 using Timer = robotManager.Helpful.Timer;
@@ -16,27 +18,29 @@ namespace WholesomeTBCAIO.Helpers
 {
     public class Cast
     {
-        private AIOSpell DefaultBaseSpell { get; }
-        private bool CombatDebugON { get; }
-        private AIOSpell WandSpell { get; }
-        private bool AutoDetectImmunities { get; }
+        private readonly IUnitCache _unitCache;
+        private readonly AIOSpell _wandSpell;
+        private readonly bool autoDetectImmunities;
+        private readonly bool _combatDebugON;
+        private readonly AIOSpell _defaultBaseSpell;
+        private readonly bool _combatLogON;
+        private readonly Random rng = new Random();
+        private IWoWUnit _currentSpellTarget;
+        private AIOSpell _currentSpell;
+        private Vector3 _currentSpellLocation;
+
         public bool IsBackingUp { get; set; }
-        private WoWUnit CurrentSpellTarget { get; set; }
-        private Vector3 CurrentSpellLocation { get; set; }
-        private AIOSpell CurrentSpell { get; set; }
         public bool IsApproachingTarget { get; set; }
-        private bool CombatLogON { get; set; }
 
-        private static Random rng = new Random();
-
-        public Cast(AIOSpell defaultBaseSpell, AIOSpell wandSpell, BaseSettings settings)
+        public Cast(AIOSpell defaultBaseSpell, AIOSpell wandSpell, BaseSettings settings, IUnitCache unitCache)
         {
-            AutoDetectImmunities = settings.AutoDetectImmunities;
-            DefaultBaseSpell = defaultBaseSpell;
-            CombatDebugON = settings.ActivateCombatDebug;
-            WandSpell = wandSpell;
+            _unitCache = unitCache;
+            autoDetectImmunities = settings.AutoDetectImmunities;
+            _defaultBaseSpell = defaultBaseSpell;
+            _combatDebugON = settings.ActivateCombatDebug;
+            _wandSpell = wandSpell;
             IsApproachingTarget = false;
-            CombatLogON = settings.ActivateCombatLog;
+            _combatLogON = settings.ActivateCombatLog;
             EventsLuaWithArgs.OnEventsLuaStringWithArgs += EventsLuaStringWithArgsHandler;
             FightEvents.OnFightLoop += FightLoopHandler;
         }
@@ -46,7 +50,7 @@ namespace WholesomeTBCAIO.Helpers
             int spellIndex = WTPet.GetPetSpellIndex(spellName);
             if (WTPet.PetKnowsSpell(spellName)
                 && WTPet.PetSpellReady(spellIndex)
-                && !UnitImmunities.Contains(ObjectManager.Target, spellName)
+                && !UnitImmunities.Contains(_unitCache.Target, spellName)
                 && (ObjectManager.Pet.HasTarget || noTargetNeeded))
             {
                 Thread.Sleep(ToolBox.GetLatency() + 100);
@@ -80,17 +84,17 @@ namespace WholesomeTBCAIO.Helpers
             return false;
         }
 
-        public bool Buff(AIOPartyMember unit, AIOSpell spell, uint reagent = 0)
+        public bool Buff(IWoWPlayer unit, AIOSpell spell, uint reagent = 0)
         {
-            return Buff(new List<AIOPartyMember>() { unit }, spell, reagent);
+            return Buff(new List<IWoWPlayer>() { unit }, spell, reagent);
         }
 
-        public bool Buff(List<AIOPartyMember> units, AIOSpell spell, uint reagent = 0)
+        public bool Buff(List<IWoWPlayer> units, AIOSpell spell, uint reagent = 0)
         {
             if (reagent != 0 && !ItemsManager.HasItemById(reagent))
                 return false;
-            List<AIOPartyMember> unitsNeedsBuff = units
-                .FindAll(m => !m.HaveBuff(spell.Name))
+            List<IWoWPlayer> unitsNeedsBuff = units
+                .FindAll(m => !m.HasAura(spell))
                 .OrderBy(m => rng.Next())
                 .ToList();
             if (unitsNeedsBuff.Count <= 0)
@@ -113,12 +117,12 @@ namespace WholesomeTBCAIO.Helpers
             return AdvancedCast(s, stopWandAndCast, location: location);
         }
 
-        public bool OnFocusUnit(AIOSpell s, WoWUnit onUnitFocus, bool stopWandAndCast = true)
+        public bool OnFocusUnit(AIOSpell s, IWoWUnit onUnitFocus, bool stopWandAndCast = true)
         {
             return AdvancedCast(s, stopWandAndCast, onUnitFocus: onUnitFocus);
         }
 
-        public bool AdvancedCast(AIOSpell spell, bool stopWandAndCast = true, bool onSelf = false, WoWUnit onUnitFocus = null, Vector3 location = null)
+        public bool AdvancedCast(AIOSpell spell, bool stopWandAndCast = true, bool onSelf = false, IWoWUnit onUnitFocus = null, Vector3 location = null)
         {
             WoWUnit Me = ObjectManager.Me;
             float buffer = 600;
@@ -126,77 +130,77 @@ namespace WholesomeTBCAIO.Helpers
             if (IsApproachingTarget)
                 return true;
 
-            CurrentSpell = spell;
-            CurrentSpellLocation = location;
+            _currentSpell = spell;
+            _currentSpellLocation = location;
 
-            CombatDebug("*----------- INTO PRE CAST FOR " + CurrentSpell.Name);
+            CombatDebug("*----------- INTO PRE CAST FOR " + _currentSpell.Name);
 
-            if (!CurrentSpell.KnownSpell
+            if (!_currentSpell.KnownSpell
                 || IsBackingUp
                 || Me.CastingTimeLeft > buffer
-                || !CurrentSpell.IsForcedCooldownReady
+                || !_currentSpell.IsForcedCooldownReady
                 || Me.IsStunned)
                 return false;
 
             // Define target
             if (onUnitFocus != null)
-                CurrentSpellTarget = onUnitFocus;
-            else if (CurrentSpellLocation != null)
-                CurrentSpellTarget = null;
+                _currentSpellTarget = onUnitFocus;
+            else if (_currentSpellLocation != null)
+                _currentSpellTarget = null;
             else if (onSelf)
-                CurrentSpellTarget = ObjectManager.Me;
+                _currentSpellTarget = _unitCache.Me;
             else
             {
-                if (CurrentSpell.MaxRange <= 0 && ObjectManager.Target.GetDistance > RangeManager.GetMeleeRangeWithTarget())
+                if (_currentSpell.MaxRange <= 0 && _unitCache.Target.GetDistance > RangeManager.GetMeleeRangeWithTarget())
                     return false;
-                CurrentSpellTarget = ObjectManager.Target;
+                _currentSpellTarget = _unitCache.Target;
             }
 
-            CombatDebug("*----------- TARGET IS " + CurrentSpellTarget.Name);
+            CombatDebug("*----------- TARGET IS " + _currentSpellTarget.Name);
 
             // Now that we know the target
-            if (CurrentSpellLocation == null)
+            if (_currentSpellLocation == null)
             {
-                if (CurrentSpellTarget == null
-                    || CurrentSpellTarget.GetDistance > 100
-                    || (CurrentSpellTarget.IsDead && !CurrentSpell.OnDeadTarget)
-                    || (CurrentSpell.MinRange > 0 && CurrentSpellTarget.GetDistance <= CurrentSpell.MinRange)
-                    || UnitImmunities.Contains(CurrentSpellTarget, CurrentSpell.Name)
-                    || (!CurrentSpellTarget.IsValid && !CurrentSpell.OnDeadTarget)) // double check this
+                if (_currentSpellTarget == null
+                    || _currentSpellTarget.GetDistance > 100
+                    || (_currentSpellTarget.IsDead && !_currentSpell.OnDeadTarget)
+                    || (_currentSpell.MinRange > 0 && _currentSpellTarget.GetDistance <= _currentSpell.MinRange)
+                    || UnitImmunities.Contains(_currentSpellTarget, _currentSpell.Name)
+                    || (!_currentSpellTarget.IsValid && !_currentSpell.OnDeadTarget)) // double check this
                     return false;
             }
 
-            CombatDebug("*----------- INTO CAST FOR " + CurrentSpell.Name);
+            CombatDebug("*----------- INTO CAST FOR " + _currentSpell.Name);
 
             // CHECK COST
-            if (CurrentSpell.PowerType == -2 && Me.Health < CurrentSpell.Cost)
+            if (_currentSpell.PowerType == -2 && Me.Health < _currentSpell.Cost)
             {
-                CombatDebug($"{CurrentSpell.Name}: Not enough health {CurrentSpell.Cost}/{Me.Health}, SKIPPING");
+                CombatDebug($"{_currentSpell.Name}: Not enough health {_currentSpell.Cost}/{Me.Health}, SKIPPING");
                 return false;
             }
-            else if (CurrentSpell.PowerType == 0 && Me.Mana < CurrentSpell.Cost)
+            else if (_currentSpell.PowerType == 0 && Me.Mana < _currentSpell.Cost)
             {
-                CombatDebug($"{CurrentSpell.Name}: Not enough mana {CurrentSpell.Cost}/{Me.Mana}, SKIPPING");
+                CombatDebug($"{_currentSpell.Name}: Not enough mana {_currentSpell.Cost}/{Me.Mana}, SKIPPING");
                 return false;
             }
-            else if (CurrentSpell.PowerType == 1 && Me.Rage < CurrentSpell.Cost)
+            else if (_currentSpell.PowerType == 1 && Me.Rage < _currentSpell.Cost)
             {
-                CombatDebug($"{CurrentSpell.Name}: Not enough rage {CurrentSpell.Cost}/{Me.Rage}, SKIPPING");
+                CombatDebug($"{_currentSpell.Name}: Not enough rage {_currentSpell.Cost}/{Me.Rage}, SKIPPING");
                 return false;
             }
-            else if (CurrentSpell.PowerType == 2 && ObjectManager.Pet.Focus < CurrentSpell.Cost)
+            else if (_currentSpell.PowerType == 2 && ObjectManager.Pet.Focus < _currentSpell.Cost)
             {
-                CombatDebug($"{CurrentSpell.Name}: Not enough pet focus {CurrentSpell.Cost}/{ObjectManager.Pet.Focus}, SKIPPING");
+                CombatDebug($"{_currentSpell.Name}: Not enough pet focus {_currentSpell.Cost}/{ObjectManager.Pet.Focus}, SKIPPING");
                 return false;
             }
-            else if (CurrentSpell.PowerType == 3 && Me.Energy < CurrentSpell.Cost)
+            else if (_currentSpell.PowerType == 3 && Me.Energy < _currentSpell.Cost)
             {
-                CombatDebug($"{CurrentSpell.Name}: Not enough energy {CurrentSpell.Cost}/{Me.Energy}, SKIPPING");
+                CombatDebug($"{_currentSpell.Name}: Not enough energy {_currentSpell.Cost}/{Me.Energy}, SKIPPING");
                 return false;
             }
 
             // DON'T CAST BECAUSE WANDING
-            if (WandSpell != null
+            if (_wandSpell != null
                 && WTCombat.IsSpellRepeating(5019)
                 && !stopWandAndCast)
             {
@@ -205,48 +209,48 @@ namespace WholesomeTBCAIO.Helpers
             }
 
             // COOLDOWN CHECKS
-            float _spellCD = CurrentSpell.GetCurrentCooldown;
+            float _spellCD = _currentSpell.GetCurrentCooldown;
             CombatDebug($"Cooldown is {_spellCD}");
 
             if (_spellCD >= 500)
             {
                 CombatDebug("Didn't cast because cd is too long");
-                return _spellCD < 1500 && WandSpell != null; // recycle if it's just global CD (avoid wand weave)
+                return _spellCD < 1500 && _wandSpell != null; // recycle if it's just global CD (avoid wand weave)
             }
 
             // STOP WAND FOR CAST
-            if (WandSpell != null
+            if (_wandSpell != null
                 && WTCombat.IsSpellRepeating(5019)
                 && stopWandAndCast)
-                StopWandWaitGCD(WandSpell);
+                StopWandWaitGCD(_wandSpell);
 
 
             // Wait for remaining Cooldown
             if (_spellCD > 0f && _spellCD < buffer)
             {
-                CombatDebug($"{CurrentSpell.Name} is almost ready, waiting");
-                while (CurrentSpell.GetCurrentCooldown > 0 && CurrentSpell.GetCurrentCooldown < 500)
+                CombatDebug($"{_currentSpell.Name} is almost ready, waiting");
+                while (_currentSpell.GetCurrentCooldown > 0 && _currentSpell.GetCurrentCooldown < 500)
                     Thread.Sleep(50);
                 Thread.Sleep(50); // safety
             }
 
-            if (!CurrentSpell.IsSpellUsable)
+            if (!_currentSpell.IsSpellUsable)
             {
                 CombatDebug("Didn't cast because spell somehow not usable");
                 return false;
             }
 
-            bool stopMove = CurrentSpell.CastTime > 0 || CurrentSpell.IsChannel;
+            bool stopMove = _currentSpell.CastTime > 0 || _currentSpell.IsChannel;
 
-            if (CurrentSpellLocation != null || CurrentSpellTarget.Guid != Me.Guid)
+            if (_currentSpellLocation != null || _currentSpellTarget.Guid != Me.Guid)
             {
-                Vector3 spellPosition = CurrentSpellLocation != null ? CurrentSpellLocation : CurrentSpellTarget.Position;
-                if (CurrentSpell.MaxRange > 0 && spellPosition.DistanceTo(Me.Position) > CurrentSpell.MaxRange || TraceLine.TraceLineGo(spellPosition))
+                Vector3 spellPosition = _currentSpellLocation != null ? _currentSpellLocation : _currentSpellTarget.PositionWithoutType;
+                if (_currentSpell.MaxRange > 0 && spellPosition.DistanceTo(Me.Position) > _currentSpell.MaxRange || TraceLine.TraceLineGo(spellPosition))
                 {
                     if (Me.HaveBuff("Spirit of Redemption"))
                         return false;
 
-                    Logger.LogFight($"Target not in range/sight, recycling {CurrentSpell.Name}");
+                    Logger.LogFight($"Target not in range/sight, recycling {_currentSpell.Name}");
 
                     if (Fight.InFight)
                         IsApproachingTarget = true;
@@ -258,10 +262,10 @@ namespace WholesomeTBCAIO.Helpers
             }
 
             if (onUnitFocus != null)
-                ObjectManager.Me.FocusGuid = CurrentSpellTarget.Guid;
+                _unitCache.Me.SetFocus(_currentSpellTarget.Guid);
 
             string unit = onUnitFocus != null ? "focus" : "target";
-            unit = onSelf || CurrentSpellLocation != null ? "player" : unit;
+            unit = onSelf || _currentSpellLocation != null ? "player" : unit;
 
             // Wait for remaining cast in case of buffer
             while (Me.CastingTimeLeft > 0)
@@ -270,18 +274,18 @@ namespace WholesomeTBCAIO.Helpers
             if (stopMove)
                 MovementManager.StopMoveNewThread();
 
-            if (CombatLogON)
+            if (_combatLogON)
             {
-                string rankString = CurrentSpell.Rank > 0 ? $"(Rank {CurrentSpell.Rank})" : "";
-                string target = CurrentSpellLocation != null ? CurrentSpellLocation.ToString() : CurrentSpellTarget.Name;
-                Logger.Log($"[Spell] Casting {CurrentSpell.Name.Replace("()", "")} {rankString} on {target}");
+                string rankString = _currentSpell.Rank > 0 ? $"(Rank {_currentSpell.Rank})" : "";
+                string target = _currentSpellLocation != null ? _currentSpellLocation.ToString() : _currentSpellTarget.Name;
+                Logger.Log($"[Spell] Casting {_currentSpell.Name.Replace("()", "")} {rankString} on {target}");
             }
 
-            CurrentSpell.Launch(stopMove, false, true, unit);
+            _currentSpell.Launch(stopMove, false, true, unit);
 
-            if (CurrentSpell.IsClickOnTerrain)
+            if (_currentSpell.IsClickOnTerrain)
             {
-                ClickOnTerrain.Pulse(CurrentSpellLocation);
+                ClickOnTerrain.Pulse(_currentSpellLocation);
             }
 
             Thread.Sleep(100);
@@ -289,23 +293,23 @@ namespace WholesomeTBCAIO.Helpers
             ToolBox.ClearCursor();
 
             // Wait for channel to end
-            if (CurrentSpell.IsChannel)
+            if (_currentSpell.IsChannel)
             {
-                CombatDebug($"{CurrentSpell.Name} is channel, wait cast");
+                CombatDebug($"{_currentSpell.Name} is channel, wait cast");
                 while (WTCombat.GetChannelTimeLeft("player") > 0)
                     Thread.Sleep(50);
 
-                CurrentSpell.StartForcedCooldown();
+                _currentSpell.StartForcedCooldown();
                 return true;
             }
 
             // Wait for instant cast GCD
-            if (CurrentSpell.CastTime <= 0)
+            if (_currentSpell.CastTime <= 0)
             {
-                CurrentSpell.StartForcedCooldown();
+                _currentSpell.StartForcedCooldown();
                 Timer gcdLimit = new Timer(1500);
-                CombatDebug($"{CurrentSpell.Name} is instant, wait GCD");
-                while (DefaultBaseSpell.GetCurrentCooldown > buffer && !gcdLimit.IsReady)
+                CombatDebug($"{_currentSpell.Name} is instant, wait GCD");
+                while (_defaultBaseSpell.GetCurrentCooldown > buffer && !gcdLimit.IsReady)
                     Thread.Sleep(50);
 
                 if (gcdLimit.IsReady)
@@ -314,19 +318,23 @@ namespace WholesomeTBCAIO.Helpers
                 return true;
             }
 
-            if (CurrentSpell.CastTime > 0)
+            if (_currentSpell.CastTime > 0)
             {
                 // Wait for cast to end
-                buffer = CurrentSpell.PreventDoubleCast ? 0 : buffer;
-                CombatDebug($"{CurrentSpell.Name} is normal, wait until {buffer} left");
+                buffer = _currentSpell.PreventDoubleCast ? 0 : buffer;
+                CombatDebug($"{_currentSpell.Name} is normal, wait until {buffer} left");
                 while (Me.CastingTimeLeft > buffer)
                 {
-                    if (CurrentSpell.IsResurrectionSpell && CurrentSpellTarget.IsAlive)
+                    if (_currentSpell.IsResurrectionSpell && !_currentSpellTarget.IsDead)
                         Lua.RunMacroText("/stopcasting");
 
                     Thread.Sleep(50);
                 }
-                CurrentSpell.StartForcedCooldown();
+
+                if (_currentSpell.PreventDoubleCast)
+                    Thread.Sleep(100);
+
+                _currentSpell.StartForcedCooldown();
             }
 
             return true;
@@ -346,26 +354,30 @@ namespace WholesomeTBCAIO.Helpers
         private void ApproachSpellTarget()
         {
             Timer limit = new Timer(10000);
-            if (CurrentSpellTarget != null)
+            if (_currentSpellTarget != null)
             {
-                Logger.Log($"Approaching {CurrentSpellTarget.Name} to cast {CurrentSpell.Name} ({CurrentSpellTarget.GetDistance}/{CurrentSpell.MaxRange}");
-                MovementManager.Go(PathFinder.FindPath(CurrentSpellTarget.Position), false);
+                WoWUnit unit = _currentSpellTarget.WowUnit;
+                Logger.Log($"Approaching {unit.Name} to cast {_currentSpell.Name}");
+                MovementManager.Go(PathFinder.FindPath(unit.PositionWithoutType), false);
                 Thread.Sleep(1000);
                 while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
                     && !limit.IsReady
-                    && (CurrentSpellTarget.IsAlive || CurrentSpell.OnDeadTarget)
-                    && (CurrentSpellTarget.GetDistance > CurrentSpell.MaxRange - 2 || TraceLine.TraceLineGo(CurrentSpellTarget.Position)))
+                    && (!unit.IsDead || _currentSpell.OnDeadTarget)
+                    && (unit.GetDistance > _currentSpell.MaxRange - 2 || TraceLine.TraceLineGo(_unitCache.Me.PositionWithoutType, unit.PositionWithoutType, CGWorldFrameHitFlags.HitTestSpellLoS)))
+                {
                     Thread.Sleep(100);
+                    //Logger.Log($"Approaching {_currentSpellTarget.Name} to cast {_currentSpell.Name} ({_currentSpellTarget.GetDistance}/{_currentSpell.MaxRange} {TraceLine.TraceLineGo(_unitCache.Me.PositionWithoutType, _currentSpellTarget.PositionWithoutType, CGWorldFrameHitFlags.HitTestSpellLoS)}");
+                }
                 MovementManager.StopMoveNewThread();
             }
-            else if (CurrentSpellLocation != null)
+            else if (_currentSpellLocation != null)
             {
-                Logger.Log($"Approaching {CurrentSpellLocation} to cast {CurrentSpell.Name}");
-                MovementManager.Go(PathFinder.FindPath(CurrentSpellLocation), false);
+                Logger.Log($"Approaching {_currentSpellLocation} to cast {_currentSpell.Name}");
+                MovementManager.Go(PathFinder.FindPath(_currentSpellLocation), false);
                 Thread.Sleep(1000);
                 while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
                     && !limit.IsReady
-                    && (CurrentSpellLocation.DistanceTo(ObjectManager.Me.Position) > CurrentSpell.MaxRange - 2))
+                    && (_currentSpellLocation.DistanceTo(ObjectManager.Me.Position) > _currentSpell.MaxRange - 2))
                     Thread.Sleep(100);
                 MovementManager.StopMoveNewThread();
             }
@@ -378,7 +390,7 @@ namespace WholesomeTBCAIO.Helpers
             wandSpell.Launch();
             Timer limit = new Timer(1500);
 
-            while (!CurrentSpell.IsSpellUsable && !limit.IsReady)
+            while (!_currentSpell.IsSpellUsable && !limit.IsReady)
                 Thread.Sleep(50);
 
             CombatDebug($"Waited for GCD after wand stop : {1500 - limit.TimeLeft()}");
@@ -386,14 +398,14 @@ namespace WholesomeTBCAIO.Helpers
 
         private void CombatDebug(string s)
         {
-            if (CombatDebugON)
+            if (_combatDebugON)
                 Logger.CombatDebug(s);
         }
 
         private void EventsLuaStringWithArgsHandler(string id, List<string> args)
         {
-            if (args.Count >= 12 && AutoDetectImmunities && args[11] == "IMMUNE")
-                UnitImmunities.Add(CurrentSpellTarget, args[9]);
+            if (args.Count >= 12 && autoDetectImmunities && args[11] == "IMMUNE")
+                UnitImmunities.Add(_currentSpellTarget, args[9]);
 
             if (args.Count >= 12 && args[11] == "Target not in line of sight" && Fight.InFight)
             {

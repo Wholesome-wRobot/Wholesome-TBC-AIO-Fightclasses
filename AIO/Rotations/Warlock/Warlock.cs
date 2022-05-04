@@ -1,11 +1,10 @@
 ﻿using robotManager.Helpful;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Events;
@@ -20,7 +19,6 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         protected Warlock specialization;
         protected BackgroundWorker _petPulseThread = new BackgroundWorker();
         protected Stopwatch _addCheckTimer = new Stopwatch();
-        protected WoWLocalPlayer Me = ObjectManager.Me;
         protected int _innerManaSaveThreshold = 20;
         protected bool _iCanUseWand = WTGear.HaveRangedWeaponEquipped;
         protected int _saveDrinkPercent = wManager.wManagerSetting.CurrentSetting.DrinkPercent;
@@ -74,29 +72,24 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 try
                 {
                     if (StatusChecker.BasicConditions()
-                        && ObjectManager.Pet.IsValid
-                        && ObjectManager.Pet.IsAlive)
+                        && Pet.IsValid
+                        && Pet.IsAlive)
                     {
                         bool multiAggroImTargeted = false;
                         // Pet Switch target on multi aggro
                         if (Me.InCombatFlagOnly
-                            && ObjectManager.GetNumberAttackPlayer() > 1)
+                            && unitCache.EnemiesAttackingMe.Count > 1)
                         {
                             Lua.LuaDoString("PetDefensiveMode();");
                             // Get list of units targeting me in a multiaggro situation
-                            List<WoWUnit> unitsAttackingMe = ObjectManager.GetUnitAttackPlayer()
-                                .OrderBy(u => u.Guid)
-                                .Where(u => u.TargetObject.Guid == Me.Guid)
-                                .ToList();
-
-                            foreach (WoWUnit unit in unitsAttackingMe)
+                            foreach (IWoWUnit unit in unitCache.EnemiesAttackingMe)
                             {
                                 multiAggroImTargeted = true;
-                                if (unit.Guid != ObjectManager.Pet.TargetObject.Guid
-                                    && ObjectManager.Pet.TargetObject.Target == ObjectManager.Pet.Guid)
+                                if (unit.Guid != Pet.TargetGuid
+                                    && Pet.GetTargetObject.TargetGuid == Pet.Guid)
                                 {
                                     Logger.Log($"Forcing pet aggro on {unit.Name}");
-                                    Me.FocusGuid = unit.Guid;
+                                    Me.SetFocus(unit.Guid);
                                     cast.PetSpell("PET_ACTION_ATTACK", true);
                                     if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
                                     {
@@ -118,7 +111,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
                         // Voidwalker Torment + Felguard Anguish
                         if ((!settings.AutoTorment || !settings.AutoAnguish)
-                            && ObjectManager.Target.Target == Me.Guid
+                            && Target.TargetGuid == Me.Guid
                             && Me.InCombatFlagOnly)
                         {
                             if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
@@ -206,9 +199,9 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 if (SummonFelguard.KnownSpell)
                     SummonSpell = SummonFelguard;
 
-                if (!ObjectManager.Pet.IsValid
-                    || ObjectManager.Pet.ManaPercentage < settings.ManaThresholdResummon && SummonSpell != SummonImp
-                    || ObjectManager.Pet.HealthPercent < settings.HealthThresholdResummon
+                if (!Pet.IsValid
+                    || Pet.ManaPercentage < settings.ManaThresholdResummon && SummonSpell != SummonImp
+                    || Pet.HealthPercent < settings.HealthThresholdResummon
                     || !SummonSpell.Name.Contains(WarlockPetAndConsumables.MyWarlockPet()))
                     shouldSummon = true;
             }
@@ -216,8 +209,8 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             if (shouldSummon)
             {
                 // Make sure we have mana to summon
-                if (ObjectManager.Me.Mana < SummonSpell.Cost
-                    && !ObjectManager.Me.HaveBuff("Drink")
+                if (Me.Mana < SummonSpell.Cost
+                    && !Me.HasBuff("Drink")
                     && !Me.InCombatFlagOnly)
                 {
                     Logger.Log($"Not enough mana to summon {SummonSpell.Name}, forcing regen");
@@ -227,7 +220,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 }
 
                 Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
-                if (!ObjectManager.Me.IsMounted && !ObjectManager.Me.IsOnTaxi)
+                if (!Me.IsMounted && !Me.IsOnTaxi)
                 {
                     if (cast.OnSelf(FelDomination))
                         Thread.Sleep(200);

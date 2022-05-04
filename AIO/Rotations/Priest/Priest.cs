@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Events;
@@ -17,12 +18,11 @@ namespace WholesomeTBCAIO.Rotations.Priest
     {
         protected PriestSettings settings;
         protected Priest specialization;
-        protected WoWLocalPlayer Me = ObjectManager.Me;
-        protected Stopwatch _dispelTimer = new Stopwatch();
-        protected bool _iCanUseWand = WTGear.HaveRangedWeaponEquipped;
-        protected int _innerManaSaveThreshold = 20;
-        protected int _wandThreshold;
-        private float _defaultRange = 28;
+        protected Stopwatch dispelTimer = new Stopwatch();
+        protected bool iCanUseWand = WTGear.HaveRangedWeaponEquipped;
+        protected int innerManaSaveThreshold = 20;
+        protected int wandThreshold;
+        private readonly float _defaultRange = 28;
 
         public Priest(BaseSettings settings) : base(settings) { }
 
@@ -31,7 +31,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             this.specialization = specialization as Priest;
             settings = PriestSettings.Current;
             BaseInit(_defaultRange, Smite, UseWand, settings);
-            _wandThreshold = settings.WandThreshold > 100 ? 50 : settings.WandThreshold;
+            wandThreshold = settings.WandThreshold > 100 ? 50 : settings.WandThreshold;
 
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightStart += FightStartHandler;
@@ -58,10 +58,10 @@ namespace WholesomeTBCAIO.Rotations.Priest
             {
                 try
                 {
-                    if (Me.HaveBuff("Spirit of Redemption"))
+                    if (Me.HasBuff("Spirit of Redemption"))
                     {
                         // PARTY Greater heal
-                        List<AIOPartyMember> needGreaterHealSR = partyManager.GroupAndRaid
+                        List<IWoWPlayer> needGreaterHealSR = unitCache.GroupAndRaid
                             .FindAll(m => m.HealthPercent < 100)
                             .OrderBy(m => m.HealthPercent)
                             .ToList();
@@ -69,7 +69,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                             continue;
 
                         // PARTY Heal
-                        List<AIOPartyMember> needHealSR = partyManager.GroupAndRaid
+                        List<IWoWPlayer> needHealSR = unitCache.GroupAndRaid
                             .FindAll(m => m.HealthPercent < 100)
                             .OrderBy(m => m.HealthPercent)
                             .ToList();
@@ -86,7 +86,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     if (StatusChecker.InCombat())
                         specialization.CombatRotation();
 
-                    if (partyManager.GroupAndRaid.Any(p => p.InCombatFlagOnly && p.GetDistance < 50) || ObjectManager.Me.HaveBuff("Spirit of Redemption"))
+                    if (unitCache.GroupAndRaid.Any(p => p.InCombatFlagOnly && p.GetDistance < 50) || Me.HasBuff("Spirit of Redemption"))
                         specialization.HealerCombat();
 
                 }
@@ -104,64 +104,62 @@ namespace WholesomeTBCAIO.Rotations.Priest
             if (specialization.RotationType == Enums.RotationType.Party)
             {
                 // PARTY Resurrection
-                List<AIOPartyMember> needRes = partyManager.GroupAndRaid
+                List<IWoWPlayer> needRes = unitCache.GroupAndRaid
                     .FindAll(m => m.IsDead)
                     .OrderBy(m => m.GetDistance)
                     .ToList();
                 if (needRes.Count > 0 && cast.OnFocusUnit(Resurrection, needRes[0]))
                     return;
 
-                List<AIOPartyMember> closeMembers = partyManager.ClosePartyMembers;
-
                 // Party Cure Disease
-                WoWPlayer needCureDisease = closeMembers
+                IWoWPlayer needCureDisease = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasDiseaseDebuff(m.Name));
                 if (needCureDisease != null && cast.OnFocusUnit(CureDisease, needCureDisease))
                     return;
 
                 // Party Dispel Magic
-                WoWPlayer needDispelMagic = closeMembers
+                IWoWPlayer needDispelMagic = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasMagicDebuff(m.Name));
                 if (needDispelMagic != null && cast.OnFocusUnit(DispelMagic, needDispelMagic))
                     return;
 
                 // Prayer of Fortitude
                 if (settings.PartyPrayerOfFortitude
-                    && cast.Buff(closeMembers, PrayerOfFortitude, 17029))
+                    && cast.Buff(unitCache.GroupAndRaid, PrayerOfFortitude, 17029))
                     return;
 
                 // Power Word Fortitude
                 if (settings.UsePowerWordFortitude
                     && !settings.PartyPrayerOfFortitude
-                    && cast.Buff(closeMembers, PowerWordFortitude))
+                    && cast.Buff(unitCache.GroupAndRaid, PowerWordFortitude))
                     return;
 
                 // Prayer Of Shadow Protection
                 if (settings.PartyPrayerOfShadowProtection
-                    && cast.Buff(closeMembers, PrayerOfShadowProtection, 17029))
+                    && cast.Buff(unitCache.GroupAndRaid, PrayerOfShadowProtection, 17029))
                     return;
 
                 // Shadow Protection
                 if (settings.UseShadowProtection
                     && !settings.PartyPrayerOfShadowProtection
-                    && cast.Buff(closeMembers, ShadowProtection))
+                    && cast.Buff(unitCache.GroupAndRaid, ShadowProtection))
                     return;
 
                 // Prayer of Spirit
                 if (settings.PartyPrayerOfSpirit
-                    && cast.Buff(closeMembers, PrayerOfSpirit, 17029))
+                    && cast.Buff(unitCache.GroupAndRaid, PrayerOfSpirit, 17029))
                     return;
 
                 // Divine Spirit
                 if (settings.UseDivineSpirit
                     && !settings.PartyPrayerOfSpirit
-                    && cast.Buff(closeMembers, DivineSpirit))
+                    && cast.Buff(unitCache.GroupAndRaid, DivineSpirit))
                     return;
             }
 
             // OOC Inner Fire
             if (settings.UseInnerFire
-                && !Me.HaveBuff("Inner Fire")
+                && !Me.HasAura(InnerFire)
                 && cast.OnSelf(InnerFire))
                 return;
         }
@@ -216,14 +214,14 @@ namespace WholesomeTBCAIO.Rotations.Priest
         // EVENT HANDLERS
         private void FightEndHandler(ulong guid)
         {
-            _dispelTimer.Reset();
-            _iCanUseWand = false;
+            dispelTimer.Reset();
+            iCanUseWand = false;
             RangeManager.SetRange(_defaultRange);
         }
 
         private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)
         {
-            _iCanUseWand = WTGear.HaveRangedWeaponEquipped;
+            iCanUseWand = WTGear.HaveRangedWeaponEquipped;
         }
     }
 }

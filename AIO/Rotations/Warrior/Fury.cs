@@ -28,7 +28,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             // Check stance
             if (!InBattleStance()
                 && ObjectManager.Me.Rage < 10
-                && !_pullFromAfar
+                && !pullFromAfar
                 && !settings.AlwaysPull)
                 cast.OnSelf(BattleStance);
 
@@ -36,7 +36,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             if (InBattleStance()
                 && ObjectManager.Target.GetDistance > 9f
                 && ObjectManager.Target.GetDistance < 24f
-                && !_pullFromAfar
+                && !pullFromAfar
                 && cast.OnTarget(Charge))
                 return;
 
@@ -44,18 +44,18 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             if (InBerserkStance()
                 && ObjectManager.Target.GetDistance > 9f
                 && ObjectManager.Target.GetDistance < 24f
-                && !_pullFromAfar
+                && !pullFromAfar
                 && cast.OnTarget(Intercept))
                 return;
 
             // Check if caster in list
-            if (_casterEnemies.Contains(ObjectManager.Target.Name))
-                _fightingACaster = true;
+            if (casterEnemies.Contains(ObjectManager.Target.Name))
+                fightingACaster = true;
 
             // Pull logic
-            if (ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { Shoot, Throw }))
+            if (ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { Shoot, Throw }, unitCache))
             {
-                _combatMeleeTimer = new Timer(2000);
+                combatMeleeTimer = new Timer(2000);
                 return;
             }
         }
@@ -63,27 +63,27 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         protected override void CombatRotation()
         {
             base.CombatRotation();
-            WoWUnit Target = ObjectManager.Target;
-            bool _shouldBeInterrupted = WTCombat.TargetIsCasting();
-            bool _inMeleeRange = Target.GetDistance < 6f;
-            bool _saveRage = Cleave.KnownSpell
-                && ObjectManager.GetNumberAttackPlayer() > 1
+
+            bool shouldBeInterrupted = WTCombat.TargetIsCasting();
+            bool inMeleeRange = Target.GetDistance < 6f;
+            bool saveRage = Cleave.KnownSpell
+                && unitCache.EnemiesAttackingMe.Count > 1
                 && ToolBox.GetNbEnemiesClose(15f) > 1
                 && settings.UseCleave
                 || Execute.KnownSpell && Target.HealthPercent < 40
                 || Bloodthirst.KnownSpell && ObjectManager.Me.Rage < 40 && Target.HealthPercent > 50;
 
             // Force melee
-            if (_combatMeleeTimer.IsReady)
+            if (combatMeleeTimer.IsReady)
                 RangeManager.SetRangeToMelee();
 
             // Check if we need to interrupt
-            if (_shouldBeInterrupted)
+            if (shouldBeInterrupted)
             {
-                _fightingACaster = true;
+                fightingACaster = true;
                 RangeManager.SetRangeToMelee();
-                if (!_casterEnemies.Contains(Target.Name))
-                    _casterEnemies.Add(Target.Name);
+                if (!casterEnemies.Contains(Target.Name))
+                    casterEnemies.Add(Target.Name);
             }
 
             // Check Auto-Attacking
@@ -100,28 +100,28 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             if (InBerserkStance()
                 && Me.Rage < 10
                 && !settings.PrioritizeBerserkStance
-                && ObjectManager.GetNumberAttackPlayer() > 1
-                && !_fightingACaster
+                && unitCache.EnemiesAttackingMe.Count > 1
+                && !fightingACaster
                 && cast.OnSelf(BattleStance))
                 return;
 
             // Berserker stance
             if (settings.PrioritizeBerserkStance
                 && !InBerserkStance()
-                && ObjectManager.GetNumberAttackPlayer() < 2
+                && unitCache.EnemiesAttackingMe.Count < 2
                 && cast.OnSelf(BerserkerStance))
                 return;
 
             // Fighting a caster
-            if (_fightingACaster
+            if (fightingACaster
                 && !InBerserkStance()
                 && Me.Rage < 20
-                && ObjectManager.GetNumberAttackPlayer() < 2
+                && unitCache.EnemiesAttackingMe.Count < 2
                 && cast.OnSelf(BerserkerStance))
                 return;
 
             // Interrupt
-            if (_shouldBeInterrupted
+            if (shouldBeInterrupted
                 && InBerserkStance())
             {
                 Thread.Sleep(Main.humanReflexTime);
@@ -134,7 +134,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 return;
 
             // Rampage
-            if ((!Me.HaveBuff("Rampage") || Me.HaveBuff("Rampage") && WTEffects.BuffTimeLeft("Rampage") < 10)
+            if ((!Me.HasAura(Rampage) || Me.HasAura(Rampage) && WTEffects.BuffTimeLeft("Rampage") < 10)
                 && cast.OnTarget(Rampage))
                 return;
 
@@ -157,34 +157,35 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             }
 
             // Bloodthirst
-            if (_inMeleeRange
+            if (inMeleeRange
                 && cast.OnTarget(Bloodthirst))
                 return;
 
             // Whirlwind
-            if (_inMeleeRange
+            if (inMeleeRange
                 && InBerserkStance()
                 && Me.Rage > 30
                 && cast.OnTarget(Whirlwind))
                 return;
 
+            int nbEnemiesCLose = ToolBox.GetNbEnemiesClose(15f);
             // Sweeping Strikes
-            if (_inMeleeRange
-                && ObjectManager.GetNumberAttackPlayer() > 1
-                && ToolBox.GetNbEnemiesClose(15f) > 1
+            if (inMeleeRange
+                && unitCache.EnemiesAttackingMe.Count > 1
+                && nbEnemiesCLose > 1
                 && cast.OnTarget(SweepingStrikes))
                 return;
 
             // Retaliation
-            if (_inMeleeRange && ObjectManager.GetNumberAttackPlayer() > 1
-                && ToolBox.GetNbEnemiesClose(15f) > 1)
+            if (inMeleeRange && unitCache.EnemiesAttackingMe.Count > 1
+                && nbEnemiesCLose > 1)
                 if (cast.OnTarget(Retaliation) && (!SweepingStrikes.IsSpellUsable || !SweepingStrikes.KnownSpell))
                     return;
 
             // Cleave
-            if (_inMeleeRange
-                && ObjectManager.GetNumberAttackPlayer() > 1
-                && ToolBox.GetNbEnemiesClose(15f) > 1
+            if (inMeleeRange
+                && unitCache.EnemiesAttackingMe.Count > 1
+                && nbEnemiesCLose > 1
                 && (!SweepingStrikes.IsSpellUsable || !SweepingStrikes.KnownSpell)
                 && ObjectManager.Me.Rage > 40
                 && settings.UseCleave
@@ -199,28 +200,28 @@ namespace WholesomeTBCAIO.Rotations.Warrior
 
             // Hamstring
             if ((Target.CreatureTypeTarget == "Humanoid" || Target.Name.Contains("Plainstrider"))
-                && _inMeleeRange
+                && inMeleeRange
                 && settings.UseHamstring
                 && Target.HealthPercent < 40
-                && !Target.HaveBuff("Hamstring")
+                && !Target.HasAura(Hamstring)
                 && cast.OnTarget(Hamstring))
                 return;
 
             // Commanding Shout
-            if (!Me.HaveBuff("Commanding Shout")
+            if (!Me.HasAura(CommandingShout)
                 && settings.UseCommandingShout
                 && cast.OnSelf(CommandingShout))
                 return;
 
             // Battle Shout
-            if (!Me.HaveBuff("Battle Shout")
+            if (!Me.HasAura(BattleShout)
                 && (!settings.UseCommandingShout || !CommandingShout.KnownSpell)
                 && cast.OnSelf(BattleShout))
                 return;
 
             // Rend
-            if (!Target.HaveBuff("Rend")
-                && _inMeleeRange
+            if (!Target.HasAura(Rend)
+                && inMeleeRange
                 && settings.UseRend
                 && Target.HealthPercent > 25
                 && cast.OnTarget(Rend))
@@ -228,15 +229,15 @@ namespace WholesomeTBCAIO.Rotations.Warrior
 
             // Demoralizing Shout
             if (settings.UseDemoralizingShout
-                && !Target.HaveBuff("Demoralizing Shout")
-                && !Target.HaveBuff("Demoralizing Roar")
-                && (ObjectManager.GetNumberAttackPlayer() > 1 || ToolBox.GetNbEnemiesClose(15f) <= 0)
-                && _inMeleeRange
+                && !Target.HasAura(DemoralizingShout)
+                && !Target.HasBuff("Demoralizing Roar")
+                && (unitCache.EnemiesAttackingMe.Count > 1 || ToolBox.GetNbEnemiesClose(15f) <= 0)
+                && inMeleeRange
                 && cast.OnSelf(DemoralizingShout))
                 return;
 
             // Heroic Strike (after whirlwind)
-            if (_inMeleeRange
+            if (inMeleeRange
                 && Whirlwind.KnownSpell
                 && !WTCombat.IsSpellActive("Heroic Strike")
                 && Me.Rage > 60
@@ -244,10 +245,10 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 return;
 
             // Heroic Strike (before whirlwind)
-            if (_inMeleeRange
+            if (inMeleeRange
                 && !Whirlwind.KnownSpell
                 && !WTCombat.IsSpellActive("Heroic Strike")
-                && (!_saveRage || Me.Rage > 60)
+                && (!saveRage || Me.Rage > 60)
                 && cast.OnTarget(HeroicStrike))
                 return;
         }

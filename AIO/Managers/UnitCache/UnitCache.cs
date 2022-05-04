@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using wManager.Events;
+using wManager.Wow.Enums;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
 
@@ -12,18 +14,78 @@ namespace WholesomeTBCAIO.Managers.UnitCache
     public class UnitCache : IUnitCache
     {
         private readonly float _enemiesNearMeRange;
+        private List<ulong> _groupGuids = new List<ulong>();
+        private Dictionary<int, List<ulong>> _raidGuids = new Dictionary<int, List<ulong>>();
 
         public IWoWLocalPlayer Me { get; private set; } = new CachedWoWLocalPlayer(new WoWLocalPlayer(0));
         public IWoWUnit Target { get; private set; } = new CachedWoWUnit(new WoWUnit(0));
         public IWoWUnit Pet { get; private set; } = new CachedWoWUnit(new WoWUnit(0));
-        public IWoWUnit[] EnemyUnitsNearPlayer { get; private set; } = new IWoWUnit[0];
-        public IWoWUnit[] EnemyUnitsTargetingPlayer { get; private set; } = new IWoWUnit[0];
-        public IWoWPlayer[] Group { get; private set; } = new IWoWPlayer[0];
+        public List<IWoWUnit> EnemyUnitsNearPlayer { get; private set; } = new List<IWoWUnit>();
+        public List<IWoWUnit> EnemyUnitsTargetingPlayer { get; private set; } = new List<IWoWUnit>();
+        public List<IWoWPlayer> GroupAndRaid { get; private set; } = new List<IWoWPlayer>();
+        public List<IWoWPlayer> NearbyPlayers { get; private set; } = new List<IWoWPlayer>();
         public Dictionary<int, List<IWoWPlayer>> Raid { get; private set; } = new Dictionary<int, List<IWoWPlayer>>();
+
+        public List<IWoWPlayer> ClosePartyMembers => GroupAndRaid.FindAll(member => member.GetDistance < 60).ToList();
+        public List<IWoWUnit> EnemiesAttackingMe => EnemiesFighting.FindAll(enemy => enemy.TargetGuid == Me.Guid);
 
         public UnitCache()
         {
             _enemiesNearMeRange = 60;
+            OnObjectManagerPulse();
+        }
+
+        public List<IWoWUnit> EnemiesFighting
+        {
+            get
+            {
+                return EnemyUnitsNearPlayer.FindAll(unit =>
+                    unit.InCombatFlagOnly
+                    && (unit.TargetGuid == Me.Guid || unit.TargetGuid == Pet.Guid || GroupAndRaid.Exists(member => unit.TargetGuid == member.Guid)));
+            }
+        }
+
+        public List<IWoWPlayer> TargetedByEnemies
+        {
+            get
+            {
+                List<ulong> targetedGuids = EnemiesFighting
+                    .Select(enemy => enemy.TargetGuid)
+                    .ToList();
+                return GroupAndRaid
+                    .Where(player => targetedGuids.Contains(player.Guid))
+                    .OrderBy(player => player.HealthPercent)
+                    .ToList();
+                /*
+                return EnemiesFighting
+                    .Select(u => u.GetTargetObject)
+                    .Distinct()
+                    .ToList()
+                    .FindAll(u => GroupAndRaid.Any(m => m.Guid == u.Guid))
+                    .OrderBy(a => a.HealthPercent)
+                    .ToList();
+                */
+            }
+        }
+
+
+        // Returns whether hostile units are close to the target. Target and distance must be passed as argument
+        public IWoWUnit GetClosestHostileFrom(IWoWUnit target, float distance)
+        {
+            foreach (IWoWUnit unit in EnemyUnitsNearPlayer.Where(e => e.PositionWithoutType.DistanceTo(target.PositionWithoutType) < distance))
+            {
+                if (unit.IsAlive
+                    && !unit.IsTapDenied
+                    && unit.IsValid
+                    && !unit.IsTaggedByOther
+                    && !unit.PlayerControlled
+                    && unit.IsAttackable
+                    && unit.Reaction == Reaction.Hostile
+                    && unit.Guid != target.Guid)
+                    return unit;
+            }
+
+            return null;
         }
 
         public void Initialize()
@@ -59,8 +121,8 @@ namespace WholesomeTBCAIO.Managers.UnitCache
             // Raid loop
             if (Party.GetRaidMemberCount() > 0)
             {
-                Dictionary<int, List<IWoWPlayer>> raid = new Dictionary<int, List<IWoWPlayer>>();
-                Group = new IWoWPlayer[0];
+                List<ulong> grGuids = new List<ulong>();
+                Dictionary<int, List<ulong>> raidGuids = new Dictionary<int, List<ulong>>();
                 List<WoWPlayer> allPlayers = ObjectManager.GetObjectWoWPlayer();
                 string raidString = Lua.LuaDoString<string>(@$"
                             local raidCount = GetNumRaidMembers();
@@ -92,22 +154,25 @@ namespace WholesomeTBCAIO.Managers.UnitCache
 
                     if (int.TryParse(parts[1], out int subGroupNumber))
                     {
+                        ulong playerGuid = 0;
                         WoWPlayer raidPlayer = allPlayers.Find(m => m.Name == name);
 
                         if (raidPlayer == null && name == Me.Name)
                         {
-                            raidPlayer = ObjectManager.Me;
+                            playerGuid = Me.Guid;
                         }
 
-                        if (raidPlayer != null)
+                        if (raidPlayer != null || playerGuid > 0)
                         {
-                            if (raid.TryGetValue(subGroupNumber, out var subgroup))
+                            playerGuid = playerGuid > 0 ? playerGuid : raidPlayer.Guid;
+                            grGuids.Add(playerGuid);
+                            if (raidGuids.TryGetValue(subGroupNumber, out var subgroup))
                             {
-                                subgroup.Add(new CachedWoWPlayer(raidPlayer));
+                                subgroup.Add(playerGuid);
                             }
                             else
                             {
-                                raid[subGroupNumber] = new List<IWoWPlayer>() { new CachedWoWPlayer(raidPlayer) };
+                                raidGuids[subGroupNumber] = new List<ulong>() { playerGuid };
                             }
                         }
                     }
@@ -116,116 +181,182 @@ namespace WholesomeTBCAIO.Managers.UnitCache
                         Logger.LogError($"{name} in group {subGroupNumber} is not a valid group number");
                     }
                 }
-                Raid = raid;
+                _groupGuids = grGuids;
+                _raidGuids = raidGuids;
             }
             // Group loop
             else if (Party.GetPartyNumberPlayers() > 0)
             {
-                List<IWoWPlayer> group = new List<IWoWPlayer>();
-                Raid = new Dictionary<int, List<IWoWPlayer>>();
-                group.Add(Me);
+                _raidGuids.Clear();
+                List<ulong> grGuids = new List<ulong>();
+                grGuids.Add(Me.Guid);
                 foreach (WoWPlayer p in Party.GetParty())
                 {
-                    group.Add(new CachedWoWPlayer(p));
+                    grGuids.Add(p.Guid);
                 }
-                Group = group.ToArray();
+                _groupGuids = grGuids;
             }
             else
             {
-                Raid = new Dictionary<int, List<IWoWPlayer>>();
-                Group = new IWoWPlayer[0];
+                _groupGuids.Clear();
+                _raidGuids.Clear();
             }
         }
 
         private void OnObjectManagerPulse()
         {
             Stopwatch watch = Stopwatch.StartNew();
+            WoWLocalPlayer player;
+            IWoWLocalPlayer cachedPlayer;
+            IWoWUnit cachedTarget, cachedPet;
+            List<WoWUnit> units;
+            List<WoWPlayer> players;
+            List<IWoWPlayer> groupAndRaid = new List<IWoWPlayer>();
+            Dictionary<int, List<IWoWPlayer>> raid = new Dictionary<int, List<IWoWPlayer>>();
+
             lock (ObjectManager.Locker)
             {
-                WoWLocalPlayer player;
-                IWoWLocalPlayer cachedPlayer;
-                IWoWUnit cachedTarget, cachedPet;
-                List<WoWUnit> units;
+                player = ObjectManager.Me;
+                cachedPlayer = new CachedWoWLocalPlayer(player);
 
-                lock (ObjectManager.Locker)
+                cachedTarget = new CachedWoWUnit(new WoWUnit(0));
+                var targetObjectBaseAddress = ObjectManager.GetObjectByGuid(player.Target).GetBaseAddress;
+                if (targetObjectBaseAddress != 0)
                 {
-                    player = ObjectManager.Me;
-                    cachedPlayer = new CachedWoWLocalPlayer(player);
-
-                    cachedTarget = new CachedWoWUnit(new WoWUnit(0));
-                    var targetObjectBaseAddress = ObjectManager.GetObjectByGuid(player.Target).GetBaseAddress;
-                    if (targetObjectBaseAddress != 0)
-                    {
-                        var target = new WoWUnit(targetObjectBaseAddress);
-                        cachedTarget = new CachedWoWUnit(target);
-                    }
-
-                    cachedPet = new CachedWoWUnit(ObjectManager.Pet);
-
-                    units = ObjectManager.GetObjectWoWUnit();
+                    var target = new WoWUnit(targetObjectBaseAddress);
+                    cachedTarget = new CachedWoWUnit(target);
                 }
 
-                var enemyUnitsNearPlayer = new List<IWoWUnit>(units.Count);
-                var interruptibleEnemyUnits = new List<IWoWUnit>(units.Count);
-                var enemyUnitsTargetingPlayer = new List<IWoWUnit>(units.Count);
+                cachedPet = new CachedWoWUnit(ObjectManager.Pet);
+                units = ObjectManager.GetObjectWoWUnit();
+                players = ObjectManager.GetObjectWoWPlayer();
+            }
 
-                var targetPosition = cachedTarget.PositionWithoutType;
-                var targetGuid = cachedTarget.Guid;
-                var playerPosition = cachedPlayer.PositionWithoutType;
-                var playerGuid = cachedPlayer.Guid;
+            long watch1 = watch.ElapsedMilliseconds;
 
-                // Enemy loop
-                foreach (var unit in units)
+            var enemyUnitsNearPlayer = new List<IWoWUnit>(units.Count);
+            var enemyUnitsTargetingPlayer = new List<IWoWUnit>(units.Count);
+
+            var targetPosition = cachedTarget.PositionWithoutType;
+            var targetGuid = cachedTarget.Guid;
+            var playerPosition = cachedPlayer.PositionWithoutType;
+            var playerGuid = cachedPlayer.Guid;
+
+            // Raid
+            if (_raidGuids.Count > 0)
+            {
+                foreach (var raidGroup in _raidGuids)
                 {
-                    if (!unit.IsAlive)
+                    raid[raidGroup.Key] = new List<IWoWPlayer>();
+                    foreach (ulong memberGuid in raidGroup.Value)
                     {
-                        continue;
-                    }
-
-                    if (!unit.IsAttackable || unit.NotSelectable)
-                    {
-                        continue;
-                    }
-
-                    var unitGuid = unit.Guid;
-
-                    IWoWUnit cachedUnit = unitGuid == targetGuid ? cachedTarget : new CachedWoWUnit(unit);
-
-                    if (unit.Target == player.Guid)
-                    {
-                        enemyUnitsTargetingPlayer.Add(cachedUnit);
-                    }
-
-                    var unitPosition = unit.PositionWithoutType;
-
-                    if (playerPosition.DistanceTo(unitPosition) <= _enemiesNearMeRange)
-                    {
-                        enemyUnitsNearPlayer.Add(cachedUnit);
+                        WoWPlayer memberTOAdd = players.Find(pl => pl.Guid == memberGuid);
+                        if (memberTOAdd != null)
+                        {
+                            //Logger.Log($"Adding {memberTOAdd.Name} to group {raidGroup.Key}");
+                            CachedWoWPlayer playerToAdd = new CachedWoWPlayer(memberTOAdd);
+                            groupAndRaid.Add(playerToAdd);
+                            raid[raidGroup.Key].Add(playerToAdd);
+                        }
+                        else if (memberGuid == Me.Guid)
+                        {
+                            //Logger.Log($"Adding {ObjectManager.Me.Name} to group {raidGroup.Key}");
+                            CachedWoWPlayer playerToAdd = new CachedWoWPlayer(ObjectManager.Me);
+                            groupAndRaid.Add(playerToAdd);
+                            raid[raidGroup.Key].Add(playerToAdd);
+                        }
                     }
                 }
+            }
+            else
+            {
+                // Group
+                foreach (ulong memberGuid in _groupGuids)
+                {
+                    WoWPlayer memberTOAdd = players.Find(pl => pl.Guid == memberGuid);
+                    if (memberTOAdd != null)
+                    {
+                        //Logger.Log($"Adding {memberTOAdd.Name} to group");
+                        groupAndRaid.Add(new CachedWoWPlayer(memberTOAdd));
+                    }
+                    else if (memberGuid == Me.Guid)
+                    {
+                        //Logger.Log($"Adding {ObjectManager.Me.Name} to group");
+                        groupAndRaid.Add(new CachedWoWPlayer(ObjectManager.Me));
+                    }
+                }
+            }
 
-                Me = cachedPlayer;
-                Target = cachedTarget;
-                Pet = cachedPet;
 
-                EnemyUnitsNearPlayer = enemyUnitsNearPlayer.ToArray();
-                EnemyUnitsTargetingPlayer = enemyUnitsTargetingPlayer.ToArray();
+            long watch2 = watch.ElapsedMilliseconds;
+
+            int enemiesFound = 0;
+            //Logger.LogError($"Checking {units.Count} units");
+            // Enemy loop
+            foreach (var unit in units)
+            {
+                if (!unit.IsAlive || !unit.IsValid || !unit.IsAttackable || unit.NotSelectable)
+                {
+                    continue;
+                }
+
+                var unitGuid = unit.Guid;
                 /*
-                foreach (KeyValuePair<int, List<IWoWPlayer>> pl in Raid)
+                if (targetGuid != 0 && unitGuid != targetGuid && unit.Target != playerGuid && !_groupGuids.Contains(unit.Target) && unit.PositionWithoutType.DistanceTo(cachedTarget.PositionWithoutType) > 30)
                 {
-                    foreach (var play in pl.Value)
-                    {
-                        Logger.Log($"{pl.Key} => {play.Name}");
-                    }
-                }
+                    continue;
+                }                
 
-                foreach (var p in Group)
+                if (targetGuid == 0 && !unit.InCombatFlagOnly)
                 {
-                    Logger.Log($"{p.Name}");
+                    continue;
                 }
                 */
-                Logger.LogError($"{watch.ElapsedMilliseconds}");
+                IWoWUnit cachedUnit = unitGuid == targetGuid ? cachedTarget : new CachedWoWUnit(unit);
+
+                //Logger.LogError(unit.Name);
+
+                if (unit.Target == player.Guid)
+                {
+                    enemiesFound++;
+                    enemyUnitsTargetingPlayer.Add(cachedUnit);
+                }
+
+                if (playerPosition.DistanceTo(unit.PositionWithoutType) <= _enemiesNearMeRange)
+                {
+                    enemiesFound++;
+                    enemyUnitsNearPlayer.Add(cachedUnit);
+                }
             }
+
+            Logger.LogError($"{enemiesFound} enemies found");
+
+            long watch3 = watch.ElapsedMilliseconds;
+
+            Me = cachedPlayer;
+            Target = cachedTarget;
+            Pet = cachedPet;
+
+            EnemyUnitsNearPlayer = enemyUnitsNearPlayer;
+            EnemyUnitsTargetingPlayer = enemyUnitsTargetingPlayer;
+            GroupAndRaid = groupAndRaid;
+            Raid = raid;
+            /*
+            foreach (KeyValuePair<int, List<IWoWPlayer>> pl in Raid)
+            {
+                foreach (var play in pl.Value)
+                {
+                    Logger.Log($"{pl.Key} => {play.Name}");
+                }
+            }
+
+            foreach (var p in Group)
+            {
+                Logger.Log($"{p.Name}");
+            }
+            */
+            long watch4 = watch.ElapsedMilliseconds;
+            Logger.LogError($"1=>{watch1}, 2=>{watch2}, 3=>{watch3}, 4=>{watch4}");
         }
     }
 }

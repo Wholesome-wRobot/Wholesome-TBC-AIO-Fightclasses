@@ -3,7 +3,6 @@ using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Wow.Helpers;
-using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Mage
 {
@@ -25,26 +24,26 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 return;
 
             // Arcane Intellect
-            if (!Me.HaveBuff("Arcane Intellect")
+            if (!Me.HasAura(ArcaneIntellect)
                 && ArcaneIntellect.KnownSpell
                 && ArcaneIntellect.IsSpellUsable
                 && cast.OnSelf(ArcaneIntellect))
                 return;
 
             // Mage Armor
-            if (!Me.HaveBuff("Mage Armor")
+            if (!Me.HasAura(MageArmor)
                 && settings.ACMageArmor
-                && cast.OnSelf(MageArmor)) 
+                && cast.OnSelf(MageArmor))
                 return;
 
             // Ice Armor
-                if (!Me.HaveBuff("Ice Armor")
-                && (!settings.ACMageArmor || !MageArmor.KnownSpell)
-                && cast.OnSelf(IceArmor))
+            if (!Me.HasAura(IceArmor)
+            && (!settings.ACMageArmor || !MageArmor.KnownSpell)
+            && cast.OnSelf(IceArmor))
                 return;
 
             // Frost Armor
-            if (!Me.HaveBuff("Frost Armor")
+            if (!Me.HasAura(FrostArmor)
                 && !IceArmor.KnownSpell
                 && (!settings.ACMageArmor || !MageArmor.KnownSpell)
                 && cast.OnSelf(FrostArmor))
@@ -55,11 +54,9 @@ namespace WholesomeTBCAIO.Rotations.Mage
         {
             base.Pull();
 
-            WoWUnit _target = ObjectManager.Target;
-
             // Slow
             if (settings.ACSlow
-                && !_target.HaveBuff("Slow")
+                && !Target.HasAura(Slow)
                 && Slow.IsDistanceGood
                 && cast.OnTarget(Slow))
                 return;
@@ -70,25 +67,25 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Arcane Missiles
             if (Me.Level >= 6
-                && (_target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 30 || !_iCanUseWand)
+                && (Target.HealthPercent > settings.WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 30 || !iCanUseWand)
                 && cast.OnTarget(ArcaneMissiles))
                 return;
 
             // Frost Bolt
             if (Me.Level >= 6
-                && (_target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 30 || !_iCanUseWand)
+                && (Target.HealthPercent > settings.WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 30 || !iCanUseWand)
                 && cast.OnTarget(Frostbolt))
                 return;
 
             // Low level Frost Bolt
-            if (_target.HealthPercent > 30
+            if (Target.HealthPercent > 30
                 && Me.Level < 6
                 && cast.OnTarget(Frostbolt))
                 return;
 
             // Low level FireBall
             if (!Frostbolt.KnownSpell
-                && _target.HealthPercent > 30)
+                && Target.HealthPercent > 30)
                 if (cast.OnTarget(Fireball))
                     return;
         }
@@ -97,11 +94,11 @@ namespace WholesomeTBCAIO.Rotations.Mage
         {
             base.CombatRotation();
             Lua.LuaDoString("PetAttack();");
-            WoWUnit Target = ObjectManager.Target;
+            int presenceOfMindCD = WTCombat.GetSpellCooldown(PresenceOfMind.Name);
 
             // Stop wand use on multipull
-            if (_iCanUseWand && ObjectManager.GetNumberAttackPlayer() > 1)
-                _iCanUseWand = false;
+            if (iCanUseWand && unitCache.EnemiesAttackingMe.Count > 1)
+                iCanUseWand = false;
 
             // Remove Curse
             if (WTEffects.HasCurseDebuff())
@@ -112,19 +109,19 @@ namespace WholesomeTBCAIO.Rotations.Mage
             }
 
             // Mana Shield
-            if (!Me.HaveBuff("Mana Shield")
+            if (!Me.HasAura(ManaShield)
                 && (Me.HealthPercent < 30 && Me.ManaPercentage > 50
                 || Me.HealthPercent < 10)
                 && cast.OnSelf(ManaShield))
                 return;
 
             // Use Mana Stone
-            if ((ObjectManager.GetNumberAttackPlayer() > 1 && Me.ManaPercentage < 50 || Me.ManaPercentage < 5)
+            if ((unitCache.EnemiesAttackingMe.Count > 1 && Me.ManaPercentage < 50 || Me.ManaPercentage < 5)
                 && foodManager.UseManaStone())
                 return;
 
             // Cast presence of mind spell
-            if (Me.HaveBuff("Presence of Mind"))
+            if (Me.HasAura(PresenceOfMind))
                 if (cast.OnTarget(ArcaneBlast) || cast.OnTarget(Fireball))
                 {
                     Usefuls.WaitIsCasting();
@@ -132,22 +129,23 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 }
 
             // Presence of Mind
-            if (!Me.HaveBuff("Presence of Mind")
-                && (ObjectManager.GetNumberAttackPlayer() > 1 || !settings.PoMOnMulti)
+            if (presenceOfMindCD <= 0
+                && !Me.HasAura(PresenceOfMind)
+                && (unitCache.EnemiesAttackingMe.Count > 1 || !settings.PoMOnMulti)
                 && Target.HealthPercent > 50
                 && cast.OnSelf(PresenceOfMind))
                 return;
 
             // Arcane Power
-            if (!Me.HaveBuff("Arcane Power")
-                && (ObjectManager.GetNumberAttackPlayer() > 1 || !settings.ArcanePowerOnMulti)
+            if (!Me.HasAura(ArcanePower)
+                && (unitCache.EnemiesAttackingMe.Count > 1 || !settings.ArcanePowerOnMulti)
                 && Target.HealthPercent > 50
                 && cast.OnSelf(ArcanePower))
                 return;
 
             // Slow
             if ((settings.ACSlow || Target.CreatureTypeTarget == "Humanoid")
-                && !Target.HaveBuff("Slow")
+                && !Target.HasAura(Slow)
                 && cast.OnTarget(Slow))
                 return;
 
@@ -168,25 +166,25 @@ namespace WholesomeTBCAIO.Rotations.Mage
             bool _shouldCastArcaneBlast =
                 nbArcaneBlastDebuffs > -1
                 && (Me.ManaPercentage > 70
-                || Me.HaveBuff("Clearcasting")
+                || Me.HasBuff("Clearcasting")
                 || (Me.ManaPercentage > 50 && nbArcaneBlastDebuffs < 3)
                 || (Me.ManaPercentage > 35 && nbArcaneBlastDebuffs < 2));
 
             // Arcane Blast
             if (_shouldCastArcaneBlast
-                && (Target.HealthPercent > settings.WandThreshold || !_iCanUseWand)
+                && (Target.HealthPercent > settings.WandThreshold || !iCanUseWand)
                 && cast.OnTarget(ArcaneBlast))
                 return;
 
             // Arcane Missiles
             if (Me.Level >= 6
-                && (Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand)
+                && (Target.HealthPercent > settings.WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 40 || !iCanUseWand)
                 && cast.OnTarget(ArcaneMissiles))
                 return;
 
             // Frost Bolt
             if (Me.Level >= 6
-                && (Target.HealthPercent > settings.WandThreshold || ObjectManager.GetNumberAttackPlayer() > 1 || Me.HealthPercent < 40 || !_iCanUseWand)
+                && (Target.HealthPercent > settings.WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 40 || !iCanUseWand)
                 && _polymorphedEnemy == null
                 && cast.OnTarget(Frostbolt))
                 return;
@@ -205,18 +203,18 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Stop wand if banned
             if (WTCombat.IsSpellRepeating(5019)
-                && UnitImmunities.Contains(ObjectManager.Target, "Shoot")
+                && UnitImmunities.Contains(Target, "Shoot")
                 && cast.OnTarget(UseWand))
                 return;
 
             // Spell if wand banned
-            if (UnitImmunities.Contains(ObjectManager.Target, "Shoot"))
+            if (UnitImmunities.Contains(Target, "Shoot"))
                 if (cast.OnTarget(ArcaneBlast) || cast.OnTarget(ArcaneMissiles) || cast.OnTarget(Frostbolt) || cast.OnTarget(Fireball))
                     return;
 
             // Use Wand
             if (!WTCombat.IsSpellRepeating(5019)
-                && _iCanUseWand
+                && iCanUseWand
                 && !cast.IsBackingUp
                 && !MovementManager.InMovement
                 && cast.OnTarget(UseWand, false))

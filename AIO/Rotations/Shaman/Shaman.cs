@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Events;
@@ -18,15 +19,14 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
         protected ShamanSettings settings;
         protected Shaman specialization;
-        protected TotemManager _totemManager;
-        protected WoWLocalPlayer Me = ObjectManager.Me;
-        protected bool _fightingACaster = false;
-        protected float _pullRange = 28f;
-        protected int _lowManaThreshold = 20;
-        protected int _mediumManaThreshold = 50;
-        protected List<string> _casterEnemies = new List<string>();
+        protected TotemManager totemManager;
+        protected bool fightingACaster = false;
+        protected readonly float pullRange = 28f;
+        protected readonly int lowManaThreshold = 20;
+        protected readonly int mediumManaThreshold = 50;
+        protected List<string> casterEnemies = new List<string>();
+        protected Timer combatMeleeTimer = new Timer();
         private Timer _moveBehindTimer = new Timer();
-        protected Timer _combatMeleeTimer = new Timer();
 
         public Shaman(BaseSettings settings) : base(settings) { }
 
@@ -34,8 +34,8 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         {
             this.specialization = specialization as Shaman;
             settings = ShamanSettings.Current;
-            BaseInit(_pullRange, LightningBolt, null, settings);
-            _totemManager = new TotemManager(cast, settings, partyManager);
+            BaseInit(pullRange, LightningBolt, null, settings);
+            totemManager = new TotemManager(cast, settings, partyManager, unitCache);
 
             WTSettings.AddToDoNotSellList(new List<string>
             {
@@ -72,10 +72,10 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             {
                 try
                 {
-                    if (StatusChecker.BasicConditions() && !ObjectManager.Me.HaveBuff("Drink") && !ObjectManager.Me.HaveBuff("Food"))
+                    if (StatusChecker.BasicConditions() && !Me.HasBuff("Drink") && !Me.HasBuff("Food"))
                     {
                         ApplyEnchantWeapon();
-                        _totemManager.CheckForTotemicCall();
+                        totemManager.CheckForTotemicCall();
                     }
 
                     if (StatusChecker.OutOfCombat(RotationRole))
@@ -87,7 +87,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     if (StatusChecker.InCombat())
                         specialization.CombatRotation();
 
-                    if (partyManager.GroupAndRaid.Any(p => p.InCombatFlagOnly && p.GetDistance < 50))
+                    if (unitCache.GroupAndRaid.Any(p => p.InCombatFlagOnly && p.GetDistance < 50))
                         specialization.HealerCombat();
                 }
                 catch (Exception arg)
@@ -104,7 +104,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             if (specialization.RotationType == Enums.RotationType.Party)
             {
                 // PARTY Resurrection
-                List<AIOPartyMember> needRes = partyManager.GroupAndRaid
+                List<IWoWPlayer> needRes = unitCache.GroupAndRaid
                     .FindAll(m => m.IsDead)
                     .OrderBy(m => m.GetDistance)
                     .ToList();
@@ -163,12 +163,12 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         // EVENT HANDLERS
         private void FightEndHandler(ulong guid)
         {
-            _fightingACaster = false;
+            fightingACaster = false;
         }
 
         private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)
         {
-            RangeManager.SetRange(_pullRange);
+            RangeManager.SetRange(pullRange);
         }
 
         private void FightLoopHandler(WoWUnit unit, CancelEventArgs cancel)
@@ -177,7 +177,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 && settings.PartyStandBehind
                 && _moveBehindTimer.IsReady)
             {
-                if (ToolBox.StandBehindTargetCombat())
+                if (ToolBox.StandBehindTargetCombat(unitCache))
                     _moveBehindTimer = new Timer(4000);
             }
         }

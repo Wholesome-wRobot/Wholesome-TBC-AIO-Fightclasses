@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using WholesomeTBCAIO.Managers.UnitCache;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeToolbox;
 using wManager.Wow.Bot.Tasks;
 using wManager.Wow.Class;
@@ -14,7 +16,7 @@ namespace WholesomeTBCAIO.Helpers
     {
         #region Combat
         // Pull
-        public static bool Pull(Cast cast, bool alwaysPull, List<AIOSpell> spells)
+        public static bool Pull(Cast cast, bool alwaysPull, List<AIOSpell> spells, IUnitCache unitCache)
         {
             AIOSpell pullSpell = spells.Find(s => s != null && s.IsSpellUsable && s.KnownSpell);
             if (pullSpell == null)
@@ -23,7 +25,7 @@ namespace WholesomeTBCAIO.Helpers
                 return false;
             }
 
-            WoWUnit closestHostileFromTarget = GetClosestHostileFrom(ObjectManager.Target, 20);
+            IWoWUnit closestHostileFromTarget = unitCache.GetClosestHostileFrom(unitCache.Target, 20);
             if (closestHostileFromTarget == null && !alwaysPull)
             {
                 RangeManager.SetRangeToMelee();
@@ -97,28 +99,6 @@ namespace WholesomeTBCAIO.Helpers
             Lua.LuaDoString("ClearCursor();");
         }
 
-        public static int GetNumberEnemiesAround(float distance, WoWUnit unit)
-        {
-            List<WoWUnit> surroundingEnemies = ObjectManager.GetObjectWoWUnit();
-
-            int result = 0;
-
-            foreach (WoWUnit unitAround in surroundingEnemies)
-            {
-                if (unitAround.IsAlive
-                    && !unitAround.IsTapDenied
-                    && unitAround.IsValid
-                    && !unitAround.IsTaggedByOther
-                    && unitAround.IsAttackable
-                    && unitAround.Position.DistanceTo(unit.Position) < distance
-                    && unitAround.Guid != ObjectManager.Target.Guid)
-                {
-                    result++;
-                }
-            }
-            return result;
-        }
-
         // Returns whether units, hostile or not, are close to the player. Distance must be passed as argument
         public static int GetNbEnemiesClose(float distance)
         {
@@ -136,27 +116,6 @@ namespace WholesomeTBCAIO.Helpers
                     result++;
             }
             return result;
-        }
-
-        // Returns whether hostile units are close to the target. Target and distance must be passed as argument
-        public static WoWUnit GetClosestHostileFrom(WoWUnit target, float distance)
-        {
-            List<WoWUnit> surroundingEnemies = ObjectManager.GetObjectWoWUnit();
-
-            foreach (WoWUnit unit in ObjectManager.GetObjectWoWUnit().Where(e => e.Position.DistanceTo(target.Position) < distance))
-            {
-                if (unit.IsAlive
-                    && !unit.IsTapDenied
-                    && unit.IsValid
-                    && !unit.IsTaggedByOther
-                    && !unit.PlayerControlled
-                    && unit.IsAttackable
-                    && unit.Reaction == wManager.Wow.Enums.Reaction.Hostile
-                    && unit.Guid != target.Guid)
-                    return unit;
-            }
-
-            return null;
         }
 
         // Returns the latency
@@ -266,22 +225,22 @@ namespace WholesomeTBCAIO.Helpers
         }
 
         // Move behind Target
-        public static bool StandBehindTargetCombat()
+        public static bool StandBehindTargetCombat(IUnitCache unitCache)
         {
-            if (ObjectManager.Me.IsAlive
-                && !ObjectManager.Me.IsCast
-                && ObjectManager.Target.IsAlive
-                && ObjectManager.Target.HasTarget
-                && !ObjectManager.Target.IsTargetingMe
+            if (unitCache.Me.IsAlive
+                && !unitCache.Me.IsCast
+                && unitCache.Target.IsAlive
+                && unitCache.Target.HasTarget
+                && !unitCache.Target.IsTargetingMe
                 && !MovementManager.InMovement)
             {
                 int limit = 5;
-                Vector3 position = WTSpace.BackOfUnit(ObjectManager.Target, 2f);
+                Vector3 position = WTSpace.BackOfUnit(unitCache.Target.WowUnit, 2f);
                 while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                    && ObjectManager.Me.Position.DistanceTo(position) > 1
+                    && unitCache.Me.PositionWithoutType.DistanceTo(position) > 1
                     && limit >= 0)
                 {
-                    position = WTSpace.BackOfUnit(ObjectManager.Target, 2f);
+                    position = WTSpace.BackOfUnit(unitCache.Target.WowUnit, 2f);
                     MovementManager.Go(PathFinder.FindPath(position), false);
                     // Wait follow path
                     Thread.Sleep(500);

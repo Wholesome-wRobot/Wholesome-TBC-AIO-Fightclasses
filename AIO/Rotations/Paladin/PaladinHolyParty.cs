@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
-using wManager.Wow.ObjectManager;
 
 namespace WholesomeTBCAIO.Rotations.Paladin
 {
@@ -19,7 +19,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
         {
             RangeManager.SetRange(30);
 
-            if (!Me.HaveBuff("Drink") || Me.ManaPercentage > 95)
+            if (!Me.HasBuff("Drink") || Me.ManaPercentage > 95)
             {
                 base.BuffRotation();
             }
@@ -29,14 +29,12 @@ namespace WholesomeTBCAIO.Rotations.Paladin
         {
             base.CombatRotation();
 
-            WoWUnit Target = ObjectManager.Target;
-
-            List<AIOPartyMember> allyNeedBigHeal = partyManager.GroupAndRaid
+            List<IWoWPlayer> allyNeedBigHeal = unitCache.GroupAndRaid
                 .FindAll(a => a.IsAlive && a.HealthPercent < 40)
                 .OrderBy(a => a.HealthPercent)
                 .ToList();
 
-            List<AIOPartyMember> allyNeedSmallHeal = partyManager.GroupAndRaid
+            List<IWoWPlayer> allyNeedSmallHeal = unitCache.GroupAndRaid
                 .FindAll(a => a.IsAlive && a.HealthPercent < settings.PartyFlashOfLightThreshold)
                 .OrderBy(a => a.HealthPercent)
                 .ToList();
@@ -49,7 +47,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Lay On Hands
             if (Me.ManaPercentage < 10)
             {
-                List<AIOPartyMember> needsLoH = partyManager.GroupAndRaid
+                List<IWoWPlayer> needsLoH = unitCache.GroupAndRaid
                     .FindAll(m => m.HealthPercent < 10)
                     .OrderBy(m => m.HealthPercent)
                     .ToList();
@@ -63,19 +61,19 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 return;
 
             // PARTY Holy Light with Divine Favor
-            if (Me.HaveBuff("Divine Favor")
+            if (Me.HasAura(DivineFavor)
                 && allyNeedBigHeal.Count > 0
                 && cast.OnFocusUnit(HolyLight, allyNeedBigHeal[0]))
                 return;
 
             // PARTY Divine Favor
             if (allyNeedBigHeal.Count > 0
-                && !Me.HaveBuff("Divine Favor")
+                && !Me.HasAura(DivineFavor)
                 && cast.OnSelf(DivineFavor))
                 return;
 
             // PARTY Holy Light
-            List<AIOPartyMember> allyNeedMediumHeal = partyManager.GroupAndRaid
+            List<IWoWPlayer> allyNeedMediumHeal = unitCache.GroupAndRaid
                 .FindAll(a => a.IsAlive && a.HealthPercent < settings.PartyHolyLightPercentThreshold)
                 .OrderBy(a => a.HealthPercent)
                 .ToList();
@@ -97,12 +95,12 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             // Seal of light
             if (settings.PartyHolySealOfLight
-                && !Target.HaveBuff("Judgement of Light"))
+                && !Target.HasBuff("Judgement of Light"))
             {
                 if (cast.OnTarget(Judgement))
                     return;
 
-                if (!Me.HaveBuff("Seal of Light")
+                if (!Me.HasAura(SealOfLight)
                     && cast.OnSelf(SealOfLight))
                     return;
             }
@@ -110,7 +108,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Purifiy
             if (settings.PartyPurify)
             {
-                WoWPlayer needsPurify = partyManager.GroupAndRaid
+                IWoWPlayer needsPurify = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasDiseaseDebuff(m.Name) || WTEffects.HasPoisonDebuff(m.Name));
                 if (needsPurify != null && cast.OnFocusUnit(Purify, needsPurify))
                     return;
@@ -119,7 +117,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // PARTY Cleanse
             if (settings.PartyCleanse)
             {
-                WoWPlayer needsCleanse = partyManager.GroupAndRaid
+                IWoWPlayer needsCleanse = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasMagicDebuff(m.Name));
                 if (needsCleanse != null && cast.OnFocusUnit(Cleanse, needsCleanse))
                     return;

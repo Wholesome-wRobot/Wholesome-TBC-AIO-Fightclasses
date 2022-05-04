@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
+using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Events;
@@ -18,15 +19,14 @@ namespace WholesomeTBCAIO.Rotations.Hunter
     {
         protected HunterSettings settings;
         protected Hunter specialization;
-        protected WoWLocalPlayer Me = ObjectManager.Me;
-        protected HunterFoodManager _foodManager = new HunterFoodManager();
-        protected BackgroundWorker _petPulseThread = new BackgroundWorker();
-        protected bool _autoshotRepeating;
-        protected bool RangeCheck;
-        protected int _backupAttempts = 0;
-        protected int _steadyShotSleep = 0;
-        protected bool _canOnlyMelee = false;
-        protected int _saveDrinkPercent = wManager.wManagerSetting.CurrentSetting.DrinkPercent;
+        protected HunterFoodManager foodManager = new HunterFoodManager();
+        protected BackgroundWorker petPulseThread = new BackgroundWorker();
+        protected bool autoshotRepeating;
+        protected bool rangeCheck;
+        protected int backupAttempts = 0;
+        protected int steadyShotSleep = 0;
+        protected bool canOnlyMelee = false;
+        protected int saveDrinkPercent = wManager.wManagerSetting.CurrentSetting.DrinkPercent;
 
         public static DateTime LastAuto { get; set; }
         public static bool PetIsDead { get; set; }
@@ -40,8 +40,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             AIOSpell baseSpell = SerpentSting.KnownSpell ? SerpentSting : RaptorStrike;
             BaseInit(28, baseSpell, null, settings);
 
-            _petPulseThread.DoWork += PetThread;
-            _petPulseThread.RunWorkerAsync();
+            petPulseThread.DoWork += PetThread;
+            petPulseThread.RunWorkerAsync();
             FightEvents.OnFightStart += FightStartHandler;
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightLoop += FightLoopHandler;
@@ -52,9 +52,9 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         public override void Dispose()
         {
-            wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
-            _petPulseThread.DoWork -= PetThread;
-            _petPulseThread.Dispose();
+            wManager.wManagerSetting.CurrentSetting.DrinkPercent = saveDrinkPercent;
+            petPulseThread.DoWork -= PetThread;
+            petPulseThread.Dispose();
             FightEvents.OnFightStart -= FightStartHandler;
             FightEvents.OnFightEnd -= FightEndHandler;
             FightEvents.OnFightLoop -= FightLoopHandler;
@@ -76,8 +76,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 {
                     if (StatusChecker.BasicConditions()
                         && !Me.IsOnTaxi
-                        && ObjectManager.Pet.IsValid
-                        && ObjectManager.Pet.IsAlive
+                        && Pet.IsValid
+                        && Pet.IsAlive
                         && !Me.IsMounted)
                     {
                         // OOC
@@ -98,32 +98,32 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
                         // In fight
                         if ((Fight.InFight || Me.InCombatFlagOnly)
-                            && Me.Target > 0UL
-                            && Me.TargetObject.IsAlive
-                            && !ObjectManager.Pet.HaveBuff("Feed Pet Effect"))
+                            && Me.HasTarget
+                            && Target.IsAlive
+                            && !Pet.HasBuff("Feed Pet Effect"))
                         {
                             bool multiAggroImTargeted = false;
 
                             // Pet Switch target on multi aggro
                             if (Me.InCombatFlagOnly
                                 && RotationType != Enums.RotationType.Party
-                                && ObjectManager.GetNumberAttackPlayer() > 1)
+                                && unitCache.EnemiesAttackingMe.Count > 1)
                             {
                                 Lua.LuaDoString("PetDefensiveMode();");
                                 // Get list of units targeting me in a multiaggro situation
-                                List<WoWUnit> unitsAttackingMe = ObjectManager.GetUnitAttackPlayer()
+                                List<IWoWUnit> unitsAttackingMe = unitCache.EnemiesAttackingMe
                                     .OrderBy(u => u.Guid)
-                                    .Where(u => u.TargetObject.Guid == Me.Guid)
+                                    .Where(u => u.TargetGuid == Me.Guid)
                                     .ToList();
 
-                                foreach (WoWUnit unit in unitsAttackingMe)
+                                foreach (IWoWUnit unit in unitsAttackingMe)
                                 {
                                     multiAggroImTargeted = true;
-                                    if (unit.Guid != ObjectManager.Pet.TargetObject.Guid
-                                    && ObjectManager.Pet.TargetObject.Target == ObjectManager.Pet.Guid)
+                                    if (unit.Guid != Pet.TargetGuid
+                                        && Pet.GetTargetObject.TargetGuid == Pet.Guid)
                                     {
                                         Logger.Log($"Forcing pet aggro on {unit.Name}");
-                                        Me.FocusGuid = unit.Guid;
+                                        Me.SetFocus(unit.Guid);
                                         cast.PetSpell("PET_ACTION_ATTACK", true);
                                         cast.PetSpell("Growl", true);
                                         Lua.LuaDoString("ClearFocus();");
@@ -133,13 +133,13 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
                             // Pet attack on single aggro
                             if ((Me.InCombatFlagOnly || Fight.InFight)
-                                && Me.Target > 0
-                                && Me.TargetObject.IsAlive
+                                && Me.HasTarget
+                                && Target.IsAlive
                                 && !multiAggroImTargeted)
                                 Lua.LuaDoString("PetAttack();", false);
 
                             // Pet Growl
-                            if ((ObjectManager.Target.Target == Me.Guid || ObjectManager.Pet.Target != Me.Target)
+                            if ((Target.TargetGuid == Me.Guid || Pet.Target != Me.Target)
                                 && !settings.AutoGrowl
                                 && RotationType != Enums.RotationType.Party)
                                 if (cast.PetSpell("Growl"))
@@ -176,7 +176,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             {
                 try
                 {
-                    if (Me.HaveBuff("Feign Death"))
+                    if (Me.HasAura(FeignDeath))
                     {
                         Thread.Sleep(500);
                         Move.Backward(Move.MoveAction.PressKey, 100);
@@ -185,10 +185,10 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
                     if (StatusChecker.BasicConditions()
                         && !Me.IsMounted
-                        && !Me.HaveBuff("Food")
-                        && !Me.HaveBuff("Drink"))
+                        && !Me.HasBuff("Food")
+                        && !Me.HasBuff("Drink"))
                     {
-                        if (_canOnlyMelee)
+                        if (canOnlyMelee)
                             RangeManager.SetRangeToMelee();
                         else
                             RangeManager.SetRange(AutoShot.MaxRange - 1);
@@ -223,13 +223,13 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         protected void Feed()
         {
-            if (ObjectManager.Pet.IsAlive
+            if (Pet.IsAlive
                 && !Me.IsCast
-                && !ObjectManager.Pet.HaveBuff("Feed Pet Effect"))
+                && !Pet.HasBuff("Feed Pet Effect"))
             {
                 if (!WTEffects.HasPoisonDebuff("pet"))
                 {
-                    _foodManager.FeedPet();
+                    foodManager.FeedPet();
                     Thread.Sleep(400);
                 }
                 else
@@ -242,22 +242,22 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         protected void PetManager()
         {
-            if (!Me.HaveBuff("Drink")
-                && !Me.HaveBuff("Food"))
+            if (!Me.HasBuff("Drink")
+                && !Me.HasBuff("Food"))
             {
                 // Set pet dead flag
-                if (ObjectManager.Pet.IsAlive)
+                if (Pet.IsAlive)
                     PetIsDead = false;
 
                 // Call Pet
-                if (!ObjectManager.Pet.IsValid && !PetIsDead)
+                if (!Pet.IsValid && !PetIsDead)
                     cast.OnSelf(CallPet);
 
                 // Make sure we have mana to revive
-                if ((PetIsDead || ObjectManager.Pet.IsDead)
+                if ((PetIsDead || Pet.IsDead)
                     && !Me.InCombatFlagOnly
                     && RevivePet.KnownSpell
-                    && !Me.HaveBuff("Drink")
+                    && !Me.HasBuff("Drink")
                     && RevivePet.Cost > Me.Mana)
                 {
                     Logger.Log("Not enough mana to summon, forcing regen");
@@ -266,23 +266,23 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                     return;
                 }
                 else
-                    wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
+                    wManager.wManagerSetting.CurrentSetting.DrinkPercent = saveDrinkPercent;
 
                 // Revive Pet
-                if ((PetIsDead || ObjectManager.Pet.IsDead)
-                    && !Me.HaveBuff("Drink")
+                if ((PetIsDead || Pet.IsDead)
+                    && !Me.HasBuff("Drink")
                     && (!Me.InCombatFlagOnly || settings.RevivePetInCombat)
                     && cast.OnSelf(RevivePet))
                     return;
 
                 // Mend Pet
-                if (ObjectManager.Pet.IsAlive
-                    && ObjectManager.Pet.IsValid
-                    && !ObjectManager.Pet.HaveBuff("Mend Pet")
+                if (Pet.IsAlive
+                    && Pet.IsValid
+                    && !Pet.HasAura(MendPet)
                     && !Me.InCombatFlagOnly
                     && Me.IsAlive
-                    && ObjectManager.Pet.HealthPercent <= 60
-                    && cast.OnFocusUnit(MendPet, ObjectManager.Pet))
+                    && Pet.HealthPercent <= 60
+                    && cast.OnFocusUnit(MendPet, Pet))
                     return;
             }
         }
@@ -324,19 +324,19 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)
         {
             // Wait for feed pet
-            if (ObjectManager.Pet.HaveBuff("Feed Pet Effect"))
+            if (Pet.HasBuff("Feed Pet Effect"))
                 Logger.Log("Waiting for pet to be fed");
 
-            while (ObjectManager.Pet.HaveBuff("Feed Pet Effect")
-                && !ObjectManager.Me.InCombatFlagOnly)
+            while (Pet.HasBuff("Feed Pet Effect")
+                && !unitCache.Me.InCombatFlagOnly)
                 Thread.Sleep(500);
 
-            if (ObjectManager.Target.GetDistance >= 13f
+            if (Target.GetDistance >= 13f
                 && !AutoShot.IsSpellUsable
                 && !cast.IsBackingUp)
-                _canOnlyMelee = true;
+                canOnlyMelee = true;
             else
-                _canOnlyMelee = false;
+                canOnlyMelee = false;
         }
 
         private void FightLoopHandler(WoWUnit unit, CancelEventArgs cancelable)
@@ -346,24 +346,24 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             float minDistance = RangeManager.GetMeleeRangeWithTarget() + settings.BackupDistance;
 
             // Do we need to backup?
-            if (ObjectManager.Target.GetDistance < minDistance
-                && !ObjectManager.Target.IsTargetingMe
+            if (Target.GetDistance < minDistance
+                && !Target.IsTargetingMe
                 && !MovementManager.InMovement
                 && Me.IsAlive
-                && ObjectManager.Target.IsAlive
-                && !ObjectManager.Pet.HaveBuff("Pacifying Dust")
-                && !_canOnlyMelee
+                && Target.IsAlive
+                && !Pet.HasBuff("Pacifying Dust")
+                && !canOnlyMelee
                 && !cast.IsApproachingTarget
-                && !ObjectManager.Pet.IsStunned
+                && !Pet.IsStunned
                 && !Me.IsCast
                 && settings.BackupFromMelee
-                && (!WTCombat.IsSpellActive("Raptor Strike") || ObjectManager.Target.GetDistance > RangeManager.GetMeleeRangeWithTarget()))
+                && (!WTCombat.IsSpellActive("Raptor Strike") || Target.GetDistance > RangeManager.GetMeleeRangeWithTarget()))
             {
                 // Stop trying if we reached the max amount of attempts
-                if (_backupAttempts >= settings.MaxBackupAttempts)
+                if (backupAttempts >= settings.MaxBackupAttempts)
                 {
-                    Logger.Log($"Backup failed after {_backupAttempts} attempts. Going in melee");
-                    _canOnlyMelee = true;
+                    Logger.Log($"Backup failed after {backupAttempts} attempts. Going in melee");
+                    canOnlyMelee = true;
                     RangeManager.SetRangeToMelee();
                     return;
                 }
@@ -374,15 +374,15 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 // Using CTM
                 if (settings.BackupUsingCTM)
                 {
-                    Vector3 position = WTSpace.BackOfUnit(Me, 12f);
+                    Vector3 position = WTSpace.BackOfUnit(Me.WowUnit, 12f);
                     MovementManager.Go(PathFinder.FindPath(position), false);
                     Thread.Sleep(500);
 
                     // Backup loop
                     while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                    && ObjectManager.Me.IsAlive
-                    && !ObjectManager.Target.IsTargetingMe
-                    && ObjectManager.Target.GetDistance < minDistance + 1
+                    && Me.IsAlive
+                    && !Target.IsTargetingMe
+                    && Target.GetDistance < minDistance + 1
                     && !timer.IsReady)
                         Thread.Sleep(100);
                 }
@@ -390,17 +390,17 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 else
                 {
                     while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                    && ObjectManager.Me.IsAlive
-                    && !ObjectManager.Target.IsTargetingMe
-                    && ObjectManager.Target.GetDistance < minDistance + 1
+                    && Me.IsAlive
+                    && !Target.IsTargetingMe
+                    && Target.GetDistance < minDistance + 1
                     && !timer.IsReady)
                     {
                         Move.Backward(Move.MoveAction.PressKey, 500);
                     }
                 }
 
-                _backupAttempts++;
-                Logger.Log($"Backup attempt : {_backupAttempts}");
+                backupAttempts++;
+                Logger.Log($"Backup attempt : {backupAttempts}");
                 //Logger.Log($"FINAL We are {ObjectManager.Target.GetDistance}/{minDistance} away from target");
                 cast.IsBackingUp = false;
 
@@ -410,23 +410,23 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             }
         }
 
-        private static void MovementEventsOnMovementPulse(List<Vector3> points, CancelEventArgs cancelable)
+        private void MovementEventsOnMovementPulse(List<Vector3> points, CancelEventArgs cancelable)
         {
             // Wait for feed pet
-            if (ObjectManager.Pet.HaveBuff("Feed Pet Effect"))
+            if (Pet.HasBuff("Feed Pet Effect"))
                 Logger.Log("Waiting for pet to be fed");
 
-            while (ObjectManager.Pet.HaveBuff("Feed Pet Effect")
-                && !ObjectManager.Me.InCombatFlagOnly)
+            while (Pet.HasBuff("Feed Pet Effect")
+                && !Me.InCombatFlagOnly)
                 Thread.Sleep(500);
         }
 
         private void FightEndHandler(ulong guid)
         {
             cast.IsBackingUp = false;
-            _backupAttempts = 0;
-            _autoshotRepeating = false;
-            _canOnlyMelee = false;
+            backupAttempts = 0;
+            autoshotRepeating = false;
+            canOnlyMelee = false;
         }
     }
 }

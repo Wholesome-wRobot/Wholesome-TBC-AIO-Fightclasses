@@ -26,7 +26,6 @@ namespace WholesomeTBCAIO.Rotations.Rogue
         protected uint MHPoison;
         protected uint OHPoison;
         protected string _myBestBandage = null;
-        protected WoWLocalPlayer Me = ObjectManager.Me;
         private Timer _moveBehindTimer = new Timer();
         protected Timer _combatMeleeTimer = new Timer();
         protected Timer _behindTargetTimer = new Timer();
@@ -202,8 +201,8 @@ namespace WholesomeTBCAIO.Rotations.Rogue
         {
             bool _autoAttacking = WTCombat.IsSpellActive("Attack");
 
-            if (!_autoAttacking && activate && !ObjectManager.Target.HaveBuff("Gouge")
-                && (!ObjectManager.Target.HaveBuff("Blind") || WTEffects.HasDebuff("Recently Bandaged")))
+            if (!_autoAttacking && activate && !Target.HasAura(Gouge)
+                && (!Target.HasAura(Blind) || WTEffects.HasDebuff("Recently Bandaged")))
             {
                 Logger.Log("Turning auto attack ON");
                 ToolBox.CheckAutoAttack(Attack);
@@ -220,7 +219,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
 
         protected bool IsTargetStunned()
         {
-            return ObjectManager.Target.HaveBuff("Gouge") || ObjectManager.Target.HaveBuff("Cheap Shot");
+            return Target.HasAura(Gouge) || Target.HasAura(CheapShot);
         }
 
         protected bool HaveDaggerInMH()
@@ -313,25 +312,25 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             Timer stealthApproachTimer = new Timer(15000);
             _isStealthApproching = true;
 
-            if (ObjectManager.Me.IsAlive && ObjectManager.Target.IsAlive)
+            if (Me.IsAlive && Target.IsAlive)
             {
                 while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                && ObjectManager.Target.GetDistance > 2.5f
-                && (specialization.RotationType == Enums.RotationType.Party || ToolBox.GetClosestHostileFrom(ObjectManager.Target, 20f) == null)
+                && Target.GetDistance > 2.5f
+                && (specialization.RotationType == Enums.RotationType.Party || unitCache.GetClosestHostileFrom(Target, 20f) == null)
                 && Fight.InFight
                 && !stealthApproachTimer.IsReady
-                && Me.HaveBuff("Stealth"))
+                && Me.HasAura(Stealth))
                 {
                     ToggleAutoAttack(false);
 
-                    Vector3 position = WTSpace.BackOfUnit(ObjectManager.Target, 2.5f);
+                    Vector3 position = WTSpace.BackOfUnit(Target.WowUnit, 2.5f);
                     MovementManager.MoveTo(position);
                     Thread.Sleep(50);
                     CastOpener();
                 }
 
                 if (stealthApproachTimer.IsReady
-                    && ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { Shoot, Throw }))
+                    && ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { Shoot, Throw }, unitCache))
                 {
                     _combatMeleeTimer = new Timer(2000);
                     return;
@@ -346,7 +345,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
         // EVENT HANDLERS
         private void BlackListHandler(ulong guid, int timeInMilisec, bool isSessionBlacklist, CancelEventArgs cancelable)
         {
-            if (Me.HaveBuff("Stealth"))
+            if (Me.HasAura(Stealth))
             {
                 Logger.LogDebug("BL : " + guid + " ms : " + timeInMilisec + " is session: " + isSessionBlacklist);
                 Logger.Log("Cancelling Blacklist event");
@@ -374,7 +373,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             if (specialization.RotationType == Enums.RotationType.Party
                 && _moveBehindTimer.IsReady)
             {
-                if (ToolBox.StandBehindTargetCombat())
+                if (ToolBox.StandBehindTargetCombat(unitCache))
                     _moveBehindTimer = new Timer(4000);
             }
             else
@@ -383,9 +382,9 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 && !MovementManager.InMovement
                 && Me.IsAlive
                 && !Me.IsCast
-                && ObjectManager.Target.IsAlive)
+                && Target.IsAlive)
                 {
-                    Vector3 position = WTSpace.BackOfUnit(ObjectManager.Target, 2.5f);
+                    Vector3 position = WTSpace.BackOfUnit(Target.WowUnit, 2.5f);
                     MovementManager.Go(PathFinder.FindPath(position), false);
 
                     while (MovementManager.InMovement
