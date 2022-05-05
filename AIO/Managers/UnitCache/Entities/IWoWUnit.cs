@@ -28,7 +28,6 @@ namespace WholesomeTBCAIO.Managers.UnitCache.Entities
         bool IsAttackable { get; }
         ulong Target { get; }
         bool HasTarget { get; }
-        IWoWUnit GetTargetObject { get; }
         bool IsTargetingMe { get; }
         uint Energy { get; }
         bool IsCast { get; }

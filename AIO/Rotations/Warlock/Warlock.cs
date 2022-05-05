@@ -81,24 +81,28 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                             && unitCache.EnemiesAttackingMe.Count > 1)
                         {
                             Lua.LuaDoString("PetDefensiveMode();");
-                            // Get list of units targeting me in a multiaggro situation
+
                             foreach (IWoWUnit unit in unitCache.EnemiesAttackingMe)
                             {
                                 multiAggroImTargeted = true;
-                                if (unit.Guid != Pet.TargetGuid
-                                    && Pet.GetTargetObject.TargetGuid == Pet.Guid)
+                                if (unit.Guid != Pet.TargetGuid)
                                 {
-                                    Logger.Log($"Forcing pet aggro on {unit.Name}");
-                                    Me.SetFocus(unit.Guid);
-                                    cast.PetSpell("PET_ACTION_ATTACK", true);
-                                    if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
+                                    // first check if pet has aggro on his current target
+                                    IWoWUnit petTarget = unitCache.EnemiesFighting.Find(enemy => enemy.Guid == Pet.TargetGuid);
+                                    if (petTarget != null && petTarget.TargetGuid == Pet.Guid)
                                     {
-                                        cast.PetSpell("Torment", true);
-                                        cast.PetSpell("Suffering", true);
+                                        Logger.Log($"Forcing pet aggro on {unit.Name}");
+                                        Me.SetFocus(unit.Guid);
+                                        cast.PetSpell("PET_ACTION_ATTACK", true);
+                                        if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
+                                        {
+                                            cast.PetSpell("Torment", true);
+                                            cast.PetSpell("Suffering", true);
+                                        }
+                                        if (WarlockPetAndConsumables.MyWarlockPet().Equals("Felguard"))
+                                            cast.PetSpell("Anguish", true);
+                                        Lua.LuaDoString("ClearFocus();");
                                     }
-                                    if (WarlockPetAndConsumables.MyWarlockPet().Equals("Felguard"))
-                                        cast.PetSpell("Anguish", true);
-                                    Lua.LuaDoString("ClearFocus();");
                                 }
                             }
                         }

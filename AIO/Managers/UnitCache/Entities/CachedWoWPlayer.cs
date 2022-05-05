@@ -4,11 +4,12 @@ namespace WholesomeTBCAIO.Managers.UnitCache.Entities
 {
     public class CachedWoWPlayer : CachedWoWUnit, IWoWPlayer
     {
-        public int ComboPoint { get; }
+        private WoWPlayer _player;
+        public int ComboPoint => _player.ComboPoint;
 
         public CachedWoWPlayer(WoWPlayer player) : base(player)
         {
-            ComboPoint = player.ComboPoint;
+            _player = player;
         }
     }
 }

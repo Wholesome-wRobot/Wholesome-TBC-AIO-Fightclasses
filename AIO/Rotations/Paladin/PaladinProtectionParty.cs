@@ -81,11 +81,14 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 partyManager.SwitchTarget(cast, RighteousDefense);
 
             // Righteous Defense
-            if (!Target.IsTargetingMe
-                && Me.HasTarget
-                && unitCache.GroupAndRaid.Exists(member => member.Guid == Target.Target)
-                && cast.OnFocusUnit(RighteousDefense, Target.GetTargetObject))
-                return;
+            if (Me.HasTarget
+                && Target.HasTarget
+                && !Target.IsTargetingMe)
+            {
+                IWoWPlayer memberToSave = unitCache.GroupAndRaid.Find(member => member.Guid == Target.TargetGuid);
+                if (memberToSave != null && cast.OnFocusUnit(RighteousDefense, memberToSave))
+                    return;
+            }
 
             // Righteous Fury
             if (!Me.HasAura(RighteousFury)

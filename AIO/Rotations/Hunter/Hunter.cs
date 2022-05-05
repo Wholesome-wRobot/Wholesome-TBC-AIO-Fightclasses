@@ -110,23 +110,22 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                                 && unitCache.EnemiesAttackingMe.Count > 1)
                             {
                                 Lua.LuaDoString("PetDefensiveMode();");
-                                // Get list of units targeting me in a multiaggro situation
-                                List<IWoWUnit> unitsAttackingMe = unitCache.EnemiesAttackingMe
-                                    .OrderBy(u => u.Guid)
-                                    .Where(u => u.TargetGuid == Me.Guid)
-                                    .ToList();
 
-                                foreach (IWoWUnit unit in unitsAttackingMe)
+                                foreach (IWoWUnit unit in unitCache.EnemiesAttackingMe)
                                 {
                                     multiAggroImTargeted = true;
-                                    if (unit.Guid != Pet.TargetGuid
-                                        && Pet.GetTargetObject.TargetGuid == Pet.Guid)
+                                    if (unit.Guid != Pet.TargetGuid)
                                     {
-                                        Logger.Log($"Forcing pet aggro on {unit.Name}");
-                                        Me.SetFocus(unit.Guid);
-                                        cast.PetSpell("PET_ACTION_ATTACK", true);
-                                        cast.PetSpell("Growl", true);
-                                        Lua.LuaDoString("ClearFocus();");
+                                        // first check if pet has aggro on his current target
+                                        IWoWUnit petTarget = unitCache.EnemiesFighting.Find(enemy => enemy.Guid == Pet.TargetGuid);
+                                        if (petTarget != null && petTarget.TargetGuid == Pet.Guid)
+                                        {
+                                            Logger.Log($"Forcing pet aggro on {unit.Name}");
+                                            Me.SetFocus(unit.Guid);
+                                            cast.PetSpell("PET_ACTION_ATTACK", true);
+                                            cast.PetSpell("Growl", true);
+                                            Lua.LuaDoString("ClearFocus();");
+                                        }
                                     }
                                 }
                             }

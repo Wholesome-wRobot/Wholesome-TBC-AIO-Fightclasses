@@ -1,5 +1,6 @@
 ﻿using robotManager.Helpful;
 using System.Collections.Generic;
+using System.Diagnostics;
 using WholesomeTBCAIO.Helpers;
 using wManager.Wow.Enums;
 using wManager.Wow.Helpers;
@@ -26,19 +27,15 @@ namespace WholesomeTBCAIO.Managers.UnitCache.Entities
         public WoWClass WowClass { get; }
         public float GetDistance { get; }
         public bool HasTarget { get; }
-        public bool IsAttackable { get; }
         public ulong Target { get; }
-        public WoWUnit TargetObject { get; }
         public bool IsTargetingMe { get; }
         public uint Energy { get; }
         public bool IsCast { get; }
-        public WoWUnit WowUnit { get; }
         public uint Rage { get; }
         public uint Mana { get; }
         public uint Level { get; }
         public bool IsSwimming { get; }
         public bool IsStunned { get; }
-        public string CreatureTypeTarget { get; }
         public uint GetBaseAddress { get; }
         public bool IsBoss { get; }
         public long MaxHealth { get; }
@@ -48,11 +45,13 @@ namespace WholesomeTBCAIO.Managers.UnitCache.Entities
         public bool PlayerControlled { get; }
         public Reaction Reaction { get; }
         public bool IsElite { get; }
+        public WoWUnit WowUnit { get; }
 
         public CachedWoWUnit(WoWUnit unit)
         {
-            WowUnit = unit;
+            Stopwatch watch = Stopwatch.StartNew();
             Name = unit.Name;
+            WowUnit = unit;
             Guid = unit.Guid;
             TargetGuid = unit.Target;
             IsValid = unit.IsValid;
@@ -68,9 +67,7 @@ namespace WholesomeTBCAIO.Managers.UnitCache.Entities
             IsAlive = unit.IsAlive;
             GetDistance = unit.GetDistance;
             HasTarget = unit.HasTarget;
-            IsAttackable = unit.IsAttackable;
             Target = unit.Target;
-            TargetObject = unit.TargetObject;
             IsTargetingMe = unit.IsTargetingMe;
             Energy = unit.Energy;
             IsCast = unit.IsCast;
@@ -79,7 +76,6 @@ namespace WholesomeTBCAIO.Managers.UnitCache.Entities
             Level = unit.Level;
             IsSwimming = unit.IsSwimming;
             IsStunned = unit.IsStunned;
-            CreatureTypeTarget = unit.CreatureTypeTarget;
             GetBaseAddress = unit.GetBaseAddress;
             IsBoss = unit.IsBoss;
             MaxHealth = unit.MaxHealth;
@@ -89,7 +85,7 @@ namespace WholesomeTBCAIO.Managers.UnitCache.Entities
             PlayerControlled = unit.PlayerControlled;
             Reaction = unit.Reaction;
             IsElite = unit.IsElite;
-            
+
             Dictionary<uint, IAura> auras = new Dictionary<uint, IAura>();
             
             foreach (var aura in BuffManager.GetAuras(unit.GetBaseAddress))
@@ -97,9 +93,9 @@ namespace WholesomeTBCAIO.Managers.UnitCache.Entities
                 auras[aura.SpellId] = new CachedAura(aura);
             }
             Auras = auras;
+            if (watch.ElapsedMilliseconds > 5)
+                Logger.LogError($"{Name} !!!! => {watch.ElapsedMilliseconds}");
         }
-
-        public IWoWUnit GetTargetObject => new CachedWoWUnit(TargetObject);
 
         public bool HasAura(AIOSpell spell)
         {
@@ -137,5 +133,7 @@ namespace WholesomeTBCAIO.Managers.UnitCache.Entities
         }
 
         public bool IsFacing(Vector3 position, float arcRadians) => WowUnit.IsFacing(position, arcRadians);
+        public string CreatureTypeTarget => WowUnit.CreatureTypeTarget; // slow call
+        public bool IsAttackable => WowUnit.IsAttackable; // slow call
     }
 }
