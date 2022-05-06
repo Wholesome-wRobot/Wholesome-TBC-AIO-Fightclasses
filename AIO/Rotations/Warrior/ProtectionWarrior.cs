@@ -116,7 +116,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             // Demoralizing Shout
             if (settings.UseDemoralizingShout
                 && !Target.HasAura(DemoralizingShout)
-                && !Target.HasBuff("Demoralizing Roar")
+                && !Target.HasAura("Demoralizing Roar")
                 && inMeleeRange
                 && cast.OnSelf(DemoralizingShout))
                 return;

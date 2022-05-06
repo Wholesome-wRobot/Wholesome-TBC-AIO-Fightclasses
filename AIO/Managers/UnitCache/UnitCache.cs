@@ -279,10 +279,12 @@ namespace WholesomeTBCAIO.Managers.UnitCache
                     WoWPlayer memberTOAdd = players.Find(pl => pl.Guid == memberGuid);
                     if (memberTOAdd != null)
                     {
+                        //Logger.Log($"Adding {memberTOAdd.Name} to group");
                         groupAndRaid.Add(new CachedWoWPlayer(memberTOAdd));
                     }
                     else if (memberGuid == Me.Guid)
                     {
+                        //Logger.Log($"Adding {playerObject.Name} to group");
                         groupAndRaid.Add(new CachedWoWPlayer(playerObject));
                     }
                 }
@@ -296,12 +298,12 @@ namespace WholesomeTBCAIO.Managers.UnitCache
             // Enemy loop
             foreach (var unit in units)
             {
-                
+
                 if (!unit.IsAlive || !unit.IsValid || unit.NotSelectable || (int)unit.Reaction > 3)
                 {
                     continue;
                 }
-                
+
                 ulong unitGuid = unit.Guid;
                 /*
                 if (targetGuid != 0 && unitGuid != targetGuid && unit.Target != playerGuid && !_groupGuids.Contains(unit.Target) && unit.PositionWithoutType.DistanceTo(cachedTarget.PositionWithoutType) > 30)
@@ -357,7 +359,7 @@ namespace WholesomeTBCAIO.Managers.UnitCache
             }
             */
             long final = watch.ElapsedMilliseconds;
-            if (final > 0)
+            if (final > 100)
                 Logger.LogError($"{units.Count} units | LOCK=>{watch1}, GROUP=>{watch2}, LOOP=>{watch3}, ASSIGN=>{final}");
         }
     }

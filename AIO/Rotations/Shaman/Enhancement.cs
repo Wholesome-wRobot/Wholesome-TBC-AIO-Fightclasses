@@ -168,7 +168,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 return;
 
             // Earth Shock Focused
-            if (Me.HasBuff("Focused")
+            if (Me.HasAura("Focused")
                 && Target.GetDistance < 19f
                 && cast.OnTarget(EarthShock))
                 return;

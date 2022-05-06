@@ -21,7 +21,7 @@ namespace WholesomeTBCAIO.Helpers
         public bool IsResurrectionSpell { get; }
         public bool PreventDoubleCast { get; }
         public bool OnDeadTarget { get; }
-        public uint MaxRankId { get; }
+        public uint SpellId { get; }
         public new bool IsSpellUsable
         {
             get
@@ -44,8 +44,9 @@ namespace WholesomeTBCAIO.Helpers
             PreventDoubleCast = SpellsToKeepFromDoubleCasting.Contains(Name);
             OnDeadTarget = OnDeadSpells.Contains(Name);
             IsResurrectionSpell = ResurrectionSpells.Contains(Name);
-            IsClickOnTerrain = ClickOnTerrainSpells.Contains(Name);
-            MaxRankId = WTSpell.GetIdMaxRank(Name);
+            //IsClickOnTerrain = ClickOnTerrainSpells.Contains(Name);
+
+            SpellId = WTSpell.GetId(Name, rank);
 
             if (Name.Contains("(") || Name.Contains(")"))
                 Name += "()";
@@ -134,12 +135,13 @@ namespace WholesomeTBCAIO.Helpers
             Logger.Log($"MinRange : {MinRange}");
             Logger.Log($"MaxRange : {MaxRange}");
         }
-
+        /*
         private List<string> ClickOnTerrainSpells = new List<string>()
         {
-            "Mass Dispel"
+            "Mass Dispel",
+            "Blizzard"
         };
-
+        */
         private List<string> OnDeadSpells = new List<string>()
         {
             "Revive",
@@ -196,7 +198,8 @@ namespace WholesomeTBCAIO.Helpers
             "Drain Life",
             "Drain Mana",
             "Health Funnel",
-            "Cannibalize"
+            "Cannibalize",
+            "Blizzard"
         };
 
         private List<string> ResurrectionSpells = new List<string>()

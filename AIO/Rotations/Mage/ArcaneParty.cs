@@ -18,7 +18,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
         protected override void BuffRotation()
         {
-            if (!Me.HasBuff("Drink") || Me.ManaPercentage > 95)
+            if (!Me.HasAura("Drink") || Me.ManaPercentage > 95)
             {
                 base.BuffRotation();
 
@@ -147,7 +147,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             bool _shouldCastArcaneBlast =
                 ArcaneBlast.KnownSpell
                 && (Me.ManaPercentage > 70
-                || Me.HasBuff("Clearcasting")
+                || Me.HasAura("Clearcasting")
                 || (Me.ManaPercentage > 50 && arcaneBlastDebuffCount < 3)
                 || (Me.ManaPercentage > 35 && arcaneBlastDebuffCount < 2)
                 || (arcaneBlastDebuffCount < 1));

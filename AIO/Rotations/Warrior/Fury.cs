@@ -230,7 +230,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             // Demoralizing Shout
             if (settings.UseDemoralizingShout
                 && !Target.HasAura(DemoralizingShout)
-                && !Target.HasBuff("Demoralizing Roar")
+                && !Target.HasAura("Demoralizing Roar")
                 && (unitCache.EnemiesAttackingMe.Count > 1 || ToolBox.GetNbEnemiesClose(15f) <= 0)
                 && inMeleeRange
                 && cast.OnSelf(DemoralizingShout))

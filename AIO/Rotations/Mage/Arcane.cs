@@ -166,7 +166,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             bool _shouldCastArcaneBlast =
                 nbArcaneBlastDebuffs > -1
                 && (Me.ManaPercentage > 70
-                || Me.HasBuff("Clearcasting")
+                || Me.HasAura("Clearcasting")
                 || (Me.ManaPercentage > 50 && nbArcaneBlastDebuffs < 3)
                 || (Me.ManaPercentage > 35 && nbArcaneBlastDebuffs < 2));
 

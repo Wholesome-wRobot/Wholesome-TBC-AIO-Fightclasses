@@ -100,7 +100,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if (specialization.RotationType == Enums.RotationType.Party)
             {
                 // Aura
-                if (!Me.HasBuff(settings.PartyAura)
+                if (!Me.HasAura(settings.PartyAura)
                     && AIOSpell.GetSpellByName(settings.PartyAura) != null
                     && cast.OnSelf(AIOSpell.GetSpellByName(settings.PartyAura)))
                     return;
@@ -234,7 +234,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             if (myBuffSpell == null)
                 return false;
-            else if (!Me.HasAura(myBuffSpell))
+            else if (!Me.HasMyAura(myBuffSpell) || Me.AuraTimeLeft(myBuffSpell) < 400000) // force refresh to ensure it's ours
                 cast.OnSelf(myBuffSpell);
 
             if (unitCache.GroupAndRaid.Count > 0)

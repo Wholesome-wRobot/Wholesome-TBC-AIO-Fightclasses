@@ -66,7 +66,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 if (_lastTotemPosition != null
                     && haveTotem
                     && _lastTotemPosition.DistanceTo(Me.Position) > 17
-                    && !_unitCache.Me.HasBuff("GhostWolf")
+                    && !_unitCache.Me.HasAura("GhostWolf")
                     && !Me.IsMounted
                     && !Me.IsCast
                     && Cast(TotemicCall))

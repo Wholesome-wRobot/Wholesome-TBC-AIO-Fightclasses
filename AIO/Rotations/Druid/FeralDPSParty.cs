@@ -19,7 +19,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
         protected override void BuffRotation()
         {
-            if ((!Me.HasBuff("Drink") || Me.ManaPercentage > 95) && Wrath.IsSpellUsable)
+            if ((!Me.HasAura("Drink") || Me.ManaPercentage > 95) && Wrath.IsSpellUsable)
             {
                 base.BuffRotation();
 
@@ -208,13 +208,13 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 RangeManager.SetRangeToMelee();
 
                 // Shred (when behind)
-                if (Me.HasBuff("Clearcasting")
+                if (Me.HasAura("Clearcasting")
                     && Me.Energy < 80
                     && cast.OnTarget(Shred))
                     return;
 
                 // Faerie Fire
-                if (!Target.HasBuff("Faerie Fire (Feral)")
+                if (!Target.HasAura("Faerie Fire (Feral)")
                     && cast.OnTarget(FaerieFireFeral))
                     return;
 
@@ -234,7 +234,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 // Rip
                 if (Me.ComboPoint >= 4
                     && Me.Energy >= 80
-                    && !Target.HasBuff("Mangle (Cat)")
+                    && !Target.HasAura("Mangle (Cat)")
                     && cast.OnTarget(Rip))
                     return;
 
@@ -267,7 +267,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     return;
 
                 // Faerie Fire
-                if (!Target.HasBuff("Faerie Fire (Feral)")
+                if (!Target.HasAura("Faerie Fire (Feral)")
                     && cast.OnTarget(FaerieFireFeral))
                     return;
 
@@ -292,7 +292,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
                 // Demoralizing Roar
                 if (!Target.HasAura(DemoralizingRoar)
-                    && !Target.HasBuff("Demoralizing Shout")
+                    && !Target.HasAura("Demoralizing Shout")
                     && Target.GetDistance < 9f
                     && cast.OnTarget(DemoralizingRoar))
                     return;

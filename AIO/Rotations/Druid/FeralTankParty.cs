@@ -19,7 +19,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
         protected override void BuffRotation()
         {
-            if ((!Me.HasBuff("Drink") || Me.ManaPercentage > 95) && Wrath.IsSpellUsable)
+            if ((!Me.HasAura("Drink") || Me.ManaPercentage > 95) && Wrath.IsSpellUsable)
             {
                 base.BuffRotation();
 
@@ -235,13 +235,13 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 return;
 
             // Faerie Fire
-            if (!target.HasBuff("Faerie Fire (Feral)")
+            if (!target.HasAura("Faerie Fire (Feral)")
                 && cast.OnTarget(FaerieFireFeral))
                 return;
 
             // Demoralizing Roar
             if (!target.HasAura(DemoralizingRoar)
-                && !target.HasBuff("Demoralizing Shout")
+                && !target.HasAura("Demoralizing Shout")
                 && target.GetDistance < 9f
                 && cast.OnTarget(DemoralizingRoar))
                 return;
@@ -250,7 +250,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             if (MangleBear.KnownSpell
                 && Me.Rage > 15
                 && inMeleeRange
-                && !target.HasBuff("Mangle (Bear)")
+                && !target.HasAura("Mangle (Bear)")
                 && cast.OnTarget(MangleBear))
                 return;
 

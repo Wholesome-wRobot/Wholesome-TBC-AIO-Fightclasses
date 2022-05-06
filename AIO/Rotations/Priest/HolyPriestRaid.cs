@@ -19,7 +19,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
         protected override void BuffRotation()
         {
-            if (!Me.HasBuff("Drink") || Me.ManaPercentage > 95)
+            if (!Me.HasAura("Drink") || Me.ManaPercentage > 95)
             {
                 base.BuffRotation();
 
@@ -140,7 +140,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             {
                 foreach (var tank in tanks.Value)
                 {
-                    if (!tank.HasAura(Renew) && cast.OnFocusUnit(Renew, tank))
+                    if (!tank.HasAura("Renew") && cast.OnFocusUnit(Renew, tank))
                         return;
                 }
             }
@@ -159,9 +159,9 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return true;
             if (unit.HealthPercent < 60 && cast.OnFocusUnit(GreaterHeal, unit))
                 return true;
-            if (unit.HealthPercent < 80 && !unit.HasAura(Renew) && cast.OnFocusUnit(Renew, unit))
+            if (unit.HealthPercent < 80 && !unit.HasAura("Renew") && cast.OnFocusUnit(Renew, unit))
                 return true;
-            if (unit.HealthPercent < 95 && !unit.HasAura(Renew) && cast.OnFocusUnit(RenewRank8, unit))
+            if (unit.HealthPercent < 95 && !unit.HasAura("Renew") && cast.OnFocusUnit(RenewRank8, unit))
                 return true;
             if (combat && unit.HealthPercent < 100)
             {

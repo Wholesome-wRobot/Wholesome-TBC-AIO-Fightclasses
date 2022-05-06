@@ -163,7 +163,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     return;
             }
 
-            bool focusedCasting = Me.HasBuff("Focused Casting");
+            bool focusedCasting = Me.HasAura("Focused Casting");
             // Frost Shock
             if ((Target.CreatureTypeTarget == "Humanoid" || Target.Name.Contains("Plainstrider"))
                 && settings.ENFrostShockHumanoids
@@ -209,7 +209,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
             // Lightning Bolt
             if (ObjectManager.Target.GetDistance <= pullRange
-                && (Target.HealthPercent > settings.ELLBHealthThreshold || Me.HasBuff("Clearcasting") || focusedCasting)
+                && (Target.HealthPercent > settings.ELLBHealthThreshold || Me.HasAura("Clearcasting") || focusedCasting)
                 && Me.ManaPercentage > 15
                 && cast.OnTarget(LightningBolt))
                 return;

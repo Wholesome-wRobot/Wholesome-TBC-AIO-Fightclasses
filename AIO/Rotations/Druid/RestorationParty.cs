@@ -18,7 +18,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
         protected override void BuffRotation()
         {
-            if ((!Me.HasBuff("Drink") || Me.ManaPercentage > 95) && Wrath.IsSpellUsable)
+            if ((!Me.HasAura("Drink") || Me.ManaPercentage > 95) && Rejuvenation.IsSpellUsable)
             {
                 base.BuffRotation();
 
@@ -143,7 +143,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 && cast.OnTarget(NaturesSwiftness))
                 return;
             if (needBurstHeal != null
-                && Me.HasBuff("Nature's Swiftness"))
+                && Me.HasAura("Nature's Swiftness"))
             {
                 cast.OnFocusUnit(HealingTouch, needBurstHeal);
                 return;

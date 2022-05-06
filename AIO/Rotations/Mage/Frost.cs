@@ -124,7 +124,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 && foodManager.UseManaStone())
                 return;
 
-            bool targetHasFrostBite = Target.HasBuff("Frostbite");
+            bool targetHasFrostBite = Target.HasAura("Frostbite");
             // Ice Lance
             if ((targetHasFrostBite || Target.HasAura(FrostNova))
                 && cast.OnTarget(IceLance))

@@ -134,7 +134,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 return;
 
             // Shiv
-            if (Target.HasBuff("Deadly Poison")
+            if (Target.HasAura("Deadly Poison")
                 && WTEffects.DeBuffTimeLeft("Deadly Poison", "target") < 3
                 && cast.OnTarget(Shiv))
                 return;

@@ -100,7 +100,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                         if ((Fight.InFight || Me.InCombatFlagOnly)
                             && Me.HasTarget
                             && Target.IsAlive
-                            && !Pet.HasBuff("Feed Pet Effect"))
+                            && !Pet.HasAura("Feed Pet Effect"))
                         {
                             bool multiAggroImTargeted = false;
 
@@ -184,8 +184,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
                     if (StatusChecker.BasicConditions()
                         && !Me.IsMounted
-                        && !Me.HasBuff("Food")
-                        && !Me.HasBuff("Drink"))
+                        && !Me.HasAura("Food")
+                        && !Me.HasAura("Drink"))
                     {
                         if (canOnlyMelee)
                             RangeManager.SetRangeToMelee();
@@ -224,7 +224,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         {
             if (Pet.IsAlive
                 && !Me.IsCast
-                && !Pet.HasBuff("Feed Pet Effect"))
+                && !Pet.HasAura("Feed Pet Effect"))
             {
                 if (!WTEffects.HasPoisonDebuff("pet"))
                 {
@@ -241,8 +241,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         protected void PetManager()
         {
-            if (!Me.HasBuff("Drink")
-                && !Me.HasBuff("Food"))
+            if (!Me.HasAura("Drink")
+                && !Me.HasAura("Food"))
             {
                 // Set pet dead flag
                 if (Pet.IsAlive)
@@ -256,7 +256,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 if ((PetIsDead || Pet.IsDead)
                     && !Me.InCombatFlagOnly
                     && RevivePet.KnownSpell
-                    && !Me.HasBuff("Drink")
+                    && !Me.HasAura("Drink")
                     && RevivePet.Cost > Me.Mana)
                 {
                     Logger.Log("Not enough mana to summon, forcing regen");
@@ -269,7 +269,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
                 // Revive Pet
                 if ((PetIsDead || Pet.IsDead)
-                    && !Me.HasBuff("Drink")
+                    && !Me.HasAura("Drink")
                     && (!Me.InCombatFlagOnly || settings.RevivePetInCombat)
                     && cast.OnSelf(RevivePet))
                     return;
@@ -323,10 +323,10 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)
         {
             // Wait for feed pet
-            if (Pet.HasBuff("Feed Pet Effect"))
+            if (Pet.HasAura("Feed Pet Effect"))
                 Logger.Log("Waiting for pet to be fed");
 
-            while (Pet.HasBuff("Feed Pet Effect")
+            while (Pet.HasAura("Feed Pet Effect")
                 && !unitCache.Me.InCombatFlagOnly)
                 Thread.Sleep(500);
 
@@ -350,7 +350,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && !MovementManager.InMovement
                 && Me.IsAlive
                 && Target.IsAlive
-                && !Pet.HasBuff("Pacifying Dust")
+                && !Pet.HasAura("Pacifying Dust")
                 && !canOnlyMelee
                 && !cast.IsApproachingTarget
                 && !Pet.IsStunned
@@ -412,10 +412,10 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         private void MovementEventsOnMovementPulse(List<Vector3> points, CancelEventArgs cancelable)
         {
             // Wait for feed pet
-            if (Pet.HasBuff("Feed Pet Effect"))
+            if (Pet.HasAura("Feed Pet Effect"))
                 Logger.Log("Waiting for pet to be fed");
 
-            while (Pet.HasBuff("Feed Pet Effect")
+            while (Pet.HasAura("Feed Pet Effect")
                 && !Me.InCombatFlagOnly)
                 Thread.Sleep(500);
         }

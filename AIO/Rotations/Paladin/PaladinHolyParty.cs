@@ -19,7 +19,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
         {
             RangeManager.SetRange(30);
 
-            if (!Me.HasBuff("Drink") || Me.ManaPercentage > 95)
+            if (!Me.HasAura("Drink") || Me.ManaPercentage > 95)
             {
                 base.BuffRotation();
             }
@@ -95,7 +95,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             // Seal of light
             if (settings.PartyHolySealOfLight
-                && !Target.HasBuff("Judgement of Light"))
+                && !Target.HasAura("Judgement of Light"))
             {
                 if (cast.OnTarget(Judgement))
                     return;

@@ -156,7 +156,7 @@ namespace WholesomeTBCAIO.Helpers
                 _currentSpellTarget = _unitCache.Target;
             }
 
-            CombatDebug("*----------- TARGET IS " + _currentSpellTarget.Name);
+            CombatDebug("*----------- TARGET IS " + _currentSpellTarget?.Name);
 
             // Now that we know the target
             if (_currentSpellLocation == null)
@@ -283,7 +283,7 @@ namespace WholesomeTBCAIO.Helpers
 
             _currentSpell.Launch(stopMove, false, true, unit);
 
-            if (_currentSpell.IsClickOnTerrain)
+            if (location != null)
             {
                 ClickOnTerrain.Pulse(_currentSpellLocation);
             }

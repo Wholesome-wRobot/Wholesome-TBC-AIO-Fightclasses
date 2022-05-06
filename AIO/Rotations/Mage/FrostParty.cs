@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using robotManager.Helpful;
+using System.Collections.Generic;
 using System.Linq;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Managers.UnitCache.Entities;
@@ -19,7 +20,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
         protected override void BuffRotation()
         {
-            if (!Me.HasBuff("Drink") || Me.ManaPercentage > 95)
+            if (!Me.HasAura("Drink") || Me.ManaPercentage > 95)
             {
                 base.BuffRotation();
 
@@ -76,8 +77,17 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 && cast.OnSelf(IceBarrier))
                 return;
 
+            // Blizzard
+            if (Blizzard.KnownSpell && unitCache.EnemyUnitsTargetingPlayer.Count <= 0)
+            {
+                Vector3 center = WTSpace.FindAggregatedCenter(unitCache.EnemiesFighting.Select(unit => unit.PositionWithoutType).ToList(), 15, 3);
+                if (center != null
+                    && cast.OnLocation(Blizzard, center))
+                    return;
+            }
+
             // Ice Lance
-            if ((Target.HasBuff("Frostbite") || Target.HasAura(FrostNova))
+            if ((Target.HasAura("Frostbite") || Target.HasAura(FrostNova))
                 && cast.OnTarget(IceLance))
                 return;
 

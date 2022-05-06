@@ -49,8 +49,9 @@ namespace WholesomeTBCAIO.Managers.UnitCache.Entities
 
         bool HasAura(AIOSpell spell);
         bool HasMyAura(AIOSpell spell);
-        bool HasBuff(string spell);
+        bool HasAura(string spell);
         int BuffStacks(AIOSpell spell);
         bool IsFacing(Vector3 position, float arcRadians);
+        int AuraTimeLeft(AIOSpell spell);
     }
 }

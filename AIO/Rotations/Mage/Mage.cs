@@ -180,6 +180,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
         protected AIOSpell MoltenArmor = new AIOSpell("Molten Armor");
         protected AIOSpell Scorch = new AIOSpell("Scorch");
         protected AIOSpell IceBlock = new AIOSpell("Ice Block");
+        protected AIOSpell Blizzard = new AIOSpell("Blizzard");
 
         protected bool CheckIceBlock()
         {
@@ -220,7 +221,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             float minDistance = RangeManager.GetMeleeRangeWithTarget() + 3f;
 
             // Do we need to backup?
-            if ((Target.HasBuff("Frostbite") || Target.HasAura(FrostNova))
+            if ((Target.HasAura("Frostbite") || Target.HasAura(FrostNova))
                 && Target.GetDistance < minDistance
                 && Me.IsAlive
                 && Target.IsAlive
@@ -246,7 +247,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                         && Target.GetDistance < minDistance
                         && Me.IsAlive
                         && Target.IsAlive
-                        && (Target.HasBuff("Frostbite") || Target.HasAura(FrostNova))
+                        && (Target.HasAura("Frostbite") || Target.HasAura(FrostNova))
                         && !timer.IsReady)
                     {
                         // Wait follow path
@@ -264,7 +265,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                     && Me.IsAlive
                     && Target.IsAlive
                     && Target.GetDistance < minDistance
-                    && (Target.HasBuff("Frostbite") || Target.HasAura(FrostNova))
+                    && (Target.HasAura("Frostbite") || Target.HasAura(FrostNova))
                     && !timer.IsReady)
                     {
                         Move.Backward(Move.MoveAction.PressKey, 500);

@@ -87,45 +87,43 @@ namespace WholesomeTBCAIO.Managers.UnitCache.Entities
             IsElite = unit.IsElite;
 
             Dictionary<uint, IAura> auras = new Dictionary<uint, IAura>();
-            
             foreach (var aura in BuffManager.GetAuras(unit.GetBaseAddress))
             {
                 auras[aura.SpellId] = new CachedAura(aura);
             }
             Auras = auras;
-            if (watch.ElapsedMilliseconds > 5)
-                Logger.LogError($"{Name} !!!! => {watch.ElapsedMilliseconds}");
+            if (watch.ElapsedMilliseconds > 15)
+                Logger.LogError($"{Name} update took {watch.ElapsedMilliseconds}");
         }
 
         public bool HasAura(AIOSpell spell)
         {
-            return Auras.ContainsKey(spell.MaxRankId);
+            return Auras.ContainsKey(spell.SpellId);
         }
 
-        public bool HasMyAura(AIOSpell spell)
+        public bool HasAura(string spell) => WowUnit.HaveBuff(spell);
+
+        public bool HasMyAura(AIOSpell spell) // only works for other players, player always returns true
         {
-            if (Auras.TryGetValue(spell.MaxRankId, out IAura aura))
+            if (Auras.TryGetValue(spell.SpellId, out IAura aura))
             {
                 return aura.TimeLeft > 0;
             }
             return false;
         }
 
-        public bool HasBuff(string spell)
+        public int AuraTimeLeft(AIOSpell spell)
         {
-            foreach (KeyValuePair<uint, IAura> pair in Auras)
+            if (Auras.TryGetValue(spell.SpellId, out IAura aura))
             {
-                if (pair.Value.Name.StartsWith(spell))
-                {
-                    return true;
-                }
+                return aura.TimeLeft;
             }
-            return false;
+            return 0;
         }
 
         public int BuffStacks(AIOSpell spell)
         {
-            if (Auras.TryGetValue(spell.MaxRankId, out IAura aura))
+            if (Auras.TryGetValue(spell.SpellId, out IAura aura))
             {
                 return aura.Stacks;
             }

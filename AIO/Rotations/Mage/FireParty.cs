@@ -19,7 +19,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
         protected override void BuffRotation()
         {
-            if (!Me.HasBuff("Drink") || Me.ManaPercentage > 95)
+            if (!Me.HasAura("Drink") || Me.ManaPercentage > 95)
             {
                 base.BuffRotation();
 
@@ -145,6 +145,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // Scorch first
             int wantedScorchCount = Target.IsBoss ? 5 : 2;
             int nbScorchDebuffOnTarget = WTEffects.CountDebuff("Fire Vulnerability", "target");
+            int scorchTimeLeft = WTEffects.DeBuffTimeLeft("Fire Vulnerability", "target");
             if (knowImprovedScorch
                 && (nbScorchDebuffOnTarget < wantedScorchCount)
                 && cast.OnTarget(Scorch))
@@ -153,7 +154,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // Scorch renewal
             if (knowImprovedScorch
                 && nbScorchDebuffOnTarget >= wantedScorchCount
-                && WTEffects.DeBuffTimeLeft("Fire Vulnerability", "target") < 10
+                && scorchTimeLeft < 10
                 && cast.OnTarget(Scorch))
             {
                 Thread.Sleep(1000);
@@ -163,8 +164,8 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // Combustion
             if (!Me.HasAura(Combustion)
                 && Combustion.GetCurrentCooldown <= 0
-                && WTEffects.DeBuffTimeLeft("Fire Vulnerability", "target") > 20
-                && WTEffects.CountDebuff("Fire Vulnerability", "target") >= wantedScorchCount
+                && scorchTimeLeft > 20
+                && nbScorchDebuffOnTarget >= wantedScorchCount
                 && cast.OnSelf(Combustion))
                 return;
 

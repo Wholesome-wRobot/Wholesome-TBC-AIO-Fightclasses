@@ -18,7 +18,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         {
             base.BuffRotation();
 
-            if (!Me.HasAura(GhostWolf) && (!Me.HasBuff("Drink") || Me.ManaPercentage > 95))
+            if (!Me.HasAura(GhostWolf) && (!Me.HasAura("Drink") || Me.ManaPercentage > 95))
             {
                 // Ghost Wolf
                 if (settings.GhostWolfMount

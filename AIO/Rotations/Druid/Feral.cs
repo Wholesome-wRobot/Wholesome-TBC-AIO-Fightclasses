@@ -250,7 +250,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     return;
 
                 // Faerie Fire
-                if (!Target.HasBuff("Faerie Fire (Feral)")
+                if (!Target.HasAura("Faerie Fire (Feral)")
                     && !Target.HasAura(Pounce)
                     && cast.OnTarget(FaerieFireFeral))
                     return;
@@ -332,7 +332,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     return;
 
                 // Faerie Fire
-                if (!Target.HasBuff("Faerie Fire (Feral)")
+                if (!Target.HasAura("Faerie Fire (Feral)")
                     && cast.OnTarget(FaerieFireFeral))
                     return;
 
@@ -357,7 +357,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
                 // Demoralizing Roar
                 if (!Target.HasAura(DemoralizingRoar)
-                    && !Target.HasBuff("Demoralizing Shout")
+                    && !Target.HasAura("Demoralizing Shout")
                     && Target.GetDistance < 9f
                     && cast.OnTarget(DemoralizingRoar))
                     return;

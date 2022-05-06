@@ -19,7 +19,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
         protected override void BuffRotation()
         {
-            if (!Me.HasBuff("Drink") || Me.ManaPercentage > 95)
+            if (!Me.HasAura("Drink") || Me.ManaPercentage > 95)
             {
                 // Righteous Fury
                 if (!Me.HasAura(RighteousFury)
@@ -35,7 +35,6 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             base.Pull();
 
             WoWUnit Target = ObjectManager.Target;
-
             ToolBox.CheckAutoAttack(Attack);
 
             // Seal of Righteousness
@@ -121,7 +120,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                     return;
             }
 
-            int nbEnemiesClose = unitCache.EnemiesFighting.FindAll(unit => unit.GetDistance < 7).Count;
+            int nbEnemiesClose = unitCache.EnemiesFighting.FindAll(unit => !unit.IsTargetingMe && unit.GetDistance < 8).Count;
             // Consecration
             if (!settings.PartyConsecrationRank1
                 && nbEnemiesClose > 1
@@ -145,7 +144,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             // Judgement
             if (Target.GetDistance < Judgement.MaxRange
-                && (!Target.HasBuff("Judgement of Wisdom") || Me.ManaPercentage > settings.PartyProtSealOfWisdom)
+                && (!Target.HasAura("Judgement of Wisdom") || Me.ManaPercentage > settings.PartyProtSealOfWisdom)
                 && cast.OnTarget(Judgement))
                 return;
 

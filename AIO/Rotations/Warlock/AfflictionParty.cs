@@ -20,7 +20,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
         protected override void BuffRotation()
         {
-            if (!Me.HasBuff("Drink") || Me.ManaPercentage > 95)
+            if (!Me.HasAura("Drink") || Me.ManaPercentage > 95)
             {
                 base.BuffRotation();
 
@@ -88,7 +88,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                     && ToolBox.GetItemCooldown(WarlockPetAndConsumables.SOULSTONES) <= 0)
                 {
                     IWoWPlayer noSoulstone = unitCache.GroupAndRaid
-                        .Find(m => !m.HasBuff("Soulstone Resurrection")
+                        .Find(m => !m.HasAura("Soulstone Resurrection")
                             && m.GetDistance < 20
                             && m.Name != "Unknown"
                             && !TraceLine.TraceLineGo(Me.PositionWithoutType, m.PositionWithoutType)
@@ -206,7 +206,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 return;
 
             // Shadow Trance
-            if (Me.HasBuff("Shadow Trance")
+            if (Me.HasAura("Shadow Trance")
                 && cast.OnTarget(ShadowBolt))
                 return;
 

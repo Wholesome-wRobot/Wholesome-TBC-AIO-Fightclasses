@@ -238,6 +238,7 @@ namespace WholesomeTBCAIO.Helpers
                 Vector3 position = WTSpace.BackOfUnit(unitCache.Target.WowUnit, 2f);
                 while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
                     && unitCache.Me.PositionWithoutType.DistanceTo(position) > 1
+                    && unitCache.Target.IsAlive
                     && limit >= 0)
                 {
                     position = WTSpace.BackOfUnit(unitCache.Target.WowUnit, 2f);

@@ -101,7 +101,7 @@ namespace WholesomeTBCAIO.Managers.PartyManager
                 Thread.Sleep(300);
 
             if (_unitCache.Me.ManaPercentage < threshold
-                && !_unitCache.Me.HasBuff("Drink")
+                && !_unitCache.Me.HasAura("Drink")
                 && !MovementManager.InMovement
                 && !MovementManager.InMoveTo
                 && drinkName.Trim().Length > 0)

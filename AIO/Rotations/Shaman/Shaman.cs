@@ -72,7 +72,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             {
                 try
                 {
-                    if (StatusChecker.BasicConditions() && !Me.HasBuff("Drink") && !Me.HasBuff("Food"))
+                    if (StatusChecker.BasicConditions() && !Me.HasAura("Drink") && !Me.HasAura("Food"))
                     {
                         ApplyEnchantWeapon();
                         totemManager.CheckForTotemicCall();

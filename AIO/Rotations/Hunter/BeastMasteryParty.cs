@@ -17,7 +17,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         protected override void BuffRotation()
         {
-            if (!Me.HasBuff("Drink") || Me.ManaPercentage > 95)
+            if (!Me.HasAura("Drink") || Me.ManaPercentage > 95)
             {
                 // Aspect of the Cheetah
                 if (!Me.IsMounted

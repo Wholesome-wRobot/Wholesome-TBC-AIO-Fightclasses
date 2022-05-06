@@ -92,7 +92,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 return;
 
             // Use Soul Stone
-            if (!Me.HasBuff("Soulstone Resurrection")
+            if (!Me.HasAura("Soulstone Resurrection")
                 && CreateSoulstone.KnownSpell
                 && WTItem.HaveOneInList(WarlockPetAndConsumables.SOULSTONES)
                 && ToolBox.GetItemCooldown(WarlockPetAndConsumables.SOULSTONES) <= 0)
@@ -150,7 +150,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             // Immolate
             if (!Target.HasAura(Immolate)
-                && !Target.HasBuff("Fire Ward")
+                && !Target.HasAura("Fire Ward")
                 && !Corruption.KnownSpell
                 && cast.OnTarget(Immolate))
                 return;
@@ -192,7 +192,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 WarlockPetAndConsumables.UseHealthstone();
 
             // Shadow Trance
-            if (Me.HasBuff("Shadow Trance")
+            if (Me.HasAura("Shadow Trance")
                 && overLowManaThreshold
                 && cast.OnTarget(ShadowBolt))
                 return;
@@ -240,7 +240,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             // Immolate
             if (!Target.HasAura(Immolate)
-                && !Target.HasBuff("Fire Ward")
+                && !Target.HasAura("Fire Ward")
                 && overLowManaThreshold
                 && Target.HealthPercent > 30
                 && (settings.UseImmolateHighLevel || !UnstableAffliction.KnownSpell)

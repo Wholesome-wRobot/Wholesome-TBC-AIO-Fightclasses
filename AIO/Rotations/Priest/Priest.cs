@@ -58,7 +58,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             {
                 try
                 {
-                    if (Me.HasBuff("Spirit of Redemption"))
+                    if (Me.HasAura("Spirit of Redemption"))
                     {
                         // PARTY Greater heal
                         List<IWoWPlayer> needGreaterHealSR = unitCache.GroupAndRaid
@@ -86,7 +86,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     if (StatusChecker.InCombat())
                         specialization.CombatRotation();
 
-                    if (unitCache.GroupAndRaid.Any(p => p.InCombatFlagOnly && p.GetDistance < 50) || Me.HasBuff("Spirit of Redemption"))
+                    if (unitCache.GroupAndRaid.Any(p => p.InCombatFlagOnly && p.GetDistance < 50) || Me.HasAura("Spirit of Redemption"))
                         specialization.HealerCombat();
 
                 }
