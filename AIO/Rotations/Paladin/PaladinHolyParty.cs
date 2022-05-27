@@ -19,7 +19,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
         {
             RangeManager.SetRange(30);
 
-            if (!Me.HasAura("Drink") || Me.ManaPercentage > 95)
+            if (!Me.HasDrinkBuff || Me.ManaPercentage > 95)
             {
                 base.BuffRotation();
             }

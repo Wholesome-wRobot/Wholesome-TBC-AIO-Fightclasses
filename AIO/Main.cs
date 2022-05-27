@@ -30,7 +30,7 @@ public class Main : ICustomClass
     private IClassRotation _selectedRotation;
     public static string wowClass = ObjectManager.Me.WowClass.ToString();
     public static int humanReflexTime = 500;
-    public static string version = "3.3.00"; // Must match version in Version.txt
+    public static string version = "3.3.01"; // Must match version in Version.txt
     public static bool HMPrunningAway = false;
 
     public static bool IsLaunched { get; private set; }

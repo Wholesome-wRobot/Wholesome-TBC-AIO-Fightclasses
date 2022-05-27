@@ -18,7 +18,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
         protected override void BuffRotation()
         {
-            if ((!Me.HasAura("Drink") || Me.ManaPercentage > 95) && Rejuvenation.IsSpellUsable)
+            if ((!Me.HasDrinkBuff || Me.ManaPercentage > 95) && Rejuvenation.IsSpellUsable)
             {
                 base.BuffRotation();
 

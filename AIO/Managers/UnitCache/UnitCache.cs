@@ -344,23 +344,10 @@ namespace WholesomeTBCAIO.Managers.UnitCache
             EnemyUnitsTargetingPlayer = enemyUnitsTargetingPlayer;
             GroupAndRaid = groupAndRaid;
             Raid = raid;
-            /*
-            foreach (KeyValuePair<int, List<IWoWPlayer>> pl in Raid)
-            {
-                foreach (var play in pl.Value)
-                {
-                    Logger.Log($"{pl.Key} => {play.Name}");
-                }
-            }
 
-            foreach (var p in Group)
-            {
-                Logger.Log($"{p.Name}");
-            }
-            */
             long final = watch.ElapsedMilliseconds;
             if (final > 100)
-                Logger.LogError($"{units.Count} units | LOCK=>{watch1}, GROUP=>{watch2}, LOOP=>{watch3}, ASSIGN=>{final}");
+                Logger.LogDebug($"{units.Count} units | LOCK=>{watch1}, GROUP=>{watch2}, LOOP=>{watch3}, ASSIGN=>{final}");
         }
     }
 }

@@ -184,8 +184,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
                     if (StatusChecker.BasicConditions()
                         && !Me.IsMounted
-                        && !Me.HasAura("Food")
-                        && !Me.HasAura("Drink"))
+                        && !Me.HasFoodBuff
+                        && !Me.HasDrinkBuff)
                     {
                         if (canOnlyMelee)
                             RangeManager.SetRangeToMelee();
@@ -241,8 +241,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
         protected void PetManager()
         {
-            if (!Me.HasAura("Drink")
-                && !Me.HasAura("Food"))
+            if (!Me.HasDrinkBuff
+                && !Me.HasFoodBuff)
             {
                 // Set pet dead flag
                 if (Pet.IsAlive)
@@ -256,7 +256,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 if ((PetIsDead || Pet.IsDead)
                     && !Me.InCombatFlagOnly
                     && RevivePet.KnownSpell
-                    && !Me.HasAura("Drink")
+                    && !Me.HasDrinkBuff
                     && RevivePet.Cost > Me.Mana)
                 {
                     Logger.Log("Not enough mana to summon, forcing regen");
@@ -269,7 +269,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
                 // Revive Pet
                 if ((PetIsDead || Pet.IsDead)
-                    && !Me.HasAura("Drink")
+                    && !Me.HasDrinkBuff
                     && (!Me.InCombatFlagOnly || settings.RevivePetInCombat)
                     && cast.OnSelf(RevivePet))
                     return;
