@@ -19,7 +19,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
 
         protected override void BuffRotation()
         {
-            if (!Me.HasDrinkBuff || Me.ManaPercentage > 95)
+            if (!Me.HasDrinkAura || Me.ManaPercentage > 95)
             {
                 base.BuffRotation();
 

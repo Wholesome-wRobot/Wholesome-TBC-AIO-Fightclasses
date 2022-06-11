@@ -19,7 +19,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
         protected override void BuffRotation()
         {
-            if ((!Me.HasDrinkBuff || Me.ManaPercentage > 95) && Wrath.IsSpellUsable)
+            if ((!Me.HasDrinkAura || Me.ManaPercentage > 95) && Wrath.IsSpellUsable)
             {
                 base.BuffRotation();
 

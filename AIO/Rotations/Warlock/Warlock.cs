@@ -214,7 +214,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             {
                 // Make sure we have mana to summon
                 if (Me.Mana < SummonSpell.Cost
-                    && !Me.HasDrinkBuff
+                    && !Me.HasDrinkAura
                     && !Me.InCombatFlagOnly)
                 {
                     Logger.Log($"Not enough mana to summon {SummonSpell.Name}, forcing regen");

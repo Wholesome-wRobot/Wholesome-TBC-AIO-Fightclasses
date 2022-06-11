@@ -131,7 +131,7 @@ namespace WholesomeTBCAIO.Managers.UnitCache.Entities
         public string CreatureTypeTarget => WowUnit.CreatureTypeTarget; // slow call
         public bool IsAttackable => WowUnit.IsAttackable; // slow call
 
-        private HashSet<uint> _drinkBuffs = new HashSet<uint>()
+        private HashSet<uint> _drinkAuras = new HashSet<uint>()
         {
             430, 431, 432, 833, 1133, 1135, 1137, 2639, 10250, 18071, 18140, 
             18233, 22734, 23540, 23541, 23542, 23692, 23698, 24355, 24384, 
@@ -145,9 +145,9 @@ namespace WholesomeTBCAIO.Managers.UnitCache.Entities
             58645, 58648, 61827, 61828, 61830, 64056, 64354, 65363, 65418, 
             65419, 65420, 65421, 65422, 69560, 69561, 72623
         };
-        public bool HasDrinkBuff => Auras.Any(aura => _drinkBuffs.Contains(aura.Key));
+        public bool HasDrinkAura => Auras.Any(aura => _drinkAuras.Contains(aura.Key));
 
-        private HashSet<uint> _foodBuffs = new HashSet<uint>()
+        private HashSet<uint> _foodAuras = new HashSet<uint>()
         {
             433, 434, 435, 1127, 1129, 1131, 2639, 5004, 5005, 5006, 5007,
             7737, 9177, 10256, 10257, 18071, 18124, 18229, 18230, 18231,
@@ -166,6 +166,6 @@ namespace WholesomeTBCAIO.Managers.UnitCache.Entities
             64056, 64354, 64355, 65418, 65419, 65420, 65421, 65422, 71068, 
             71071, 71073, 71074
         };
-        public bool HasFoodBuff => Auras.Any(aura => _foodBuffs.Contains(aura.Key));
+        public bool HasFoodAura => Auras.Any(aura => _foodAuras.Contains(aura.Key));
     }
 }

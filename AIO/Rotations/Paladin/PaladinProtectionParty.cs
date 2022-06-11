@@ -19,7 +19,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
         protected override void BuffRotation()
         {
-            if (!Me.HasDrinkBuff || Me.ManaPercentage > 95)
+            if (!Me.HasDrinkAura || Me.ManaPercentage > 95)
             {
                 // Righteous Fury
                 if (!Me.HasAura(RighteousFury)

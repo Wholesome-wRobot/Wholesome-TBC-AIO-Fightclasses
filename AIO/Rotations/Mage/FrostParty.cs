@@ -20,7 +20,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
         protected override void BuffRotation()
         {
-            if (!Me.HasDrinkBuff || Me.ManaPercentage > 95)
+            if (!Me.HasDrinkAura || Me.ManaPercentage > 95)
             {
                 base.BuffRotation();
 

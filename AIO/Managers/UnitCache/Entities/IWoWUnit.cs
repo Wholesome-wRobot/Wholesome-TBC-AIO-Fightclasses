@@ -46,8 +46,8 @@ namespace WholesomeTBCAIO.Managers.UnitCache.Entities
         bool PlayerControlled { get; }
         Reaction Reaction { get; }
         bool IsElite { get; }
-        bool HasDrinkBuff { get; }
-        bool HasFoodBuff { get; }
+        bool HasDrinkAura { get; }
+        bool HasFoodAura { get; }
 
         bool HasAura(AIOSpell spell);
         bool HasMyAura(AIOSpell spell);
