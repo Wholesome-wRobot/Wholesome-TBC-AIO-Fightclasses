@@ -157,8 +157,6 @@ namespace WholesomeTBCAIO.Helpers
             "Regrowth",
             "Revive Pet",
             "Polymorph",
-            //"Arcane Blast",
-            //"Scorch",
             "Hammer of Wrath",
             "Unstable Affliction",
             "Flash of Light",
@@ -186,7 +184,9 @@ namespace WholesomeTBCAIO.Helpers
             "Summon Felguard",
             "Create HealthStone",
             "Create Soulstone",
-            "Seed of Corruption"
+            "Seed of Corruption",
+            //"Arcane Blast",
+            //"Scorch",
         };
 
         private List<string> ChannelSpells = new List<string>()
