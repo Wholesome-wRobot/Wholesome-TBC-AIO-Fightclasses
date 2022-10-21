@@ -36,6 +36,8 @@ namespace WholesomeTBCAIO.Settings
             UseMagmaTotem = false;
             UseStoneSkinTotem = false;
             UseTotemOfWrath = true;
+            UseTremorTotem = false;
+            TotemPreset = "None";
 
             PartyStandBehind = true;
             PartyLesserHealingWaveThreshold = 80;
@@ -140,11 +142,13 @@ namespace WholesomeTBCAIO.Settings
         public bool ENShamanisticRageOnMultiOnly { get; set; }
 
         // TOTEMS
+
         [Category("Totems")]
-        [DefaultValue(false)]
-        [DisplayName("Stoneskin Totem")]
-        [Description("Use Stoneskin Totem instead of Strength of Earth Totem")]
-        public bool UseStoneSkinTotem { get; set; }
+        [DefaultValue("Random")]
+        [DisplayName("[RES] Totem Preset")]
+        [Description("Totem preset for restoration rotation")]
+        [DropdownList(new string[] { "None", "Melee", "Caster" })]
+        public string TotemPreset { get; set; }
 
         [Category("Totems")]
         [DefaultValue(true)]
@@ -181,6 +185,18 @@ namespace WholesomeTBCAIO.Settings
         [DisplayName("Totem of Wrath")]
         [Description("Use Totem of Wrath")]
         public bool UseTotemOfWrath { get; set; }
+
+        [Category("Totems")]
+        [DefaultValue(false)]
+        [DisplayName("Stoneskin Totem")]
+        [Description("Use Stoneskin Totem instead of Strength of Earth Totem")]
+        public bool UseStoneSkinTotem { get; set; }
+
+        [Category("Totems")]
+        [DefaultValue(false)]
+        [DisplayName("Tremor Totem")]
+        [Description("Use Tremor Totem instead default earth totem")]
+        public bool UseTremorTotem { get; set; }
 
         // ELEMENTAL
         [Category("Elemental")]

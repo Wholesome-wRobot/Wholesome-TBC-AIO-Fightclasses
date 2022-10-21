@@ -21,15 +21,27 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         private IUnitCache _unitCache;
 
         private AIOSpell TotemicCall = new AIOSpell("Totemic Call");
+
+        // Air
+        private AIOSpell GraceOfAirTotem = new AIOSpell("Grace of Air Totem");
+        private AIOSpell WindfuryTotem = new AIOSpell("Windfury Totem");
+        private AIOSpell WrathOfAirTotem = new AIOSpell("Wrath of Air Totem");
+
+        // Fire
+        private AIOSpell SearingTotem = new AIOSpell("Searing Totem");
+        private AIOSpell MagmaTotem = new AIOSpell("Magma Totem");
+        private AIOSpell TotemOfWrath = new AIOSpell("Totem of Wrath");
+
+        // Earth
+        private AIOSpell StoneskinTotem = new AIOSpell("Stoneskin Totem");
         private AIOSpell StoneclawTotem = new AIOSpell("Stoneclaw Totem");
         private AIOSpell StrengthOfEarthTotem = new AIOSpell("Strength of Earth Totem");
-        private AIOSpell StoneskinTotem = new AIOSpell("Stoneskin Totem");
-        private AIOSpell SearingTotem = new AIOSpell("Searing Totem");
-        private AIOSpell ManaSpringTotem = new AIOSpell("Mana Spring Totem");
-        private AIOSpell MagmaTotem = new AIOSpell("Magma Totem");
-        private AIOSpell GraceOfAirTotem = new AIOSpell("Grace of Air Totem");
         private AIOSpell EarthElementalTotem = new AIOSpell("Earth Elemental Totem");
-        private AIOSpell TotemOfWrath = new AIOSpell("Totem of Wrath");
+        private AIOSpell TremorTotem = new AIOSpell("Tremor Totem");
+
+        // Water
+        private AIOSpell FireResistanceTotem = new AIOSpell("Fire Resistance Totem");
+        private AIOSpell ManaSpringTotem = new AIOSpell("Mana Spring Totem");
         private AIOSpell ManaTideTotem = new AIOSpell("Mana Tide Totem");
 
         public TotemManager(Cast cast, ShamanSettings settings, IPartyManager partyManager, IUnitCache unitCache)
@@ -100,16 +112,29 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
             if (_settings.UseEarthTotems)
             {
-                // Strenght of Earth totem
-                if ((spec is Enhancement || spec is EnhancementParty || spec is ShamanRestoParty)
-                    && (!_settings.UseStoneSkinTotem || !StoneskinTotem.KnownSpell)
-                    && !Me.HaveBuff("Strength of Earth")
-                    && !currentEarthTotem.Contains("Stoneclaw Totem")
-                    && !currentEarthTotem.Contains("Earth Elemental Totem")
-                    && (_unitCache.EnemiesAttackingMe.Count < 2 || spec.RotationType == Enums.RotationType.Party)
-                    && Cast(StrengthOfEarthTotem))
-                    return true;
-
+                switch (_settings.TotemPreset)
+                {
+                    case "Melee":
+                        if (!currentEarthTotem.Contains("Strength of Earth") && Cast(StrengthOfEarthTotem))
+                            return true;
+                        break;
+                    case "Caster":
+                        if (!currentEarthTotem.Contains("Tremor Totem") && Cast(TremorTotem))
+                            return true;
+                        break;
+                    default:
+                        // Strenght of Earth totem
+                        if ((spec is Enhancement || spec is EnhancementParty || spec is ShamanRestoParty)
+                            && (!_settings.UseStoneSkinTotem || !StoneskinTotem.KnownSpell)
+                            && !Me.HaveBuff("Strength of Earth")
+                            && !currentEarthTotem.Contains("Stoneclaw Totem")
+                            && !currentEarthTotem.Contains("Earth Elemental Totem")
+                            && (_unitCache.EnemiesAttackingMe.Count < 2 || spec.RotationType == Enums.RotationType.Party)
+                            && Cast(StrengthOfEarthTotem))
+                            return true;
+                        break;
+                }
+                
                 // Stoneskin Totem
                 if ((_settings.UseStoneSkinTotem || !StrengthOfEarthTotem.KnownSpell || spec is Elemental || (spec.RotationType == Enums.RotationType.Solo && _unitCache.EnemiesAttackingMe.Count > 1))
                     && !Me.HaveBuff("Stoneskin")
@@ -117,6 +142,15 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     && !currentEarthTotem.Contains("Earth Elemental Totem")
                     && Cast(StoneskinTotem))
                     return true;
+
+                // Tremor Totem
+                if (_settings.UseTremorTotem)
+                {
+                    if (!currentEarthTotem.Contains("Tremor Totem") && Cast(TremorTotem))
+                    {
+                        return true;
+                    }
+                }
             }
 
             return false;
@@ -130,11 +164,11 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     (@"local haveTotem, totemName, startTime, duration = GetTotemInfo(1); return totemName;");
 
                 // Magma Totem
-                if (_unitCache.EnemiesAttackingMe.Count > 1
+                if (_settings.UseMagmaTotem 
+                    && _unitCache.EnemiesAttackingMe.Count > 1
                     && Me.ManaPercentage > 50
                     && ObjectManager.Target.GetDistance < 10
                     && !currentFireTotem.Contains("Magma Totem")
-                    && _settings.UseMagmaTotem
                     && Cast(MagmaTotem))
                     return true;
 
@@ -168,10 +202,24 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 string currentAirTotem = Lua.LuaDoString<string>
                     (@"local _, totemName, _, _ = GetTotemInfo(4); return totemName;");
 
-                // Mana Spring Totem
-                if (!Me.HaveBuff("Grace of Air")
-                    && Cast(GraceOfAirTotem))
-                    return true;
+
+                switch (_settings.TotemPreset)
+                {
+                    case "Melee":
+                        if (!currentAirTotem.Contains("Windfury") && Cast(WindfuryTotem))
+                            return true;
+                        break;
+                    case "Caster":
+                        if (!currentAirTotem.Contains("Wrath of Air") && Cast(WrathOfAirTotem))
+                            return true;
+                        break;
+                    default:
+                        // Grace of Air Totem
+                        if (!Me.HaveBuff("Grace of Air")
+                            && Cast(GraceOfAirTotem))
+                            return true;
+                        break;
+                }
             }
 
             return false;
@@ -185,13 +233,23 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     (@"local _, totemName, _, _ = GetTotemInfo(3); return totemName;");
 
                 // Mana Tide Totem
-                if (ManaTideTotem.KnownSpell)
+                if (ManaTideTotem.KnownSpell && !currentWaterTotem.Contains("Mana Tide"))
                 {
-                    List<IWoWPlayer> alliesNeedingMana = _unitCache.GroupAndRaid
+                    if (_unitCache.GroupAndRaid.Count > 5)
+                    {
+                        // Raid
+                        if (Me.ManaPercentage < 40 && Cast(ManaTideTotem))
+                        {
+                            return true;
+                        }
+                    } else {
+                        //Group
+                        List<IWoWPlayer> alliesNeedingMana = _unitCache.GroupAndRaid
                         .FindAll(a => a.ManaPercentage < 20);
-                    if ((alliesNeedingMana.Count > 1 || Me.ManaPercentage < 10)
-                        && Cast(ManaTideTotem))
-                        return true;
+                        if ((alliesNeedingMana.Count > 1 || Me.ManaPercentage < 10)
+                            && Cast(ManaTideTotem))
+                            return true;
+                    }
                 }
 
                 // Mana Spring Totem
