@@ -68,6 +68,7 @@ namespace WholesomeTBCAIO.Helpers
             { "Elemental", Specs.ShamanElemental },
             { "Party Enhancement", Specs.ShamanEnhancementParty },
             { "Party Restoration", Specs.ShamanRestoParty },
+            { "Raid Restoration", Specs.ShamanRestoRaid },
         };
         private readonly static Dictionary<string, Specs> WarlockSpecs = new Dictionary<string, Specs>()
         {
@@ -89,6 +90,7 @@ namespace WholesomeTBCAIO.Helpers
             ShamanEnhancementParty,
             ShamanElemental,
             ShamanRestoParty,
+            ShamanRestoRaid,
             // Druid
             DruidFeral,
             DruidFeralDPSParty,

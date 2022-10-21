@@ -145,6 +145,7 @@
     <Compile Include="Rotations\Rogue\Combat.cs" />
     <Compile Include="Rotations\Rogue\RogueCombatParty.cs" />
     <Compile Include="Rotations\Shaman\Elemental.cs" />
+    <Compile Include="Rotations\Shaman\ShamanRestoRaid.cs" />
     <Compile Include="Rotations\Shaman\ShamanRestoParty.cs" />
     <Compile Include="Rotations\Shaman\EnhancementParty.cs" />
     <Compile Include="Rotations\Shaman\Enhancement.cs" />

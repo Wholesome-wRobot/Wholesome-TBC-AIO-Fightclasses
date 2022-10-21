@@ -96,6 +96,7 @@ public class Main : ICustomClass
             case Specs.ShamanEnhancementParty: return new EnhancementParty(baseSettings);
             case Specs.ShamanElemental: return new Elemental(baseSettings);
             case Specs.ShamanRestoParty: return new ShamanRestoParty(baseSettings);
+            case Specs.ShamanRestoRaid: return new ShamanRestoRaid(baseSettings);
             // Druid
             case Specs.DruidFeral: return new Feral(baseSettings);
             case Specs.DruidFeralDPSParty: return new FeralDPSParty(baseSettings);
