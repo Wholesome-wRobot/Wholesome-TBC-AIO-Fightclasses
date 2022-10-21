@@ -212,7 +212,7 @@ namespace WholesomeTBCAIO.Settings
 
         [Category("Party")]
         [DefaultValue(0)]
-        [DisplayName("[Party] Tank healing priority")]
+        [DisplayName("[RES] Tank healing priority")]
         [Description("Prefer healing tanks over other group members")]
         [Percentage(true)]
         public int PartyTankHealingPriority { get; set; }
@@ -259,7 +259,7 @@ namespace WholesomeTBCAIO.Settings
 
         [Category("Party")]
         [DefaultValue("Random")]
-        [DisplayName("[Party] Cure priority")]
+        [DisplayName("[RES] Cure priority")]
         [Description("Use Cure Posison or Desease with the selected priority")]
         [DropdownList(new string[] { "High", "Random", "Low" })]
         public string PartyCurePriority { get; set; }

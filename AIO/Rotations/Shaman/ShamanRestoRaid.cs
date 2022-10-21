@@ -32,13 +32,11 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                     && GhostWolf.KnownSpell)
                     WTSettings.SetGroundMount(GhostWolf.Name);
 
-                // PARTY Healing Wave
-                List<IWoWPlayer> alliesNeedingHealWave = unitCache.GroupAndRaid
-                    .FindAll(a => a.IsAlive && a.HealthPercent < 70)
+                List<IWoWPlayer> aliveMembers = unitCache.GroupAndRaid
+                    .FindAll(a => a.IsAlive && a.GetDistance < 60)
                     .OrderBy(a => a.HealthPercent)
                     .ToList();
-                if (alliesNeedingHealWave.Count > 0
-                    && cast.OnFocusUnit(HealingWave, alliesNeedingHealWave[0]))
+                if (Heal(aliveMembers, false))
                     return;
 
                 // Water Shield
@@ -159,20 +157,23 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 return;
         }
 
-        private bool Heal(List<IWoWPlayer> aliveMembers)
+        private bool Heal(List<IWoWPlayer> aliveMembers, bool combat = false)
         {
             if (aliveMembers.Count > 0)
             {
-                var lowest = aliveMembers.First();
-                if (lowest.HealthPercent <= settings.PartyInstantHealThreshold)
+                if (combat)
                 {
-                    if(!Me.HasAura(NaturesSwiftness) && cast.OnSelf(NaturesSwiftness))
+                    var lowest = aliveMembers.First();
+                    if (lowest.HealthPercent <= settings.PartyInstantHealThreshold)
                     {
-                        // Natures Swiftness causes no GCD to occour, no need to return here
-                        // We just need to wait a little not to overwhelm the input
-                        Thread.Sleep(50);
-                        if (cast.OnFocusUnit(HealingWave, lowest))
-                            return true;
+                        if (!Me.HasAura(NaturesSwiftness) && cast.OnSelf(NaturesSwiftness))
+                        {
+                            // Natures Swiftness causes no GCD to occour, no need to return here
+                            // We just need to wait a little not to overwhelm the input
+                            Thread.Sleep(50);
+                            if (cast.OnFocusUnit(HealingWave, lowest))
+                                return true;
+                        }
                     }
                 }
 
