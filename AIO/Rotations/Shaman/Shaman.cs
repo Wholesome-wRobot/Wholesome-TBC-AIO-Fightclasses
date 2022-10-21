@@ -141,6 +141,10 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         protected AIOSpell Bloodlust = new AIOSpell("Bloodlust");
         protected AIOSpell EarthShield = new AIOSpell("Earth Shield");
         protected AIOSpell ChainHeal = new AIOSpell("Chain Heal");
+        protected AIOSpell ChainHealRank1 = new AIOSpell("Chain Heal", 1);
+        protected AIOSpell ChainHealRank2 = new AIOSpell("Chain Heal", 2);
+        protected AIOSpell ChainHealRank3 = new AIOSpell("Chain Heal", 3);
+        protected AIOSpell ChainHealRank4 = new AIOSpell("Chain Heal", 4);
         protected AIOSpell NaturesSwiftness = new AIOSpell("Nature\'s Swiftness");
         protected AIOSpell AncestralSpirit = new AIOSpell("Ancestral Spirit");
 

@@ -42,6 +42,10 @@ namespace WholesomeTBCAIO.Settings
             PartyHealingWaveThreshold = 60;
             PartyChainHealAmount = 3;
             PartyChainHealThreshold = 80;
+            PartyInstantHealThreshold = 20;
+            PartyCurePriority = "Random";
+            PartyTankHealingPriority = 0;
+            PartyChainHealMaxRank = 0;
 
             Specialization = "Enhancement";
         }
@@ -207,6 +211,13 @@ namespace WholesomeTBCAIO.Settings
         public bool PartyStandBehind { get; set; }
 
         [Category("Party")]
+        [DefaultValue(0)]
+        [DisplayName("[Party] Tank healing priority")]
+        [Description("Prefer healing tanks over other group members")]
+        [Percentage(true)]
+        public int PartyTankHealingPriority { get; set; }
+
+        [Category("Party")]
         [DefaultValue(80)]
         [DisplayName("[RES] Lesser H. Wave")]
         [Description("Use Lesser Healing Wave when ally has less HP than this threshold")]
@@ -227,11 +238,31 @@ namespace WholesomeTBCAIO.Settings
         public int PartyChainHealAmount { get; set; }
 
         [Category("Party")]
+        [DefaultValue(0)]
+        [DisplayName("[RES] Chain Heal rank")]
+        [Description("If bigger than zero, downrank the casted Chail Heal")]
+        public int PartyChainHealMaxRank { get; set; }
+
+        [Category("Party")]
         [DefaultValue(80)]
         [DisplayName("[RES] Chain Heal")]
         [Description("Use Chain Heal when allies has less HP than this threshold")]
         [Percentage(true)]
         public int PartyChainHealThreshold { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(20)]
+        [DisplayName("[RES] Instant Heal")]
+        [Description("Use Nature Swiftness when allies has less HP than this threshold")]
+        [Percentage(true)]
+        public int PartyInstantHealThreshold { get; set; }
+
+        [Category("Party")]
+        [DefaultValue("Random")]
+        [DisplayName("[Party] Cure priority")]
+        [Description("Use Cure Posison or Desease with the selected priority")]
+        [DropdownList(new string[] { "High", "Random", "Low" })]
+        public string PartyCurePriority { get; set; }
 
         [Category("Party")]
         [DefaultValue(false)]
@@ -246,7 +277,7 @@ namespace WholesomeTBCAIO.Settings
         public bool PartyCureDisease { get; set; }
 
         // TALENT
-        [DropdownList(new string[] { "Enhancement", "Elemental", "Party Enhancement", "Party Restoration" })]
+        [DropdownList(new string[] { "Enhancement", "Elemental", "Party Enhancement", "Party Restoration", "Raid Restoration" })]
         public override string Specialization { get; set; }
     }
 }
