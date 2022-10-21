@@ -241,14 +241,28 @@ namespace WholesomeTBCAIO.Settings
         public int PartyLesserHealingWaveThreshold { get; set; }
 
         [Category("Party")]
-        [DefaultValue(60)]
+        [DefaultValue(50)]
         [DisplayName("[RES] Healing Wave")]
         [Description("Use Healing Wave when ally has less HP than this threshold")]
         [Percentage(true)]
         public int PartyHealingWaveThreshold { get; set; }
 
         [Category("Party")]
-        [DefaultValue(3)]
+        [DefaultValue(20)]
+        [DisplayName("[RES] Instant Heal")]
+        [Description("Use Nature Swiftness when allies has less HP than this threshold")]
+        [Percentage(true)]
+        public int PartyInstantHealThreshold { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(90)]
+        [DisplayName("[RES] Chain Heal")]
+        [Description("Use Chain Heal when allies has less HP than this threshold")]
+        [Percentage(true)]
+        public int PartyChainHealThreshold { get; set; }
+
+        [Category("Party")]
+        [DefaultValue(2)]
         [DisplayName("[RES] Chain Heal count")]
         [Description("Use Chain Heal when at least this amount of allies has less HP than Chain Heal threshold")]
         public int PartyChainHealAmount { get; set; }
@@ -258,20 +272,6 @@ namespace WholesomeTBCAIO.Settings
         [DisplayName("[RES] Chain Heal rank")]
         [Description("If bigger than zero, downrank the casted Chail Heal")]
         public int PartyChainHealMaxRank { get; set; }
-
-        [Category("Party")]
-        [DefaultValue(80)]
-        [DisplayName("[RES] Chain Heal")]
-        [Description("Use Chain Heal when allies has less HP than this threshold")]
-        [Percentage(true)]
-        public int PartyChainHealThreshold { get; set; }
-
-        [Category("Party")]
-        [DefaultValue(20)]
-        [DisplayName("[RES] Instant Heal")]
-        [Description("Use Nature Swiftness when allies has less HP than this threshold")]
-        [Percentage(true)]
-        public int PartyInstantHealThreshold { get; set; }
 
         [Category("Party")]
         [DefaultValue("Random")]

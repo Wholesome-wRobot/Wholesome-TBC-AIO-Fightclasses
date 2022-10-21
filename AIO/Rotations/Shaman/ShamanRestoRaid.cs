@@ -157,45 +157,35 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 return;
         }
 
-        private bool Heal(List<IWoWPlayer> aliveMembers, bool combat = false)
+        private bool Heal(List<IWoWPlayer> aliveMembers, bool combat = true)
         {
-            if (aliveMembers.Count > 0)
+            foreach (IWoWPlayer member in aliveMembers)
             {
                 if (combat)
                 {
-                    var lowest = aliveMembers.First();
-                    if (lowest.HealthPercent <= settings.PartyInstantHealThreshold)
+                    if (member.HealthPercent <= settings.PartyInstantHealThreshold)
                     {
                         if (!Me.HasAura(NaturesSwiftness) && cast.OnSelf(NaturesSwiftness))
                         {
                             // Natures Swiftness causes no GCD to occour, no need to return here
                             // We just need to wait a little not to overwhelm the input
                             Thread.Sleep(50);
-                            if (cast.OnFocusUnit(HealingWave, lowest))
+                            if (cast.OnFocusUnit(HealingWave, member))
                                 return true;
                         }
                     }
                 }
 
-                if (aliveMembers.Count >= settings.PartyChainHealAmount)
-                {
-                    List<IWoWPlayer> alliesNeedChainHeal = aliveMembers
-                        .FindAll(m => m.HealthPercent < settings.PartyChainHealThreshold)
-                        .ToList();
-                    if (TryCastSpell(SelectChainHeal(), alliesNeedChainHeal))
-                        return true;
-                }
-
-                List<IWoWPlayer> alliesNeedingLesserHealWave = unitCache.GroupAndRaid
-                    .FindAll(a => a.HealthPercent < settings.PartyLesserHealingWaveThreshold)
-                    .ToList();
-                if (TryCastSpell(LesserHealingWave, alliesNeedingLesserHealWave))
+                if (member.HealthPercent < settings.PartyChainHealThreshold
+                    && cast.OnFocusUnit(SelectChainHeal(), member))
                     return true;
 
-                List<IWoWPlayer> alliesNeedingHealWave = unitCache.GroupAndRaid
-                    .FindAll(a => a.HealthPercent < settings.PartyHealingWaveThreshold)
-                    .ToList();
-                if (TryCastSpell(HealingWave, alliesNeedingHealWave))
+                if (member.HealthPercent < settings.PartyLesserHealingWaveThreshold
+                    && cast.OnFocusUnit(LesserHealingWave, member))
+                    return true;
+
+                if (member.HealthPercent < settings.PartyHealingWaveThreshold
+                    && cast.OnFocusUnit(HealingWave, member))
                     return true;
             }
             return false;
