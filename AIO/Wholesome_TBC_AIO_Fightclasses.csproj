@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>WholesomeTBCAIO</RootNamespace>
     <AssemblyName>Wholesome_TBC_AIO_Fightclasses</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>false</Deterministic>
     <TargetFrameworkProfile />
@@ -31,7 +31,7 @@
     <PlatformTarget>x86</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>F:\WoW\WoW TBC\WRobot\FightClass\</OutputPath>
+    <OutputPath>..\..\..\WoW TBC\WRobot\FightClass\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -225,8 +225,8 @@
 		</PostBuildEventDependsOn>
     <PostBuildEvent>copy /Y "$(TargetDir)\$(ProjectName).dll" "$(SolutionDir)\AIO\Compiled\$(ProjectName).dll"
 copy /Y "$(TargetDir)\$(ProjectName).dll" "C:\Users\Nico\Desktop\$(ProjectName).dll"
-copy /Y "$(TargetDir)\$(ProjectName).dll" "F:\WoW\WoW Vanilla\WRobot\FightClass\$(ProjectName).dll"
-copy /Y "$(TargetDir)\$(ProjectName).dll" "F:\WoW\WoW Wotlk\WRobot WOTLK\FightClass\$(ProjectName).dll"
+copy /Y "$(TargetDir)\$(ProjectName).dll" "D:\WoW\WoW Vanilla\WRobot\FightClass\$(ProjectName).dll"
+copy /Y "$(TargetDir)\$(ProjectName).dll" "D:\WoW\WoW Wotlk\WRobot WOTLK\FightClass\$(ProjectName).dll"
 echo Writing assembly version in Auto_Version.txt: @(VersionNumber)
 echo @(VersionNumber) &gt; $(ProjectDir)\Compiled\Auto_Version.txt</PostBuildEvent>
   </PropertyGroup>

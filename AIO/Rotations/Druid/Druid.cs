@@ -2,12 +2,14 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Settings;
 using WholesomeToolbox;
 using wManager.Events;
+using wManager.Wow.Bot.Tasks;
 using wManager.Wow.Enums;
 using wManager.Wow.Helpers;
 using wManager.Wow.ObjectManager;
@@ -155,22 +157,18 @@ namespace WholesomeTBCAIO.Rotations.Druid
             if (Me.IsAlive && Target.IsAlive)
             {
                 while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                    && (Target.GetDistance > 3f || !Claw.IsSpellUsable)
+                    //&& (Target.GetDistance > 3f || !Claw.IsSpellUsable)
                     && (specialization.RotationType == Enums.RotationType.Party || unitCache.GetClosestHostileFrom(Target, 20f) == null)
                     && Fight.InFight
                     && !stealthApproachTimer.IsReady
                     && !TraceLine.TraceLineGo(Me.PositionWithoutType, Target.PositionWithoutType, CGWorldFrameHitFlags.HitTestSpellLoS | CGWorldFrameHitFlags.HitTestLOS)
                     && Me.HasAura(Prowl))
                 {
-                    float distanceToTarget = Target.PositionWithoutType.DistanceTo(Me.PositionWithoutType);
                     Vector3 position;
-                    if (distanceToTarget > 5)
-                        position = WTSpace.BackOfUnit(Target.WowUnit, 2.5f);
-                    else
-                        position = Target.PositionWithoutType;
-
+                    position = WTSpace.BackOfUnit(Target.WowUnit, 2.5f);
                     MovementManager.MoveTo(position);
-                    Thread.Sleep(50);
+
+                    Thread.Sleep(100);
                     CastOpener();
                 }
 
@@ -187,17 +185,24 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     && ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { FaerieFireFeral, MoonfireRank1, Wrath }, unitCache))
                 {
                     combatMeleeTimer = new Timer(2000);
+                    isStealthApproching = false;
                     return;
                 }
 
                 ToolBox.CheckAutoAttack(Attack);
-
-                isStealthApproching = false;
             }
+
+            isStealthApproching = false;
         }
 
         protected void CastOpener()
         {
+            cast.OnTarget(Pounce);
+            cast.OnTarget(Ravage);
+            cast.OnTarget(Shred);
+            cast.OnTarget(Rake);
+            cast.OnTarget(Claw);
+            /*
             if (Me.Energy > 80
                 && cast.OnTarget(Pounce))
                 return;
@@ -214,7 +219,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             {
                 cast.OnTarget(Rake);
                 cast.OnTarget(Claw);
-            }
+            }*/
         }
 
         // EVENT HANDLERS

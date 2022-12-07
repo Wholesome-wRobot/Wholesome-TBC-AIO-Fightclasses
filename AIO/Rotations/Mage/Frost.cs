@@ -109,6 +109,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // Cold Snap
             if (unitCache.EnemiesAttackingMe.Count > 1
                 && !Me.HasAura(IcyVeins)
+                && IcyVeins.KnownSpell
                 && !IcyVeins.IsSpellUsable
                 && cast.OnSelf(ColdSnap))
                 return;

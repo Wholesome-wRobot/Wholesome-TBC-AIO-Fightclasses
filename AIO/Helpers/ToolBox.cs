@@ -18,7 +18,7 @@ namespace WholesomeTBCAIO.Helpers
         // Pull
         public static bool Pull(Cast cast, bool alwaysPull, List<AIOSpell> spells, IUnitCache unitCache)
         {
-            AIOSpell pullSpell = spells.Find(s => s != null && s.IsSpellUsable && s.KnownSpell);
+            AIOSpell pullSpell = spells.Find(s => s != null && s.KnownSpell && (s.IsSpellUsable || s.GetCurrentCooldown < 1000));
             if (pullSpell == null)
             {
                 RangeManager.SetRangeToMelee();
