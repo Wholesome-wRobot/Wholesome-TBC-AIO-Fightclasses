@@ -38,7 +38,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 fightingACaster = true;
 
             // Pull logic
-            if (ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { Shoot, Throw }, unitCache))
+            if (ToolBox.Pull(cast, settings.PPR_AlwaysPull, new List<AIOSpell> { Shoot, Throw }, unitCache))
             {
                 combatMeleeTimer = new Timer(2000);
                 return;
@@ -49,8 +49,8 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         {
             base.CombatNoTarget();
 
-            if (settings.PartyTankSwitchTarget)
-                partyManager.SwitchTarget(cast, settings.PartyUseIntervene ? Intervene : null);
+            if (settings.PPR_PartyTankSwitchTarget)
+                partyManager.SwitchTarget(cast, settings.PPR_PartyUseIntervene ? Intervene : null);
         }
 
         protected override void CombatRotation()
@@ -72,8 +72,8 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                     casterEnemies.Add(Target.Name);
             }
 
-            if (settings.PartyTankSwitchTarget)
-                partyManager.SwitchTarget(cast, settings.PartyUseIntervene ? Intervene : null);
+            if (settings.PPR_PartyTankSwitchTarget)
+                partyManager.SwitchTarget(cast, settings.PPR_PartyUseIntervene ? Intervene : null);
 
             // Defensive Stance
             if (InBattleStance())
@@ -114,7 +114,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 return;
 
             // Demoralizing Shout
-            if (settings.UseDemoralizingShout
+            if (settings.PPR_UseDemoralizingShout
                 && !Target.HasAura(DemoralizingShout)
                 && !Target.HasAura("Demoralizing Roar")
                 && inMeleeRange
@@ -161,7 +161,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
 
             // Commanding Shout
             if (!Me.HasAura(CommandingShout)
-                && settings.UseCommandingShout
+                && settings.PPR_UseCommandingShout
                 && cast.OnSelf(CommandingShout))
                 return;
         }

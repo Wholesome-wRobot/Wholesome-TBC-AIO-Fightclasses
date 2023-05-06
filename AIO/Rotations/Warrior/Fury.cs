@@ -29,7 +29,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             if (!InBattleStance()
                 && ObjectManager.Me.Rage < 10
                 && !pullFromAfar
-                && !settings.AlwaysPull)
+                && !settings.SFU_AlwaysPull)
                 cast.OnSelf(BattleStance);
 
             // Charge Battle Stance
@@ -53,7 +53,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 fightingACaster = true;
 
             // Pull logic
-            if (ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { Shoot, Throw }, unitCache))
+            if (ToolBox.Pull(cast, settings.SFU_AlwaysPull, new List<AIOSpell> { Shoot, Throw }, unitCache))
             {
                 combatMeleeTimer = new Timer(2000);
                 return;
@@ -69,7 +69,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             bool saveRage = Cleave.KnownSpell
                 && unitCache.EnemiesAttackingMe.Count > 1
                 && ToolBox.GetNbEnemiesClose(15f) > 1
-                && settings.UseCleave
+                && settings.SFU_UseCleave
                 || Execute.KnownSpell && Target.HealthPercent < 40
                 || Bloodthirst.KnownSpell && ObjectManager.Me.Rage < 40 && Target.HealthPercent > 50;
 
@@ -99,14 +99,14 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             // Battle stance
             if (InBerserkStance()
                 && Me.Rage < 10
-                && !settings.PrioritizeBerserkStance
+                && !settings.SFU_PrioritizeBerserkStance
                 && unitCache.EnemiesAttackingMe.Count > 1
                 && !fightingACaster
                 && cast.OnSelf(BattleStance))
                 return;
 
             // Berserker stance
-            if (settings.PrioritizeBerserkStance
+            if (settings.SFU_PrioritizeBerserkStance
                 && !InBerserkStance()
                 && unitCache.EnemiesAttackingMe.Count < 2
                 && cast.OnSelf(BerserkerStance))
@@ -188,12 +188,12 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 && nbEnemiesCLose > 1
                 && (!SweepingStrikes.IsSpellUsable || !SweepingStrikes.KnownSpell)
                 && ObjectManager.Me.Rage > 40
-                && settings.UseCleave
+                && settings.SFU_UseCleave
                 && cast.OnTarget(Cleave))
                 return;
 
             // Blood Rage
-            if (settings.UseBloodRage
+            if (settings.SFU_UseBloodRage
                 && Me.HealthPercent > 90
                 && cast.OnSelf(BloodRage))
                 return;
@@ -201,7 +201,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             // Hamstring
             if ((Target.CreatureTypeTarget == "Humanoid" || Target.Name.Contains("Plainstrider"))
                 && inMeleeRange
-                && settings.UseHamstring
+                && settings.SFU_UseHamstring
                 && Target.HealthPercent < 40
                 && !Target.HasAura(Hamstring)
                 && cast.OnTarget(Hamstring))
@@ -209,26 +209,26 @@ namespace WholesomeTBCAIO.Rotations.Warrior
 
             // Commanding Shout
             if (!Me.HasAura(CommandingShout)
-                && settings.UseCommandingShout
+                && settings.SFU_UseCommandingShout
                 && cast.OnSelf(CommandingShout))
                 return;
 
             // Battle Shout
             if (!Me.HasAura(BattleShout)
-                && (!settings.UseCommandingShout || !CommandingShout.KnownSpell)
+                && (!settings.SFU_UseCommandingShout || !CommandingShout.KnownSpell)
                 && cast.OnSelf(BattleShout))
                 return;
 
             // Rend
             if (!Target.HasAura(Rend)
                 && inMeleeRange
-                && settings.UseRend
+                && settings.SFU_UseRend
                 && Target.HealthPercent > 25
                 && cast.OnTarget(Rend))
                 return;
 
             // Demoralizing Shout
-            if (settings.UseDemoralizingShout
+            if (settings.SFU_UseDemoralizingShout
                 && !Target.HasAura(DemoralizingShout)
                 && !Target.HasAura("Demoralizing Roar")
                 && (unitCache.EnemiesAttackingMe.Count > 1 || ToolBox.GetNbEnemiesClose(15f) <= 0)

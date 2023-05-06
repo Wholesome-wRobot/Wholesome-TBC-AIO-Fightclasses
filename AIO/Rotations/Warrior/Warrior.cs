@@ -21,11 +21,15 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         protected Timer combatMeleeTimer = new Timer();
         protected Warrior specialization;
         private Timer _moveBehindTimer = new Timer();
+        private bool _useCommandingShout;
 
         public Warrior(BaseSettings settings) : base(settings) { }
 
         public override void Initialize(IClassRotation specialization)
         {
+            _useCommandingShout = specialization is ProtectionWarrior && settings.PPR_UseCommandingShout
+                || specialization is Fury && settings.SFU_UseCommandingShout
+                || specialization is FuryParty && settings.PFU_UseCommandingShout;
             this.specialization = specialization as Warrior;
             settings = WarriorSettings.Current;
             BaseInit(RangeManager.DefaultMeleeRange, BattleShout, null, settings);
@@ -79,13 +83,13 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             {
                 // Battle Shout
                 if (!Me.HasAura(BattleShout)
-                    && (!settings.UseCommandingShout || !CommandingShout.KnownSpell)
+                    && (!_useCommandingShout || !CommandingShout.KnownSpell)
                     && cast.OnSelf(BattleShout))
                     return;
 
                 // Commanding Shout
                 if (!Me.HasAura(CommandingShout)
-                    && settings.UseCommandingShout
+                    && _useCommandingShout
                     && cast.OnSelf(CommandingShout))
                     return;
             }
@@ -99,7 +103,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
         private void FightLoopHandler(WoWUnit unit, CancelEventArgs cancel)
         {
             if (specialization is FuryParty
-                && settings.PartyStandBehind
+                && settings.PFU_PartyStandBehind
                 && _moveBehindTimer.IsReady)
             {
                 if (ToolBox.StandBehindTargetCombat(unitCache))

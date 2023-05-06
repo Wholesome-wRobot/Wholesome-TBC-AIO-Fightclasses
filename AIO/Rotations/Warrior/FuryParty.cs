@@ -44,7 +44,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             bool saveRage = Cleave.KnownSpell
                 && unitCache.EnemiesAttackingMe.Count > 1
                 && ToolBox.GetNbEnemiesClose(15f) > 1
-                && settings.UseCleave
+                && settings.PFU_UseCleave
                 || Execute.KnownSpell && Target.HealthPercent < 40
                 || Bloodthirst.KnownSpell && Me.Rage < 40 && Target.HealthPercent > 50;
 
@@ -115,12 +115,12 @@ namespace WholesomeTBCAIO.Rotations.Warrior
                 && ToolBox.GetNbEnemiesClose(15f) > 1
                 && (!SweepingStrikes.IsSpellUsable || !SweepingStrikes.KnownSpell)
                 && Me.Rage > 40
-                && settings.UseCleave
+                && settings.PFU_UseCleave
                 && cast.OnTarget(Cleave))
                 return;
 
             // Blood Rage
-            if (settings.UseBloodRage
+            if (settings.PFU_UseBloodRage
                 && Me.HealthPercent > 90
                 && cast.OnSelf(BloodRage))
                 return;
@@ -128,7 +128,7 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             // Hamstring
             if ((Target.CreatureTypeTarget == "Humanoid" || Target.Name.Contains("Plainstrider"))
                 && inMeleeRange
-                && settings.UseHamstring
+                && settings.PFU_UseHamstring
                 && Target.HealthPercent < 40
                 && !Target.HasAura(Hamstring)
                 && cast.OnTarget(Hamstring))
@@ -136,13 +136,13 @@ namespace WholesomeTBCAIO.Rotations.Warrior
 
             // Commanding Shout
             if (!Me.HasAura(CommandingShout)
-                && settings.UseCommandingShout
+                && settings.PFU_UseCommandingShout
                 && cast.OnSelf(CommandingShout))
                 return;
 
             // Battle Shout
             if (!Me.HasAura(BattleShout)
-                && (!settings.UseCommandingShout || !CommandingShout.KnownSpell)
+                && (!settings.PFU_UseCommandingShout || !CommandingShout.KnownSpell)
                 && cast.OnSelf(BattleShout))
                 return;
 
