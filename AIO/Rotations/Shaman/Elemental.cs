@@ -21,25 +21,25 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             if (!Me.HasAura(GhostWolf))
             {
                 // Ghost Wolf
-                if (settings.GhostWolfMount
+                if (settings.ELE_GhostWolfMount
                     && wManager.wManagerSetting.CurrentSetting.GroundMountName == ""
                     && GhostWolf.KnownSpell)
                     WTSettings.SetGroundMount(GhostWolf.Name);
 
                 // Lesser Healing Wave OOC
-                if (Me.HealthPercent < settings.OOCHealThreshold
+                if (Me.HealthPercent < settings.ELE_OOCHealThreshold
                     && cast.OnSelf(LesserHealingWave))
                     return;
 
                 // Healing Wave OOC
-                if (Me.HealthPercent < settings.OOCHealThreshold
+                if (Me.HealthPercent < settings.ELE_OOCHealThreshold
                     && cast.OnSelf(HealingWave))
                     return;
 
                 // Water Shield
                 if (!Me.HasAura(WaterShield)
                     && !Me.HasAura(LightningShield)
-                    && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage < 20)
+                    && (settings.ELE_UseWaterShield || !settings.ELE_UseLightningShield || Me.ManaPercentage < 20)
                     && cast.OnSelf(WaterShield))
                     return;
             }
@@ -61,7 +61,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             // Water Shield
             if (!Me.HasAura(WaterShield)
                 && !Me.HasAura(LightningShield)
-                && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage < lowManaThreshold)
+                && (settings.ELE_UseWaterShield || !settings.ELE_UseLightningShield || Me.ManaPercentage < lowManaThreshold)
                 && cast.OnSelf(WaterShield))
                 return;
 
@@ -69,8 +69,8 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             if (Me.ManaPercentage > lowManaThreshold
                 && !Me.HasAura(LightningShield)
                 && !Me.HasAura(WaterShield)
-                && settings.UseLightningShield
-                && (!WaterShield.KnownSpell || !settings.UseWaterShield)
+                && settings.ELE_UseLightningShield
+                && (!WaterShield.KnownSpell || !settings.ELE_UseWaterShield)
                 && cast.OnTarget(LightningShield))
                 return;
 
@@ -103,13 +103,13 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 return;
 
             // Healing Wave + Lesser Healing Wave
-            if (Me.HealthPercent < settings.HealThreshold
+            if (Me.HealthPercent < settings.ELE_HealThreshold
                 && (Target.HealthPercent > 15 || Me.HealthPercent < 25))
                 if (cast.OnSelf(LesserHealingWave) || cast.OnSelf(HealingWave))
                     return;
 
             // Cure Poison
-            if (settings.CurePoison
+            if (settings.ELE_CurePoison
                 && isPoisoned
                 && CurePoison.KnownSpell
                 && Me.ManaPercentage > lowManaThreshold)
@@ -120,7 +120,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             }
 
             // Cure Disease
-            if (settings.CureDisease
+            if (settings.ELE_CureDisease
                 && hasDisease
                 && CureDisease.KnownSpell
                 && Me.ManaPercentage > lowManaThreshold)
@@ -139,7 +139,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             // Water Shield
             if (!Me.HasAura(WaterShield)
                 && !Me.HasAura(LightningShield)
-                && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage <= lowManaThreshold)
+                && (settings.ELE_UseWaterShield || !settings.ELE_UseLightningShield || Me.ManaPercentage <= lowManaThreshold)
                 && cast.OnSelf(WaterShield))
                 return;
 
@@ -147,8 +147,8 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             if (Me.ManaPercentage > lowManaThreshold
                 && !Me.HasAura(LightningShield)
                 && !Me.HasAura(WaterShield)
-                && settings.UseLightningShield
-                && (!WaterShield.KnownSpell || !settings.UseWaterShield)
+                && settings.ELE_UseLightningShield
+                && (!WaterShield.KnownSpell || !settings.ELE_UseWaterShield)
                 && cast.OnTarget(LightningShield))
                 return;
 
@@ -166,7 +166,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             bool focusedCasting = Me.HasAura("Focused Casting");
             // Frost Shock
             if ((Target.CreatureTypeTarget == "Humanoid" || Target.Name.Contains("Plainstrider"))
-                && settings.ENFrostShockHumanoids
+                && settings.ELE_FrostShockHumanoids
                 && Target.HealthPercent < 40
                 && !Target.HasAura(FrostShock)
                 && !focusedCasting
@@ -180,7 +180,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 return;
 
             // Chain Lightning
-            if (settings.ELChainLightningOnMulti
+            if (settings.ELE_ChainLightningOnMulti
                 && unitCache.EnemiesAttackingMe.Count > 1
                 && Me.ManaPercentage > 20
                 && cast.OnTarget(ChainLightning))
@@ -188,10 +188,10 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
             // Earth Shock DPS
             if (Target.GetDistance < 19f
-                && (!FlameShock.KnownSpell || !settings.UseFlameShock)
+                && (!FlameShock.KnownSpell || !settings.ELE_UseFlameShock)
                 && !fightingACaster
                 && Target.HealthPercent > 25
-                && Me.ManaPercentage > settings.ELShockDPSMana
+                && Me.ManaPercentage > settings.ELE_ShockDPSMana
                 && !focusedCasting
                 && cast.OnTarget(EarthShock))
                 return;
@@ -201,15 +201,15 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 && !Target.HasAura(FlameShock)
                 && Target.HealthPercent > 20
                 && !fightingACaster
-                && settings.UseFlameShock
-                && Me.ManaPercentage > settings.ELShockDPSMana
+                && settings.ELE_UseFlameShock
+                && Me.ManaPercentage > settings.ELE_ShockDPSMana
                 && !focusedCasting
                 && cast.OnTarget(FlameShock))
                 return;
 
             // Lightning Bolt
             if (ObjectManager.Target.GetDistance <= pullRange
-                && (Target.HealthPercent > settings.ELLBHealthThreshold || Me.HasAura("Clearcasting") || focusedCasting)
+                && (Target.HealthPercent > settings.ELE_LBHealthThreshold || Me.HasAura("Clearcasting") || focusedCasting)
                 && Me.ManaPercentage > 15
                 && cast.OnTarget(LightningBolt))
                 return;

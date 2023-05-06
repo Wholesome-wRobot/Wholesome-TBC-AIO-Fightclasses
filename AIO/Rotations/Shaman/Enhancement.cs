@@ -22,25 +22,25 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             if (!Me.HasAura(GhostWolf))
             {
                 // Ghost Wolf
-                if (settings.GhostWolfMount
+                if (settings.ENH_GhostWolfMount
                     && wManager.wManagerSetting.CurrentSetting.GroundMountName == ""
                     && GhostWolf.KnownSpell)
                     WTSettings.SetGroundMount(GhostWolf.Name);
 
                 // Lesser Healing Wave OOC
-                if (Me.HealthPercent < settings.OOCHealThreshold
+                if (Me.HealthPercent < settings.ENH_OOCHealThreshold
                     && cast.OnSelf(LesserHealingWave))
                     return;
 
                 // Healing Wave OOC
-                if (Me.HealthPercent < settings.OOCHealThreshold
+                if (Me.HealthPercent < settings.ENH_OOCHealThreshold
                     && cast.OnSelf(HealingWave))
                     return;
 
                 // Water Shield
                 if (!Me.HasAura(WaterShield)
                     && !Me.HasAura(LightningShield)
-                    && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage < 20)
+                    && (settings.ENH_UseWaterShield || !settings.ENH_UseLightningShield || Me.ManaPercentage < 20)
                     && cast.OnSelf(WaterShield))
                     return;
             }
@@ -62,7 +62,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             // Water Shield
             if (!Me.HasAura(WaterShield)
                 && !Me.HasAura(LightningShield)
-                && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage < lowManaThreshold)
+                && (settings.ENH_UseWaterShield || !settings.ENH_UseLightningShield || Me.ManaPercentage < lowManaThreshold)
                 && cast.OnSelf(WaterShield))
                 return;
 
@@ -70,13 +70,13 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             if (Me.ManaPercentage > lowManaThreshold
                 && !Me.HasAura(LightningShield)
                 && !Me.HasAura(WaterShield)
-                && settings.UseLightningShield
-                && (!WaterShield.KnownSpell || !settings.UseWaterShield)
+                && settings.ENH_UseLightningShield
+                && (!WaterShield.KnownSpell || !settings.ENH_UseWaterShield)
                 && cast.OnTarget(LightningShield))
                 return;
 
             // Pull logic
-            if (ToolBox.Pull(cast, settings.ENAlwaysPullWithLightningBolt, new List<AIOSpell> { settings.ENPullRankOneLightningBolt ? LightningBoltRank1 : null, LightningBolt }, unitCache))
+            if (ToolBox.Pull(cast, settings.ENH_AlwaysPullWithLightningBolt, new List<AIOSpell> { settings.ENH_PullRankOneLightningBolt ? LightningBoltRank1 : null, LightningBolt }, unitCache))
             {
                 combatMeleeTimer = new Timer(2000);
                 return;
@@ -112,13 +112,13 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 return;
 
             // Healing Wave + Lesser Healing Wave
-            if (Me.HealthPercent < settings.HealThreshold
+            if (Me.HealthPercent < settings.ENH_HealThreshold
                 && (Target.HealthPercent > 15 || Me.HealthPercent < 25))
                 if (cast.OnSelf(LesserHealingWave) || cast.OnSelf(HealingWave))
                     return;
 
             // Cure Poison
-            if (settings.CurePoison
+            if (settings.ENH_CurePoison
                 && isPoisoned
                 && CurePoison.KnownSpell
                 && Me.ManaPercentage > lowManaThreshold)
@@ -129,7 +129,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             }
 
             // Cure Disease
-            if (settings.CureDisease
+            if (settings.ENH_CureDisease
                 && CureDisease.KnownSpell
                 && hasDisease
                 && Me.ManaPercentage > lowManaThreshold)
@@ -148,7 +148,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             // Water Shield
             if (!Me.HasAura(WaterShield)
                 && !Me.HasAura(LightningShield)
-                && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage <= lowManaThreshold)
+                && (settings.ENH_UseWaterShield || !settings.ENH_UseLightningShield || Me.ManaPercentage <= lowManaThreshold)
                 && cast.OnSelf(WaterShield))
                 return;
 
@@ -156,14 +156,14 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             if (Me.ManaPercentage > lowManaThreshold
                 && !Me.HasAura(LightningShield)
                 && !Me.HasAura(WaterShield)
-                && settings.UseLightningShield
-                && (!WaterShield.KnownSpell || !settings.UseWaterShield)
+                && settings.ENH_UseLightningShield
+                && (!WaterShield.KnownSpell || !settings.ENH_UseWaterShield)
                 && cast.OnTarget(LightningShield))
                 return;
 
             // Shamanistic Rage
             if (Me.ManaPercentage < mediumManaThreshold
-                && (Target.HealthPercent > 80 && !settings.ENShamanisticRageOnMultiOnly || unitCache.EnemiesAttackingMe.Count > 1)
+                && (Target.HealthPercent > 80 && !settings.ENH_ENShamanisticRageOnMultiOnly || unitCache.EnemiesAttackingMe.Count > 1)
                 && cast.OnSelf(ShamanisticRage))
                 return;
 
@@ -175,7 +175,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
             // Frost Shock
             if ((Target.CreatureTypeTarget == "Humanoid" || Target.Name.Contains("Plainstrider"))
-                && settings.ENFrostShockHumanoids
+                && settings.ENH_FrostShockHumanoids
                 && Target.HealthPercent < 40
                 && !Target.HasAura(FrostShock)
                 && cast.OnTarget(FrostShock))
@@ -183,7 +183,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
             // Earth Shock Interupt Rank 1
             if (shouldBeInterrupted
-                && (settings.ENInterruptWithRankOne || Me.ManaPercentage <= lowManaThreshold))
+                && (settings.ENH_InterruptWithRankOne || Me.ManaPercentage <= lowManaThreshold))
             {
                 fightingACaster = true;
                 if (!casterEnemies.Contains(Target.Name))
@@ -195,7 +195,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
             // Earth Shock Interupt
             if (shouldBeInterrupted
-                && !settings.ENInterruptWithRankOne)
+                && !settings.ENH_InterruptWithRankOne)
             {
                 if (!casterEnemies.Contains(Target.Name))
                     casterEnemies.Add(Target.Name);
@@ -216,7 +216,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 && Target.GetDistance < 19f
                 && !Target.HasAura(FlameShock)
                 && Target.HealthPercent > 20
-                && settings.UseFlameShock
+                && settings.ENH_UseFlameShock
                 && cast.OnTarget(FlameShock))
                 return;
 

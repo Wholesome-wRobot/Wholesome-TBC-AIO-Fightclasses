@@ -199,13 +199,15 @@ public class Main : ICustomClass
 
     private void ReadyCheckHandler(object context)
     {
-        var delay = 1000 + new Random().Next(1, 2000);
-        string isReady = _selectedRotation.AnswerReadyCheck() ? "true" : "false";
-        Logger.Log($"Answering ReadyCheck ({isReady}), in {delay} ms");
-        Thread.Sleep(delay);
-        // Test with static button instead
-        Lua.LuaDoString($"ConfirmReadyCheck({isReady});");
-        Lua.LuaDoString($"GetClickFrame('ReadyCheckFrame'):Hide();");
+        if (baseSettings.AnswerReadyChecks)
+        {
+            var delay = 1000 + new Random().Next(1, 2000);
+            Logger.Log($"Answering ReadyCheck, in {delay} ms");
+            Thread.Sleep(delay);
+            // Test with static button instead
+            Lua.LuaDoString($"ConfirmReadyCheck(true);");
+            Lua.LuaDoString($"GetClickFrame('ReadyCheckFrame'):Hide();");
+        }
     }
 
     private void ResurrectionEventHandler(object context)

@@ -9,7 +9,6 @@ namespace WholesomeTBCAIO.Rotations
         public abstract RotationRole RotationRole { get; }
 
         public void Initialize(IClassRotation specialization);
-        public bool AnswerReadyCheck();
         public void Dispose();
     }
 }

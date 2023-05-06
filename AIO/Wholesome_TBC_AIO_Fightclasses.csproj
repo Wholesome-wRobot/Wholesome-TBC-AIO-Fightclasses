@@ -49,7 +49,7 @@
       <HintPath>..\Dependencies\MahApps.Metro.dll</HintPath>
     </Reference>
     <Reference Include="MarsSettingsGUI">
-      <HintPath>..\Special_Deps\MarsSettingsGUI.dll</HintPath>
+      <HintPath>..\Dependencies\MarsSettingsGUI.dll</HintPath>
     </Reference>
     <Reference Include="MemoryRobot">
       <HintPath>..\Dependencies\MemoryRobot.dll</HintPath>
@@ -98,6 +98,7 @@
     <Compile Include="Helpers\Cast.cs" />
     <Compile Include="Helpers\Enums.cs" />
     <Compile Include="Helpers\Logger.cs" />
+    <Compile Include="Helpers\AIOPetSpell.cs" />
     <Compile Include="Helpers\RangeManager.cs" />
     <Compile Include="Helpers\StatusChecker.cs" />
     <Compile Include="Helpers\UnitImmunities.cs" />
@@ -224,9 +225,8 @@
 			PostBuildMacros;
 		</PostBuildEventDependsOn>
     <PostBuildEvent>copy /Y "$(TargetDir)\$(ProjectName).dll" "$(SolutionDir)\AIO\Compiled\$(ProjectName).dll"
-copy /Y "$(TargetDir)\$(ProjectName).dll" "C:\Users\Nico\Desktop\$(ProjectName).dll"
 copy /Y "$(TargetDir)\$(ProjectName).dll" "D:\WoW\WoW Vanilla\WRobot\FightClass\$(ProjectName).dll"
-copy /Y "$(TargetDir)\$(ProjectName).dll" "D:\WoW\WoW Wotlk\WRobot WOTLK\FightClass\$(ProjectName).dll"
+copy /Y "$(TargetDir)\$(ProjectName).dll" "D:\WoW\WoW Wotlk\WRobot\FightClass\$(ProjectName).dll"
 echo Writing assembly version in Auto_Version.txt: @(VersionNumber)
 echo @(VersionNumber) &gt; $(ProjectDir)\Compiled\Auto_Version.txt</PostBuildEvent>
   </PropertyGroup>

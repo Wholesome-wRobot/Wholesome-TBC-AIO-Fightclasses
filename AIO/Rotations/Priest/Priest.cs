@@ -39,11 +39,6 @@ namespace WholesomeTBCAIO.Rotations.Priest
             Rotation();
         }
 
-        public override bool AnswerReadyCheck()
-        {
-            return Me.ManaPercentage > settings.PartyDrinkThreshold;
-        }
-
         public override void Dispose()
         {
             FightEvents.OnFightEnd -= FightEndHandler;

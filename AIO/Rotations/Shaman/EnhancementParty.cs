@@ -21,25 +21,25 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             if (!Me.HasAura(GhostWolf) && (!Me.HasDrinkAura || Me.ManaPercentage > 95))
             {
                 // Ghost Wolf
-                if (settings.GhostWolfMount
+                if (settings.PEN_GhostWolfMount
                     && wManager.wManagerSetting.CurrentSetting.GroundMountName == ""
                     && GhostWolf.KnownSpell)
                     WTSettings.SetGroundMount(GhostWolf.Name);
 
                 // Lesser Healing Wave OOC
-                if (Me.HealthPercent < settings.OOCHealThreshold
+                if (Me.HealthPercent < settings.PEN_OOCHealThreshold
                     && cast.OnSelf(LesserHealingWave))
                     return;
 
                 // Healing Wave OOC
-                if (Me.HealthPercent < settings.OOCHealThreshold
+                if (Me.HealthPercent < settings.PEN_OOCHealThreshold
                     && cast.OnSelf(HealingWave))
                     return;
 
                 // Water Shield
                 if (!Me.HasAura(WaterShield)
                     && !Me.HasAura(LightningShield)
-                    && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage < 20)
+                    && (settings.PEN_UseWaterShield || !settings.PEN_UseLightningShield || Me.ManaPercentage < 20)
                     && cast.OnSelf(WaterShield))
                     return;
 
@@ -79,7 +79,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             // Water Shield
             if (!Me.HasAura(WaterShield)
                 && !Me.HasAura(LightningShield)
-                && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage < lowManaThreshold)
+                && (settings.PEN_UseWaterShield || !settings.PEN_UseLightningShield || Me.ManaPercentage < lowManaThreshold)
                 && cast.OnSelf(WaterShield))
                 return;
 
@@ -87,8 +87,8 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             if (Me.ManaPercentage > lowManaThreshold
                 && !Me.HasAura(LightningShield)
                 && !Me.HasAura(WaterShield)
-                && settings.UseLightningShield
-                && (!WaterShield.KnownSpell || !settings.UseWaterShield)
+                && settings.PEN_UseLightningShield
+                && (!WaterShield.KnownSpell || !settings.PEN_UseWaterShield)
                 && cast.OnSelf(LightningShield))
                 return;
         }
@@ -116,7 +116,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 return;
 
             // PARTY Cure Poison
-            if (settings.PartyCurePoison)
+            if (settings.PEN_CurePoison)
             {
                 IWoWPlayer needCurePoison = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasPoisonDebuff(m.Name));
@@ -125,7 +125,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             }
 
             // PARTY Cure Disease
-            if (settings.CureDisease)
+            if (settings.PEN_CureDisease)
             {
                 IWoWPlayer needCureDisease = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasDiseaseDebuff(m.Name));
@@ -142,7 +142,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             // Water Shield
             if (!Me.HasAura(WaterShield)
                 && !Me.HasAura(LightningShield)
-                && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage <= lowManaThreshold)
+                && (settings.PEN_UseWaterShield || !settings.PEN_UseLightningShield || Me.ManaPercentage <= lowManaThreshold)
                 && cast.OnSelf(WaterShield))
                 return;
 
@@ -150,8 +150,8 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             if (Me.ManaPercentage > lowManaThreshold
                 && !Me.HasAura(LightningShield)
                 && !Me.HasAura(WaterShield)
-                && settings.UseLightningShield
-                && (!WaterShield.KnownSpell || !settings.UseWaterShield)
+                && settings.PEN_UseLightningShield
+                && (!WaterShield.KnownSpell || !settings.PEN_UseWaterShield)
                 && cast.OnTarget(LightningShield))
                 return;
 

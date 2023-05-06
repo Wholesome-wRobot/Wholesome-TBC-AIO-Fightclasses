@@ -40,11 +40,6 @@ namespace WholesomeTBCAIO.Rotations.Mage
             Rotation();
         }
 
-        public override bool AnswerReadyCheck()
-        {
-            return true;
-        }
-
         public override void Dispose()
         {
             cast.IsBackingUp = false;

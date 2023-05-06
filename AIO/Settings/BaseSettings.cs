@@ -44,20 +44,40 @@ namespace WholesomeTBCAIO.Settings
         public bool UseRacialSkills { get; set; }
 
         [Setting]
-        [Category("Rotation")]
+        [Category("General")]
+        [DefaultValue("")]
+        [DisplayName("Party Drink")]
+        [Description("In Party mode, the regen state is disabled. Set a drink name here if you want the AIO to drink. Beware, movement and fight states will interrupt the drinking. Leave empty to disable.")]
+        public string PartyDrinkName { get; set; }
+
+        [Category("General")]
+        [DefaultValue(40)]
+        [DisplayName("Drink Threshold")]
+        [Description("Mana threshold under which the AIO will try to drink")]
+        [Percentage(true)]
+        public int PartyDrinkThreshold { get; set; }
+
+        [Category("General")]
+        [DefaultValue(false)]
+        [DisplayName("Ready Check")]
+        [Description("Answer yes to ready checks")]
+        public bool AnswerReadyChecks { get; set; }
+
+        [Setting]
+        [Category("Talents")]
         [DisplayName("Talents Codes")]
         [Description("Use a talent calculator to generate your own codes. Do not modify if you are not sure.")]
         public List<string> TalentCodes { get; set; }
 
         [Setting]
-        [Category("Rotation")]
+        [Category("Talents")]
         [DefaultValue(true)]
         [DisplayName("Use default talents")]
-        [Description("If True, Make sure your talents match the default talents, or reset your talents.")]
+        [Description("If True, Make sure your talents in game match the default talents, or reset your talents.")]
         public bool UseDefaultTalents { get; set; }
 
         [Setting]
-        [Category("Rotation")]
+        [Category("Talents")]
         [DefaultValue(true)]
         [DisplayName("Auto assign talents")]
         [Description("Will automatically assign your talent points.")]
@@ -70,20 +90,6 @@ namespace WholesomeTBCAIO.Settings
         [Description("Choose your specialization")]
         public abstract string Specialization { get; set; }
 
-        [Setting]
-        [Category("Party")]
-        [DefaultValue("")]
-        [DisplayName("Party Drink")]
-        [Description("In Party mode, the regen state is disabled. Set a drink name here if you want the AIO to drink. Beware, movement and fight states will interrupt the drinking. Leave empty to disable.")]
-        public string PartyDrinkName { get; set; }
-
-        [Category("Party")]
-        [DefaultValue(40)]
-        [DisplayName("Drink Threshold")]
-        [Description("Mana threshold under which the AIO will try to drink")]
-        [Percentage(true)]
-        public int PartyDrinkThreshold { get; set; }
-
         protected BaseSettings()
         {
             ActivateCombatDebug = false;
@@ -95,6 +101,7 @@ namespace WholesomeTBCAIO.Settings
             AutoDetectImmunities = false;
             ActivateCombatLog = true;
             UseRacialSkills = true;
+            AnswerReadyChecks = false;
 
             PartyDrinkName = "";
             PartyDrinkThreshold = 40;

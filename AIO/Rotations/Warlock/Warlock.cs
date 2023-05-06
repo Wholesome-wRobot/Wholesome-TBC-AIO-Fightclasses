@@ -1,7 +1,9 @@
 ﻿using robotManager.Helpful;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Managers.UnitCache.Entities;
@@ -22,6 +24,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         protected int _innerManaSaveThreshold = 20;
         protected bool _iCanUseWand = WTGear.HaveRangedWeaponEquipped;
         protected int _saveDrinkPercent = wManager.wManagerSetting.CurrentSetting.DrinkPercent;
+        private bool IsWotlk = WTLua.GetWoWVersion.StartsWith("3");
 
         public Warlock(BaseSettings settings) : base(settings) { }
 
@@ -59,71 +62,79 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             BaseDispose();
         }
 
-        public override bool AnswerReadyCheck()
-        {
-            return true;
-        }
-
         // Pet thread
         protected void PetThread(object sender, DoWorkEventArgs args)
         {
             while (Main.IsLaunched)
             {
+                Thread.Sleep(300);
                 try
                 {
                     if (StatusChecker.BasicConditions()
+                        && !Me.IsOnTaxi
                         && Pet.IsValid
-                        && Pet.IsAlive)
+                        && Pet.IsAlive
+                        && !Me.IsMounted)
                     {
-                        bool multiAggroImTargeted = false;
-                        // Pet Switch target on multi aggro
-                        if (Me.InCombatFlagOnly
-                            && unitCache.EnemiesAttackingMe.Count > 1)
+                        // In fight
+                        List<IWoWUnit> enemiesFighting = new List<IWoWUnit>(
+                                unitCache.EnemiesFighting
+                                    .OrderBy(unit => unit.PositionWithoutType.DistanceTo(Me.PositionWithoutType))
+                            );
+                        if (enemiesFighting.Count > 0)
                         {
-                            Lua.LuaDoString("PetDefensiveMode();");
+                            IWoWUnit petTarget = enemiesFighting.Find(unit => unit.Guid == Pet.Target);
+                            IWoWUnit enemyTargetingMe = enemiesFighting.Find(unit => unit.Target == Me.Guid);
+                            IWoWUnit myTarget = enemiesFighting.Find(unit => Me.Target == unit.Guid);
 
-                            foreach (IWoWUnit unit in unitCache.EnemiesAttackingMe)
+                            // Not attacking anything, select closest
+                            if (petTarget == null)
                             {
-                                multiAggroImTargeted = true;
-                                if (unit.Guid != Pet.TargetGuid)
+                                IWoWUnit unitToAttack = enemiesFighting.FirstOrDefault();
+                                if (unitToAttack != null)
                                 {
-                                    // first check if pet has aggro on his current target
-                                    IWoWUnit petTarget = unitCache.EnemiesFighting.Find(enemy => enemy.Guid == Pet.TargetGuid);
-                                    if (petTarget != null && petTarget.TargetGuid == Pet.Guid)
-                                    {
-                                        Logger.Log($"Forcing pet aggro on {unit.Name}");
-                                        Me.SetFocus(unit.Guid);
-                                        cast.PetSpell("PET_ACTION_ATTACK", true);
-                                        if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
-                                        {
-                                            cast.PetSpell("Torment", true);
-                                            cast.PetSpell("Suffering", true);
-                                        }
-                                        if (WarlockPetAndConsumables.MyWarlockPet().Equals("Felguard"))
-                                            cast.PetSpell("Anguish", true);
-                                        Lua.LuaDoString("ClearFocus();");
-                                    }
+                                    PetAttackFocus(unitToAttack);
+                                    continue;
                                 }
                             }
-                        }
 
-                        // Pet attack on single aggro
-                        if ((Me.InCombatFlagOnly || Fight.InFight)
-                            && Me.Target > 0
-                            && !multiAggroImTargeted)
-                            Lua.LuaDoString("PetAttack();");
+                            // Switch to regain aggro
+                            if (enemyTargetingMe != null
+                                && petTarget.TargetGuid == Pet.Guid
+                                && petTarget.Guid != enemyTargetingMe.Guid)
+                            {
+                                PetAttackFocus(enemyTargetingMe);
+                                continue;
+                            }
 
-                        // Voidwalker Torment + Felguard Anguish
-                        if ((!settings.AutoTorment || !settings.AutoAnguish)
-                            && Target.TargetGuid == Me.Guid
-                            && Me.InCombatFlagOnly)
-                        {
-                            if (WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
-                                if (cast.PetSpell("Torment") || cast.PetSpell("Suffering"))
-                                    continue;
-                            if (WarlockPetAndConsumables.MyWarlockPet().Equals("Felguard"))
-                                if (cast.PetSpell("Anguish"))
-                                    continue;
+                            // Switch to attack my target
+                            if (myTarget != null
+                                && enemyTargetingMe == null
+                                && petTarget.Guid != myTarget.Guid)
+                            {
+                                PetAttackFocus(myTarget);
+                                continue;
+                            }
+
+                            // Pet torment/anguish
+                            if (petTarget != null
+                                && petTarget.Target != Pet.Guid
+                                && RotationType != Enums.RotationType.Party)
+                            {
+                                ObjectManager.Me.FocusGuid = petTarget.Guid;
+                                if (!settings.AutoTorment
+                                    && WarlockPetAndConsumables.MyWarlockPet().Equals("Voidwalker"))
+                                {
+                                    cast.PetSpell("Torment", true);
+                                    cast.PetSpell("Suffering", true);
+                                }
+                                if (!settings.AutoAnguish
+                                    && WarlockPetAndConsumables.MyWarlockPet().Equals("Felguard"))
+                                {
+                                    cast.PetSpell("Anguish", true);
+                                }
+                                Lua.LuaDoString("ClearFocus();");
+                            }
                         }
 
                         // Switch Auto Torment & Suffering off
@@ -149,8 +160,14 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 {
                     Logging.WriteError(string.Concat(arg), true);
                 }
-                Thread.Sleep(300);
             }
+        }
+
+        private void PetAttackFocus(IWoWUnit unit)
+        {
+            Me.SetFocus(unit.Guid);
+            Lua.LuaDoString($"CastPetAction(1, \"focus\")");
+            Lua.LuaDoString("ClearFocus();");
         }
 
         private void Rotation()
@@ -180,7 +197,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         protected override void BuffRotation()
         {
             // Delete additional Soul Shards
-            if (WTItem.CountItemStacks("Soul Shard") > settings.NumberOfSoulShards)
+            if (WTItem.CountItemStacks("Soul Shard") > settings.CommonNumberOfSoulShards)
             {
                 Logger.Log("Deleting excess Soul Shard");
                 WTItem.DeleteItemByName("Soul Shard");
@@ -188,7 +205,6 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             // Define the demon to summon
             AIOSpell SummonSpell = null;
-            bool shouldSummon = false;
             if (SummonImp.KnownSpell)
             {
                 if (WTItem.CountItemStacks("Soul Shard") < 1 || !SummonVoidwalker.KnownSpell && !SummonFelguard.KnownSpell)
@@ -202,43 +218,48 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
                 if (SummonFelguard.KnownSpell)
                     SummonSpell = SummonFelguard;
+            }
 
+            if (SummonSpell != null)
+            {
                 if (!Pet.IsValid
                     || Pet.ManaPercentage < settings.ManaThresholdResummon && SummonSpell != SummonImp
                     || Pet.HealthPercent < settings.HealthThresholdResummon
                     || !SummonSpell.Name.Contains(WarlockPetAndConsumables.MyWarlockPet()))
-                    shouldSummon = true;
-            }
-
-            if (shouldSummon)
-            {
-                // Make sure we have mana to summon
-                if (Me.Mana < SummonSpell.Cost
-                    && !Me.HasDrinkAura
-                    && !Me.InCombatFlagOnly)
                 {
-                    Logger.Log($"Not enough mana to summon {SummonSpell.Name}, forcing regen");
-                    wManager.wManagerSetting.CurrentSetting.DrinkPercent = 95;
-                    Thread.Sleep(1000);
-                    return;
-                }
-
-                Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
-                if (!Me.IsMounted && !Me.IsOnTaxi)
-                {
-                    if (cast.OnSelf(FelDomination))
-                        Thread.Sleep(200);
-                    if (cast.OnSelf(SummonSpell))
+                    // Make sure we have mana to summon
+                    if (Me.Mana < SummonSpell.Cost
+                        && !Me.HasDrinkAura
+                        && !Me.InCombatFlagOnly)
                     {
-                        Usefuls.WaitIsCasting();
-                        Thread.Sleep(1000); // Prevent double summon
+                        Logger.Log($"Not enough mana to summon {SummonSpell.Name}, forcing regen");
+                        wManager.wManagerSetting.CurrentSetting.DrinkPercent = 95;
+                        Thread.Sleep(1000);
                         return;
                     }
+
+                    Thread.Sleep(Usefuls.Latency + 500); // Safety for Mount check
+                    if (!Me.IsMounted && !Me.IsOnTaxi)
+                    {
+                        if (cast.OnSelf(FelDomination))
+                        {
+                            Thread.Sleep(200);
+                        }
+                        if (cast.OnSelf(SummonSpell))
+                        {
+                            Usefuls.WaitIsCasting();
+                            Thread.Sleep(1000); // Prevent double summon
+                            return;
+                        }
+                    }
+                }
+                else
+                {
+                    wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
                 }
             }
-            else
-                wManager.wManagerSetting.CurrentSetting.DrinkPercent = _saveDrinkPercent;
         }
+
         protected override void Pull() { }
         protected override void CombatRotation() { }
         protected override void CombatNoTarget() { }
@@ -294,8 +315,9 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)
         {
             if (UseWand.IsSpellUsable)
+            {
                 _iCanUseWand = true;
-            Lua.LuaDoString("PetDefensiveMode();");
+            }
 
             // Imp Firebolt
             if (WarlockPetAndConsumables.MyWarlockPet().Equals("Imp"))

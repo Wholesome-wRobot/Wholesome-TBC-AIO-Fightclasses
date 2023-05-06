@@ -46,11 +46,6 @@ namespace WholesomeTBCAIO.Rotations.Warrior
             BaseDispose();
         }
 
-        public override bool AnswerReadyCheck()
-        {
-            return true;
-        }
-
         private void Rotation()
         {
             while (Main.IsLaunched)

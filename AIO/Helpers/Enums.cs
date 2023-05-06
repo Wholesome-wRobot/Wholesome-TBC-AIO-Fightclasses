@@ -71,8 +71,8 @@ namespace WholesomeTBCAIO.Helpers
         };
         private readonly static Dictionary<string, Specs> WarlockSpecs = new Dictionary<string, Specs>()
         {
-            { "Affliction", Specs.WarlockAffliction },
-            { "Demonology", Specs.WarlockDemonology },
+            { "Solo Affliction", Specs.WarlockAffliction },
+            { "Solo Demonology", Specs.WarlockDemonology },
             { "Party Affliction", Specs.WarlockAfflictionParty },
         };
         private readonly static Dictionary<string, Specs> WarriorSpecs = new Dictionary<string, Specs>()

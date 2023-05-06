@@ -61,11 +61,6 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             BaseDispose();
         }
 
-        public override bool AnswerReadyCheck()
-        {
-            return true;
-        }
-
         private void Rotation()
         {
             while (Main.IsLaunched)
@@ -174,7 +169,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
         private void FightLoopHandler(WoWUnit unit, CancelEventArgs cancel)
         {
             if (specialization is EnhancementParty
-                && settings.PartyStandBehind
+                && settings.PEN_StandBehind
                 && _moveBehindTimer.IsReady)
             {
                 if (ToolBox.StandBehindTargetCombat(unitCache))

@@ -22,7 +22,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             if (!Me.HasAura(GhostWolf) && (!Me.HasDrinkAura || Me.ManaPercentage > 95))
             {
                 // Ghost Wolf
-                if (settings.GhostWolfMount
+                if (settings.PRE_GhostWolfMount
                     && wManager.wManagerSetting.CurrentSetting.GroundMountName == ""
                     && GhostWolf.KnownSpell)
                     WTSettings.SetGroundMount(GhostWolf.Name);
@@ -39,7 +39,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 // Water Shield
                 if (!Me.HasAura(WaterShield)
                     && !Me.HasAura(LightningShield)
-                    && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage < 20)
+                    && (settings.PRE_UseWaterShield || !settings.PRE_UseLightningShield || Me.ManaPercentage < 20)
                     && cast.OnSelf(WaterShield))
                     return;
 
@@ -73,7 +73,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             // Water Shield
             if (!Me.HasAura(WaterShield)
                 && !Me.HasAura(LightningShield)
-                && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage < lowManaThreshold)
+                && (settings.PRE_UseWaterShield || !settings.PRE_UseLightningShield || Me.ManaPercentage < lowManaThreshold)
                 && cast.OnSelf(WaterShield))
                 return;
         }
@@ -105,18 +105,9 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 && cast.OnSelf(NaturesSwiftness))
                 return;
 
-            // PARTY Lesser Healing Wave
-            List<IWoWPlayer> alliesNeedingLesserHealWave = unitCache.GroupAndRaid
-                .FindAll(a => a.IsAlive && a.HealthPercent < settings.PartyLesserHealingWaveThreshold)
-                .OrderBy(a => a.HealthPercent)
-                .ToList();
-            if (alliesNeedingLesserHealWave.Count > 0
-                && cast.OnFocusUnit(LesserHealingWave, alliesNeedingLesserHealWave[0]))
-                return;
-
             // PARTY Healing Wave
             List<IWoWPlayer> alliesNeedingHealWave = unitCache.GroupAndRaid
-                .FindAll(a => a.IsAlive && a.HealthPercent < settings.PartyHealingWaveThreshold)
+                .FindAll(a => a.IsAlive && a.HealthPercent < settings.PRE_HealingWaveThreshold)
                 .OrderBy(a => a.HealthPercent)
                 .ToList();
             if (alliesNeedingHealWave.Count > 0
@@ -125,10 +116,10 @@ namespace WholesomeTBCAIO.Rotations.Shaman
 
             // PARTY Chain Heal
             List<IWoWPlayer> alliesNeedChainHeal = unitCache.GroupAndRaid
-                .FindAll(a => a.IsAlive && a.HealthPercent < settings.PartyChainHealThreshold)
+                .FindAll(a => a.IsAlive && a.HealthPercent < settings.PRE_ChainHealThreshold)
                 .OrderBy(a => a.GetDistance)
                 .ToList();
-            if (alliesNeedChainHeal.Count >= settings.PartyChainHealAmount)
+            if (alliesNeedChainHeal.Count >= settings.PRE_ChainHealAmount)
             {
                 if (alliesNeedChainHeal.Exists(p => p.Guid == Me.Guid)
                     && cast.OnSelf(ChainHeal))
@@ -136,6 +127,15 @@ namespace WholesomeTBCAIO.Rotations.Shaman
                 if (cast.OnFocusUnit(ChainHeal, alliesNeedChainHeal[0]))
                     return;
             }
+
+            // PARTY Lesser Healing Wave
+            List<IWoWPlayer> alliesNeedingLesserHealWave = unitCache.GroupAndRaid
+                .FindAll(a => a.IsAlive && a.HealthPercent < settings.PRE_LesserHealingWaveThreshold)
+                .OrderBy(a => a.HealthPercent)
+                .ToList();
+            if (alliesNeedingLesserHealWave.Count > 0
+                && cast.OnFocusUnit(LesserHealingWave, alliesNeedingLesserHealWave[0]))
+                return;
 
             // PARTY Earth Shield
             if (EarthShield.KnownSpell && !unitCache.GroupAndRaid.Exists(a => a.HasAura(EarthShield)))
@@ -150,7 +150,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             }
 
             // PARTY Cure Poison
-            if (settings.PartyCurePoison)
+            if (settings.PRE_CurePoison)
             {
                 IWoWPlayer needCurePoison = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasPoisonDebuff(m.Name));
@@ -159,7 +159,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             }
 
             // PARTY Cure Disease
-            if (settings.PartyCureDisease)
+            if (settings.PRE_CureDisease)
             {
                 IWoWPlayer needCureDisease = unitCache.GroupAndRaid
                     .Find(m => m.IsAlive && WTEffects.HasDiseaseDebuff(m.Name));
@@ -176,7 +176,7 @@ namespace WholesomeTBCAIO.Rotations.Shaman
             // Water Shield
             if (!Me.HasAura(WaterShield)
                 && !Me.HasAura(LightningShield)
-                && (settings.UseWaterShield || !settings.UseLightningShield || Me.ManaPercentage <= lowManaThreshold)
+                && (settings.PRE_UseWaterShield || !settings.PRE_UseLightningShield || Me.ManaPercentage <= lowManaThreshold)
                 && cast.OnSelf(WaterShield))
                 return;
 

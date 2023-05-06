@@ -59,14 +59,14 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
             // Mend Pet
             if (Pet.IsAlive
-                && Pet.HealthPercent <= 50
+                && Pet.HealthPercent <= 80
                 && !Pet.HasAura(MendPet)
                 && cast.OnFocusUnit(MendPet, Pet))
                 return;
 
             // Aspect of the viper
             if (!Me.HasAura(AspectViper)
-                && Me.ManaPercentage < 30
+                && Me.ManaPercentage < 35
                 && cast.OnSelf(AspectViper))
                 return;
 

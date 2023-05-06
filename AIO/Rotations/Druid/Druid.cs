@@ -57,11 +57,6 @@ namespace WholesomeTBCAIO.Rotations.Druid
             BaseDispose();
         }
 
-        public override bool AnswerReadyCheck()
-        {
-            return true;
-        }
-
         private void Rotation()
         {
             while (Main.IsLaunched)

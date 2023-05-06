@@ -28,6 +28,8 @@ namespace WholesomeTBCAIO.Helpers
         private IWoWUnit _currentSpellTarget;
         private AIOSpell _currentSpell;
         private Vector3 _currentSpellLocation;
+        //private Dictionary<string, int> _petSpells = new Dictionary<string, int>(); // spell name => spell index in spellbook
+        private List<AIOPetSpell> _petSpells = new List<AIOPetSpell>();
 
         public bool IsBackingUp { get; set; }
         public bool IsApproachingTarget { get; set; }
@@ -43,44 +45,103 @@ namespace WholesomeTBCAIO.Helpers
             _combatLogON = settings.ActivateCombatLog;
             EventsLuaWithArgs.OnEventsLuaStringWithArgs += EventsLuaStringWithArgsHandler;
             FightEvents.OnFightLoop += FightLoopHandler;
-        }
-
-        public bool PetSpell(string spellName, bool onFocus = false, bool noTargetNeeded = false)
-        {
-            int spellIndex = WTPet.GetPetSpellIndex(spellName);
-            if (WTPet.PetKnowsSpell(spellName)
-                && WTPet.PetSpellReady(spellIndex)
-                && !UnitImmunities.Contains(_unitCache.Target, spellName)
-                && (ObjectManager.Pet.HasTarget || noTargetNeeded))
-            {
-                Thread.Sleep(ToolBox.GetLatency() + 100);
-                Logger.Combat($"Cast (Pet) {spellName}");
-                Lua.LuaDoString($"CastSpell({spellIndex}, 'pet');");
-                if (!onFocus)
-                    Lua.LuaDoString($"CastSpell({spellIndex}, 'pet');");
-                else
-                {
-                    Lua.LuaDoString($"PetAttack('focus');");
-                    Lua.LuaDoString($"CastSpell({spellIndex}, 'pet');");
-                }
-                return true;
-            }
-            return false;
+            FightEvents.OnFightStart += FightStartHandler;
+            UpdatePetSpells();
         }
 
         public void Dispose()
         {
             EventsLuaWithArgs.OnEventsLuaStringWithArgs -= EventsLuaStringWithArgsHandler;
             FightEvents.OnFightLoop -= FightLoopHandler;
+            FightEvents.OnFightStart -= FightStartHandler;
         }
 
-        public bool PetSpellIfEnoughForGrowl(string spellName, uint spellCost)
+        private void FightStartHandler(WoWUnit unit, CancelEventArgs cancelable)
         {
-            if (ObjectManager.Pet.Focus >= spellCost + 15
-                && ObjectManager.Me.InCombatFlagOnly
-                && WTPet.PetKnowsSpell(spellName))
-                if (PetSpell(spellName))
+            UpdatePetSpells();
+        }
+
+        private void UpdatePetSpells()
+        {
+            _petSpells.Clear();
+
+            string[] luaPetSpells = Lua.LuaDoString<string[]>($@"
+                local result = {{}};
+                for i=1,20 do
+                    local name, rank, icon, powerCost, isFunnel, powerType, castingTime, minRange, maxRange = GetSpellInfo(i, 'pet');
+                    if name ~= nil then
+                        table.insert(result, i .. '$' .. name .. '$' .. rank .. '$' .. powerCost .. '$' .. tostring(isFunnel) .. '$' .. powerType .. '$' .. castingTime .. '$' .. minRange .. '$' .. maxRange);
+                    end
+                end
+                return unpack(result);
+            ");
+
+            foreach(string spellLine in luaPetSpells)
+            {
+                string[] spellProps = spellLine.Split('$');
+                if (spellProps.Length == 9)
+                {
+                    int index = int.Parse(spellProps[0]);
+                    string name = spellProps[1];
+                    // rank can be empty
+                    int rank = 0;
+                    if (spellProps[2].Length > 0 && spellProps[2].Contains("Rank "))
+                    {
+                        rank = int.Parse(spellProps[2].Replace("Rank ", ""));
+                    }
+                    int powerCost = int.Parse(spellProps[3]);
+                    bool isFunnel = spellProps[4] == "true" ? true : false;
+                    int powerType = int.Parse(spellProps[5]);
+                    int castingTime = int.Parse(spellProps[6]);
+                    int minRange = int.Parse(spellProps[7]);
+                    int maxRange = int.Parse(spellProps[8]);                    
+                    _petSpells.Add(new AIOPetSpell(index, name, rank, powerCost, isFunnel, powerType, castingTime, minRange, maxRange));
+                }
+            }
+        }
+
+        public bool PetSpellIfEnoughForGrowl(string spellName)
+        {
+            AIOPetSpell spell = _petSpells.Where(s => s.Name == spellName).FirstOrDefault();
+            AIOPetSpell growlSpell = _petSpells.Where(s => s.Name == "Growl").FirstOrDefault();
+            if (spell == null) return false;
+            int growlCost = growlSpell == null ? 0 : growlSpell.Cost;
+
+            if (ObjectManager.Pet.Focus >= spell.Cost + growlCost)
+            {
+                ObjectManager.Me.FocusGuid = ObjectManager.Pet.Target;
+                if (PetSpell(spellName, true))
+                {
+                    Lua.LuaDoString("ClearFocus();");
                     return true;
+                }
+                Lua.LuaDoString("ClearFocus();");
+            }
+            return false;
+        }
+
+        public bool PetSpell(string spellName, bool onFocus = false, bool noTargetNeeded = false)
+        {
+            AIOPetSpell spell = _petSpells.Where(s => s.Name == spellName).FirstOrDefault();
+            if (spell == null) return false;
+
+            if (WTPet.PetSpellReady(spell.Index)
+                && !UnitImmunities.Contains(_unitCache.Target, spellName)
+                && (ObjectManager.Pet.HasTarget || noTargetNeeded))
+            {
+                Thread.Sleep(ToolBox.GetLatency() + 100);
+                Logger.Combat($"Cast (Pet) {spellName}");
+                if (!onFocus)
+                {
+                    Lua.LuaDoString($"CastSpell({spell.Index}, 'pet');");
+                }
+                else
+                {
+                    string rankString = spell.Rank > 0 ? $"(Rank {spell.Rank})" : "";
+                    Lua.RunMacroText($"/cast [target=focus] {spellName}{rankString}");
+                }
+                return true;
+            }
             return false;
         }
 
@@ -411,6 +472,11 @@ namespace WholesomeTBCAIO.Helpers
             {
                 Logger.Log("Forcing Approach");
                 IsApproachingTarget = true;
+            }
+
+            if (id == "SPELLS_CHANGED")
+            {
+                UpdatePetSpells();
             }
         }
     }

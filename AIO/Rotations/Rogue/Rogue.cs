@@ -78,11 +78,6 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             BaseDispose();
         }
 
-        public override bool AnswerReadyCheck()
-        {
-            return true;
-        }
-
         private void Rotation()
         {
             while (Main.IsLaunched)
@@ -154,7 +149,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
 
         protected void CastOpener()
         {
-            if (ToolBox.MeBehindTarget() && BehindTargetCheck)
+            if (BehindTargetCheck)
             {
                 if (settings.UseGarrote
                     && cast.OnTarget(Garrote))
@@ -163,17 +158,23 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                     return;
                 if (cast.OnTarget(CheapShot))
                     return;
-                if (cast.OnTarget(Hemorrhage) || cast.OnTarget(SinisterStrike))
+                if (cast.OnTarget(Hemorrhage))
+                    return;
+                if (cast.OnTarget(SinisterStrike))
                     return;
             }
             else
             {
                 if (cast.OnTarget(CheapShot))
                     return;
+                /*
                 if (HaveDaggerInMH()
                     && cast.OnTarget(Gouge))
                     return;
-                if (cast.OnTarget(Hemorrhage) || cast.OnTarget(SinisterStrike))
+                */
+                if (cast.OnTarget(Hemorrhage))
+                    return;
+                if (cast.OnTarget(SinisterStrike))
                     return;
             }
         }
@@ -315,12 +316,28 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             if (Me.IsAlive && Target.IsAlive)
             {
                 while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                && Target.GetDistance > 2.5f
-                && (specialization.RotationType == Enums.RotationType.Party || unitCache.GetClosestHostileFrom(Target, 20f) == null)
-                && Fight.InFight
-                && !stealthApproachTimer.IsReady
-                && Me.HasAura(Stealth))
+                    && !stealthApproachTimer.IsReady
+                    && Me.HasAura(Stealth))
                 {
+                    if (Target.GetDistance <= 2.5f)
+                    {
+                        Logger.Log($"Approach interrupted because we are close enough");
+                        break;
+                    }
+
+                    if (specialization.RotationType != Enums.RotationType.Party 
+                        && unitCache.GetClosestHostileFrom(Target, 20f) != null)
+                    {
+                        Logger.Log($"Approach interrupted because an enemy is too close");
+                        break;
+                    }
+
+                    if (!Fight.InFight)
+                    {
+                        Logger.Log($"Approach interrupted because we are not in fight anymore");
+                        break;
+                    }
+
                     ToggleAutoAttack(false);
 
                     Vector3 position = WTSpace.BackOfUnit(Target.WowUnit, 2.5f);

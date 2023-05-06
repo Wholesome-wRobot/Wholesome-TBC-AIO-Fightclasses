@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading;
+using System.Web.UI.WebControls;
 using WholesomeTBCAIO.Helpers;
 using WholesomeTBCAIO.Managers.UnitCache.Entities;
 using WholesomeTBCAIO.Settings;
@@ -27,6 +28,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
         protected int steadyShotSleep = 0;
         protected bool canOnlyMelee = false;
         protected int saveDrinkPercent = wManager.wManagerSetting.CurrentSetting.DrinkPercent;
+        private bool IsWotlk = WTLua.GetWoWVersion.StartsWith("3");
 
         public static DateTime LastAuto { get; set; }
         public static bool PetIsDead { get; set; }
@@ -62,16 +64,12 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             BaseDispose();
         }
 
-        public override bool AnswerReadyCheck()
-        {
-            return true;
-        }
-
         // Pet thread
         private void PetThread(object sender, DoWorkEventArgs args)
         {
             while (Main.IsLaunched)
             {
+                Thread.Sleep(300);
                 try
                 {
                     if (StatusChecker.BasicConditions()
@@ -97,76 +95,91 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                         }
 
                         // In fight
-                        if ((Fight.InFight || Me.InCombatFlagOnly)
-                            && Me.HasTarget
-                            && Target.IsAlive
-                            && !Pet.HasAura("Feed Pet Effect"))
+                        List<IWoWUnit> enemiesFighting = new List<IWoWUnit>(
+                                unitCache.EnemiesFighting
+                                    .OrderBy(unit => unit.HealthPercent)
+                            );
+                        if (enemiesFighting.Count > 0)
                         {
-                            bool multiAggroImTargeted = false;
+                            IWoWUnit petTarget = enemiesFighting.Find(unit => unit.Guid == Pet.TargetGuid);
+                            IWoWUnit enemyTargetingMe = enemiesFighting.Find(unit => unit.TargetGuid == Me.Guid);
+                            IWoWUnit myTarget = enemiesFighting.Find(unit => Me.Target == unit.Guid);
 
-                            // Pet Switch target on multi aggro
-                            if (Me.InCombatFlagOnly
-                                && RotationType != Enums.RotationType.Party
-                                && unitCache.EnemiesAttackingMe.Count > 1)
+                            // Not attacking anything, select closest
+                            if (petTarget == null)
                             {
-                                Lua.LuaDoString("PetDefensiveMode();");
-
-                                foreach (IWoWUnit unit in unitCache.EnemiesAttackingMe)
+                                IWoWUnit unitToAttack = enemiesFighting.FirstOrDefault();
+                                if (unitToAttack != null)
                                 {
-                                    multiAggroImTargeted = true;
-                                    if (unit.Guid != Pet.TargetGuid)
-                                    {
-                                        // first check if pet has aggro on his current target
-                                        IWoWUnit petTarget = unitCache.EnemiesFighting.Find(enemy => enemy.Guid == Pet.TargetGuid);
-                                        if (petTarget != null && petTarget.TargetGuid == Pet.Guid)
-                                        {
-                                            Logger.Log($"Forcing pet aggro on {unit.Name}");
-                                            Me.SetFocus(unit.Guid);
-                                            cast.PetSpell("PET_ACTION_ATTACK", true);
-                                            cast.PetSpell("Growl", true);
-                                            Lua.LuaDoString("ClearFocus();");
-                                        }
-                                    }
+                                    PetAttackFocus(unitToAttack);
+                                    continue;
                                 }
                             }
 
-                            // Pet attack on single aggro
-                            if ((Me.InCombatFlagOnly || Fight.InFight)
-                                && Me.HasTarget
-                                && Target.IsAlive
-                                && !multiAggroImTargeted)
-                                Lua.LuaDoString("PetAttack();", false);
+                            // Switch to regain aggro
+                            if (enemyTargetingMe != null
+                                && petTarget.TargetGuid == Pet.Guid
+                                && petTarget.Guid != enemyTargetingMe.Guid)
+                            {
+                                PetAttackFocus(enemyTargetingMe);
+                                continue;
+                            }
+
+                            // Switch to attack my target
+                            if (myTarget != null
+                                && enemyTargetingMe == null
+                                && petTarget.Guid != myTarget.Guid)
+                            {
+                                PetAttackFocus(myTarget);
+                                continue;
+                            }
 
                             // Pet Growl
-                            if ((Target.TargetGuid == Me.Guid || Pet.Target != Me.Target)
+                            if (petTarget != null
+                                && petTarget.TargetGuid != Pet.Guid
                                 && !settings.AutoGrowl
                                 && RotationType != Enums.RotationType.Party)
-                                if (cast.PetSpell("Growl"))
+                            {
+                                Me.SetFocus(petTarget.Guid);
+                                if (cast.PetSpell("Growl", true))
+                                {
+                                    Lua.LuaDoString("ClearFocus();");
                                     continue;
+                                }
+                                Lua.LuaDoString("ClearFocus();");
+                            }
 
-                            // Pet damage spells
-                            if (cast.PetSpellIfEnoughForGrowl("Bite", 35))
-                                continue;
-                            if (cast.PetSpellIfEnoughForGrowl("Gore", 25))
-                                continue;
-                            if (cast.PetSpellIfEnoughForGrowl("Scorpid Poison", 30))
-                                continue;
-                            if (cast.PetSpellIfEnoughForGrowl("Claw", 25))
-                                continue;
-                            if (cast.PetSpellIfEnoughForGrowl("Screech", 20))
-                                continue;
-                            if (cast.PetSpellIfEnoughForGrowl("Lightning Breath", 50))
-                                continue;
+                            if (petTarget != null)
+                            {
+                                // Pet damage spells
+                                if (cast.PetSpellIfEnoughForGrowl("Bite"))
+                                    continue;
+                                if (cast.PetSpellIfEnoughForGrowl("Gore"))
+                                    continue;
+                                if (cast.PetSpellIfEnoughForGrowl("Scorpid Poison"))
+                                    continue;
+                                if (cast.PetSpellIfEnoughForGrowl("Claw"))
+                                    continue;
+                                if (cast.PetSpellIfEnoughForGrowl("Screech"))
+                                    continue;
+                                if (cast.PetSpellIfEnoughForGrowl("Lightning Breath"))
+                                    continue;
+                            }
                         }
-
                     }
                 }
                 catch (Exception arg)
                 {
                     Logging.WriteError(string.Concat(arg), true);
                 }
-                Thread.Sleep(300);
             }
+        }
+
+        private void PetAttackFocus(IWoWUnit unit)
+        {
+            Me.SetFocus(unit.Guid);
+            Lua.LuaDoString($"CastPetAction(1, \"focus\")");
+            Lua.LuaDoString("ClearFocus();");
         }
 
         private void Rotation()

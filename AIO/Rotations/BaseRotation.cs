@@ -45,7 +45,6 @@ namespace WholesomeTBCAIO.Rotations
         protected IWoWUnit Target => unitCache.Target;
         protected IWoWUnit Pet => unitCache.Pet;
 
-        public abstract bool AnswerReadyCheck();
         protected abstract void BuffRotation();
         protected abstract void Pull();
         protected abstract void CombatRotation();

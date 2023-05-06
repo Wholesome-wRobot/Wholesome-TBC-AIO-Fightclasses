@@ -93,6 +93,7 @@ namespace WholesomeTBCAIO.Managers.UnitCache.Entities
                 auras[aura.SpellId] = new CachedAura(aura);
             }
             Auras = auras;
+
             if (watch.ElapsedMilliseconds > 15)
                 Logger.LogDebug($"{Name} update took {watch.ElapsedMilliseconds}");
         }

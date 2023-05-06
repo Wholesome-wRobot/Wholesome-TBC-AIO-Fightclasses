@@ -26,7 +26,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
                 // Unending Breath
                 if (!Me.HasAura(UnendingBreath)
-                    && settings.UseUnendingBreath
+                    && settings.PAF_UnendingBreath
                     && cast.OnSelf(UnendingBreath))
                     return;
 
@@ -53,7 +53,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                     && Me.HealthPercent > 40
                     && Pet.GetDistance < 19
                     && !Pet.InCombatFlagOnly
-                    && settings.HealthFunnelOOC)
+                    && settings.PAF_HealthFunnelOOC)
                 {
                     Lua.LuaDoString("PetWait();");
                     MovementManager.StopMove();
@@ -115,7 +115,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
                 // Life Tap
                 if (Me.HealthPercent > Me.ManaPercentage
-                    && settings.UseLifeTap
+                    && settings.PAF_LifeTap
                     && cast.OnSelf(LifeTap))
                     return;
             }
@@ -130,7 +130,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 Lua.LuaDoString("PetAttack();");
 
             // PARTY Seed of Corruption
-            if (unitCache.EnemiesFighting.Count >= settings.PartySeedOfCorruptionAmount
+            if (unitCache.EnemiesFighting.Count >= settings.PAF_SeedOfCorruptionAmount
                 && SeedOfCorruption.KnownSpell)
             {
                 List<IWoWUnit> enemiesWithoutSeedOfCorruption = unitCache.EnemiesFighting
@@ -147,7 +147,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             // Curse of The Elements
             if (!Target.HasAura(CurseOfTheElements)
-                && settings.PartyCurseOfTheElements
+                && settings.PAF_CurseOfTheElements
                 && cast.OnTarget(CurseOfTheElements))
                 return;
 
@@ -158,7 +158,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             // Siphon Life
             if (Me.HealthPercent < 90
-                && settings.UseSiphonLife
+                && settings.PAF_SiphonLife
                 && !Target.HasAura(SiphonLife)
                 && cast.OnTarget(SiphonLife))
                 return;
@@ -192,16 +192,16 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             // Soulshatter
             if (SoulShatter.IsSpellUsable
-                && settings.UseSoulShatter
+                && settings.PAF_SoulShatter
                 && unitCache.EnemyUnitsTargetingPlayer.Count > 0
                 && WTItem.CountItemStacks("Soul Shard") > 0
                 && cast.OnSelf(SoulShatter))
                 return;
 
             // Life Tap
-            if (Me.ManaPercentage < settings.PartyLifeTapManaThreshold
-                && Me.HealthPercent > settings.PartyLifeTapHealthThreshold
-                && settings.UseLifeTap
+            if (Me.ManaPercentage < settings.PAF_LifeTapManaThreshold
+                && Me.HealthPercent > settings.PAF_LifeTapHealthThreshold
+                && settings.PAF_LifeTap
                 && cast.OnSelf(LifeTap))
                 return;
 
@@ -211,7 +211,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 return;
 
             // PARTY Seed of Corruption
-            if (unitCache.EnemiesFighting.Count >= settings.PartySeedOfCorruptionAmount
+            if (unitCache.EnemiesFighting.Count >= settings.PAF_SeedOfCorruptionAmount
                 && SeedOfCorruption.KnownSpell)
             {
                 List<IWoWUnit> enemiesWithoutSeedOfCorruption = unitCache.EnemiesFighting
@@ -227,7 +227,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             }
 
             if (CurseOfTheElements.KnownSpell
-                && settings.PartyCurseOfTheElements)
+                && settings.PAF_CurseOfTheElements)
             {
                 // PARTY Curse of the Elements
                 List<IWoWUnit> enemiesWithoutCurseOfTheElements = unitCache.EnemiesFighting
@@ -293,13 +293,13 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 return;
 
             // Drain Soul
-            bool _shouldDrainSoul = WTItem.CountItemStacks("Soul Shard") < settings.NumberOfSoulShards || settings.AlwaysDrainSoul;
+            bool _shouldDrainSoul = WTItem.CountItemStacks("Soul Shard") < settings.CommonNumberOfSoulShards || settings.PAF_AlwaysDrainSoul;
             if (_shouldDrainSoul
-                && Target.HealthPercent < settings.DrainSoulHP
+                && Target.HealthPercent < settings.PAF_DrainSoulHP
                 && Target.Level >= Me.Level - 8
                 && !UnitImmunities.Contains(Target, "Drain Soul(Rank 1)"))
             {
-                if (settings.DrainSoulLevel1
+                if (settings.PAF_DrainSoulLevel1
                     && cast.OnTarget(DrainSoulRank1))
                     return;
                 else if (cast.OnTarget(DrainSoul))

@@ -44,11 +44,6 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             Rotation();
         }
 
-        public override bool AnswerReadyCheck()
-        {
-            return Me.ManaPercentage > settings.PartyDrinkThreshold;
-        }
-
         public override void Dispose()
         {
             FightEvents.OnFightEnd -= FightEndHandler;

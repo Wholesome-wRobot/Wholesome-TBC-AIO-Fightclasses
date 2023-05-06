@@ -20,20 +20,20 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             // Life Tap
             if (Me.HealthPercent > Me.ManaPercentage
-                && settings.UseLifeTap
+                && settings.AFF_LifeTap
                 && !Me.IsMounted
                 && cast.OnSelf(LifeTap))
                 return;
 
             // Unending Breath
             if (!Me.HasAura(UnendingBreath)
-                && settings.UseUnendingBreath
+                && settings.AFF_UnendingBreath
                 && cast.OnSelf(UnendingBreath))
                 return;
 
             // Fel Armor
             if (!Me.HasAura(FelArmor)
-                && settings.UseFelArmor
+                && settings.AFF_FelArmor
                 && cast.OnSelf(FelArmor))
                 return;
 
@@ -56,7 +56,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && Me.HealthPercent > 40
                 && Pet.GetDistance < 19
                 && !Pet.InCombatFlagOnly
-                && settings.HealthFunnelOOC)
+                && settings.AFF_HealthFunnelOOC)
             {
                 Lua.LuaDoString("PetWait();");
                 MovementManager.StopMove();
@@ -103,15 +103,15 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         protected override void Pull()
         {
             base.Pull();
-
+            
             // Pet attack
             if (Pet.Target != Me.Target)
                 Lua.LuaDoString("PetAttack();");
-
+            
             // Life Tap
             if (Me.HealthPercent > Me.ManaPercentage
                 && !Me.IsMounted
-                && settings.UseLifeTap
+                && settings.AFF_LifeTap
                 && cast.OnSelf(LifeTap))
                 return;
 
@@ -122,7 +122,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
 
             // Siphon Life
             if (Me.HealthPercent < 90
-                && settings.UseSiphonLife
+                && settings.AFF_SiphonLife
                 && !Target.HasAura(SiphonLife)
                 && cast.OnTarget(SiphonLife))
                 return;
@@ -163,13 +163,13 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             bool overLowManaThreshold = myManaPC > _innerManaSaveThreshold;
 
             // Drain Soul
-            bool _shouldDrainSoul = WTItem.CountItemStacks("Soul Shard") < settings.NumberOfSoulShards || settings.AlwaysDrainSoul;
+            bool _shouldDrainSoul = WTItem.CountItemStacks("Soul Shard") < settings.CommonNumberOfSoulShards || settings.AFF_AlwaysDrainSoul;
             if (_shouldDrainSoul
-                && Target.HealthPercent < settings.DrainSoulHP
+                && Target.HealthPercent < settings.AFF_DrainSoulHP
                 && Target.Level >= Me.Level - 8
                 && !UnitImmunities.Contains(Target, "Drain Soul(Rank 1)"))
             {
-                if (settings.DrainSoulLevel1
+                if (settings.AFF_DrainSoulLevel1
                     && cast.OnTarget(DrainSoulRank1))
                     return;
                 else if (cast.OnTarget(DrainSoul))
@@ -196,7 +196,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && overLowManaThreshold
                 && Target.HealthPercent > 20
                 && !Target.HasAura(SiphonLife)
-                && settings.UseSiphonLife
+                && settings.AFF_SiphonLife
                 && cast.OnTarget(SiphonLife))
                 return;
 
@@ -237,7 +237,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 && !Target.HasAura("Fire Ward")
                 && overLowManaThreshold
                 && Target.HealthPercent > 30
-                && (settings.UseImmolateHighLevel || !UnstableAffliction.KnownSpell)
+                && (settings.AFF_ImmolateHighLevel || !UnstableAffliction.KnownSpell)
                 && cast.OnTarget(Immolate))
                 return;
 
@@ -262,7 +262,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             if (Me.ManaPercentage < 70
                 && Pet.Mana > 0
                 && Pet.ManaPercentage > 60
-                && settings.UseDarkPact
+                && settings.AFF_DarkPact
                 && cast.OnSelf(DarkPact))
                 return;
 
@@ -277,12 +277,12 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             if (Target.HasAura(Immolate)
                 && overLowManaThreshold
                 && Target.HealthPercent > 30
-                && settings.UseIncinerate
+                && settings.AFF_Incinerate
                 && cast.OnTarget(Incinerate))
                 return;
 
             // Shadow Bolt
-            if ((!settings.PrioritizeWandingOverSB || !_iCanUseWand)
+            if ((!settings.AFF_WandingOverSB || !_iCanUseWand)
                 && (Target.HealthPercent > 50 || Me.ManaPercentage > 90 && Target.HealthPercent > 10)
                 && myManaPC > 40
                 && cast.OnTarget(ShadowBolt))
@@ -292,7 +292,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
             if (Me.HealthPercent > 50
                 && Me.ManaPercentage < 40
                 && !Target.IsTargetingMe
-                && settings.UseLifeTap
+                && settings.AFF_LifeTap
                 && cast.OnSelf(LifeTap))
                 return;
 
