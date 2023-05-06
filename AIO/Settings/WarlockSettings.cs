@@ -8,11 +8,9 @@ namespace WholesomeTBCAIO.Settings
     public class WarlockSettings : BasePersistentSettings<WarlockSettings>
     {
         private const string _settingsTriggerName = "WarlockRotationTrigger";
-
         private const string _soloAffliName = "Solo Affliction";
         private const string _soloDemoName = "Solo Demonology";
         private const string _partyAffliName = "Party Affliction";
-
         private const string _rotationTabName = "Rotation";
         private const string _petTabName = "Pet";
 

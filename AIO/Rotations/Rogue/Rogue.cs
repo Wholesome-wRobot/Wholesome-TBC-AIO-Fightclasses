@@ -107,7 +107,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             PoisonWeapon();
 
             // Sprint
-            if (settings.SprintWhenAvail
+            if ((settings.SC_SprintWhenAvail || settings.PC_SprintWhenAvail)
                 && Me.HealthPercent >
                 80 && MovementManager.InMovement
                 && cast.OnSelf(Sprint))
@@ -151,7 +151,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
         {
             if (BehindTargetCheck)
             {
-                if (settings.UseGarrote
+                if ((settings.SC_UseGarrote || settings.PC_UseGarrote)
                     && cast.OnTarget(Garrote))
                     return;
                 if (cast.OnTarget(Backstab))
@@ -347,7 +347,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 }
 
                 if (stealthApproachTimer.IsReady
-                    && ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { Shoot, Throw }, unitCache))
+                    && ToolBox.Pull(cast, settings.SC_AlwaysPull, new List<AIOSpell> { Shoot, Throw }, unitCache))
                 {
                     _combatMeleeTimer = new Timer(2000);
                     return;

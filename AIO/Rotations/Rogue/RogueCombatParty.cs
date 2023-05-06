@@ -32,9 +32,9 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             if (!Me.HasAura(Stealth)
                 && Target.GetDistance > 15f
                 && Target.GetDistance < 25f
-                && settings.StealthApproach
+                && settings.PC_StealthApproach
                 && Backstab.KnownSpell
-                && (!WTEffects.HasPoisonDebuff() || settings.StealthWhenPoisoned)
+                && (!WTEffects.HasPoisonDebuff() || settings.PC_StealthWhenPoisoned)
                 && cast.OnSelf(Stealth))
                 return;
 
@@ -88,7 +88,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
 
             // Riposte
             if (Riposte.IsSpellUsable
-                && (Target.CreatureTypeTarget.Equals("Humanoid") || settings.RiposteAll)
+                && (Target.CreatureTypeTarget.Equals("Humanoid") || settings.PC_RiposteAll)
                 && cast.OnTarget(Riposte))
                 return;
 
@@ -108,7 +108,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 && Target.IsTargetingMe
                 && !WTEffects.HasDebuff("Recently Bandaged")
                 && _myBestBandage != null
-                && settings.UseBlindBandage
+                && settings.PC_UseBlindBandage
                 && cast.OnTarget(Blind))
                 return;
 

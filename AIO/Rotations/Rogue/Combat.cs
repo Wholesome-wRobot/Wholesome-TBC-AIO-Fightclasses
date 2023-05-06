@@ -30,7 +30,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 _fightingACaster = true;
 
             // Pull logic
-            if (ToolBox.Pull(cast, settings.AlwaysPull || WTEffects.HasPoisonDebuff(), new List<AIOSpell> { Shoot, Throw }, unitCache))
+            if (ToolBox.Pull(cast, settings.SC_AlwaysPull || WTEffects.HasPoisonDebuff(), new List<AIOSpell> { Shoot, Throw }, unitCache))
             {
                 _combatMeleeTimer = new Timer(2000);
                 return;
@@ -41,9 +41,9 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                 && Target.GetDistance > 15f
                 && Target.GetDistance < 25f
                 && unitCache.GetClosestHostileFrom(Target, 20) == null
-                && settings.StealthApproach
+                && settings.SC_StealthApproach
                 && Backstab.KnownSpell
-                && (!WTEffects.HasPoisonDebuff() || settings.StealthWhenPoisoned)
+                && (!WTEffects.HasPoisonDebuff() || settings.SC_StealthWhenPoisoned)
                 && cast.OnSelf(Stealth))
                 return;
 
@@ -99,7 +99,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                     return;
 
             // Riposte
-            if (Riposte.IsSpellUsable && (Target.CreatureTypeTarget.Equals("Humanoid") || settings.RiposteAll))
+            if (Riposte.IsSpellUsable && (Target.CreatureTypeTarget.Equals("Humanoid") || settings.SC_RiposteAll))
                 if (cast.OnTarget(Riposte))
                     return;
 
@@ -117,7 +117,7 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             if (Me.HealthPercent < 40
                 && !WTEffects.HasDebuff("Recently Bandaged")
                 && _myBestBandage != null
-                && settings.UseBlindBandage)
+                && settings.SC_UseBlindBandage)
                 if (cast.OnTarget(Blind))
                     return;
 
