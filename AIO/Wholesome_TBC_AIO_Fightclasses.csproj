@@ -49,7 +49,7 @@
       <HintPath>..\Dependencies\MahApps.Metro.dll</HintPath>
     </Reference>
     <Reference Include="MarsSettingsGUI">
-      <HintPath>..\Dependencies\MarsSettingsGUI.dll</HintPath>
+      <HintPath>..\Special_Deps\MarsSettingsGUI.dll</HintPath>
     </Reference>
     <Reference Include="MemoryRobot">
       <HintPath>..\Dependencies\MemoryRobot.dll</HintPath>
