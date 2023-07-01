@@ -18,37 +18,37 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             base.BuffRotation();
 
             // Holy Light
-            if (Me.HealthPercent < settings.OOCHolyLightThreshold
+            if (Me.HealthPercent < settings.SRET_OOCHolyLightThreshold
                 && HolyLight.IsSpellUsable
                 && cast.OnSelf(HolyLight))
                 return;
 
             // Flash of Light
             if (FlashOfLight.IsSpellUsable
-                && Me.HealthPercent < settings.OOCFlashHealThreshold
+                && Me.HealthPercent < settings.SRET_OOCFlashHealThreshold
                 && cast.OnSelf(FlashOfLight))
                 return;
 
             // Sanctity Aura
             if (!Me.HasAura(SanctityAura)
-                && !settings.RetributionAura
+                && !settings.SRET_RetributionAura
                 && cast.OnSelf(SanctityAura))
                 return;
 
             // Retribution Aura
             if (!Me.HasAura(RetributionAura)
-                && (!SanctityAura.KnownSpell || settings.RetributionAura)
+                && (!SanctityAura.KnownSpell || settings.SRET_RetributionAura)
                 && cast.OnSelf(RetributionAura))
                 return;
 
             // Blessing of Wisdom
-            if (settings.UseBlessingOfWisdom
+            if (settings.SRET_UseBlessingOfWisdom
                 && !Me.HasAura(BlessingOfWisdom)
                 && cast.OnSelf(BlessingOfWisdom))
                 return;
 
             // Blessing of Might
-            if (!settings.UseBlessingOfWisdom
+            if (!settings.SRET_UseBlessingOfWisdom
                 && !Me.HasAura(BlessingOfMight)
                 && !Me.IsMounted
                 && cast.OnSelf(BlessingOfMight))
@@ -72,24 +72,24 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if (!Target.HasAura("Judgement of the Crusader")
                 && !Me.HasAura(SealOfTheCrusader)
                 && Me.ManaPercentage > manaSavePercent - 20
-                && settings.UseSealOfTheCrusader
+                && settings.SRET_UseSealOfTheCrusader
                 && cast.OnSelf(SealOfTheCrusader))
                 return;
 
             // Seal of Righteousness
             if (!Me.HasAura(SealOfRighteousness)
                 && !Me.HasAura(SealOfTheCrusader)
-                && !settings.UseSealOfTheCrusader
-                && (Target.HasAura("Judgement of the Crusader") || Me.ManaPercentage > manaSavePercent || !settings.UseSealOfTheCrusader)
-                && (!settings.UseSealOfCommand || !SealOfCommand.KnownSpell)
+                && !settings.SRET_UseSealOfTheCrusader
+                && (Target.HasAura("Judgement of the Crusader") || Me.ManaPercentage > manaSavePercent || !settings.SRET_UseSealOfTheCrusader)
+                && (!settings.SRET_UseSealOfCommand || !SealOfCommand.KnownSpell)
                 && cast.OnSelf(SealOfRighteousness))
                 return;
 
             // Seal of Command
             if (!Me.HasAura(SealOfCommand)
                 && !Me.HasAura(SealOfTheCrusader)
-                && (Target.HasAura("Judgement of the Crusader") || Me.ManaPercentage > manaSavePercent || !settings.UseSealOfTheCrusader)
-                && settings.UseSealOfCommand
+                && (Target.HasAura("Judgement of the Crusader") || Me.ManaPercentage > manaSavePercent || !settings.SRET_UseSealOfTheCrusader)
+                && settings.SRET_UseSealOfCommand
                 && SealOfCommand.KnownSpell
                 && cast.OnSelf(SealOfCommand))
                 return;
@@ -114,7 +114,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             // Devotion Aura multi
             if (unitCache.EnemiesAttackingMe.Count > 1
-                && settings.DevoAuraOnMulti
+                && settings.SRET_DevoAuraOnMulti
                 && !Me.HasAura(DevotionAura)
                 && cast.OnSelf(DevotionAura))
                 return;
@@ -128,14 +128,14 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             // Sanctity Aura
             if (!Me.HasAura(SanctityAura)
-                && !settings.RetributionAura
+                && !settings.SRET_RetributionAura
                 && unitCache.EnemiesAttackingMe.Count <= 1
                 && cast.OnSelf(SanctityAura))
                 return;
 
             // Retribution Aura
             if (!Me.HasAura(RetributionAura)
-                && (!SanctityAura.KnownSpell || settings.RetributionAura)
+                && (!SanctityAura.KnownSpell || settings.SRET_RetributionAura)
                 && unitCache.EnemiesAttackingMe.Count <= 1
                 && cast.OnSelf(RetributionAura))
                 return;
@@ -154,7 +154,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             // Holy Light / Flash of Light
             if (Me.HealthPercent < 50
                 && (Target.HealthPercent > 15 || Me.HealthPercent < 25)
-                && settings.HealDuringCombat)
+                && settings.SRET_HealDuringCombat)
             {
                 if (!HolyLight.IsSpellUsable)
                 {
@@ -176,7 +176,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             // Exorcism
             if ((Target.CreatureTypeTarget == "Undead" || Target.CreatureTypeTarget == "Demon")
-                && settings.UseExorcism
+                && settings.SRET_UseExorcism
                 && cast.OnTarget(Exorcism))
                 return;
 
@@ -199,24 +199,24 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 && !Me.HasAura(SealOfTheCrusader)
                 && Me.ManaPercentage > manaSavePercent - 20
                 && Target.IsAlive
-                && settings.UseSealOfTheCrusader
+                && settings.SRET_UseSealOfTheCrusader
                 && cast.OnSelf(SealOfTheCrusader))
                 return;
 
             // Seal of Righteousness
             if (!Me.HasAura(SealOfRighteousness)
                 && !Me.HasAura(SealOfTheCrusader)
-                && (targetHasJoCrusader || Me.ManaPercentage > manaSavePercent || !settings.UseSealOfTheCrusader)
-                && (!settings.UseSealOfCommand || !SealOfCommand.KnownSpell)
+                && (targetHasJoCrusader || Me.ManaPercentage > manaSavePercent || !settings.SRET_UseSealOfTheCrusader)
+                && (!settings.SRET_UseSealOfCommand || !SealOfCommand.KnownSpell)
                 && cast.OnSelf(SealOfRighteousness))
                 return;
 
             // Seal of Command
-            if (settings.UseSealOfCommand
+            if (settings.SRET_UseSealOfCommand
                 && !Me.HasAura(SealOfCommand)
                 && !Me.HasAura(SealOfCommandRank1)
                 && !Me.HasAura(SealOfTheCrusader)
-                && (targetHasJoCrusader || Me.ManaPercentage > manaSavePercent || !settings.UseSealOfTheCrusader)
+                && (targetHasJoCrusader || Me.ManaPercentage > manaSavePercent || !settings.SRET_UseSealOfTheCrusader)
                 && cast.OnSelf(SealOfCommand))
                 return;
 
@@ -237,7 +237,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 return;
 
             // Hammer of Wrath
-            if (settings.UseHammerOfWrath
+            if (settings.SRET_UseHammerOfWrath
                 && cast.OnTarget(HammerOfWrath))
                 return;
 

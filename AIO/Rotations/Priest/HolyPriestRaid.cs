@@ -23,6 +23,42 @@ namespace WholesomeTBCAIO.Rotations.Priest
             {
                 base.BuffRotation();
 
+                // Prayer of Fortitude
+                if (settings.RHO_PrayerOfFortitude
+                    && cast.Buff(unitCache.GroupAndRaid, PrayerOfFortitude, 17029))
+                    return;
+
+                // Prayer Of Shadow Protection
+                if (settings.RHO_PrayerOfShadowProtection
+                    && cast.Buff(unitCache.GroupAndRaid, PrayerOfShadowProtection, 17029))
+                    return;
+
+                // Prayer of Spirit
+                if (settings.RHO_PrayerOfSpirit
+                    && cast.Buff(unitCache.GroupAndRaid, PrayerOfSpirit, 17029))
+                    return;
+
+                // Power Word Fortitude
+                if (settings.RHO_UsePowerWordFortitude
+                    && cast.Buff(unitCache.GroupAndRaid.Where(p => !p.HasAura(PrayerOfFortitude)).ToList(), PowerWordFortitude))
+                    return;
+
+                // Shadow Protection
+                if (settings.RHO_UseShadowProtection
+                    && cast.Buff(unitCache.GroupAndRaid.Where(p => !p.HasAura(PrayerOfShadowProtection)).ToList(), ShadowProtection))
+                    return;
+
+                // Divine spirit
+                if (settings.RHO_UseDivineSpirit
+                    && cast.Buff(unitCache.GroupAndRaid.Where(p => !p.HasAura(PrayerOfSpirit)).ToList(), DivineSpirit))
+                    return;
+
+                // OOC Inner Fire            
+                if (settings.RHO_UseInnerFire
+                    && !Me.HasAura(InnerFire)
+                    && cast.OnSelf(InnerFire))
+                    return;
+
                 // PARTY Circle of Healing
                 if (AoEHeal(false))
                     return;
@@ -70,9 +106,9 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     .FindAll(m => m.IsAlive && WTEffects.HasMagicDebuff(m.Name));
 
             // PARTY Mass Dispel
-            if (settings.PartyMassDispel && MassDispel.KnownSpell)
+            if (settings.RHO_MassDispel && MassDispel.KnownSpell)
             {
-                Vector3 centerPosition = WTSpace.FindAggregatedCenter(needDispel.Select(u => u.PositionWithoutType).ToList(), 15, settings.PartyMassDispelCount);
+                Vector3 centerPosition = WTSpace.FindAggregatedCenter(needDispel.Select(u => u.PositionWithoutType).ToList(), 15, settings.RHO_MassDispelCount);
                 if (centerPosition != null && cast.OnLocation(MassDispel, centerPosition))
                     return;
             }
@@ -101,7 +137,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return;
 
             // Cure Disease
-            if (settings.PartyCureDisease)
+            if (settings.RHO_CureDisease)
             {
                 // Party Cure Disease
                 IWoWPlayer needCureDisease = membersByMissingHealth
@@ -111,16 +147,16 @@ namespace WholesomeTBCAIO.Rotations.Priest
             }
 
             // Party Dispel Magic
-            if (settings.PartyDispelMagic)
+            if (settings.RHO_DispelMagic)
             {
                 if (needDispel.Count > 0 && cast.OnFocusUnit(DispelMagic, needDispel[0]))
                     return;
             }
 
             // High priority single target heal
-            if (settings.PartyTankHealingPriority > 0)
+            if (settings.RHO_TankHealingPriority > 0)
             {
-                var priorityTanks = partyManager.TanksNeedPriorityHeal(tanks.Value, membersByMissingHealth, settings.PartyTankHealingPriority);
+                var priorityTanks = partyManager.TanksNeedPriorityHeal(tanks.Value, membersByMissingHealth, settings.RHO_TankHealingPriority);
                 foreach (var tank in priorityTanks)
                 {
                     if (SingleTargetHeal(tank))
@@ -136,7 +172,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             }
 
             // Keep Renew on tank
-            if (settings.PartyKeepRenewOnTank)
+            if (settings.RHO_KeepRenewOnTank)
             {
                 foreach (var tank in tanks.Value)
                 {
@@ -150,7 +186,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
         {
             if (unit.HealthPercent < 30 && cast.OnFocusUnit(FlashHeal, unit))
                 return true;
-            if (settings.UsePowerWordShield
+            if (settings.RHO_UsePowerWordShield
                 && unit.HealthPercent < 50
                 && unit.RagePercent <= 0
                 && !unit.HasAura(PowerWordShield)
@@ -197,7 +233,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 ? new List<List<IWoWPlayer>> { unitCache.GroupAndRaid }
                 : unitCache.Raid.Values.ToList();
             var minimumCount = 3;
-            int healthThreshold = (combat && Me.ManaPercentage < 80) ? settings.PartyCircleOfHealingThreshold : 95;
+            int healthThreshold = (combat && Me.ManaPercentage < 80) ? settings.RHO_CircleOfHealingThreshold : 95;
 
             var groupsNeedCoH = groups
                 // Find all groups those need CoH
@@ -217,7 +253,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     .Select(member => (member, count: group.FindAll(otherMember =>
                         otherMember.IsAlive
                         && otherMember.HealthPercent < healthThreshold
-                        && otherMember.PositionWithoutType.DistanceTo(member.PositionWithoutType) < settings.PartyCircleofHealingRadius)
+                        && otherMember.PositionWithoutType.DistanceTo(member.PositionWithoutType) < settings.RHO_CircleofHealingRadius)
                         .Count))
                     .ToList()
                     // Removing those who would heal less members than `minimumCount`

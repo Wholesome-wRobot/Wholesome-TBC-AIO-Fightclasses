@@ -32,20 +32,20 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Mage Armor
             if (!Me.HasAura(MageArmor)
-                && settings.ACMageArmor
+                && settings.SARC_ACMageArmor
                 && cast.OnSelf(MageArmor))
                 return;
 
             // Ice Armor
             if (!Me.HasAura(IceArmor)
-            && (!settings.ACMageArmor || !MageArmor.KnownSpell)
+            && (!settings.SARC_ACMageArmor || !MageArmor.KnownSpell)
             && cast.OnSelf(IceArmor))
                 return;
 
             // Frost Armor
             if (!Me.HasAura(FrostArmor)
                 && !IceArmor.KnownSpell
-                && (!settings.ACMageArmor || !MageArmor.KnownSpell)
+                && (!settings.SARC_ACMageArmor || !MageArmor.KnownSpell)
                 && cast.OnSelf(FrostArmor))
                 return;
         }
@@ -55,7 +55,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             base.Pull();
 
             // Slow
-            if (settings.ACSlow
+            if (settings.SARC_ACSlow
                 && !Target.HasAura(Slow)
                 && Slow.IsDistanceGood
                 && cast.OnTarget(Slow))
@@ -67,13 +67,13 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Arcane Missiles
             if (Me.Level >= 6
-                && (Target.HealthPercent > settings.WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 30 || !iCanUseWand)
+                && (Target.HealthPercent > settings.SARC_WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 30 || !iCanUseWand)
                 && cast.OnTarget(ArcaneMissiles))
                 return;
 
             // Frost Bolt
             if (Me.Level >= 6
-                && (Target.HealthPercent > settings.WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 30 || !iCanUseWand)
+                && (Target.HealthPercent > settings.SARC_WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 30 || !iCanUseWand)
                 && cast.OnTarget(Frostbolt))
                 return;
 
@@ -131,33 +131,33 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // Presence of Mind
             if (presenceOfMindCD <= 0
                 && !Me.HasAura(PresenceOfMind)
-                && (unitCache.EnemiesAttackingMe.Count > 1 || !settings.PoMOnMulti)
+                && (unitCache.EnemiesAttackingMe.Count > 1 || !settings.SARC_PoMOnMulti)
                 && Target.HealthPercent > 50
                 && cast.OnSelf(PresenceOfMind))
                 return;
 
             // Arcane Power
             if (!Me.HasAura(ArcanePower)
-                && (unitCache.EnemiesAttackingMe.Count > 1 || !settings.ArcanePowerOnMulti)
+                && (unitCache.EnemiesAttackingMe.Count > 1 || !settings.SARC_ArcanePowerOnMulti)
                 && Target.HealthPercent > 50
                 && cast.OnSelf(ArcanePower))
                 return;
 
             // Slow
-            if ((settings.ACSlow || Target.CreatureTypeTarget == "Humanoid")
+            if ((settings.SARC_ACSlow || Target.CreatureTypeTarget == "Humanoid")
                 && !Target.HasAura(Slow)
                 && cast.OnTarget(Slow))
                 return;
 
             // Cone of Cold
             if (Target.GetDistance < 10
-                && settings.UseConeOfCold
+                && settings.SARC_UseConeOfCold
                 && _polymorphedEnemy == null
                 && cast.OnTarget(ConeOfCold))
                 return;
 
             // Fire Blast
-            if (Target.HealthPercent <= settings.FireblastThreshold
+            if (Target.HealthPercent <= settings.SARC_FireblastThreshold
                 && _polymorphedEnemy == null
                 && cast.OnTarget(FireBlast))
                 return;
@@ -172,19 +172,19 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Arcane Blast
             if (_shouldCastArcaneBlast
-                && (Target.HealthPercent > settings.WandThreshold || !iCanUseWand)
+                && (Target.HealthPercent > settings.SARC_WandThreshold || !iCanUseWand)
                 && cast.OnTarget(ArcaneBlast))
                 return;
 
             // Arcane Missiles
             if (Me.Level >= 6
-                && (Target.HealthPercent > settings.WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 40 || !iCanUseWand)
+                && (Target.HealthPercent > settings.SARC_WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 40 || !iCanUseWand)
                 && cast.OnTarget(ArcaneMissiles))
                 return;
 
             // Frost Bolt
             if (Me.Level >= 6
-                && (Target.HealthPercent > settings.WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 40 || !iCanUseWand)
+                && (Target.HealthPercent > settings.SARC_WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 40 || !iCanUseWand)
                 && _polymorphedEnemy == null
                 && cast.OnTarget(Frostbolt))
                 return;

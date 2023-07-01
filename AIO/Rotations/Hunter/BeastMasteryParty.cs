@@ -24,7 +24,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && !Me.HasAura(AspectCheetah)
                 && MovementManager.InMoveTo
                 && Me.ManaPercentage > 60
-                && settings.UseAspectOfTheCheetah
+                && Me.ManaPercentage > settings.PBM_AspectOfTheCheetahThreashold
                 && cast.OnSelf(AspectCheetah))
                     return;
 
@@ -106,7 +106,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 return;
 
             // Disengage
-            if (settings.UseDisengage
+            if (settings.PBM_UseDisengage
                 && Target.Target == Me.Guid
                 && Target.GetDistance < minRange
                 && cast.OnTarget(Disengage))
@@ -133,7 +133,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 cast.OnTarget(KillCommand);
 
             // Raptor Strike
-            if (settings.UseRaptorStrike
+            if (settings.PBM_UseRaptorStrike
                 && Target.GetDistance < minRange
                 && !WTCombat.IsSpellActive("Raptor Strike")
                 && cast.OnTarget(RaptorStrike))
@@ -151,7 +151,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
             // Wing Clip
             if ((Target.CreatureTypeTarget == "Humanoid" || Target.Name.Contains("Plainstrider"))
-                && settings.UseConcussiveShot
+                && settings.PBM_UseConcussiveShot
                 && Target.HealthPercent < 20
                 && !Target.HasAura(WingClip)
                 && cast.OnTarget(WingClip))
@@ -167,7 +167,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
             // Multi-Shot
             if (Target.GetDistance > minRange
-                && unitCache.EnemiesFighting.FindAll(e => e.PositionWithoutType.DistanceTo(Target.PositionWithoutType) < 15).Count > settings.MultishotCount
+                && unitCache.EnemiesFighting.FindAll(e => e.PositionWithoutType.DistanceTo(Target.PositionWithoutType) < 15).Count > settings.PBM_MultishotCount
                 && cast.OnTarget(MultiShot))
                 return;
 

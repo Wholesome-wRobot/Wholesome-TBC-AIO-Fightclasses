@@ -316,7 +316,6 @@ namespace WholesomeTBCAIO.Rotations.Rogue
             if (Me.IsAlive && Target.IsAlive)
             {
                 while (Conditions.InGameAndConnectedAndAliveAndProductStartedNotInPause
-                    && !stealthApproachTimer.IsReady
                     && Me.HasAura(Stealth))
                 {
                     if (Target.GetDistance <= 2.5f)
@@ -338,6 +337,12 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                         break;
                     }
 
+                    if (stealthApproachTimer.IsReady)
+                    {
+                        Logger.Log($"Approach interrupted because the timer ran out");
+                        break;
+                    }
+
                     ToggleAutoAttack(false);
 
                     Vector3 position = WTSpace.BackOfUnit(Target.WowUnit, 2.5f);
@@ -345,6 +350,8 @@ namespace WholesomeTBCAIO.Rotations.Rogue
                     Thread.Sleep(50);
                     CastOpener();
                 }
+
+                cast.OnTarget(SinisterStrike);
 
                 if (stealthApproachTimer.IsReady
                     && ToolBox.Pull(cast, settings.SC_AlwaysPull, new List<AIOSpell> { Shoot, Throw }, unitCache))

@@ -35,7 +35,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 .ToList();
 
             List<IWoWPlayer> allyNeedSmallHeal = unitCache.GroupAndRaid
-                .FindAll(a => a.IsAlive && a.HealthPercent < settings.PartyFlashOfLightThreshold)
+                .FindAll(a => a.IsAlive && a.HealthPercent < settings.PHO_PartyFlashOfLightThreshold)
                 .OrderBy(a => a.HealthPercent)
                 .ToList();
 
@@ -74,7 +74,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             // PARTY Holy Light
             List<IWoWPlayer> allyNeedMediumHeal = unitCache.GroupAndRaid
-                .FindAll(a => a.IsAlive && a.HealthPercent < settings.PartyHolyLightPercentThreshold)
+                .FindAll(a => a.IsAlive && a.HealthPercent < settings.PHO_PartyHolyLightPercentThreshold)
                 .OrderBy(a => a.HealthPercent)
                 .ToList();
             if (allyNeedMediumHeal.Count > 0
@@ -94,7 +94,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 return;
 
             // Seal of light
-            if (settings.PartyHolySealOfLight
+            if (settings.PHO_PartyHolySealOfLight
                 && !Target.HasAura("Judgement of Light"))
             {
                 if (cast.OnTarget(Judgement))
@@ -106,7 +106,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             }
 
             // PARTY Purifiy
-            if (settings.PartyPurify)
+            if (settings.PHO_PartyPurify)
             {
                 IWoWPlayer needsPurify = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasDiseaseDebuff(m.Name) || WTEffects.HasPoisonDebuff(m.Name));
@@ -115,7 +115,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             }
 
             // PARTY Cleanse
-            if (settings.PartyCleanse)
+            if (settings.PHO_PartyCleanse)
             {
                 IWoWPlayer needsCleanse = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasMagicDebuff(m.Name));

@@ -116,7 +116,7 @@ namespace WholesomeTBCAIO.Settings
         [VisibleWhenDropdownValue(_settingsTriggerName, _partyFuryName)]
         public bool PFU_UseCommandingShout { get; set; }
         [Category(_rotationTabName)]
-        [DefaultValue(true)]
+        [DefaultValue(false)]
         [DisplayName("Cleave")]
         [Description("Use Cleave on multi aggro")]
         [VisibleWhenDropdownValue(_settingsTriggerName, _partyFuryName)]
@@ -148,7 +148,7 @@ namespace WholesomeTBCAIO.Settings
         [VisibleWhenDropdownValue(_settingsTriggerName, _partyProtName)]
         public bool PPR_UseCommandingShout { get; set; }
         [Category(_rotationTabName)]
-        [DefaultValue(true)]
+        [DefaultValue(false)]
         [DisplayName("Switch target")]
         [Description("Switch targets to regain aggro when tanking")]
         [VisibleWhenDropdownValue(_settingsTriggerName, _partyProtName)]

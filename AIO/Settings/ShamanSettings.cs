@@ -8,12 +8,10 @@ namespace WholesomeTBCAIO.Settings
     public class ShamanSettings : BasePersistentSettings<ShamanSettings>
     {
         private const string _settingsTriggerName = "ShamanRotationTrigger";
-
-        private const string _ELE_name = "Elemental";
         private const string _ENH_name = "Enhancement";
+        private const string _ELE_name = "Elemental";
         private const string _PEN_name = "Party Enhancement";
         private const string _PRE_name = "Party Restoration";
-
         private const string _rotationTabName = "Rotation";
         private const string _totemsTabName = "Totems";
 

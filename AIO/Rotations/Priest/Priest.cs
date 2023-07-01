@@ -21,7 +21,6 @@ namespace WholesomeTBCAIO.Rotations.Priest
         protected Stopwatch dispelTimer = new Stopwatch();
         protected bool iCanUseWand = WTGear.HaveRangedWeaponEquipped;
         protected int innerManaSaveThreshold = 20;
-        protected int wandThreshold;
         private readonly float _defaultRange = 28;
 
         public Priest(BaseSettings settings) : base(settings) { }
@@ -31,7 +30,6 @@ namespace WholesomeTBCAIO.Rotations.Priest
             this.specialization = specialization as Priest;
             settings = PriestSettings.Current;
             BaseInit(_defaultRange, Smite, UseWand, settings);
-            wandThreshold = settings.WandThreshold > 100 ? 50 : settings.WandThreshold;
 
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightStart += FightStartHandler;
@@ -117,46 +115,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                     .Find(m => WTEffects.HasMagicDebuff(m.Name));
                 if (needDispelMagic != null && cast.OnFocusUnit(DispelMagic, needDispelMagic))
                     return;
-
-                // Prayer of Fortitude
-                if (settings.PartyPrayerOfFortitude
-                    && cast.Buff(unitCache.GroupAndRaid, PrayerOfFortitude, 17029))
-                    return;
-
-                // Power Word Fortitude
-                if (settings.UsePowerWordFortitude
-                    && !settings.PartyPrayerOfFortitude
-                    && cast.Buff(unitCache.GroupAndRaid, PowerWordFortitude))
-                    return;
-
-                // Prayer Of Shadow Protection
-                if (settings.PartyPrayerOfShadowProtection
-                    && cast.Buff(unitCache.GroupAndRaid, PrayerOfShadowProtection, 17029))
-                    return;
-
-                // Shadow Protection
-                if (settings.UseShadowProtection
-                    && !settings.PartyPrayerOfShadowProtection
-                    && cast.Buff(unitCache.GroupAndRaid, ShadowProtection))
-                    return;
-
-                // Prayer of Spirit
-                if (settings.PartyPrayerOfSpirit
-                    && cast.Buff(unitCache.GroupAndRaid, PrayerOfSpirit, 17029))
-                    return;
-
-                // Divine Spirit
-                if (settings.UseDivineSpirit
-                    && !settings.PartyPrayerOfSpirit
-                    && cast.Buff(unitCache.GroupAndRaid, DivineSpirit))
-                    return;
             }
-
-            // OOC Inner Fire
-            if (settings.UseInnerFire
-                && !Me.HasAura(InnerFire)
-                && cast.OnSelf(InnerFire))
-                return;
         }
 
         protected override void Pull() { }

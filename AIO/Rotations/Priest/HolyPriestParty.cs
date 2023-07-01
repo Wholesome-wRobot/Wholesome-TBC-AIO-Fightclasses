@@ -20,6 +20,26 @@ namespace WholesomeTBCAIO.Rotations.Priest
             if (!Me.HasDrinkAura || Me.ManaPercentage > 95)
             {
                 base.BuffRotation();
+                // OOC Inner Fire            
+                if (settings.PHO_UseInnerFire
+                    && !Me.HasAura(InnerFire)
+                    && cast.OnSelf(InnerFire))
+                    return;
+
+                // Power Word Fortitude
+                if (settings.PHO_UsePowerWordFortitude
+                    && cast.Buff(unitCache.GroupAndRaid, PowerWordFortitude))
+                    return;
+
+                // Shadow Protection
+                if (settings.PHO_UseShadowProtection
+                    && cast.Buff(unitCache.GroupAndRaid, ShadowProtection))
+                    return;
+
+                // Divine spirit
+                if (settings.PHO_UseDivineSpirit
+                    && cast.Buff(unitCache.GroupAndRaid, DivineSpirit))
+                    return;
 
                 // PARTY Greater heal
                 List<IWoWPlayer> needGreaterHeal = unitCache.GroupAndRaid
@@ -65,7 +85,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
         protected override void HealerCombat()
         {
             // Cure Disease
-            if (settings.PartyCureDisease)
+            if (settings.PHO_CureDisease)
             {
                 // Party Cure Disease
                 IWoWPlayer needCureDisease = unitCache.GroupAndRaid
@@ -85,7 +105,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return;
 
             // Party Dispel Magic
-            if (settings.PartyDispelMagic)
+            if (settings.PHO_DispelMagic)
             {
                 IWoWPlayer needDispelMagic = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasMagicDebuff(m.Name));
@@ -165,6 +185,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 if (needGHeal2.Count > 0 && cast.OnFocusUnit(GreaterHealRank2, needGHeal2[0]))
                     return;
             }
+
             // PARTY Heal
             else
             {
@@ -175,7 +196,6 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 if (needHeal70.Count > 0 && cast.OnFocusUnit(Heal, needHeal70[0]))
                     return;
             }
-
 
             // PARTY Renew
             List<IWoWPlayer> needRenew = unitCache.GroupAndRaid

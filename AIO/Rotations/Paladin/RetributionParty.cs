@@ -38,7 +38,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 return;
 
             // PARTY Purifiy
-            if (settings.PartyPurify)
+            if (settings.PRET_PartyPurify)
             {
                 IWoWPlayer needsPurify = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasDiseaseDebuff(m.Name) || WTEffects.HasPoisonDebuff(m.Name));
@@ -47,7 +47,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             }
 
             // PARTY Cleanse
-            if (settings.PartyCleanse)
+            if (settings.PRET_PartyCleanse)
             {
                 IWoWPlayer needsCleanse = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasMagicDebuff(m.Name));
@@ -66,16 +66,16 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if (!Target.HasAura("Judgement of the Crusader")
                 && !Me.HasAura(SealOfTheCrusader)
                 && Me.ManaPercentage > manaSavePercent - 20
-                && settings.UseSealOfTheCrusader
+                && settings.PRET_UseSealOfTheCrusader
                 && cast.OnSelf(SealOfTheCrusader))
                 return;
 
             // Seal of Righteousness
             if (!Me.HasAura(SealOfRighteousness)
                 && !Me.HasAura(SealOfTheCrusader)
-                && !settings.UseSealOfTheCrusader
-                && (Target.HasAura("Judgement of the Crusader") || Me.ManaPercentage > manaSavePercent || !settings.UseSealOfTheCrusader)
-                && (!settings.UseSealOfCommand || !SealOfCommand.KnownSpell)
+                && !settings.PRET_UseSealOfTheCrusader
+                && (Target.HasAura("Judgement of the Crusader") || Me.ManaPercentage > manaSavePercent || !settings.PRET_UseSealOfTheCrusader)
+                && (!settings.PRET_UseSealOfCommand || !SealOfCommand.KnownSpell)
                 && cast.OnSelf(SealOfRighteousness))
                 return;
 
@@ -83,8 +83,8 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if (!Me.HasAura(SealOfCommand)
                 && !Me.HasAura(SealOfCommandRank1)
                 && !Me.HasAura(SealOfTheCrusader)
-                && (Target.HasAura("Judgement of the Crusader") || Me.ManaPercentage > manaSavePercent || !settings.UseSealOfTheCrusader)
-                && settings.UseSealOfCommand
+                && (Target.HasAura("Judgement of the Crusader") || Me.ManaPercentage > manaSavePercent || !settings.PRET_UseSealOfTheCrusader)
+                && settings.PRET_UseSealOfCommand
                 && SealOfCommand.KnownSpell
                 && cast.OnSelf(SealOfCommand))
                 return;
@@ -117,7 +117,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 return;
 
             // PARTY Purifiy
-            if (settings.PartyPurify)
+            if (settings.PRET_PartyPurify)
             {
                 IWoWPlayer needsPurify = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasDiseaseDebuff(m.Name) || WTEffects.HasPoisonDebuff(m.Name));
@@ -126,7 +126,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             }
 
             // PARTY Cleanse
-            if (settings.PartyCleanse)
+            if (settings.PRET_PartyCleanse)
             {
                 IWoWPlayer needsCleanse = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasMagicDebuff(m.Name));
@@ -171,8 +171,8 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 // Seal of Righteousness
                 if (!Me.HasAura(SealOfRighteousness)
                     && !Me.HasAura(SealOfTheCrusader)
-                    && (targetHasJOCrsudaer || !settings.UseSealOfTheCrusader)
-                    && (!settings.UseSealOfCommand || !SealOfCommand.KnownSpell)
+                    && (targetHasJOCrsudaer || !settings.PRET_UseSealOfTheCrusader)
+                    && (!settings.PRET_UseSealOfCommand || !SealOfCommand.KnownSpell)
                     && cast.OnSelf(SealOfRighteousness))
                     return;
 
@@ -180,8 +180,8 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 if (!Me.HasAura(SealOfCommand)
                     && !Me.HasAura(SealOfCommandRank1)
                     && !Me.HasAura(SealOfTheCrusader)
-                    && (targetHasJOCrsudaer || !settings.UseSealOfTheCrusader)
-                    && settings.UseSealOfCommand
+                    && (targetHasJOCrsudaer || !settings.PRET_UseSealOfTheCrusader)
+                    && settings.PRET_UseSealOfCommand
                     && cast.OnSelf(SealOfCommand))
                     return;
 
@@ -197,18 +197,18 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             }
 
             // Consecration
-            if (Me.ManaPercentage > settings.PartyRetConsecrationThreshold
+            if (Me.ManaPercentage > settings.PRET_PartyRetConsecrationThreshold
                 && ToolBox.GetNbEnemiesClose(10f) > 1
                 && cast.OnSelf(Consecration))
                 return;
 
             // Hammer of Wrath
-            if (settings.UseHammerOfWrath
+            if (settings.PRET_UseHammerOfWrath
                 && cast.OnTarget(HammerOfWrath))
                 return;
 
             // Exorcism
-            if (Me.ManaPercentage > settings.PartyRetExorcismThreshold
+            if (Me.ManaPercentage > settings.PRET_PartyRetExorcismThreshold
                 && (Target.CreatureTypeTarget == "Undead" || Target.CreatureTypeTarget == "Demon")
                 && cast.OnTarget(Exorcism))
                 return;

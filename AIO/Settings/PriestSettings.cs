@@ -7,208 +7,357 @@ namespace WholesomeTBCAIO.Settings
     [Serializable]
     public class PriestSettings : BasePersistentSettings<PriestSettings>
     {
+        private const string _settingsTriggerName = "PriestRotationTrigger";
+        private const string _soloShadowName = "Shadow";
+        private const string _partyShadowName = "Party Shadow";
+        private const string _partyHolyName = "Party Holy";
+        private const string _raidHolyName = "Raid Holy";
+        private const string _rotationTabName = "Rotation";
+
         public PriestSettings()
         {
-            WandThreshold = 40;
-            UseInnerFire = true;
-            UseShieldOnPull = true;
-            UseShadowGuard = true;
-            UsePowerWordShield = true;
-            UseShadowWordDeath = true;
-            UseDispel = false;
-            CureDisease = false;
-            DevouringPlagueThreshold = 80;
+            // Solo Shadow
+            SSH_WandThreshold = 40;
+            SSH_UsePowerWordShield = true;
+            SSH_UseShieldOnPull = true;
+            SSH_UseShadowGuard = true;
+            SSH_UseInnerFire = true;
+            SSH_UsePowerWordFortitude = true;
+            SSH_UseShadowProtection = false;
+            SSH_UseDivineSpirit = false;
+            SSH_DevouringPlagueThreshold = 80;
+            SSH_UseShadowWordDeath = true;
+            SSH_DispelMagic = false;
+            SSH_CureDisease = false;
 
-            PartyCureDisease = false;
-            PartyDispelMagic = false;
-            PartyMassDispel = false;
-            UsePowerWordFortitude = false;
-            PartyPrayerOfFortitude = false;
-            UseShadowProtection = false;
-            PartyPrayerOfShadowProtection = false;
-            UseDivineSpirit = false;
-            PartyPrayerOfSpirit = false;
-            PartyVampiricEmbrace = false;
-            PartyMassDispelCount = 5;
-            PartySWDeathThreshold = 90;
-            PartyMindBlastThreshold = 70;
-            PartyCircleOfHealingThreshold = 90;
-            PartyCircleofHealingRadius = 18;
-            PartyTankHealingPriority = 0;
-            PartyKeepRenewOnTank = false;
+            // Party Shadow
+            PSH_UsePowerWordShield = true;
+            PSH_UseShadowGuard = true;
+            PSH_UseInnerFire = true;
+            PSH_UsePowerWordFortitude = true;
+            PSH_UseShadowProtection = false;
+            PSH_UseDivineSpirit = false;
+            PSH_DispelMagic = false;
+            PSH_CureDisease = false;
+            PSH_VampiricEmbrace = false;
+            PSH_SWDeathThreshold = 90;
+            PSH_MindBlastThreshold = 70;
 
-            Specialization = "Shadow";
+            // Party Holy
+            PHO_UseInnerFire = true;
+            PHO_UsePowerWordFortitude = true;
+            PHO_UseShadowProtection = false;
+            PHO_UseDivineSpirit = false;
+            PHO_DispelMagic = false;
+            PHO_CureDisease = false;
+
+            // Raid Holy
+            RHO_UsePowerWordShield = true;
+            RHO_UseInnerFire = true;
+            RHO_UsePowerWordFortitude = true;
+            RHO_UseShadowProtection = false;
+            RHO_UseDivineSpirit = false;
+            RHO_DispelMagic = false;
+            RHO_CureDisease = false;
+            RHO_MassDispel = false;
+            RHO_MassDispelCount = 5;
+            RHO_CircleOfHealingThreshold = 90;
+            RHO_CircleofHealingRadius = 18;
+            RHO_TankHealingPriority = 0;
+            RHO_KeepRenewOnTank = false;
+            RHO_PrayerOfFortitude = false;
+            RHO_PrayerOfShadowProtection = false;
+            RHO_PrayerOfSpirit = false;
+
+            Specialization = _soloShadowName;
         }
 
-        // COMMON
-        [Category("Common")]
+        // TALENT
+        [TriggerDropdown(_settingsTriggerName, new string[] { _soloShadowName, _partyShadowName, _partyHolyName, _raidHolyName })]
+        public override string Specialization { get; set; }
+
+        // SOLO SHADOW
+        [Category(_rotationTabName)]
         [DefaultValue(40)]
         [DisplayName("Wand Threshold")]
-        [Description("Enemy HP under which the wand should be used")]
+        [Description("Use wand when the enemy HP goes under this percentage")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _soloShadowName)]
         [Percentage(true)]
-        public int WandThreshold { get; set; }
-
-        [Category("Common")]
+        public int SSH_WandThreshold { get; set; }
+        [Category(_rotationTabName)]
         [DefaultValue(true)]
         [DisplayName("Power Word: Shield")]
-        [Description("Use Power Word: Shield")]
-        public bool UsePowerWordShield { get; set; }
-
-        [Category("Common")]
+        [Description("Use Power Word: Shield on yourself")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _soloShadowName)]
+        public bool SSH_UsePowerWordShield { get; set; }
+        [Category(_rotationTabName)]
         [DefaultValue(true)]
         [DisplayName("Shield on pull")]
         [Description("Use Power Word: Shield on pull")]
-        public bool UseShieldOnPull { get; set; }
-
-        [Category("Common")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _soloShadowName)]
+        public bool SSH_UseShieldOnPull { get; set; }
+        [Category(_rotationTabName)]
         [DefaultValue(true)]
         [DisplayName("Shadowguard")]
         [Description("Use Shadowguard")]
-        public bool UseShadowGuard { get; set; }
-
-        // COMMON - Buffs
-        [Category("Common")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _soloShadowName)]
+        public bool SSH_UseShadowGuard { get; set; }
+        [Category(_rotationTabName)]
         [DefaultValue(true)]
         [DisplayName("Inner Fire")]
         [Description("Use Inner Fire")]
-        public bool UseInnerFire { get; set; }
-
-        [Category("Common")]
-        [DefaultValue(false)]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _soloShadowName)]
+        public bool SSH_UseInnerFire { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
         [DisplayName("Power Word: Fortitude")]
         [Description("Use Power Word: Fortitude")]
-        public bool UsePowerWordFortitude { get; set; }
-
-        [Category("Common")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _soloShadowName)]
+        public bool SSH_UsePowerWordFortitude { get; set; }
+        [Category(_rotationTabName)]
         [DefaultValue(false)]
         [DisplayName("Shadow Protection")]
         [Description("Use Shadow Protection")]
-        public bool UseShadowProtection { get; set; }
-
-        [Category("Common")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _soloShadowName)]
+        public bool SSH_UseShadowProtection { get; set; }
+        [Category(_rotationTabName)]
         [DefaultValue(false)]
         [DisplayName("Divine Spirit")]
         [Description("Use Divine Spirit")]
-        public bool UseDivineSpirit { get; set; }
-
-        // SHADOW
-        [Category("Shadow")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _soloShadowName)]
+        public bool SSH_UseDivineSpirit { get; set; }
+        [Category(_rotationTabName)]
         [DefaultValue(80)]
         [DisplayName("Devouring Plague")]
         [Description("Enemy HP over which Devouring Plague should be used")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _soloShadowName)]
         [Percentage(true)]
-        public int DevouringPlagueThreshold { get; set; }
-
-        [Category("Shadow")]
+        public int SSH_DevouringPlagueThreshold { get; set; }
+        [Category(_rotationTabName)]
         [DefaultValue(true)]
         [DisplayName("SW: Death")]
         [Description("Use Shadow Word: Death")]
-        public bool UseShadowWordDeath { get; set; }
-
-        [Category("Shadow")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _soloShadowName)]
+        public bool SSH_UseShadowWordDeath { get; set; }
+        [Category(_rotationTabName)]
         [DefaultValue(false)]
         [DisplayName("Dispel Magic")]
         [Description("Use Dispel Magic")]
-        public bool UseDispel { get; set; }
-
-        [Category("Shadow")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _soloShadowName)]
+        public bool SSH_DispelMagic { get; set; }
+        [Category(_rotationTabName)]
         [DefaultValue(false)]
         [DisplayName("Cure Disease")]
         [Description("Use Cure Disease")]
-        public bool CureDisease { get; set; }
+        [VisibleWhenDropdownValue(_settingsTriggerName, _soloShadowName)]
+        public bool SSH_CureDisease { get; set; }
 
-        [Category("Shadow")]
+        // PARTY SHADOW
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Power Word: Shield")]
+        [Description("Use Power Word: Shield on yourself")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyShadowName)]
+        public bool PSH_UsePowerWordShield { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Shadowguard")]
+        [Description("Use Shadowguard")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyShadowName)]
+        public bool PSH_UseShadowGuard { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Inner Fire")]
+        [Description("Use Inner Fire")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyShadowName)]
+        public bool PSH_UseInnerFire { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Power Word: Fortitude")]
+        [Description("Use Power Word: Fortitude")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyShadowName)]
+        public bool PSH_UsePowerWordFortitude { get; set; }
+        [Category(_rotationTabName)]
         [DefaultValue(false)]
-        [DisplayName("[Party] Vamp. Embrace")]
-        [Description("Use Vampiric Embrace in combat")]
-        public bool PartyVampiricEmbrace { get; set; }
-
-        [Category("Shadow")]
-        [DefaultValue(90)]
-        [DisplayName("[Party] SW: Death")]
-        [Description("Use Shadow Word: Death when above this HEALTH percentage threshold (100 to disable)")]
-        [Percentage(true)]
-        public int PartySWDeathThreshold { get; set; }
-
-        [Category("Shadow")]
-        [DefaultValue(70)]
-        [DisplayName("[Party] Mind Blast")]
-        [Description("Use Mind Blast when above this MANA percentage threshold (100 to disable)")]
-        [Percentage(true)]
-        public int PartyMindBlastThreshold { get; set; }
-
-        // HOLY
-        [Category("Holy")]
+        [DisplayName("Shadow Protection")]
+        [Description("Use Shadow Protection")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyShadowName)]
+        public bool PSH_UseShadowProtection { get; set; }
+        [Category(_rotationTabName)]
         [DefaultValue(false)]
-        [DisplayName("[Party] Mass Dispel")]
-        [Description("Use Mass Dispel in combat")]
-        public bool PartyMassDispel { get; set; }
-
-        [Category("Holy")]
-        [DefaultValue(5)]
-        [DisplayName("[Party] Mass Dispel Count")]
-        [Description("Minimum number of group members with dispellable debuff to use Mass Dispel")]
-        public int PartyMassDispelCount { get; set; }
-
-        [Category("Holy")]
-        [DefaultValue(90)]
-        [DisplayName("[Party] Circle of Healing Threshold")]
-        [Description("Use Circle of Healing on party members under this health threshold")]
-        [Percentage(true)]
-        public int PartyCircleOfHealingThreshold { get; set; }
-
-        [Category("Holy")]
-        [DefaultValue(18)]
-        [DisplayName("[Party] Circle of Healing Radius")]
-        [Description("Healing radius of Circle of Healing")]
-        public int PartyCircleofHealingRadius { get; set; }
-
-        [Category("Holy")]
-        [DefaultValue(0)]
-        [DisplayName("[Party] Tank healing priority")]
-        [Description("Prefer healing tanks over other group members")]
-        [Percentage(true)]
-        public int PartyTankHealingPriority { get; set; }
-
-        [Category("Holy")]
-        [DefaultValue(false)]
-        [DisplayName("[Party] Keep renew on tank")]
-        [Description("Keep renew on tank")]
-        public bool PartyKeepRenewOnTank { get; set; }
-
-        // PARTY
-        [Category("Party")]
-        [DefaultValue(false)]
-        [DisplayName("Cure Disease")]
-        [Description("Use Cure Disease in combat")]
-        public bool PartyCureDisease { get; set; }
-
-        [Category("Party")]
+        [DisplayName("Divine Spirit")]
+        [Description("Use Divine Spirit")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyShadowName)]
+        public bool PSH_UseDivineSpirit { get; set; }
+        [Category(_rotationTabName)]
         [DefaultValue(false)]
         [DisplayName("Dispel Magic")]
-        [Description("Use Dispel Magic in combat")]
-        public bool PartyDispelMagic { get; set; }
+        [Description("Use Dispel Magic")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyShadowName)]
+        public bool PSH_DispelMagic { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(false)]
+        [DisplayName("Cure Disease")]
+        [Description("Use Cure Disease")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyShadowName)]
+        public bool PSH_CureDisease { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(false)]
+        [DisplayName("Vampiric Embrace")]
+        [Description("Use Vampiric Embrace in combat")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyShadowName)]
+        public bool PSH_VampiricEmbrace { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(90)]
+        [DisplayName("SW: Death")]
+        [Description("Use Shadow Word: Death when you are above this HEALTH percentage threshold (100 to disable)")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyShadowName)]
+        [Percentage(true)]
+        public int PSH_SWDeathThreshold { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(70)]
+        [DisplayName("Mind Blast")]
+        [Description("Use Mind Blast when above this MANA percentage threshold (100 to disable)")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyShadowName)]
+        [Percentage(true)]
+        public int PSH_MindBlastThreshold { get; set; }
 
-        [Category("Party")]
+        // PARTY HOLY
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Inner Fire")]
+        [Description("Use Inner Fire")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyHolyName)]
+        public bool PHO_UseInnerFire { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Power Word: Fortitude")]
+        [Description("Use Power Word: Fortitude")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyHolyName)]
+        public bool PHO_UsePowerWordFortitude { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(false)]
+        [DisplayName("Shadow Protection")]
+        [Description("Use Shadow Protection")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyHolyName)]
+        public bool PHO_UseShadowProtection { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(false)]
+        [DisplayName("Divine Spirit")]
+        [Description("Use Divine Spirit")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyHolyName)]
+        public bool PHO_UseDivineSpirit { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(false)]
+        [DisplayName("Dispel Magic")]
+        [Description("Use Dispel Magic")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyHolyName)]
+        public bool PHO_DispelMagic { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(false)]
+        [DisplayName("Cure Disease")]
+        [Description("Use Cure Disease")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyHolyName)]
+        public bool PHO_CureDisease { get; set; }
+
+        // RAID HOLY
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Power Word: Shield")]
+        [Description("Use Power Word: Shield on the group")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _raidHolyName)]
+        public bool RHO_UsePowerWordShield { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Inner Fire")]
+        [Description("Use Inner Fire")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _raidHolyName)]
+        public bool RHO_UseInnerFire { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Power Word: Fortitude")]
+        [Description("Use Power Word: Fortitude")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _raidHolyName)]
+        public bool RHO_UsePowerWordFortitude { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(false)]
+        [DisplayName("Shadow Protection")]
+        [Description("Use Shadow Protection")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _raidHolyName)]
+        public bool RHO_UseShadowProtection { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(false)]
+        [DisplayName("Divine Spirit")]
+        [Description("Use Divine Spirit")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _raidHolyName)]
+        public bool RHO_UseDivineSpirit { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(false)]
+        [DisplayName("Dispel Magic")]
+        [Description("Use Dispel Magic")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _raidHolyName)]
+        public bool RHO_DispelMagic { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(false)]
+        [DisplayName("Cure Disease")]
+        [Description("Use Cure Disease")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _raidHolyName)]
+        public bool RHO_CureDisease { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(false)]
+        [DisplayName("Mass Dispel")]
+        [Description("Use Mass Dispel in combat")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _raidHolyName)]
+        public bool RHO_MassDispel { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(5)]
+        [DisplayName("Mass Dispel Count")]
+        [Description("Minimum number of group members with dispellable debuff to use Mass Dispel")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _raidHolyName)]
+        public int RHO_MassDispelCount { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(90)]
+        [DisplayName("CoH Threshold")]
+        [Description("Use Circle of Healing on party members under this health threshold")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _raidHolyName)]
+        [Percentage(true)]
+        public int RHO_CircleOfHealingThreshold { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(18)]
+        [DisplayName("Circle of Healing Radius")]
+        [Description("Healing radius of Circle of Healing")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _raidHolyName)]
+        public int RHO_CircleofHealingRadius { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(0)]
+        [DisplayName("Tank healing priority")]
+        [Description("Prefer healing tanks over other group members")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _raidHolyName)]
+        [Percentage(true)]
+        public int RHO_TankHealingPriority { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(false)]
+        [DisplayName("Keep renew on tank")]
+        [Description("Keep renew on tank")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _raidHolyName)]
+        public bool RHO_KeepRenewOnTank { get; set; }
+        [Category(_rotationTabName)]
         [DefaultValue(false)]
         [DisplayName("Prayer of Fortitude")]
         [Description("Use Prayer of Fortitude")]
-        public bool PartyPrayerOfFortitude { get; set; }
-
-        [Category("Party")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _raidHolyName)]
+        public bool RHO_PrayerOfFortitude { get; set; }
+        [Category(_rotationTabName)]
         [DefaultValue(false)]
         [DisplayName("Prayer of Shadow Protection")]
         [Description("Use Prayer of Shadow Protection")]
-        public bool PartyPrayerOfShadowProtection { get; set; }
-
-        [Category("Party")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _raidHolyName)]
+        public bool RHO_PrayerOfShadowProtection { get; set; }
+        [Category(_rotationTabName)]
         [DefaultValue(false)]
         [DisplayName("Prayer of Spirit")]
         [Description("Use Prayer of Spirit")]
-        public bool PartyPrayerOfSpirit { get; set; }
-
-        // TALENT
-        [DropdownList(new string[] { "Shadow", "Party Shadow", "Party Holy", "Raid Holy" })]
-        public override string Specialization { get; set; }
+        [VisibleWhenDropdownValue(_settingsTriggerName, _raidHolyName)]
+        public bool RHO_PrayerOfSpirit { get; set; }
     }
 }

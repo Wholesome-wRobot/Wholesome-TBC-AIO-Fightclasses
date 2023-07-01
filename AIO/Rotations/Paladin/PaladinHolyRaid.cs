@@ -67,11 +67,11 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                     return;
             }
 
-            bool isCleanseHighPriority = settings.PartyCleansePriority != "Low"
-                && (settings.PartyCleansePriority == "High" || rng.NextDouble() >= 0.5);
+            bool isCleanseHighPriority = settings.RHO_PartyCleansePriority != "Low"
+                && (settings.RHO_PartyCleansePriority == "High" || rng.NextDouble() >= 0.5);
 
             // High priority Cleanse
-            if (settings.PartyCleanse && isCleanseHighPriority)
+            if (settings.RHO_PartyCleanse && isCleanseHighPriority)
             {
                 IWoWPlayer needsCleanse = unitCache.GroupAndRaid
                     .Find(m => UnitHasCleansableDebuff(m.Name));
@@ -80,12 +80,12 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             }
 
             // High priority heal
-            if (settings.PartyTankHealingPriority > 0)
+            if (settings.RHO_PartyTankHealingPriority > 0)
             {
                 var tanks = unitCache.TargetedByEnemies
                     .FindAll(a => a.IsAlive && a.GetDistance < 60)
                     .ToList();
-                var priorityTanks = partyManager.TanksNeedPriorityHeal(tanks, aliveMembers, settings.PartyTankHealingPriority);
+                var priorityTanks = partyManager.TanksNeedPriorityHeal(tanks, aliveMembers, settings.RHO_PartyTankHealingPriority);
                 foreach (var tank in priorityTanks)
                 {
                     if (SingleTargetHeal(tank))
@@ -98,7 +98,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 return;
 
             // Low priority Cleanse
-            if (settings.PartyCleanse && !isCleanseHighPriority)
+            if (settings.RHO_PartyCleanse && !isCleanseHighPriority)
             {
                 IWoWPlayer needsCleanse = unitCache.GroupAndRaid
                     .Find(m => UnitHasCleansableDebuff(m.Name));
@@ -107,7 +107,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             }
 
             // Seal of light
-            if (settings.PartyHolySealOfLight
+            if (settings.RHO_PartyHolySealOfLight
                 && !Target.HasAura("Judgement of Light"))
             {
                 if (cast.OnTarget(Judgement))
@@ -119,7 +119,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             }
 
             // PARTY Purifiy
-            if (settings.PartyPurify)
+            if (settings.RHO_PartyPurify)
             {
                 IWoWPlayer needsPurify = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasDiseaseDebuff(m.Name) || WTEffects.HasPoisonDebuff(m.Name));
@@ -151,14 +151,14 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                     return true;
             }
             // Medium heal
-            if (unit.HealthPercent < settings.PartyHolyLightPercentThreshold
-                || (unit.MaxHealth - unit.Health) > settings.PartyHolyLightValueThreshold)
+            if (unit.HealthPercent < settings.RHO_PartyHolyLightPercentThreshold
+                || (unit.MaxHealth - unit.Health) > settings.RHO_PartyHolyLightValueThreshold)
             {
                 if (cast.OnFocusUnit(HolyLight, unit))
                     return true;
             }
             // Small heal
-            if (unit.HealthPercent < settings.PartyFlashOfLightThreshold)
+            if (unit.HealthPercent < settings.RHO_PartyFlashOfLightThreshold)
             {
                 if (HolyLight.Cost == 840
                     && WTEffects.BuffTimeLeft("Light\'s Grace") < 5

@@ -21,9 +21,30 @@ namespace WholesomeTBCAIO.Rotations.Priest
             {
                 base.BuffRotation();
 
+                // Power Word Fortitude
+                if (settings.PSH_UsePowerWordFortitude
+                    && cast.Buff(unitCache.GroupAndRaid, PowerWordFortitude))
+                    return;
+
+                // Shadow Protection
+                if (settings.PSH_UseShadowProtection
+                    && cast.Buff(unitCache.GroupAndRaid, ShadowProtection))
+                    return;
+
+                // Divine spirit
+                if (settings.PSH_UseDivineSpirit
+                    && cast.Buff(unitCache.GroupAndRaid, DivineSpirit))
+                    return;
+
+                // OOC Inner Fire            
+                if (settings.PSH_UseInnerFire
+                    && !Me.HasAura(InnerFire)
+                    && cast.OnSelf(InnerFire))
+                    return;
+
                 // OOC Shadowguard
                 if (!Me.HasAura(Shadowguard)
-                    && settings.UseShadowGuard
+                    && settings.PSH_UseShadowGuard
                     && cast.OnSelf(Shadowguard))
                     return;
 
@@ -77,7 +98,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             if (Me.HealthPercent < 50
                 && !Me.HasAura(PowerWordShield)
                 && !WTEffects.HasDebuff("Weakened Soul")
-                && settings.UsePowerWordShield
+                && settings.PSH_UsePowerWordShield
                 && cast.OnSelf(PowerWordShield))
                 return;
 
@@ -87,7 +108,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return;
 
             // Cure Disease
-            if (settings.PartyCureDisease)
+            if (settings.PSH_CureDisease)
             {
                 // PARTY Cure Disease
                 IWoWPlayer needCureDisease = unitCache.GroupAndRaid
@@ -97,7 +118,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
             }
 
             // PARTY Dispel Magic
-            if (settings.PartyDispelMagic)
+            if (settings.PSH_DispelMagic)
             {
                 IWoWPlayer needDispelMagic = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasMagicDebuff(m.Name));
@@ -120,7 +141,7 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 && cast.OnTarget(VampiricTouch))
                 return;
 
-            if (settings.PartyVampiricEmbrace)
+            if (settings.PSH_VampiricEmbrace)
             {
                 // Vampiric Embrace
                 if (!Target.HasAura(VampiricEmbrace)
@@ -153,13 +174,12 @@ namespace WholesomeTBCAIO.Rotations.Priest
                 return;
 
             // Mind Blast
-            if (Me.ManaPercentage > settings.PartyMindBlastThreshold
+            if (Me.ManaPercentage > settings.PSH_MindBlastThreshold
                 && cast.OnTarget(MindBlast))
                 return;
 
             // Shadow Word Death
-            if (Me.HealthPercent > settings.PartySWDeathThreshold
-                && settings.UseShadowWordDeath
+            if (Me.HealthPercent > settings.PSH_SWDeathThreshold
                 && cast.OnTarget(ShadowWordDeath))
                 return;
 

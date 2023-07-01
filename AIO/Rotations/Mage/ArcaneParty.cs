@@ -24,20 +24,20 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
                 // Mage Armor
                 if (!Me.HasAura(MageArmor)
-                    && settings.ACMageArmor
+                    && settings.PARC_ACMageArmor
                     && cast.OnSelf(MageArmor))
                     return;
 
                 // Ice Armor
                 if (!Me.HasAura(IceArmor)
-                    && (!settings.ACMageArmor || !MageArmor.KnownSpell)
+                    && (!settings.PARC_ACMageArmor || !MageArmor.KnownSpell)
                     && cast.OnSelf(IceArmor))
                     return;
 
                 // Frost Armor
                 if (!Me.HasAura(FrostArmor)
                     && !IceArmor.KnownSpell
-                    && (!settings.ACMageArmor || !MageArmor.KnownSpell)
+                    && (!settings.PARC_ACMageArmor || !MageArmor.KnownSpell)
                     && cast.OnSelf(FrostArmor))
                     return;
 
@@ -52,7 +52,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             base.Pull();
 
             // Slow
-            if (settings.ACSlow
+            if (settings.PARC_ACSlow
                 && !Target.HasAura(Slow)
                 && cast.OnTarget(Slow))
                 return;
@@ -73,7 +73,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             int presenceOfMindCD = WTCombat.GetSpellCooldown(PresenceOfMind.Name);
 
             // PARTY Remove Curse
-            if (settings.PartyRemoveCurse)
+            if (settings.PARC_PartyRemoveCurse)
             {
                 List<IWoWPlayer> needRemoveCurse = unitCache.GroupAndRaid
                     .FindAll(m => WTEffects.HasCurseDebuff(m.Name))

@@ -7,132 +7,256 @@ namespace WholesomeTBCAIO.Settings
     [Serializable]
     public class DruidSettings : BasePersistentSettings<DruidSettings>
     {
+        private const string _settingsTriggerName = "DruidRotationTrigger";
+        private const string _soloFeralName = "Feral";
+        private const string _partyFeralName = "Party Feral DPS";
+        private const string _partyTankName = "Party Feral Tank";
+        private const string _partyRestoName = "Party Restoration";
+        private const string _rotationTabName = "Rotation";
+
         public DruidSettings()
         {
-            AlwaysPull = false;
-            UseBarkskin = true;
-            UseInnervate = true;
-            UseAquaticForm = true;
+            // Solo Feral
+            SFER_AlwaysPull = false;
+            SFER_UseBarkskin = true;
+            SFER_UseInnervate = true;
+            SFER_UseEnrage = true;
+            SFER_UseTigersFury = true;
+            SFER_StealthEngage = true;
+            SFER_NumberOfAttackersBearForm = 2;
 
-            UseEnrage = true;
-            UseSwipe = true;
-            UseTigersFury = true;
-            StealthEngage = true;
-            NumberOfAttackersBearForm = 2;
+            // Party Feral
+            PFER_UseInnervate = true;
+            PFER_UseEnrage = true;
+            PFER_StealthEngage = true;
+            PFER_PartyUseRebirth = true;
+            PFER_PartyAbolishPoison = true;
+            PFER_PartyRemoveCurse = true;
+            PFER_PartyTranquility = true;
+            PFER_PartyStandBehind = true;
 
-            PartyTankSwitchTarget = true;
-            PartyUseInnervate = true;
-            PartyUseRebirth = true;
-            PartyAbolishPoison = true;
-            PartyRemoveCurse = true;
-            PartyTranquility = true;
-            PartyStandBehind = true;
+            // Party Tank
+            PTANK_AlwaysPull = false;
+            PTANK_UseInnervate = true;
+            PTANK_UseEnrage = true;
+            PTANK_PartyTankSwitchTarget = true;
+            PTANK_PartyUseRebirth = true;
+            PTANK_PartyAbolishPoison = true;
+            PTANK_PartyRemoveCurse = true;
+            PTANK_PartyTranquility = true;
 
-            Specialization = "Feral";
+            // Party Restoration
+            PREST_UseInnervate = true;
+            PREST_PartyUseRebirth = true;
+            PREST_PartyAbolishPoison = true;
+            PREST_PartyRemoveCurse = true;
+            PREST_PartyTranquility = true;
+
+            Specialization = _soloFeralName;
         }
 
-        // COMMON
-        [Category("Common")]
-        [DefaultValue(true)]
-        [DisplayName("Use Aquatic Form")]
-        [Description("Use Aquatic Form")]
-        public bool UseAquaticForm { get; set; }
+        // TALENT
+        [TriggerDropdown(_settingsTriggerName, new string[] { _soloFeralName, _partyFeralName, _partyTankName, _partyRestoName })]
+        public override string Specialization { get; set; }
 
-        [Category("Common")]
-        [DefaultValue(true)]
-        [DisplayName("Use Innervate")]
-        [Description("Use Innervate")]
-        public bool UseInnervate { get; set; }
-
-        [Category("Common")]
-        [DefaultValue(true)]
-        [DisplayName("Use Barkskin")]
-        [Description("Use Barkskin before healing in dangerous situations")]
-        public bool UseBarkskin { get; set; }
-
-        // FERAL
-        [Category("Feral")]
+        // SOLO FERAL
+        [Category(_rotationTabName)]
         [DefaultValue(false)]
         [DisplayName("Always range pull")]
         [Description("Always pull with a range spell")]
-        public bool AlwaysPull { get; set; }
+        [VisibleWhenDropdownValue(_settingsTriggerName, _soloFeralName)]
+        public bool SFER_AlwaysPull { get; set; }
 
-        [Category("Feral")]
-        [DefaultValue(2)]
-        [DisplayName("Bear number of attackers")]
-        [Description("Bear Form when the number of enemies attacking you is superior or equal to this value.")]
-        public int NumberOfAttackersBearForm { get; set; }
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Use Barkskin")]
+        [Description("Use Barkskin before healing in dangerous situations")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _soloFeralName)]
+        public bool SFER_UseBarkskin { get; set; }
 
-        [Category("Feral")]
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Use Innervate")]
+        [Description("Use Innervate")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _soloFeralName)]
+        public bool SFER_UseInnervate { get; set; }
+
+        [Category(_rotationTabName)]
         [DefaultValue(true)]
         [DisplayName("Always use Bear Form Enrage")]
         [Description("Always use Enrage")]
-        public bool UseEnrage { get; set; }
+        [VisibleWhenDropdownValue(_settingsTriggerName, _soloFeralName)]
+        public bool SFER_UseEnrage { get; set; }
 
-        [Category("Feral")]
-        [DefaultValue(true)]
-        [DisplayName("Swipe")]
-        [Description("Use Swipe on multi aggro")]
-        public bool UseSwipe { get; set; }
-
-        [Category("Feral")]
+        [Category(_rotationTabName)]
         [DefaultValue(true)]
         [DisplayName("Use Tiger's Fury")]
         [Description("Use Tiger's Fury")]
-        public bool UseTigersFury { get; set; }
+        [VisibleWhenDropdownValue(_settingsTriggerName, _soloFeralName)]
+        public bool SFER_UseTigersFury { get; set; }
 
-        [Category("Feral")]
+        [Category(_rotationTabName)]
         [DefaultValue(true)]
         [DisplayName("Cat Stealth engage")]
         [Description("Try to engage fights using Prowl and going behind the target")]
-        public bool StealthEngage { get; set; }
+        [VisibleWhenDropdownValue(_settingsTriggerName, _soloFeralName)]
+        public bool SFER_StealthEngage { get; set; }
 
-        // PARTY
-        [Category("Party")]
+        [Category(_rotationTabName)]
+        [DefaultValue(2)]
+        [DisplayName("Bear number of attackers")]
+        [Description("Bear Form when the number of enemies attacking you is superior or equal to this value.")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _soloFeralName)]
+        public int SFER_NumberOfAttackersBearForm { get; set; }
+
+        // PARTY FERAL
+        [Category(_rotationTabName)]
         [DefaultValue(true)]
-        [DisplayName("[Tank] Switch target")]
-        [Description("Switch targets to regain aggro when tanking")]
-        public bool PartyTankSwitchTarget { get; set; }
+        [DisplayName("Use Innervate")]
+        [Description("Use Innervate on low mana team members")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyFeralName)]
+        public bool PFER_UseInnervate { get; set; }
 
-        [Category("Party")]
+        [Category(_rotationTabName)]
         [DefaultValue(true)]
-        [DisplayName("[DPS] Stand behind")]
-        [Description("Try to stand behind the target in Feral DPS")]
-        public bool PartyStandBehind { get; set; }
+        [DisplayName("Always use Bear Form Enrage")]
+        [Description("Always use Enrage")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyFeralName)]
+        public bool PFER_UseEnrage { get; set; }
 
-        [Category("Party")]
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Cat Stealth engage")]
+        [Description("Try to engage fights using Prowl and going behind the target")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyFeralName)]
+        public bool PFER_StealthEngage { get; set; }
+
+        [Category(_rotationTabName)]
         [DefaultValue(true)]
         [DisplayName("Rebirth")]
         [Description("Use Rebirth on dead team members")]
-        public bool PartyUseRebirth { get; set; }
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyFeralName)]
+        public bool PFER_PartyUseRebirth { get; set; }
 
-        [Category("Party")]
-        [DefaultValue(true)]
-        [DisplayName("Party Innervate")]
-        [Description("Use Innervate on low mana team members")]
-        public bool PartyUseInnervate { get; set; }
-
-        [Category("Party")]
-        [DefaultValue(true)]
-        [DisplayName("Party Remove Curse")]
-        [Description("Use Remove Curse in combat")]
-        public bool PartyRemoveCurse { get; set; }
-
-        [Category("Party")]
+        [Category(_rotationTabName)]
         [DefaultValue(true)]
         [DisplayName("Party Abolish Poison")]
         [Description("Use Abolish Poison in combat")]
-        public bool PartyAbolishPoison { get; set; }
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyFeralName)]
+        public bool PFER_PartyAbolishPoison { get; set; }
 
-        [Category("Party")]
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Party Remove Curse")]
+        [Description("Use Remove Curse in combat")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyFeralName)]
+        public bool PFER_PartyRemoveCurse { get; set; }
+
+        [Category(_rotationTabName)]
         [DefaultValue(true)]
         [DisplayName("Party Tranquility")]
         [Description("Use Tranquility in combat")]
-        public bool PartyTranquility { get; set; }
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyFeralName)]
+        public bool PFER_PartyTranquility { get; set; }
 
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Stand behind")]
+        [Description("Try to stand behind the target in Feral DPS")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyFeralName)]
+        public bool PFER_PartyStandBehind { get; set; }
 
-        // TALENT
-        [DropdownList(new string[] { "Feral", "Party Feral DPS", "Party Feral Tank", "Party Restoration" })]
-        public override string Specialization { get; set; }
+        // PARTY TANK
+        [Category(_rotationTabName)]
+        [DefaultValue(false)]
+        [DisplayName("Always range pull")]
+        [Description("Always pull with a range spell")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyTankName)]
+        public bool PTANK_AlwaysPull { get; set; }
+
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Use Innervate")]
+        [Description("Use Innervate on low mana team members")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyTankName)]
+        public bool PTANK_UseInnervate { get; set; }
+
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Always use Bear Form Enrage")]
+        [Description("Always use Enrage")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyTankName)]
+        public bool PTANK_UseEnrage { get; set; }
+
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Switch target")]
+        [Description("Switch targets to regain aggro when tanking")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyTankName)]
+        public bool PTANK_PartyTankSwitchTarget { get; set; }
+
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Rebirth")]
+        [Description("Use Rebirth on dead team members")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyTankName)]
+        public bool PTANK_PartyUseRebirth { get; set; }
+
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Party Abolish Poison")]
+        [Description("Use Abolish Poison in combat")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyTankName)]
+        public bool PTANK_PartyAbolishPoison { get; set; }
+
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Party Remove Curse")]
+        [Description("Use Remove Curse in combat")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyTankName)]
+        public bool PTANK_PartyRemoveCurse { get; set; }
+
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Party Tranquility")]
+        [Description("Use Tranquility in combat")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyTankName)]
+        public bool PTANK_PartyTranquility { get; set; }
+
+        // PARTY RESTO
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Use Innervate")]
+        [Description("Use Innervate on low mana team members")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyRestoName)]
+        public bool PREST_UseInnervate { get; set; }
+
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Rebirth")]
+        [Description("Use Rebirth on dead team members")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyRestoName)]
+        public bool PREST_PartyUseRebirth { get; set; }
+
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Party Abolish Poison")]
+        [Description("Use Abolish Poison in combat")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyRestoName)]
+        public bool PREST_PartyAbolishPoison { get; set; }
+
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Party Remove Curse")]
+        [Description("Use Remove Curse in combat")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyRestoName)]
+        public bool PREST_PartyRemoveCurse { get; set; }
+
+        [Category(_rotationTabName)]
+        [DefaultValue(true)]
+        [DisplayName("Party Tranquility")]
+        [Description("Use Tranquility in combat")]
+        [VisibleWhenDropdownValue(_settingsTriggerName, _partyRestoName)]
+        public bool PREST_PartyTranquility { get; set; }
     }
 }

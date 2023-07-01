@@ -63,7 +63,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             int presenceOfMindCD = WTCombat.GetSpellCooldown(PresenceOfMind.Name);
 
             // PARTY Remove Curse
-            if (settings.PartyRemoveCurse)
+            if (settings.PFRO_PartyRemoveCurse)
             {
                 List<IWoWPlayer> needRemoveCurse = unitCache.GroupAndRaid
                     .FindAll(m => WTEffects.HasCurseDebuff(m.Name))

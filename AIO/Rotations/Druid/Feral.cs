@@ -100,7 +100,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 && Target.GetDistance > 15f
                 && Target.GetDistance < 25f
                 && unitCache.GetClosestHostileFrom(Target, 20) == null
-                && settings.StealthEngage
+                && settings.SFER_StealthEngage
                 && cast.OnSelf(Prowl))
                 return;
 
@@ -109,7 +109,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 fightingACaster = true;
 
             // Pull logic
-            if (ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { FaerieFireFeral, MoonfireRank1, Wrath }, unitCache))
+            if (ToolBox.Pull(cast, settings.SFER_AlwaysPull, new List<AIOSpell> { FaerieFireFeral, MoonfireRank1, Wrath }, unitCache))
             {
                 combatMeleeTimer = new Timer(2000);
                 return;
@@ -161,13 +161,13 @@ namespace WholesomeTBCAIO.Rotations.Druid
             ToolBox.CheckAutoAttack(Attack);
 
             // Innervate
-            if (settings.UseInnervate
+            if (settings.SFER_UseInnervate
                 && Me.ManaPercentage < 20
                 && cast.OnSelf(Innervate))
                 return;
 
             // Barkskin + Regrowth + Rejuvenation
-            if (settings.UseBarkskin
+            if (settings.SFER_UseBarkskin
                 && Barkskin.KnownSpell
                 && Me.HealthPercent < 50
                 && !Me.HasAura(Regrowth)
@@ -212,7 +212,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
             // Catorm
             if (!Me.HasAura(CatForm)
-                && (unitCache.EnemiesAttackingMe.Count < settings.NumberOfAttackersBearForm || !BearForm.KnownSpell && !DireBearForm.KnownSpell))
+                && (unitCache.EnemiesAttackingMe.Count < settings.SFER_NumberOfAttackersBearForm || !BearForm.KnownSpell && !DireBearForm.KnownSpell))
                 if (cast.OnSelf(CatForm))
                     return;
 
@@ -225,8 +225,8 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     if (cast.OnSelf(DireBearForm) || cast.OnSelf(BearForm))
                         return;
                 }
-                else if (unitCache.EnemiesAttackingMe.Count >= settings.NumberOfAttackersBearForm
-                        && settings.NumberOfAttackersBearForm > 1)
+                else if (unitCache.EnemiesAttackingMe.Count >= settings.SFER_NumberOfAttackersBearForm
+                        && settings.SFER_NumberOfAttackersBearForm > 1)
                 {
                     {
                         if (cast.OnSelf(DireBearForm) || cast.OnSelf(BearForm))
@@ -293,7 +293,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
                 // Tiger's Fury
                 if (!TigersFury.HaveBuff
-                    && settings.UseTigersFury
+                    && settings.SFER_UseTigersFury
                     && Me.ComboPoint < 1
                     && !Target.HasAura(Pounce)
                     && Me.Energy > 30
@@ -351,7 +351,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 }
 
                 // Enrage
-                if (settings.UseEnrage
+                if (settings.SFER_UseEnrage
                     && cast.OnSelf(Enrage))
                     return;
 

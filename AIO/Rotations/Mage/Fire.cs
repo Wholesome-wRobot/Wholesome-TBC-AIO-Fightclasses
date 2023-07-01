@@ -56,7 +56,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Fireball
             if (_target.GetDistance < 33f
-                && (_target.HealthPercent > settings.WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 30 || !iCanUseWand)
+                && (_target.HealthPercent > settings.SFIR_WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 30 || !iCanUseWand)
                 && cast.OnTarget(Fireball))
                 return;
         }
@@ -99,7 +99,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 return;
 
             // Blast Wave
-            if (settings.BlastWaveOnMulti
+            if (settings.SFIR_BlastWaveOnMulti
                 && ToolBox.GetNbEnemiesClose(10) > 1
                 && unitCache.EnemiesAttackingMe.Count > 1
                 && cast.OnSelf(BlastWave))
@@ -107,28 +107,28 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Dragon's Breath
             if (Target.GetDistance <= 10f
-                && settings.UseDragonsBreath
-                && (Target.HealthPercent > settings.WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 40 || !iCanUseWand)
+                && settings.SFIR_UseDragonsBreath
+                && (Target.HealthPercent > settings.SFIR_WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 40 || !iCanUseWand)
                 && _polymorphedEnemy == null
                 && cast.OnSelf(DragonsBreath))
                 return;
 
             // Fire Blast
-            if (Target.HealthPercent <= settings.FireblastThreshold
-                && (Target.HealthPercent > settings.WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 40 || !iCanUseWand)
+            if (Target.HealthPercent <= settings.SFIR_FireblastThreshold
+                && (Target.HealthPercent > settings.SFIR_WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 40 || !iCanUseWand)
                 && !Target.HasAura(Polymorph)
                 && cast.OnTarget(FireBlast))
                 return;
 
             // Cone of Cold
             if (Target.GetDistance < 10
-                && settings.UseConeOfCold
+                && settings.SFIR_UseConeOfCold
                 && _polymorphedEnemy == null
                 && cast.OnTarget(ConeOfCold))
                 return;
 
             // FireBall
-            if ((Target.HealthPercent > settings.WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 40 || !iCanUseWand)
+            if ((Target.HealthPercent > settings.SFIR_WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 40 || !iCanUseWand)
                 && !Target.HasAura(Polymorph)
                 && cast.OnTarget(Fireball))
                 return;

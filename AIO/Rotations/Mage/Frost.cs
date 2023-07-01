@@ -55,7 +55,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Frost Bolt
             if (Me.Level >= 6
-                && (_target.HealthPercent > settings.WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 30 || !iCanUseWand)
+                && (_target.HealthPercent > settings.SFRO_WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 30 || !iCanUseWand)
                 && cast.OnTarget(Frostbolt))
                 return;
 
@@ -115,8 +115,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 return;
 
             // Icy Veins
-            if (unitCache.EnemiesAttackingMe.Count > 1 && settings.IcyVeinMultiPull
-                || !settings.IcyVeinMultiPull
+            if ((unitCache.EnemiesAttackingMe.Count > 1 && settings.SFRO_IcyVeinMultiPull || !settings.SFRO_IcyVeinMultiPull)
                 && cast.OnSelf(IcyVeins))
                 return;
 
@@ -140,7 +139,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 return;
 
             // Fire Blast
-            if (Target.HealthPercent <= settings.FireblastThreshold
+            if (Target.HealthPercent <= settings.SFRO_FireblastThreshold
                 && !targetHasFrostBite
                 && !Target.HasAura(FrostNova)
                 && cast.OnTarget(FireBlast))
@@ -148,7 +147,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Cone of Cold
             if (Target.GetDistance < 10
-                && settings.UseConeOfCold
+                && settings.SFRO_UseConeOfCold
                 && Me.IsFacing(Target.PositionWithoutType, 0.5f)
                 && _polymorphedEnemy == null
                 && cast.OnSelf(ConeOfCold))
@@ -157,7 +156,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             // Frost Bolt
             if (Me.Level >= 6
                 && !cast.IsBackingUp
-                && (Target.HealthPercent > settings.WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 40 || !iCanUseWand)
+                && (Target.HealthPercent > settings.SFRO_WandThreshold || unitCache.EnemiesAttackingMe.Count > 1 || Me.HealthPercent < 40 || !iCanUseWand)
                 && cast.OnTarget(Frostbolt))
                 return;
 

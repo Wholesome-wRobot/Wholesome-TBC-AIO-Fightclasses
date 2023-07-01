@@ -40,7 +40,7 @@ namespace WholesomeTBCAIO.Helpers
                 && !ObjectManager.Me.InCombatFlagOnly
                 && (!ObjectManager.Me.HaveBuff("Drink") || ObjectManager.Me.ManaPercentage >= 95)
                 && (!ObjectManager.Me.HaveBuff("Food") || ObjectManager.Me.HealthPercent >= 95)
-                && !MovementManager.InMovement)
+                /*&& !MovementManager.InMovement*/)
             {
                 // Remove Earth Shield if not tank
                 if (rotationRole != RotationRole.Tank

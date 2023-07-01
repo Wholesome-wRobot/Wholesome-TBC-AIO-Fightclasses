@@ -90,7 +90,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 && !Me.HasAura(Prowl)
                 && ObjectManager.Target.GetDistance > 15f
                 && ObjectManager.Target.GetDistance < 25f
-                && settings.StealthEngage
+                && settings.PFER_StealthEngage
                 && cast.OnSelf(Prowl))
                 return;
 
@@ -135,7 +135,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             ToolBox.CheckAutoAttack(Attack);
 
             // Party Tranquility
-            if (settings.PartyTranquility && !unitCache.GroupAndRaid.Any(e => e.IsTargetingMe))
+            if (settings.PFER_PartyTranquility && !unitCache.GroupAndRaid.Any(e => e.IsTargetingMe))
             {
                 bool needTranquility = unitCache.GroupAndRaid
                     .FindAll(m => m.HealthPercent < 50)
@@ -149,7 +149,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             }
 
             // PARTY Rebirth
-            if (settings.PartyUseRebirth)
+            if (settings.PFER_PartyUseRebirth)
             {
                 IWoWPlayer needRebirth = unitCache.GroupAndRaid
                     .Find(m => m.IsDead);
@@ -158,7 +158,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             }
 
             // PARTY Innervate
-            if (settings.PartyUseInnervate)
+            if (settings.PFER_UseInnervate)
             {
                 IWoWPlayer needInnervate = unitCache.GroupAndRaid
                     .Find(m => m.ManaPercentage < 10 && !m.HasAura(Innervate));
@@ -166,7 +166,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     return;
             }
 
-            if (settings.PartyRemoveCurse)
+            if (settings.PFER_PartyRemoveCurse)
             {
                 // PARTY Remove Curse
                 IWoWPlayer needRemoveCurse = unitCache.GroupAndRaid
@@ -175,7 +175,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     return;
             }
 
-            if (settings.PartyAbolishPoison)
+            if (settings.PFER_PartyAbolishPoison)
             {
                 // PARTY Abolish Poison
                 IWoWPlayer needAbolishPoison = unitCache.GroupAndRaid
@@ -286,7 +286,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 }
 
                 // Enrage
-                if (settings.UseEnrage
+                if (settings.PFER_UseEnrage
                     && cast.OnSelf(Enrage))
                     return;
 

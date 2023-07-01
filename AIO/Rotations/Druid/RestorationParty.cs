@@ -86,7 +86,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 .ToList();
 
             // Party Tranquility
-            if (settings.PartyTranquility && !unitCache.EnemiesFighting.Any(e => e.IsTargetingMe))
+            if (settings.PREST_PartyTranquility && !unitCache.EnemiesFighting.Any(e => e.IsTargetingMe))
             {
                 bool needTranquility = unitCache.GroupAndRaid
                     .FindAll(m => m.HealthPercent < 50)
@@ -100,7 +100,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             }
 
             // PARTY Rebirth
-            if (settings.PartyUseRebirth)
+            if (settings.PREST_PartyUseRebirth)
             {
                 IWoWPlayer needRebirth = lisPartyOrdered
                     .Find(m => m.IsDead);
@@ -109,7 +109,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             }
 
             // PARTY Innervate
-            if (settings.PartyUseInnervate)
+            if (settings.PREST_UseInnervate)
             {
                 IWoWPlayer needInnervate = lisPartyOrdered
                     .Find(m => m.ManaPercentage < 10 && !m.HasAura(Innervate));
@@ -117,7 +117,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     return;
             }
 
-            if (settings.PartyRemoveCurse)
+            if (settings.PREST_PartyRemoveCurse)
             {
                 // PARTY Remove Curse
                 IWoWPlayer needRemoveCurse = lisPartyOrdered
@@ -126,7 +126,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     return;
             }
 
-            if (settings.PartyAbolishPoison)
+            if (settings.PREST_PartyAbolishPoison)
             {
                 // PARTY Abolish Poison
                 IWoWPlayer needAbolishPoison = lisPartyOrdered

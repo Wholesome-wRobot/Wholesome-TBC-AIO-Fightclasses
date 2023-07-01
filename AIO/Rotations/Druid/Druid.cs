@@ -176,8 +176,10 @@ namespace WholesomeTBCAIO.Rotations.Druid
 
                 CastOpener();
 
+                bool alwaysPull = specialization is Feral && settings.SFER_AlwaysPull
+                    || specialization is FeralTankParty && settings.PTANK_AlwaysPull;
                 if (stealthApproachTimer.IsReady
-                    && ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { FaerieFireFeral, MoonfireRank1, Wrath }, unitCache))
+                    && ToolBox.Pull(cast, alwaysPull, new List<AIOSpell> { FaerieFireFeral, MoonfireRank1, Wrath }, unitCache))
                 {
                     combatMeleeTimer = new Timer(2000);
                     isStealthApproching = false;
@@ -244,7 +246,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
         private void FightLoopHandler(WoWUnit unit, CancelEventArgs cancel)
         {
             if (specialization is FeralDPSParty
-                && settings.PartyStandBehind
+                && settings.PFER_PartyStandBehind
                 && _moveBehindTimer.IsReady)
             {
                 if (ToolBox.StandBehindTargetCombat(unitCache))

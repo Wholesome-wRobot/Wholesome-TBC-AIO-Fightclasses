@@ -90,7 +90,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 fightingACaster = true;
 
             // Pull logic
-            if (ToolBox.Pull(cast, settings.AlwaysPull, new List<AIOSpell> { FaerieFireFeral, MoonfireRank1, Wrath }, unitCache))
+            if (ToolBox.Pull(cast, settings.PTANK_AlwaysPull, new List<AIOSpell> { FaerieFireFeral, MoonfireRank1, Wrath }, unitCache))
             {
                 combatMeleeTimer = new Timer(1000);
                 return;
@@ -101,7 +101,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
         {
             base.CombatNoTarget();
 
-            if (settings.PartyTankSwitchTarget)
+            if (settings.PTANK_PartyTankSwitchTarget)
                 partyManager.SwitchTarget(cast, null);
         }
 
@@ -113,7 +113,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             bool inMeleeRange = Target.GetDistance < 6f;
             IWoWUnit target = Target;
 
-            if (settings.PartyTankSwitchTarget)
+            if (settings.PTANK_PartyTankSwitchTarget)
                 partyManager.SwitchTarget(cast, null);
 
             // Force melee
@@ -133,7 +133,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             ToolBox.CheckAutoAttack(Attack);
 
             // Party Tranquility
-            if (settings.PartyTranquility && !unitCache.EnemiesFighting.Any(e => e.IsTargetingMe))
+            if (settings.PTANK_PartyTranquility && !unitCache.EnemiesFighting.Any(e => e.IsTargetingMe))
             {
                 bool needTranquility = unitCache.GroupAndRaid
                     .FindAll(m => m.HealthPercent < 50)
@@ -147,7 +147,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             }
 
             // PARTY Rebirth
-            if (settings.PartyUseRebirth)
+            if (settings.PTANK_PartyUseRebirth)
             {
                 IWoWPlayer needRebirth = unitCache.GroupAndRaid
                     .Find(m => m.IsDead);
@@ -156,7 +156,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
             }
 
             // PARTY Innervate
-            if (settings.PartyUseInnervate)
+            if (settings.PTANK_UseInnervate)
             {
                 IWoWPlayer needInnervate = unitCache.GroupAndRaid
                     .Find(m => m.ManaPercentage < 10 && !m.HasAura(Innervate));
@@ -164,7 +164,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     return;
             }
 
-            if (settings.PartyRemoveCurse)
+            if (settings.PTANK_PartyRemoveCurse)
             {
                 // PARTY Remove Curse
                 IWoWPlayer needRemoveCurse = unitCache.GroupAndRaid
@@ -173,7 +173,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                     return;
             }
 
-            if (settings.PartyAbolishPoison)
+            if (settings.PTANK_PartyAbolishPoison)
             {
                 // PARTY Abolish Poison
                 IWoWPlayer needAbolishPoison = unitCache.GroupAndRaid
@@ -230,7 +230,7 @@ namespace WholesomeTBCAIO.Rotations.Druid
                 return;
 
             // Enrage
-            if (settings.UseEnrage
+            if (settings.PTANK_UseEnrage
                 && cast.OnSelf(Enrage))
                 return;
 

@@ -38,18 +38,18 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             ToolBox.CheckAutoAttack(Attack);
 
             // Seal of Righteousness
-            if (Me.ManaPercentage > settings.PartyProtSealOfWisdom
+            if (Me.ManaPercentage > settings.PPROT_PartyProtSealOfWisdom
                 && !Me.HasAura(SealOfRighteousness)
                 && cast.OnSelf(SealOfRighteousness))
                 return;
 
             // Seal of Wisdom
-            if (Me.ManaPercentage <= settings.PartyProtSealOfWisdom
+            if (Me.ManaPercentage <= settings.PPROT_PartyProtSealOfWisdom
                 && !Me.HasAura(SealOfWisdom)
                 && cast.OnSelf(SealOfWisdom))
                 return;
 
-            AIOSpell avengersShield = settings.PartyAvengersShieldnRank1 ? AvengersShieldRank1 : AvengersShield;
+            AIOSpell avengersShield = settings.PPROT_PartyAvengersShieldnRank1 ? AvengersShieldRank1 : AvengersShield;
             // Pull logic
             if (ToolBox.Pull(cast, true, new List<AIOSpell> { avengersShield, Judgement }, unitCache))
             {
@@ -62,7 +62,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
         {
             base.CombatNoTarget();
 
-            if (settings.PartyTankSwitchTarget)
+            if (settings.PPROT_PartyTankSwitchTarget)
                 partyManager.SwitchTarget(cast, RighteousDefense);
         }
 
@@ -76,7 +76,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             ToolBox.CheckAutoAttack(Attack);
 
-            if (settings.PartyTankSwitchTarget)
+            if (settings.PPROT_PartyTankSwitchTarget)
                 partyManager.SwitchTarget(cast, RighteousDefense);
 
             // Righteous Defense
@@ -103,7 +103,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 return;
 
             // PARTY Purifiy
-            if (settings.PartyPurify)
+            if (settings.PPROT_PartyPurify)
             {
                 IWoWPlayer needsPurify = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasDiseaseDebuff(m.Name) || WTEffects.HasPoisonDebuff(m.Name));
@@ -112,7 +112,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             }
 
             // PARTY Cleanse
-            if (settings.PartyCleanse)
+            if (settings.PPROT_PartyCleanse)
             {
                 IWoWPlayer needsCleanse = unitCache.GroupAndRaid
                     .Find(m => WTEffects.HasMagicDebuff(m.Name));
@@ -122,13 +122,13 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             int nbEnemiesClose = unitCache.EnemiesFighting.FindAll(unit => !unit.IsTargetingMe && unit.GetDistance < 8).Count;
             // Consecration
-            if (!settings.PartyConsecrationRank1
+            if (!settings.PPROT_PartyConsecrationRank1
                 && nbEnemiesClose > 1
                 && cast.OnSelf(Consecration))
                 return;
 
             // Consecration Rank 1
-            if (settings.PartyConsecrationRank1
+            if (settings.PPROT_PartyConsecrationRank1
                 && nbEnemiesClose > 1
                 && cast.OnSelf(ConsecrationRank1))
                 return;
@@ -144,54 +144,54 @@ namespace WholesomeTBCAIO.Rotations.Paladin
 
             // Judgement
             if (Target.GetDistance < Judgement.MaxRange
-                && (!Target.HasAura("Judgement of Wisdom") || Me.ManaPercentage > settings.PartyProtSealOfWisdom)
+                && (!Target.HasAura("Judgement of Wisdom") || Me.ManaPercentage > settings.PPROT_PartyProtSealOfWisdom)
                 && cast.OnTarget(Judgement))
                 return;
 
             // Seal of Righteousness
-            if (Me.ManaPercentage > settings.PartyProtSealOfWisdom
+            if (Me.ManaPercentage > settings.PPROT_PartyProtSealOfWisdom
                 && !Me.HasAura(SealOfRighteousness)
                 && cast.OnSelf(SealOfRighteousness))
                 return;
 
             // Seal of Wisdom
-            if (Me.ManaPercentage <= settings.PartyProtSealOfWisdom
+            if (Me.ManaPercentage <= settings.PPROT_PartyProtSealOfWisdom
                 && !Me.HasAura(SealOfWisdom)
                 && cast.OnSelf(SealOfWisdom))
                 return;
 
             // Holy Shield
-            if (!settings.PartyHolyShieldRank1
+            if (!settings.PPROT_PartyHolyShieldRank1
                 && !Me.HasAura(HolyShield)
                 && cast.OnSelf(HolyShield))
                 return;
 
             // Holy Shield Rank 1
-            if (settings.PartyHolyShieldRank1
+            if (settings.PPROT_PartyHolyShieldRank1
                 && !Me.HasAura(HolyShieldRank1)
                 && cast.OnSelf(HolyShieldRank1))
                 return;
 
             // Avenger's Shield
-            if (!settings.PartyAvengersShieldnRank1
+            if (!settings.PPROT_PartyAvengersShieldnRank1
                 && !Target.IsTargetingMe
                 && cast.OnTarget(AvengersShield))
                 return;
 
             // Avenger's Shield Rank 1
-            if (settings.PartyAvengersShieldnRank1
+            if (settings.PPROT_PartyAvengersShieldnRank1
                 && !Target.IsTargetingMe
                 && cast.OnTarget(AvengersShieldRank1))
                 return;
 
             // Hammer of Wrath
-            if (settings.UseHammerOfWrath
+            if (settings.PPROT_UseHammerOfWrath
                 && cast.OnTarget(HammerOfWrath))
                 return;
 
             // Exorcism
             if ((Target.CreatureTypeTarget == "Undead" || Target.CreatureTypeTarget == "Demon")
-                && settings.UseExorcism
+                && settings.PPROT_UseExorcism
                 && cast.OnTarget(Exorcism))
                 return;
         }

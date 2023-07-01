@@ -35,7 +35,14 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             settings = PaladinSettings.Current;
             BaseInit(28, HolyLight, null, settings);
 
-            manaSavePercent = System.Math.Max(20, settings.ManaSaveLimitPercent);
+            if (specialization is Retribution)
+            {
+                manaSavePercent = System.Math.Max(20, settings.SRET_ManaSaveLimitPercent);
+            }
+            if (specialization is RetributionParty)
+            {
+                manaSavePercent = System.Math.Max(20, settings.PRET_ManaSaveLimitPercent);
+            }
 
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightStart += FightStartHandler;
@@ -95,9 +102,9 @@ namespace WholesomeTBCAIO.Rotations.Paladin
             if (specialization.RotationType == Enums.RotationType.Party)
             {
                 // Aura
-                if (!Me.HasAura(settings.PartyAura)
-                    && AIOSpell.GetSpellByName(settings.PartyAura) != null
-                    && cast.OnSelf(AIOSpell.GetSpellByName(settings.PartyAura)))
+                if (!Me.HasAura(settings.PARTY_PartyAura)
+                    && AIOSpell.GetSpellByName(settings.PARTY_PartyAura) != null
+                    && cast.OnSelf(AIOSpell.GetSpellByName(settings.PARTY_PartyAura)))
                     return;
 
                 // PARTY Resurrection
@@ -108,7 +115,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                 if (needRes.Count > 0 && cast.OnFocusUnit(Redemption, needRes[0]))
                     return;
 
-                if (settings.PartyHealOOC)
+                if (settings.PARTY_PartyHealOOC)
                 {
                     // PARTY Heal
                     List<IWoWPlayer> needHeal = unitCache.GroupAndRaid
@@ -140,7 +147,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
                     return;
 
                 // Blessings
-                if (settings.PartyBlessings && PartyBlessingBuffs())
+                if (settings.PARTY_PartyBlessings && PartyBlessingBuffs())
                     return;
 
                 // PARTY Drink
@@ -212,7 +219,7 @@ namespace WholesomeTBCAIO.Rotations.Paladin
         private void FightLoopHandler(WoWUnit unit, CancelEventArgs cancel)
         {
             if (specialization is RetributionParty
-                && settings.PartyStandBehind
+                && settings.PRET_PartyStandBehind
                 && _moveBehindTimer.IsReady)
             {
                 if (ToolBox.StandBehindTargetCombat(unitCache))

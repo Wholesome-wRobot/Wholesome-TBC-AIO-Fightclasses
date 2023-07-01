@@ -103,7 +103,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
 
             // Dampen Magic
             if (!Me.HasAura(DampenMagic)
-                && settings.UseDampenMagic
+                && settings.MCOM_UseDampenMagic
                 && DampenMagic.KnownSpell
                 && DampenMagic.IsSpellUsable
                 && cast.OnSelf(DampenMagic))
@@ -134,7 +134,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
             }
 
             // CounterSpell
-            if (settings.UseCounterspell
+            if (settings.MCOM_UseCounterspell
                 && WTCombat.TargetIsCasting()
                 && cast.OnTarget(CounterSpell))
                 return;
@@ -230,7 +230,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                 Timer timer = new Timer(3000);
 
                 // Using CTM
-                if (settings.BackupUsingCTM)
+                if (settings.MCOM_BackupUsingCTM)
                 {
                     Vector3 position = WTSpace.BackOfUnit(Me.WowUnit, 15f);
                     MovementManager.Go(PathFinder.FindPath(position), false);
@@ -247,7 +247,7 @@ namespace WholesomeTBCAIO.Rotations.Mage
                     {
                         // Wait follow path
                         Thread.Sleep(300);
-                        if (settings.BlinkWhenBackup)
+                        if (settings.MCOM_BlinkWhenBackup)
                             cast.OnSelf(Blink);
                     }
                     MovementManager.StopMove();
@@ -270,12 +270,12 @@ namespace WholesomeTBCAIO.Rotations.Mage
             }
 
             // Polymorph
-            if (settings.UsePolymorph
-                && unitCache.EnemiesAttackingMe.Count > 1
+            if (unitCache.EnemiesAttackingMe.Count > 1
                 && Polymorph.KnownSpell
                 && !cast.IsBackingUp
                 && !cast.IsApproachingTarget
                 && specialization.RotationType != Enums.RotationType.Party
+                && (specialization is Frost && settings.SFRO_UsePolymorph || specialization is Fire && settings.SFIR_UsePolymorph || specialization is Arcane && settings.SARC_UsePolymorph)
                 && polymorphableEnemyInThisFight)
             {
                 IWoWUnit myNearbyPolymorphed = null;

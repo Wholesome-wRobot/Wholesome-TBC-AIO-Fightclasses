@@ -141,7 +141,9 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                                 && RotationType != Enums.RotationType.Party)
                             {
                                 Me.SetFocus(petTarget.Guid);
-                                if (cast.PetSpell("Growl", true))
+                                if (cast.PetSpell("Growl", true)
+                                    || cast.PetSpell("Taunt", true)
+                                    || cast.PetSpell("Thunderstomp", true))
                                 {
                                     Lua.LuaDoString("ClearFocus();");
                                     continue;
@@ -158,11 +160,13 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                                     continue;
                                 if (cast.PetSpellIfEnoughForGrowl("Scorpid Poison"))
                                     continue;
-                                if (cast.PetSpellIfEnoughForGrowl("Claw"))
-                                    continue;
                                 if (cast.PetSpellIfEnoughForGrowl("Screech"))
                                     continue;
                                 if (cast.PetSpellIfEnoughForGrowl("Lightning Breath"))
+                                    continue;
+                                if (cast.PetSpellIfEnoughForGrowl("Swipe"))
+                                    continue;
+                                if (cast.PetSpellIfEnoughForGrowl("Claw"))
                                     continue;
                             }
                         }

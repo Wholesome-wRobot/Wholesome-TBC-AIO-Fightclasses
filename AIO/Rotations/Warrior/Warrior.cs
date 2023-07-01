@@ -27,12 +27,13 @@ namespace WholesomeTBCAIO.Rotations.Warrior
 
         public override void Initialize(IClassRotation specialization)
         {
-            _useCommandingShout = specialization is ProtectionWarrior && settings.PPR_UseCommandingShout
-                || specialization is Fury && settings.SFU_UseCommandingShout
-                || specialization is FuryParty && settings.PFU_UseCommandingShout;
             this.specialization = specialization as Warrior;
             settings = WarriorSettings.Current;
             BaseInit(RangeManager.DefaultMeleeRange, BattleShout, null, settings);
+
+            _useCommandingShout = specialization is ProtectionWarrior && settings.PPR_UseCommandingShout
+                || specialization is Fury && settings.SFU_UseCommandingShout
+                || specialization is FuryParty && settings.PFU_UseCommandingShout;
 
             FightEvents.OnFightEnd += FightEndHandler;
             FightEvents.OnFightLoop += FightLoopHandler;

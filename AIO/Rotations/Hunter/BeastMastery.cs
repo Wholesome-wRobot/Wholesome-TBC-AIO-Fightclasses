@@ -20,9 +20,8 @@ namespace WholesomeTBCAIO.Rotations.Hunter
             // Aspect of the Cheetah
             if (!Me.IsMounted
                 && !Me.HasAura(AspectCheetah)
-                && MovementManager.InMoveTo
-                && Me.ManaPercentage > 60
-                && settings.UseAspectOfTheCheetah
+                && (MovementManager.InMovement || MovementManager.InMoveTo)
+                && Me.ManaPercentage > settings.BM_AspectOfTheCheetahThreashold
                 && cast.OnSelf(AspectCheetah))
                 return;
         }
@@ -86,7 +85,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 return;
 
             // Disengage
-            if (settings.UseDisengage
+            if (settings.BM_UseDisengage
                 && Pet.Target == Me.Target
                 && Target.IsTargetingMe
                 && Target.GetDistance < minRange
@@ -98,14 +97,14 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 && Target.HealthPercent >= 60
                 && Me.ManaPercentage > 10
                 && BestialWrath.IsSpellUsable
-                && (settings.BestialWrathOnMulti && unitCache.EnemiesAttackingMe.Count > 1 || !settings.BestialWrathOnMulti)
+                && (settings.BM_BestialWrathOnMulti && unitCache.EnemiesAttackingMe.Count > 1 || !settings.BM_BestialWrathOnMulti)
                 && cast.OnSelf(BestialWrath))
                 return;
 
             // Rapid Fire
             if (Target.GetDistance < AutoShot.MaxRange
                 && Target.HealthPercent >= 80.0
-                && (settings.RapidFireOnMulti && unitCache.EnemiesAttackingMe.Count > 1 || !settings.RapidFireOnMulti)
+                && (settings.BM_RapidFireOnMulti && unitCache.EnemiesAttackingMe.Count > 1 || !settings.BM_RapidFireOnMulti)
                 && cast.OnSelf(RapidFire))
                 return;
 
@@ -115,7 +114,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
                 return;
 
             // Raptor Strike
-            if (settings.UseRaptorStrike
+            if (settings.BM_UseRaptorStrike
                 && Target.GetDistance < minRange
                 && !WTCombat.IsSpellActive("Raptor Strike")
                 && cast.OnTarget(RaptorStrike))
@@ -134,7 +133,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
             // Concussive Shot
             if ((Target.CreatureTypeTarget == "Humanoid" || Target.Name.Contains("Plainstrider"))
-                && settings.UseConcussiveShot
+                && settings.BM_UseConcussiveShot
                 && Target.HealthPercent < 20
                 && !ConcussiveShot.TargetHaveBuff
                 && cast.OnTarget(ConcussiveShot))
@@ -142,7 +141,7 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
             // Wing Clip
             if ((Target.CreatureTypeTarget == "Humanoid" || Target.Name.Contains("Plainstrider"))
-                && settings.UseConcussiveShot
+                && settings.BM_UseConcussiveShot
                 && Target.HealthPercent < 20
                 && !Target.HasAura(WingClip)
                 && cast.OnTarget(WingClip))
@@ -192,10 +191,23 @@ namespace WholesomeTBCAIO.Rotations.Hunter
 
             // Arcane Shot
             if (Target.GetDistance < AutoShot.MaxRange
-                && Target.HealthPercent >= 30
-                && Me.ManaPercentage > 80
+                && Me.ManaPercentage > settings.BM_ArcaneShotThreshold
                 && !SteadyShot.KnownSpell
                 && cast.OnTarget(ArcaneShot))
+                return;
+
+            // Multi Shot on multi aggro
+            if (Target.GetDistance < AutoShot.MaxRange
+                && unitCache.EnemiesFighting.Count > 1
+                && cast.OnTarget(MultiShot))
+                return;
+
+            // Multi Shot on single
+            if (Target.GetDistance < AutoShot.MaxRange
+                && settings.BM_MultishotOnSolo
+                && Me.ManaPercentage > settings.BM_MultishotThreshold
+                && !SteadyShot.KnownSpell
+                && cast.OnTarget(MultiShot))
                 return;
         }
     }
