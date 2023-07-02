@@ -52,7 +52,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
                 return;
 
             // Soul Link
-            if (!Me.HasAura(SoulLink)
+            if (!Me.HasAura("Soul Link")
                 && Pet.IsAlive
                 && cast.OnSelf(SoulLink))
                 return;

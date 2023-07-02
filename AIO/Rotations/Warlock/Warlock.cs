@@ -24,7 +24,7 @@ namespace WholesomeTBCAIO.Rotations.Warlock
         protected int _innerManaSaveThreshold = 20;
         protected bool _iCanUseWand = WTGear.HaveRangedWeaponEquipped;
         protected int _saveDrinkPercent = wManager.wManagerSetting.CurrentSetting.DrinkPercent;
-        private bool IsWotlk = WTLua.GetWoWVersion.StartsWith("3");
+        protected bool IsWotlk = WTLua.GetWoWVersion.StartsWith("3");
 
         public Warlock(BaseSettings settings) : base(settings) { }
 
